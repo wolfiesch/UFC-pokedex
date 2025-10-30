@@ -1,0 +1,34 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Node
+frontend/.next/
+frontend/node_modules/
+frontend/.turbo/
+frontend/dist/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Data artifacts
+data/raw/
+data/processed/
+data/cache/
+
+# Docker
+docker-compose.override.yml
+

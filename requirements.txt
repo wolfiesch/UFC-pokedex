@@ -1,0 +1,14 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.23
+alembic==1.13.1
+psycopg[binary]==3.2.12
+pydantic==2.7.1
+pydantic-settings==2.2.1
+scrapy==2.11.1
+beautifulsoup4==4.12.3
+httpx==0.27.0
+lxml==5.2.1
+tenacity==8.2.3
+python-dotenv==1.0.1
+rich==13.7.1
