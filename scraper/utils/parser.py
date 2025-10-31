@@ -1,21 +1,34 @@
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime
 from typing import Any, Iterable
 
 from parsel import Selector
 
+logger = logging.getLogger(__name__)
+
 UUID_RE = re.compile(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+# Hex ID pattern for IDs without dashes (16 hex characters)
+HEX_ID_RE = re.compile(r"([0-9a-f]{16})")
 
 
 def _extract_uuid(url: str | None) -> str:
     if not url:
         raise ValueError("Missing URL when attempting to extract UUID")
+
+    # Try UUID format first (with dashes)
     match = UUID_RE.search(url)
-    if not match:
-        raise ValueError(f"Could not extract id from URL: {url}")
-    return match.group(1)
+    if match:
+        return match.group(1)
+
+    # Fall back to hex ID format (without dashes)
+    match = HEX_ID_RE.search(url)
+    if match:
+        return match.group(1)
+
+    raise ValueError(f"Could not extract id from URL: {url}")
 
 
 def clean_text(value: str | None) -> str | None:
@@ -44,9 +57,26 @@ def parse_date(value: str | None) -> str | None:
     return text
 
 
-def parse_fighter_list_row(row: Selector) -> dict[str, Any]:
-    detail_url = clean_text(row.css("td:nth-child(1) a::attr(href)").get())
-    fighter_id = _extract_uuid(detail_url)
+def parse_fighter_list_row(row: Selector) -> dict[str, Any] | None:
+    # Try multiple selectors to find the fighter detail URL
+    detail_url = (
+        clean_text(row.css("td:nth-child(1) a::attr(href)").get()) or
+        clean_text(row.css("td:first-child a::attr(href)").get()) or
+        clean_text(row.css("a[href*='fighter-details']::attr(href)").get())
+    )
+
+    if not detail_url:
+        # Log the row HTML for debugging
+        row_html = row.get()
+        logger.warning(f"No fighter URL found in row. Row HTML: {row_html[:500]}")
+        return None
+
+    try:
+        fighter_id = _extract_uuid(detail_url)
+    except ValueError as e:
+        logger.warning(f"Failed to extract UUID from URL '{detail_url}': {e}")
+        return None
+
     data = {
         "item_type": "fighter_list",
         "fighter_id": fighter_id,

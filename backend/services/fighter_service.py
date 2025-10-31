@@ -3,6 +3,11 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import date
 
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.db.connection import get_db
+from backend.db.repositories import PostgreSQLFighterRepository
 from backend.schemas.fighter import FighterDetail, FighterListItem
 
 
@@ -49,8 +54,8 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
 
 
 class FighterService:
-    def __init__(self, repository: FighterRepositoryProtocol | None = None) -> None:
-        self._repository = repository or InMemoryFighterRepository()
+    def __init__(self, repository: FighterRepositoryProtocol | PostgreSQLFighterRepository) -> None:
+        self._repository = repository
 
     async def list_fighters(self) -> list[FighterListItem]:
         fighters = await self._repository.list_fighters()
@@ -62,6 +67,38 @@ class FighterService:
     async def get_stats_summary(self) -> dict[str, float]:
         return await self._repository.stats_summary()
 
+    async def search_fighters(
+        self, query: str | None = None, stance: str | None = None
+    ) -> list[FighterListItem]:
+        """Search fighters by name or filter by stance."""
+        if hasattr(self._repository, "search_fighters"):
+            fighters = await self._repository.search_fighters(query=query, stance=stance)
+            return list(fighters)
+        else:
+            # Fallback for repositories that don't support search natively.
+            fighters = await self._repository.list_fighters()
+            query_lower = query.lower() if query else None
+            stance_lower = stance.lower() if stance else None
+            filtered: list[FighterListItem] = []
+            for fighter in fighters:
+                name_match = True
+                if query_lower:
+                    name_parts = [
+                        getattr(fighter, "name", "") or "",
+                        getattr(fighter, "nickname", "") or "",
+                    ]
+                    haystack = " ".join(part for part in name_parts if part).lower()
+                    name_match = query_lower in haystack
+                stance_match = True
+                if stance_lower:
+                    fighter_stance = (getattr(fighter, "stance", None) or "").lower()
+                    stance_match = fighter_stance == stance_lower
+                if name_match and stance_match:
+                    filtered.append(fighter)
+            return filtered
 
-def get_fighter_service() -> FighterService:
-    return FighterService()
+
+def get_fighter_service(session: AsyncSession = Depends(get_db)) -> FighterService:
+    """FastAPI dependency that provides FighterService with PostgreSQL repository."""
+    repository = PostgreSQLFighterRepository(session)
+    return FighterService(repository)

@@ -1,5 +1,6 @@
 export type FighterListItem = {
   fighter_id: string;
+  detail_url: string;
   name: string;
   nickname?: string | null;
   division?: string | null;

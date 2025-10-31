@@ -20,12 +20,12 @@ class FighterListItem(BaseModel):
 
 class FightHistoryEntry(BaseModel):
     fight_id: str
-    event_name: str
+    event_name: str | None = None
     event_date: date | None = None
     opponent: str
     opponent_id: str | None = None
-    result: str
-    method: str
+    result: str | None = None
+    method: str | None = None
     round: int | None = None
     time: str | None = None
     fight_card_url: HttpUrl | None = None

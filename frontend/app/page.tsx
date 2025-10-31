@@ -7,7 +7,7 @@ import { useFighters } from "@/hooks/useFighters";
 import { useSearch } from "@/hooks/useSearch";
 
 export default function HomePage() {
-  const { fighters, isLoading } = useFighters();
+  const { fighters, isLoading, error } = useFighters();
   const { stanceFilter, setStanceFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
 
@@ -25,7 +25,7 @@ export default function HomePage() {
         selectedStance={stanceFilter}
         onStanceChange={setStanceFilter}
       />
-      <FighterGrid fighters={fighters} isLoading={isLoading} />
+      <FighterGrid fighters={fighters} isLoading={isLoading} error={error} />
     </section>
   );
 }

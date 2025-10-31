@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class FightHistoryEntry(BaseModel):
@@ -16,12 +16,13 @@ class FightHistoryEntry(BaseModel):
     method: str
     round: int | None = None
     time: str | None = None
-    fight_card_url: str | None = None
+    fight_card_url: HttpUrl | None = None
     stats: dict[str, Any] = Field(default_factory=dict)
 
 
 class FighterListItem(BaseModel):
     fighter_id: str
+    detail_url: HttpUrl
     name: str
     nickname: str | None = None
     division: str | None = None

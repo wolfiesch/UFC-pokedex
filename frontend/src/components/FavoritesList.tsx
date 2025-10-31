@@ -21,7 +21,7 @@ export default function FavoritesList({ favorites }: Props) {
             <div>
               <p className="text-lg font-semibold text-pokedexYellow">{fighter.name}</p>
               {fighter.nickname && (
-                <p className="text-sm text-slate-400">"{fighter.nickname}"</p>
+                <p className="text-sm text-slate-400">&quot;{fighter.nickname}&quot;</p>
               )}
             </div>
             <Link

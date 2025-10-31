@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from fastapi import Depends
+
 from backend.schemas.fighter import FighterListItem
 from backend.services.fighter_service import FighterService, get_fighter_service
 
@@ -8,25 +10,12 @@ class SearchService:
     def __init__(self, fighter_service: FighterService) -> None:
         self._fighter_service = fighter_service
 
-    async def search_fighters(self, query: str, stance: str | None = None) -> list[FighterListItem]:
-        fighters = await self._fighter_service.list_fighters()
-        query_lower = query.lower()
-        results = [
-            fighter
-            for fighter in fighters
-            if query_lower in fighter.name.lower()
-            or (fighter.nickname and query_lower in fighter.nickname.lower())
-        ]
-        if stance:
-            stance_lower = stance.lower()
-            results = [
-                fighter for fighter in results if fighter.stance and fighter.stance.lower() == stance_lower
-            ]
-        return results
+    async def search_fighters(self, query: str | None = None, stance: str | None = None) -> list[FighterListItem]:
+        """Search fighters using the fighter service's search method."""
+        return await self._fighter_service.search_fighters(query=query, stance=stance)
 
 
 def get_search_service(
-    fighter_service: FighterService | None = None,
+    fighter_service: FighterService = Depends(get_fighter_service),
 ) -> SearchService:
-    service = fighter_service or get_fighter_service()
-    return SearchService(service)
+    return SearchService(fighter_service)

@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -18,7 +20,7 @@ class Fighter(Base):
     reach: Mapped[str | None]
     leg_reach: Mapped[str | None]
     stance: Mapped[str | None]
-    dob: Mapped[Date | None]
+    dob: Mapped[date | None]
     record: Mapped[str | None]
 
     fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="fighter")
@@ -32,7 +34,7 @@ class Fight(Base):
     opponent_id: Mapped[str | None] = mapped_column(String, nullable=True)
     opponent_name: Mapped[str] = mapped_column(String, nullable=False)
     event_name: Mapped[str] = mapped_column(String, nullable=False)
-    event_date: Mapped[Date | None]
+    event_date: Mapped[date | None]
     result: Mapped[str] = mapped_column(String, nullable=False)
     method: Mapped[str | None]
     round: Mapped[int | None]

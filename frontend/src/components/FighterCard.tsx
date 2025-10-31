@@ -25,7 +25,7 @@ export default function FighterCard({ fighter }: Props) {
           {isFavorite ? "Remove" : "Favorite"}
         </button>
       </header>
-      {fighter.nickname && <p className="text-sm text-slate-400">"{fighter.nickname}"</p>}
+      {fighter.nickname && <p className="text-sm text-slate-400">&quot;{fighter.nickname}&quot;</p>}
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
         <div>
           <dt className="font-semibold text-slate-100">Height</dt>

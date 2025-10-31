@@ -30,3 +30,30 @@ async def get_session(engine: AsyncEngine | None = None):
     session_factory = create_session_factory(engine)
     async with session_factory() as session:
         yield session
+
+
+# Global engine instance for FastAPI dependency injection
+_engine: AsyncEngine | None = None
+
+
+def get_engine() -> AsyncEngine:
+    """Get or create the global engine instance."""
+    global _engine
+    if _engine is None:
+        _engine = create_engine()
+    return _engine
+
+
+async def get_db() -> AsyncSession:
+    """FastAPI dependency that provides a database session."""
+    engine = get_engine()
+    session_factory = create_session_factory(engine)
+    async with session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()

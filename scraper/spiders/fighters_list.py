@@ -28,7 +28,8 @@ class FightersListSpider(scrapy.Spider):
     def parse(self, response: scrapy.http.Response):
         for row in response.css("tr.b-statistics__table-row"):
             item = parse_fighter_list_row(row)
-            yield item
+            if item is not None:  # Skip rows that couldn't be parsed
+                yield item
 
         next_page = response.css("a.b-statistics__paginate-link.next::attr(href)").get()
         if next_page:
