@@ -15,3 +15,13 @@ ITEM_PIPELINES = {
 
 LOG_LEVEL = "INFO"
 
+# HTTP Caching - Avoid re-scraping already downloaded fighters
+HTTPCACHE_ENABLED = True
+HTTPCACHE_DIR = "data/cache/scrapy_cache"
+HTTPCACHE_EXPIRATION_SECS = 86400  # 24 hours
+HTTPCACHE_IGNORE_HTTP_CODES = [500, 502, 503, 504]
+
+# Connection pooling optimizations
+REACTOR_THREADPOOL_MAXSIZE = 20
+DNS_TIMEOUT = 10
+

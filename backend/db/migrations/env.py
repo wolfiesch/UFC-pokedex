@@ -62,6 +62,11 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata)
 
+    if os.getenv("TRUNCATE_DATABASE") == "True":
+        print("Truncating database...")
+        # Drop all tables defined in the target_metadata
+        target_metadata.drop_all(connection)
+
     with context.begin_transaction():
         context.run_migrations()
 

@@ -346,17 +346,17 @@ async def load_fighter_detail(
         fighter.division = data.get("division")
         fighter.record = data.get("record")
 
+        # Delete old fights for this fighter to allow re-scraping with updated data
+        await session.execute(
+            delete(Fight).where(Fight.fighter_id == fighter_id)
+        )
+
         # Load fight history
         fight_history = data.get("fight_history", [])
         for fight_data in fight_history:
             fight_id = fight_data.get("fight_id")
             if not fight_id:
                 continue
-
-            # Check if fight already exists
-            existing_fight = await session.get(Fight, fight_id)
-            if existing_fight:
-                continue  # Skip if already loaded
 
             fight = Fight(
                 id=fight_id,

@@ -51,9 +51,11 @@ def parse_date(value: str | None) -> str | None:
     text = clean_text(value)
     if not text:
         return None
+    # Remove periods after month abbreviations (e.g., "Nov. 16, 2024" -> "Nov 16, 2024")
+    text_normalized = text.replace(".", "")
     for fmt in ("%b %d, %Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(text, fmt).date().isoformat()
+            return datetime.strptime(text_normalized, fmt).date().isoformat()
         except ValueError:
             continue
     return text
@@ -151,39 +153,77 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         first_p = cell.css("p.b-fight-details__table-text::text").get()
         return clean_text(first_p)
 
+    def _extract_opponent_name(fighter_cell: Selector) -> str:
+        """Extract opponent name (second fighter in the cell).
+
+        UFCStats.com shows BOTH fighters in column 2:
+        - First link: the page owner (e.g., "Jon Jones")
+        - Second link: the opponent (e.g., "Stipe Miocic")
+        """
+        fighter_links = fighter_cell.css("p.b-fight-details__table-text a::text").getall()
+        if len(fighter_links) >= 2:
+            return clean_text(fighter_links[1]) or "Unknown"
+        # Fallback for cases with only one fighter listed
+        return clean_text(fighter_links[0]) if fighter_links else "Unknown"
+
+    def _extract_opponent_id(fighter_cell: Selector) -> str | None:
+        """Extract opponent ID (second link in the cell)."""
+        opponent_links = fighter_cell.css("p.b-fight-details__table-text a::attr(href)").getall()
+        if len(opponent_links) >= 2:
+            try:
+                return _extract_uuid(opponent_links[1])
+            except ValueError:
+                return None
+        return None
+
+    def _extract_event_date(event_cell: Selector) -> str | None:
+        """Extract event date from second <p> tag in event cell."""
+        # Date is in the second <p> tag after the flag icon
+        date_texts = event_cell.css("p:nth-child(2)::text").getall()
+        # Filter out whitespace and join remaining text
+        cleaned_parts = [clean_text(t) for t in date_texts if clean_text(t)]
+        date_str = " ".join(cleaned_parts) if cleaned_parts else None
+        return parse_date(date_str)
+
     fights = []
     rows = table.css("tbody tr")
     if not rows:
         rows = table.css("tr.b-fight-details__table-row")
+
     for index, row in enumerate(rows, start=1):
+        # Skip empty rows (first row in tbody is often empty with class "b-statistics__table-col_type_clear")
+        if row.css("td.b-fight-details__table-col_type_clear"):
+            continue
+
         fight_link = row.css("td:nth-child(1) a::attr(href)").get()
         fight_id = (
             _extract_uuid(fight_link)
             if fight_link
             else f"{fighter_id}-fight-{index}"
         )
-        opponent_link = row.css("td:nth-child(2) a::attr(href)").get()
+
+        fighter_cell = row.css("td:nth-child(2)")
         event_cell = row.css("td:nth-child(7)")
+
         # Actual column mapping from UFCStats.com:
         # Col 3: Kd (knockdowns), Col 4: Str (strikes), Col 5: Td (takedowns), Col 6: Sub (submissions)
         knockdowns_cell = row.css("td:nth-child(3)")
         strikes_cell = row.css("td:nth-child(4)")
         takedowns_cell = row.css("td:nth-child(5)")
         submissions_cell = row.css("td:nth-child(6)")
+
         fights.append(
             {
                 "fight_id": fight_id,
-                "opponent": clean_text(row.css("td:nth-child(2) a::text").get())
-                or clean_text(row.css("td:nth-child(2)::text").get())
-                or "Unknown",
-                "opponent_id": _extract_uuid(opponent_link) if opponent_link else None,
+                "opponent": _extract_opponent_name(fighter_cell),
+                "opponent_id": _extract_opponent_id(fighter_cell),
                 "event_name": clean_text(event_cell.css("a::text").get())
-                or clean_text(event_cell.css("::text").get()),
-                "event_date": parse_date(event_cell.css("span::text").get()),
-                "result": clean_text(row.css("td:nth-child(1)::text").get()),
-                "method": clean_text(row.css("td:nth-child(8)::text").get()),
-                "round": _parse_int(row.css("td:nth-child(9)::text").get()),
-                "time": clean_text(row.css("td:nth-child(10)::text").get()),
+                or clean_text(event_cell.css("p:nth-child(1)::text").get()),
+                "event_date": _extract_event_date(event_cell),
+                "result": clean_text(row.css("td:nth-child(1) a i.b-flag__text::text").get()),
+                "method": " ".join([clean_text(t) for t in row.css("td:nth-child(8) p:nth-child(1)::text").getall() if clean_text(t)]) or None,
+                "round": _parse_int(row.css("td:nth-child(9) p::text").get()),
+                "time": clean_text(row.css("td:nth-child(10) p::text").get()),
                 "fight_card_url": clean_text(event_cell.css("a::attr(href)").get()),
                 "stats": {
                     "knockdowns": _extract_fighter_stat(knockdowns_cell),

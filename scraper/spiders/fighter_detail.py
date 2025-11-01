@@ -18,6 +18,10 @@ class FighterDetailSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": settings.delay_seconds,
         "USER_AGENT": settings.user_agent,
         "AUTOTHROTTLE_ENABLED": True,
+        "AUTOTHROTTLE_START_DELAY": 0.5,  # Start faster
+        "AUTOTHROTTLE_MAX_DELAY": 3.0,  # Max delay cap
+        "AUTOTHROTTLE_TARGET_CONCURRENCY": 8.0,  # Target 8 concurrent requests
+        "CONCURRENT_REQUESTS_PER_DOMAIN": settings.concurrent_requests,
     }
 
     def start_requests(self):
