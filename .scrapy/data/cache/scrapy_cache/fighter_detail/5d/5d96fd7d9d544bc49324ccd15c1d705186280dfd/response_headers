@@ -1,0 +1,10 @@
+Server: nginx/1.10.1
+Vary: Accept-Encoding
+Cache-Control: public, max-age=900
+Content-Type: text/html;charset=utf-8
+Content-Encoding: gzip
+Date: Sat, 01 Nov 2025 04:43:26 GMT
+Status: 200 OK
+X-Xss-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
