@@ -286,19 +286,16 @@ async def load_fighters_from_jsonl(
                     await session.merge(fighter)
                     loaded_count += 1
 
-                    if not dry_run:
-                        await session.commit()
-
                 except json.JSONDecodeError as e:
                     console.print(f"[red]Line {line_num}: JSON decode error: {e}[/red]")
                     skipped_count += 1
                 except Exception as e:
                     console.print(f"[red]Line {line_num}: Error loading fighter: {e}[/red]")
-                    if not dry_run and session.in_transaction():
+                    if not dry_run:
                         await session.rollback()
                     skipped_count += 1
 
-        if not dry_run and session.in_transaction():
+        if not dry_run:
             await session.commit()
 
     return loaded_count

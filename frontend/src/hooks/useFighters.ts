@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { FighterListItem } from "@/lib/types";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -16,7 +16,7 @@ export function useFighters(initialLimit = 20) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadFighters = async (newOffset: number) => {
+  const loadFighters = useCallback(async (newOffset: number) => {
     let active = true;
     setIsLoading(true);
     setError(null);
@@ -59,14 +59,14 @@ export function useFighters(initialLimit = 20) {
         setIsLoading(false);
       }
     }
-  };
+  }, [searchTerm, stance, initialLimit]);
 
   const nextPage = () => loadFighters(offset + initialLimit);
   const prevPage = () => loadFighters(Math.max(0, offset - initialLimit));
 
   useEffect(() => {
     void loadFighters(0);
-  }, [searchTerm, stance]);
+  }, [loadFighters]);
 
   return { fighters, total, offset, hasMore, isLoading, error, nextPage, prevPage };
 }

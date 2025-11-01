@@ -171,7 +171,7 @@ class PostgreSQLFighterRepository:
             )
 
         if stance:
-            stmt = stmt.where(Fighter.stance == stance)
+            stmt = stmt.where(Fighter.stance.ilike(stance))
 
         result = await self._session.execute(stmt)
         fighters = result.scalars().all()

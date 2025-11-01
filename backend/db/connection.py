@@ -44,7 +44,7 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
-async def get_db() -> AsyncSession:
+async def get_db():
     """FastAPI dependency that provides a database session."""
     engine = get_engine()
     session_factory = create_session_factory(engine)
@@ -55,5 +55,3 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
