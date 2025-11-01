@@ -371,7 +371,7 @@ async def load_fighter_detail(
                 time=fight_data.get("time"),
                 fight_card_url=fight_data.get("fight_card_url"),
             )
-            session.add(fight)
+            await session.merge(fight)
 
         aggregated_stats = calculate_fighter_stats(fight_history)
         await upsert_fighter_stats(session, fighter_id, aggregated_stats)
