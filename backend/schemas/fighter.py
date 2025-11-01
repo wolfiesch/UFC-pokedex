@@ -42,3 +42,11 @@ class FighterDetail(FighterListItem):
     significant_strikes: dict[str, Any] = Field(default_factory=dict)
     takedown_stats: dict[str, Any] = Field(default_factory=dict)
     fight_history: list[FightHistoryEntry] = Field(default_factory=list)
+
+
+class PaginatedFightersResponse(BaseModel):
+    fighters: list[FighterListItem]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool

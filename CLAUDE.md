@@ -11,6 +11,7 @@ UFC Fighter Pokedex is a full-stack application that scrapes UFC fighter data fr
 - Scraper: Scrapy + BeautifulSoup4
 - Frontend: Next.js 14 + React + Tailwind CSS + Zustand
 - Package Manager: `uv` (not pip)
+- Testing: Playwright MCP for E2E browser automation
 
 ## Development Commands
 
@@ -43,6 +44,29 @@ cd frontend && npm test                # Frontend tests only
 make lint           # Run Ruff + ESLint
 make format         # Format code with Ruff + Prettier
 ```
+
+### E2E Testing with Playwright MCP
+Playwright MCP is configured for browser automation and E2E testing. Available capabilities:
+
+**Navigation & Inspection:**
+- Navigate to URLs and capture page state
+- Take screenshots (viewport or full page)
+- Capture accessibility snapshots (structured YAML of page content)
+- Execute JavaScript to inspect/manipulate page
+- Monitor network requests and console messages
+
+**User Interactions:**
+- Click, hover, type, drag-and-drop
+- Fill forms and select dropdowns
+- Upload files and handle dialogs
+- Press keyboard keys
+
+**Session Management:**
+- Create, switch, and close tabs
+- Wait for elements or time delays
+- Resize browser window
+
+Screenshots are saved to `.playwright-mcp/` directory.
 
 ### Database Operations
 ```bash
@@ -243,6 +267,7 @@ make scraper       # Uses .venv/bin/scrapy internally
 - Scraper logs: Scrapy outputs to console, check `data/processed/` for output files
 - Frontend: Check browser console + Next.js terminal for errors
 - Search endpoint: The `q` parameter is required (use `/search/?q=fighter_name`)
+- E2E testing: Use Playwright MCP tools to inspect page state, capture screenshots, and monitor network/console
 
 ## Known TODOs & Limitations
 

@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.db.models import Fight, Fighter
+from backend.db.models import Fight, Fighter, fighter_stats
 from backend.schemas.fighter import FighterDetail, FighterListItem, FightHistoryEntry
 
 
@@ -36,6 +36,7 @@ class PostgreSQLFighterRepository:
                 detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
                 name=fighter.name,
                 nickname=fighter.nickname,
+                division=fighter.division,
                 height=fighter.height,
                 weight=fighter.weight,
                 reach=fighter.reach,
@@ -57,6 +58,20 @@ class PostgreSQLFighterRepository:
 
         if fighter is None:
             return None
+
+        stats_result = await self._session.execute(
+            select(
+                fighter_stats.c.category,
+                fighter_stats.c.metric,
+                fighter_stats.c.value,
+            ).where(fighter_stats.c.fighter_id == fighter_id)
+        )
+        stats_map: dict[str, dict[str, str]] = {}
+        for category, metric, value in stats_result.all():
+            if category is None or metric is None:
+                continue
+            category_stats = stats_map.setdefault(category, {})
+            category_stats[metric] = value
 
         # Convert fights to FightHistoryEntry
         fight_history = [
@@ -90,10 +105,10 @@ class PostgreSQLFighterRepository:
             leg_reach=fighter.leg_reach,
             division=fighter.division,
             age=None,  # TODO: Calculate age from dob
-            striking={},  # TODO: Populate from fighter_stats
-            grappling={},  # TODO: Populate from fighter_stats
-            significant_strikes={},  # TODO: Populate from fighter_stats
-            takedown_stats={},  # TODO: Populate from fighter_stats
+            striking=stats_map.get("striking", {}),
+            grappling=stats_map.get("grappling", {}),
+            significant_strikes=stats_map.get("significant_strikes", {}),
+            takedown_stats=stats_map.get("takedown_stats", {}),
             fight_history=fight_history,
         )
 
@@ -172,6 +187,35 @@ class PostgreSQLFighterRepository:
                 reach=fighter.reach,
                 stance=fighter.stance,
                 dob=fighter.dob,
+                division=fighter.division,
             )
             for fighter in fighters
         ]
+
+    async def count_fighters(self) -> int:
+        """Get the total count of fighters in the database."""
+        query = select(func.count()).select_from(Fighter)
+        result = await self._session.execute(query)
+        return result.scalar_one()
+
+    async def get_random_fighter(self) -> FighterListItem | None:
+        """Get a random fighter from the database."""
+        query = select(Fighter).order_by(func.random()).limit(1)
+        result = await self._session.execute(query)
+        fighter = result.scalar_one_or_none()
+
+        if fighter is None:
+            return None
+
+        return FighterListItem(
+            fighter_id=fighter.id,
+            detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
+            name=fighter.name,
+            nickname=fighter.nickname,
+            division=fighter.division,
+            height=fighter.height,
+            weight=fighter.weight,
+            reach=fighter.reach,
+            stance=fighter.stance,
+            dob=fighter.dob,
+        )

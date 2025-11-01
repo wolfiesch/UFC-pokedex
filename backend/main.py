@@ -1,9 +1,12 @@
+import os
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .api import fighters, search, stats
 
@@ -11,6 +14,31 @@ app = FastAPI(
     title="UFC Pokedex API",
     version="0.1.0",
     description="REST API serving UFC fighter data scraped from UFCStats.",
+)
+
+def _default_origins() -> list[str]:
+    ports = list(range(3000, 3011)) + [5173]
+    origins = []
+    for host in ("localhost", "127.0.0.1"):
+        origins.extend([f"http://{host}:{port}" for port in ports])
+    origins.append("http://localhost")
+    origins.append("http://127.0.0.1")
+    return origins
+
+default_origins = _default_origins()
+extra_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
+    if origin.strip()
+]
+allow_origins = extra_origins or default_origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -12,16 +13,208 @@ from typing import Any
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.connection import get_session
-from backend.db.models import Fight, Fighter
+from backend.db.models import Fight, Fighter, fighter_stats
 
 # Load environment variables
 load_dotenv()
 
 console = Console()
 
+
+LANDED_ATTEMPT_RE = re.compile(r"(?P<landed>\d+)\s*(?:of|/)\s*(?P<attempted>\d+)", re.IGNORECASE)
+PERCENT_RE = re.compile(r"(?P<pct>\d+(?:\.\d+)?)%")
+
+
+def _parse_landed_attempted(value: Any) -> tuple[int, int] | None:
+    """Parse strings like '30 of 75' into landed/attempted totals."""
+    if value in (None, "", "--"):
+        return None
+    text = str(value).strip()
+    if not text or text == "--":
+        return None
+    text = text.replace(",", "")
+    match = LANDED_ATTEMPT_RE.search(text)
+    if not match:
+        return None
+    return int(match.group("landed")), int(match.group("attempted"))
+
+
+def _parse_percentage(value: Any) -> float | None:
+    """Parse percentage strings like '45%' into a ratio between 0 and 1."""
+    if value in (None, "", "--"):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    percent_match = PERCENT_RE.search(text)
+    if percent_match:
+        return float(percent_match.group("pct")) / 100.0
+    try:
+        numeric = float(text)
+    except ValueError:
+        return None
+    # Handle both 0-1 and 0-100 scale values
+    return numeric / 100.0 if numeric > 1 else numeric
+
+
+def _format_number(value: float, decimals: int = 2) -> str:
+    """Format floats with trailing zeros trimmed."""
+    formatted = f"{value:.{decimals}f}"
+    return formatted.rstrip("0").rstrip(".")
+
+
+def _format_percentage(value: float, decimals: int = 1) -> str:
+    """Format a ratio as a percentage string."""
+    percent = value * 100
+    formatted = f"{percent:.{decimals}f}"
+    return f"{formatted.rstrip('0').rstrip('.')}%"
+
+
+def _average(total: float, count: int) -> float | None:
+    if count <= 0:
+        return None
+    return total / count
+
+
+def _compute_accuracy(
+    landed_total: int,
+    attempted_total: int,
+    pct_sum: float,
+    pct_count: int,
+) -> float | None:
+    """Compute accuracy using totals, falling back to averaged percentages."""
+    if attempted_total > 0:
+        return landed_total / attempted_total
+    if pct_count > 0:
+        return pct_sum / pct_count
+    return None
+
+
+def calculate_fighter_stats(fight_history: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    """Aggregate per-fight stats into career averages."""
+    sig_totals = {"landed": 0, "attempted": 0, "count": 0, "pct_sum": 0.0, "pct_count": 0}
+    total_totals = {"landed": 0, "attempted": 0, "count": 0}
+    td_totals = {"completed": 0, "attempted": 0, "count": 0}
+
+    for fight in fight_history or []:
+        stats = fight.get("stats") or {}
+
+        sig_pair = _parse_landed_attempted(stats.get("sig_strikes"))
+        if sig_pair:
+            sig_totals["landed"] += sig_pair[0]
+            sig_totals["attempted"] += sig_pair[1]
+            sig_totals["count"] += 1
+
+        sig_pct = _parse_percentage(stats.get("sig_strikes_pct"))
+        if sig_pct is not None:
+            sig_totals["pct_sum"] += sig_pct
+            sig_totals["pct_count"] += 1
+
+        total_pair = _parse_landed_attempted(stats.get("total_strikes"))
+        if total_pair:
+            total_totals["landed"] += total_pair[0]
+            total_totals["attempted"] += total_pair[1]
+            total_totals["count"] += 1
+
+        td_pair = _parse_landed_attempted(stats.get("takedowns"))
+        if td_pair:
+            td_totals["completed"] += td_pair[0]
+            td_totals["attempted"] += td_pair[1]
+            td_totals["count"] += 1
+
+    results: dict[str, dict[str, str]] = {}
+
+    avg_sig_landed = _average(sig_totals["landed"], sig_totals["count"])
+    avg_sig_attempted = _average(sig_totals["attempted"], sig_totals["count"])
+    sig_accuracy = _compute_accuracy(
+        sig_totals["landed"],
+        sig_totals["attempted"],
+        sig_totals["pct_sum"],
+        sig_totals["pct_count"],
+    )
+    if any(value is not None for value in (avg_sig_landed, avg_sig_attempted, sig_accuracy)):
+        category = {}
+        if avg_sig_landed is not None:
+            category["avg_landed"] = _format_number(avg_sig_landed)
+        if avg_sig_attempted is not None:
+            category["avg_attempted"] = _format_number(avg_sig_attempted)
+        if sig_accuracy is not None:
+            category["accuracy_pct"] = _format_percentage(sig_accuracy)
+        if category:
+            results["significant_strikes"] = category
+
+    avg_total_landed = _average(total_totals["landed"], total_totals["count"])
+    avg_total_attempted = _average(total_totals["attempted"], total_totals["count"])
+    total_accuracy = None
+    if total_totals["attempted"] > 0:
+        total_accuracy = total_totals["landed"] / total_totals["attempted"]
+    if any(value is not None for value in (avg_total_landed, avg_total_attempted, total_accuracy)):
+        category = {}
+        if avg_total_landed is not None:
+            category["total_strikes_landed_avg"] = _format_number(avg_total_landed)
+        if avg_total_attempted is not None:
+            category["total_strikes_attempted_avg"] = _format_number(avg_total_attempted)
+        if total_accuracy is not None:
+            category["total_strikes_accuracy_pct"] = _format_percentage(total_accuracy)
+        if category:
+            results["striking"] = category
+
+    avg_td_completed = _average(td_totals["completed"], td_totals["count"])
+    avg_td_attempted = _average(td_totals["attempted"], td_totals["count"])
+    td_accuracy = None
+    if td_totals["attempted"] > 0:
+        td_accuracy = td_totals["completed"] / td_totals["attempted"]
+    if any(value is not None for value in (avg_td_completed, avg_td_attempted, td_accuracy)):
+        td_category = {}
+        if avg_td_completed is not None:
+            td_category["takedowns_completed_avg"] = _format_number(avg_td_completed)
+        if avg_td_attempted is not None:
+            td_category["takedowns_attempted_avg"] = _format_number(avg_td_attempted)
+        if td_accuracy is not None:
+            td_category["takedown_accuracy_pct"] = _format_percentage(td_accuracy)
+        if td_category:
+            results["takedown_stats"] = td_category
+            grappling_metrics: dict[str, str] = {}
+            if "takedowns_completed_avg" in td_category:
+                grappling_metrics["takedowns_avg"] = td_category["takedowns_completed_avg"]
+            if "takedowns_attempted_avg" in td_category:
+                grappling_metrics["takedown_attempts_avg"] = td_category["takedowns_attempted_avg"]
+            if "takedown_accuracy_pct" in td_category:
+                grappling_metrics["takedown_accuracy_pct"] = td_category["takedown_accuracy_pct"]
+            if grappling_metrics:
+                results["grappling"] = grappling_metrics
+
+    return results
+
+
+async def upsert_fighter_stats(
+    session: AsyncSession,
+    fighter_id: str,
+    aggregated_stats: dict[str, dict[str, str]],
+) -> None:
+    """Replace fighter_stats rows for a fighter with fresh aggregates."""
+    await session.execute(delete(fighter_stats).where(fighter_stats.c.fighter_id == fighter_id))
+
+    rows: list[dict[str, Any]] = []
+    for category, metrics in (aggregated_stats or {}).items():
+        for metric, raw_value in metrics.items():
+            if raw_value is None:
+                continue
+            rows.append(
+                {
+                    "fighter_id": fighter_id,
+                    "category": category,
+                    "metric": metric,
+                    "value": str(raw_value),
+                }
+            )
+
+    if rows:
+        await session.execute(insert(fighter_stats), rows)
 
 def _parse_date(value: Any) -> date | None:
     """Convert ISO strings to date objects expected by SQLAlchemy models."""
@@ -192,6 +385,9 @@ async def load_fighter_detail(
                 fight_card_url=fight_data.get("fight_card_url"),
             )
             session.add(fight)
+
+        aggregated_stats = calculate_fighter_stats(fight_history)
+        await upsert_fighter_stats(session, fighter_id, aggregated_stats)
 
         await session.commit()
         return True

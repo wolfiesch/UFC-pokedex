@@ -13,6 +13,7 @@ class FighterListItem(BaseModel):
     nickname: str | None = None
     height: str | None = None
     weight: str | None = None
+    division: str | None = None
     reach: str | None = None
     stance: str | None = None
     dob: date | None = None
@@ -35,7 +36,6 @@ class FightHistoryEntry(BaseModel):
 class FighterDetail(FighterListItem):
     record: str | None = None
     leg_reach: str | None = None
-    division: str | None = None
     age: int | None = None
     striking: dict[str, Any] = Field(default_factory=dict)
     grappling: dict[str, Any] = Field(default_factory=dict)

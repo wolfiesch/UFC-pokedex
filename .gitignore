@@ -32,3 +32,8 @@ data/cache/
 # Docker
 docker-compose.override.yml
 
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/screenshots/

@@ -7,9 +7,24 @@ type Props = {
   fighters: FighterListItem[];
   isLoading?: boolean;
   error?: string | null;
+  // Pagination props
+  total?: number;
+  offset?: number;
+  hasMore?: boolean;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
 };
 
-export default function FighterGrid({ fighters, isLoading = false, error }: Props) {
+export default function FighterGrid({
+  fighters,
+  isLoading = false,
+  error,
+  total = 0,
+  offset = 0,
+  hasMore = false,
+  onNextPage,
+  onPrevPage,
+}: Props) {
   if (isLoading) {
     return <p className="text-slate-300">Loading fighters...</p>;
   }
@@ -26,11 +41,42 @@ export default function FighterGrid({ fighters, isLoading = false, error }: Prop
     return <p className="text-slate-500">No fighters found. Try a different search.</p>;
   }
 
+  const showPagination = onNextPage && onPrevPage && total > 0;
+  const currentPage = Math.floor(offset / 20) + 1;
+  const totalPages = Math.ceil(total / 20);
+
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {fighters.map((fighter) => (
-        <FighterCard key={fighter.fighter_id} fighter={fighter} />
-      ))}
+    <div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {fighters.map((fighter) => (
+          <FighterCard key={fighter.fighter_id} fighter={fighter} />
+        ))}
+      </div>
+
+      {showPagination && (
+        <div className="mt-8 flex items-center justify-between border-t border-slate-700 pt-6">
+          <button
+            onClick={onPrevPage}
+            disabled={offset === 0}
+            className="rounded-lg bg-pokedexBlue px-4 py-2 text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-pokedexBlue"
+          >
+            ← Previous
+          </button>
+
+          <span className="text-sm text-slate-400">
+            Page {currentPage} of {totalPages} • Showing {offset + 1}-
+            {Math.min(offset + fighters.length, total)} of {total} fighters
+          </span>
+
+          <button
+            onClick={onNextPage}
+            disabled={!hasMore}
+            className="rounded-lg bg-pokedexBlue px-4 py-2 text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-pokedexBlue"
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

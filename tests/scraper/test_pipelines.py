@@ -17,6 +17,7 @@ def test_validation_pipeline_preserves_item_type():
         "nickname": None,
         "height": "6' 0\"",
         "weight": "185 lbs.",
+        "division": "Middleweight",
         "reach": "75\"",
         "stance": "Orthodox",
         "dob": "1990-06-15",

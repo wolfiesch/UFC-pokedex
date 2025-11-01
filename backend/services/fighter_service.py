@@ -57,8 +57,10 @@ class FighterService:
     def __init__(self, repository: FighterRepositoryProtocol | PostgreSQLFighterRepository) -> None:
         self._repository = repository
 
-    async def list_fighters(self) -> list[FighterListItem]:
-        fighters = await self._repository.list_fighters()
+    async def list_fighters(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[FighterListItem]:
+        fighters = await self._repository.list_fighters(limit=limit, offset=offset)
         return list(fighters)
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
@@ -66,6 +68,28 @@ class FighterService:
 
     async def get_stats_summary(self) -> dict[str, float]:
         return await self._repository.stats_summary()
+
+    async def count_fighters(self) -> int:
+        """Get the total count of fighters."""
+        if hasattr(self._repository, "count_fighters"):
+            return await self._repository.count_fighters()
+        else:
+            # Fallback for repositories without count
+            fighters = await self._repository.list_fighters()
+            return len(list(fighters))
+
+    async def get_random_fighter(self) -> FighterListItem | None:
+        """Get a random fighter."""
+        if hasattr(self._repository, "get_random_fighter"):
+            return await self._repository.get_random_fighter()
+        else:
+            # Fallback for repositories without random
+            import random
+            fighters = await self._repository.list_fighters()
+            fighter_list = list(fighters)
+            if not fighter_list:
+                return None
+            return random.choice(fighter_list)
 
     async def search_fighters(
         self, query: str | None = None, stance: str | None = None

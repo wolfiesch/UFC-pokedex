@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details frontend db-upgrade db-downgrade db-reset load-data
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -28,11 +28,17 @@ scrape-sample: ## Run sample scrape to populate data/samples
 	python -m scripts.scrape_sample
 
 dev: ## Start backend and frontend in development mode
-	uvicorn backend.main:app --reload &
-	cd frontend && pnpm dev
+	@set -euo pipefail; \
+	trap 'kill 0' INT TERM EXIT; \
+	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} & \
+	if [ -n "$${WEB_PORT:-}" ]; then \
+		cd frontend && PORT=$$WEB_PORT pnpm dev; \
+	else \
+		cd frontend && pnpm dev; \
+	fi
 
 api: ## Start only the FastAPI backend
-	uvicorn backend.main:app --reload
+	.venv/bin/uvicorn backend.main:app --reload
 
 scraper: ## Run full scraper crawl (fighters list)
 	.venv/bin/scrapy crawl fighters_list
@@ -56,9 +62,20 @@ db-reset: ## Drop and recreate database (WARNING: destroys all data)
 	@sleep 5
 	make db-upgrade
 
-load-data: ## Load scraped fighter data into database
-	.venv/bin/python -m scripts.load_scraped_data
+load-data: ## Load scraped fighter data (basic list) into database
+	.venv/bin/python -m scripts.load_scraped_data $(LOAD_DATA_ARGS)
 
 load-data-sample: ## Load sample fighter data (first 10 fighters)
 	.venv/bin/python -m scripts.load_scraped_data --limit 10
 
+load-data-details: ## Load all fighters with full details (from individual JSON files)
+	.venv/bin/python -m scripts.load_scraped_data --load-details
+
+load-data-dry-run: ## Validate scraped data without inserting into database
+	.venv/bin/python -m scripts.load_scraped_data --dry-run
+
+load-data-details-dry-run: ## Validate detailed fighter data without inserting
+	.venv/bin/python -m scripts.load_scraped_data --load-details --dry-run
+
+reload-data: ## Reload fighters list and detail data into database
+	@$(MAKE) load-data LOAD_DATA_ARGS="--load-details"

@@ -26,3 +26,21 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
 
 Refer to `Plans/Initial_Plan.md` for the full project roadmap.
 
+## Refreshing Data
+
+Scraped fighters only receive division and other enriched fields after the detail JSON files are loaded into the database.
+
+1. (Optional) Refresh raw scrape artifacts:
+   ```bash
+   make scraper
+   make scraper-details
+   ```
+2. Load the list and detail data into PostgreSQL:
+   ```bash
+   make reload-data
+   ```
+
+You can also call the underlying targets directly:
+
+- `make load-data` ingests the fighter list JSONL only.
+- `make load-data-details` ingests detail JSON files without reloading the list data.

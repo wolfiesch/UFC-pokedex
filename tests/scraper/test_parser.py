@@ -43,6 +43,7 @@ def test_parse_fighter_list_row():
     assert result["nickname"] == "The Hammer"
     assert result["height"] == '6\' 0"'
     assert result["weight"] == "185 lbs."
+    assert result["division"] == "Middleweight"
     assert result["stance"] == "Orthodox"
     assert result["dob"] == "1990-06-15"
 
@@ -124,6 +125,7 @@ def test_parse_fighter_detail_page():
     assert detail["stance"] == "Orthodox"
     assert detail["dob"] == "1990-06-15"
     assert detail["age"] == 33
+    assert detail["division"] == "Middleweight"
     assert detail["striking"]["slpm"] == "5.35"
     assert detail["grappling"]["tdavg"] == "2.00"
     fight = detail["fight_history"][0]
@@ -135,3 +137,73 @@ def test_parse_fighter_detail_page():
     assert fight["method"] == "KO/TKO"
     assert fight["round"] == 2
     assert fight["time"] == "03:15"
+    assert fight["stats"]["sig_strikes"] == "50 of 100"
+    assert fight["stats"]["sig_strikes_pct"] == "50%"
+    assert fight["stats"]["total_strikes"] == "60 of 120"
+    assert fight["stats"]["takedowns"] == "2 of 5"
+
+
+def test_parse_fighter_detail_page_prefers_scraped_division():
+    html = """
+    <html>
+      <body>
+        <div class="b-content__banner">
+          <span class="b-content__title-highlight">Jane Doe</span>
+        </div>
+        <div class="b-fight-details__person">
+          <i>Featherweight</i>
+        </div>
+        <ul class="b-list__box-list">
+          <li><i>Weight:</i><span>155 lbs.</span></li>
+        </ul>
+      </body>
+    </html>
+    """
+    response = HtmlResponse(
+        url="http://ufcstats.com/fighter-details/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        body=html,
+        encoding="utf-8",
+    )
+
+    detail = parser.parse_fighter_detail_page(response)
+
+    assert detail["division"] == "Featherweight"
+    assert detail["weight"] == "155 lbs."
+
+
+def test_parse_fight_history_stats_handles_missing_values():
+    html = """
+    <html>
+      <body>
+        <table class="b-fight-details__table">
+          <tbody>
+            <tr class="b-fight-details__table-row">
+              <td></td>
+              <td></td>
+              <td>--</td>
+              <td>--</td>
+              <td>--</td>
+              <td>--</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+    </html>
+    """
+    response = HtmlResponse(
+        url="http://ufcstats.com/fighter-details/cccccccc-dddd-eeee-ffff-000000000000",
+        body=html,
+        encoding="utf-8",
+    )
+
+    detail = parser.parse_fighter_detail_page(response)
+
+    stats = detail["fight_history"][0]["stats"]
+    assert stats["sig_strikes"] is None
+    assert stats["sig_strikes_pct"] is None
+    assert stats["total_strikes"] is None
+    assert stats["takedowns"] is None
