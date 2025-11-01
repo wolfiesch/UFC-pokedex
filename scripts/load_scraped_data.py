@@ -61,6 +61,19 @@ def _parse_percentage(value: Any) -> float | None:
     return numeric / 100.0 if numeric > 1 else numeric
 
 
+def _parse_int_stat(value: Any) -> int | None:
+    """Parse simple integer stat values (e.g., '5', '12', etc.)."""
+    if value in (None, "", "--"):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 def _format_number(value: float, decimals: int = 2) -> str:
     """Format floats with trailing zeros trimmed."""
     formatted = f"{value:.{decimals}f}"
@@ -95,98 +108,72 @@ def _compute_accuracy(
 
 
 def calculate_fighter_stats(fight_history: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
-    """Aggregate per-fight stats into career averages."""
-    sig_totals = {"landed": 0, "attempted": 0, "count": 0, "pct_sum": 0.0, "pct_count": 0}
-    total_totals = {"landed": 0, "attempted": 0, "count": 0}
-    td_totals = {"completed": 0, "attempted": 0, "count": 0}
+    """Aggregate per-fight stats into career averages.
+
+    UFCStats.com provides simple counts per fight (not landed/attempted format):
+    - knockdowns: total knockdowns in the fight
+    - total_strikes: total strikes landed in the fight
+    - takedowns: total takedowns in the fight
+    - submissions: total submission attempts in the fight
+    """
+    knockdowns_total = {"total": 0, "count": 0}
+    strikes_total = {"total": 0, "count": 0}
+    takedowns_total = {"total": 0, "count": 0}
+    submissions_total = {"total": 0, "count": 0}
 
     for fight in fight_history or []:
         stats = fight.get("stats") or {}
 
-        sig_pair = _parse_landed_attempted(stats.get("sig_strikes"))
-        if sig_pair:
-            sig_totals["landed"] += sig_pair[0]
-            sig_totals["attempted"] += sig_pair[1]
-            sig_totals["count"] += 1
+        # Parse simple numeric values (not "landed of attempted" format)
+        knockdowns = _parse_int_stat(stats.get("knockdowns"))
+        if knockdowns is not None:
+            knockdowns_total["total"] += knockdowns
+            knockdowns_total["count"] += 1
 
-        sig_pct = _parse_percentage(stats.get("sig_strikes_pct"))
-        if sig_pct is not None:
-            sig_totals["pct_sum"] += sig_pct
-            sig_totals["pct_count"] += 1
+        total_strikes = _parse_int_stat(stats.get("total_strikes"))
+        if total_strikes is not None:
+            strikes_total["total"] += total_strikes
+            strikes_total["count"] += 1
 
-        total_pair = _parse_landed_attempted(stats.get("total_strikes"))
-        if total_pair:
-            total_totals["landed"] += total_pair[0]
-            total_totals["attempted"] += total_pair[1]
-            total_totals["count"] += 1
+        takedowns = _parse_int_stat(stats.get("takedowns"))
+        if takedowns is not None:
+            takedowns_total["total"] += takedowns
+            takedowns_total["count"] += 1
 
-        td_pair = _parse_landed_attempted(stats.get("takedowns"))
-        if td_pair:
-            td_totals["completed"] += td_pair[0]
-            td_totals["attempted"] += td_pair[1]
-            td_totals["count"] += 1
+        submissions = _parse_int_stat(stats.get("submissions"))
+        if submissions is not None:
+            submissions_total["total"] += submissions
+            submissions_total["count"] += 1
 
     results: dict[str, dict[str, str]] = {}
 
-    avg_sig_landed = _average(sig_totals["landed"], sig_totals["count"])
-    avg_sig_attempted = _average(sig_totals["attempted"], sig_totals["count"])
-    sig_accuracy = _compute_accuracy(
-        sig_totals["landed"],
-        sig_totals["attempted"],
-        sig_totals["pct_sum"],
-        sig_totals["pct_count"],
-    )
-    if any(value is not None for value in (avg_sig_landed, avg_sig_attempted, sig_accuracy)):
-        category = {}
-        if avg_sig_landed is not None:
-            category["avg_landed"] = _format_number(avg_sig_landed)
-        if avg_sig_attempted is not None:
-            category["avg_attempted"] = _format_number(avg_sig_attempted)
-        if sig_accuracy is not None:
-            category["accuracy_pct"] = _format_percentage(sig_accuracy)
-        if category:
-            results["significant_strikes"] = category
+    # Calculate striking stats (total strikes and knockdowns)
+    avg_strikes = _average(strikes_total["total"], strikes_total["count"])
+    avg_knockdowns = _average(knockdowns_total["total"], knockdowns_total["count"])
+    if avg_strikes is not None or avg_knockdowns is not None:
+        striking_category = {}
+        if avg_strikes is not None:
+            striking_category["avg_total_strikes"] = _format_number(avg_strikes)
+        if avg_knockdowns is not None:
+            striking_category["avg_knockdowns"] = _format_number(avg_knockdowns)
+        results["striking"] = striking_category
 
-    avg_total_landed = _average(total_totals["landed"], total_totals["count"])
-    avg_total_attempted = _average(total_totals["attempted"], total_totals["count"])
-    total_accuracy = None
-    if total_totals["attempted"] > 0:
-        total_accuracy = total_totals["landed"] / total_totals["attempted"]
-    if any(value is not None for value in (avg_total_landed, avg_total_attempted, total_accuracy)):
-        category = {}
-        if avg_total_landed is not None:
-            category["total_strikes_landed_avg"] = _format_number(avg_total_landed)
-        if avg_total_attempted is not None:
-            category["total_strikes_attempted_avg"] = _format_number(avg_total_attempted)
-        if total_accuracy is not None:
-            category["total_strikes_accuracy_pct"] = _format_percentage(total_accuracy)
-        if category:
-            results["striking"] = category
+    # Calculate grappling stats (takedowns and submissions)
+    avg_takedowns = _average(takedowns_total["total"], takedowns_total["count"])
+    avg_submissions = _average(submissions_total["total"], submissions_total["count"])
+    if avg_takedowns is not None or avg_submissions is not None:
+        grappling_category = {}
+        if avg_takedowns is not None:
+            grappling_category["avg_takedowns"] = _format_number(avg_takedowns)
+        if avg_submissions is not None:
+            grappling_category["avg_submissions"] = _format_number(avg_submissions)
+        results["grappling"] = grappling_category
 
-    avg_td_completed = _average(td_totals["completed"], td_totals["count"])
-    avg_td_attempted = _average(td_totals["attempted"], td_totals["count"])
-    td_accuracy = None
-    if td_totals["attempted"] > 0:
-        td_accuracy = td_totals["completed"] / td_totals["attempted"]
-    if any(value is not None for value in (avg_td_completed, avg_td_attempted, td_accuracy)):
-        td_category = {}
-        if avg_td_completed is not None:
-            td_category["takedowns_completed_avg"] = _format_number(avg_td_completed)
-        if avg_td_attempted is not None:
-            td_category["takedowns_attempted_avg"] = _format_number(avg_td_attempted)
-        if td_accuracy is not None:
-            td_category["takedown_accuracy_pct"] = _format_percentage(td_accuracy)
-        if td_category:
-            results["takedown_stats"] = td_category
-            grappling_metrics: dict[str, str] = {}
-            if "takedowns_completed_avg" in td_category:
-                grappling_metrics["takedowns_avg"] = td_category["takedowns_completed_avg"]
-            if "takedowns_attempted_avg" in td_category:
-                grappling_metrics["takedown_attempts_avg"] = td_category["takedowns_attempted_avg"]
-            if "takedown_accuracy_pct" in td_category:
-                grappling_metrics["takedown_accuracy_pct"] = td_category["takedown_accuracy_pct"]
-            if grappling_metrics:
-                results["grappling"] = grappling_metrics
+    # Also put takedowns in takedown_stats for compatibility
+    if avg_takedowns is not None:
+        results["takedown_stats"] = {
+            "avg_takedowns": _format_number(avg_takedowns)
+        }
 
     return results
 

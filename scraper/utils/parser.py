@@ -142,14 +142,14 @@ def parse_stat_section(section: Selector) -> dict[str, Any]:
 
 
 def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str, Any]]:
-    def _extract_stat_value(cell: Selector | None) -> str | None:
+    def _extract_fighter_stat(cell: Selector | None) -> str | None:
+        """Extract only the fighter's stat (first value), not the opponent's."""
         if not cell:
             return None
-        parts = [clean_text(part) for part in cell.css("::text").getall()]
-        normalized = [part for part in parts if part]
-        if not normalized:
-            return None
-        return " ".join(normalized)
+        # Each cell has two <p> elements: fighter's stat and opponent's stat
+        # We only want the first one (the fighter's stat)
+        first_p = cell.css("p.b-fight-details__table-text::text").get()
+        return clean_text(first_p)
 
     fights = []
     rows = table.css("tbody tr")
@@ -164,10 +164,12 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         )
         opponent_link = row.css("td:nth-child(2) a::attr(href)").get()
         event_cell = row.css("td:nth-child(7)")
-        sig_strikes_cell = row.css("td:nth-child(3)")
-        sig_strikes_pct_cell = row.css("td:nth-child(4)")
-        total_strikes_cell = row.css("td:nth-child(5)")
-        takedowns_cell = row.css("td:nth-child(6)")
+        # Actual column mapping from UFCStats.com:
+        # Col 3: Kd (knockdowns), Col 4: Str (strikes), Col 5: Td (takedowns), Col 6: Sub (submissions)
+        knockdowns_cell = row.css("td:nth-child(3)")
+        strikes_cell = row.css("td:nth-child(4)")
+        takedowns_cell = row.css("td:nth-child(5)")
+        submissions_cell = row.css("td:nth-child(6)")
         fights.append(
             {
                 "fight_id": fight_id,
@@ -184,10 +186,10 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
                 "time": clean_text(row.css("td:nth-child(10)::text").get()),
                 "fight_card_url": clean_text(event_cell.css("a::attr(href)").get()),
                 "stats": {
-                    "sig_strikes": _extract_stat_value(sig_strikes_cell),
-                    "sig_strikes_pct": _extract_stat_value(sig_strikes_pct_cell),
-                    "total_strikes": _extract_stat_value(total_strikes_cell),
-                    "takedowns": _extract_stat_value(takedowns_cell),
+                    "knockdowns": _extract_fighter_stat(knockdowns_cell),
+                    "total_strikes": _extract_fighter_stat(strikes_cell),
+                    "takedowns": _extract_fighter_stat(takedowns_cell),
+                    "submissions": _extract_fighter_stat(submissions_cell),
                 },
             }
         )
