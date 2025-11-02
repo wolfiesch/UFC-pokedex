@@ -64,9 +64,9 @@ def parse_date(value: str | None) -> str | None:
 def parse_fighter_list_row(row: Selector) -> dict[str, Any] | None:
     # Try multiple selectors to find the fighter detail URL
     detail_url = (
-        clean_text(row.css("td:nth-child(1) a::attr(href)").get()) or
-        clean_text(row.css("td:first-child a::attr(href)").get()) or
-        clean_text(row.css("a[href*='fighter-details']::attr(href)").get())
+        clean_text(row.css("td:nth-child(1) a::attr(href)").get())
+        or clean_text(row.css("td:first-child a::attr(href)").get())
+        or clean_text(row.css("a[href*='fighter-details']::attr(href)").get())
     )
 
     if not detail_url:
@@ -142,7 +142,11 @@ def parse_stat_section(section: Selector) -> dict[str, Any]:
             "i::text, span.b-list__info-box-title::text, p.b-list__info-box-title::text"
         )
         label = next(
-            (clean_text(text) for text in label_candidates.getall() if clean_text(text)),
+            (
+                clean_text(text)
+                for text in label_candidates.getall()
+                if clean_text(text)
+            ),
             None,
         )
         if not label:
@@ -175,8 +179,14 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
             return None
         # Each cell has two <p> elements: fighter's stat and opponent's stat
         # We only want the first one (the fighter's stat)
-        first_p = cell.css("p.b-fight-details__table-text::text").get()
-        return clean_text(first_p)
+        stat_candidates: list[str | None] = cell.css(
+            "p.b-fight-details__table-text::text, p::text, ::text"
+        ).getall()
+        for candidate in stat_candidates:
+            cleaned = clean_text(candidate)
+            if cleaned:
+                return cleaned
+        return None
 
     def _extract_opponent_name(fighter_cell: Selector) -> str:
         """Extract opponent name (second fighter in the cell).
@@ -185,7 +195,14 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         - First link: the page owner (e.g., "Jon Jones")
         - Second link: the opponent (e.g., "Stipe Miocic")
         """
-        fighter_links = fighter_cell.css("p.b-fight-details__table-text a::text").getall()
+        fighter_links: list[str] = fighter_cell.css(
+            "p.b-fight-details__table-text a::text"
+        ).getall()
+        if not fighter_links:
+            # Some archived event pages omit the ``b-fight-details__table-text``
+            # class, so we gracefully fall back to any anchor tags inside the
+            # cell.
+            fighter_links = fighter_cell.css("a::text").getall()
         if len(fighter_links) >= 2:
             return clean_text(fighter_links[1]) or "Unknown"
         # Fallback for cases with only one fighter listed
@@ -193,7 +210,13 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
 
     def _extract_opponent_id(fighter_cell: Selector) -> str | None:
         """Extract opponent ID (second link in the cell)."""
-        opponent_links = fighter_cell.css("p.b-fight-details__table-text a::attr(href)").getall()
+        opponent_links: list[str] = fighter_cell.css(
+            "p.b-fight-details__table-text a::attr(href)"
+        ).getall()
+        if not opponent_links:
+            # Same fallback logic as ``_extract_opponent_name`` for legacy
+            # markup without the class attribute.
+            opponent_links = fighter_cell.css("a::attr(href)").getall()
         if len(opponent_links) >= 2:
             try:
                 return _extract_uuid(opponent_links[1])
@@ -210,6 +233,21 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         date_str = " ".join(cleaned_parts) if cleaned_parts else None
         return parse_date(date_str)
 
+    def _extract_result(cell: Selector) -> str | None:
+        """Retrieve the fight result (e.g., ``W``/``L``) regardless of markup."""
+
+        result_candidates: list[str | None] = [
+            cell.css("a i.b-flag__text::text").get(),
+            cell.css("a::text").get(),
+            cell.css("::text").get(),
+        ]
+
+        for candidate in result_candidates:
+            cleaned = clean_text(candidate)
+            if cleaned:
+                return cleaned
+        return None
+
     fights = []
     rows = table.css("tbody tr")
     if not rows:
@@ -222,9 +260,7 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
 
         fight_link = row.css("td:nth-child(1) a::attr(href)").get()
         fight_id = (
-            _extract_uuid(fight_link)
-            if fight_link
-            else f"{fighter_id}-fight-{index}"
+            _extract_uuid(fight_link) if fight_link else f"{fighter_id}-fight-{index}"
         )
 
         fighter_cell = row.css("td:nth-child(2)")
@@ -245,8 +281,17 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
                 "event_name": clean_text(event_cell.css("a::text").get())
                 or clean_text(event_cell.css("p:nth-child(1)::text").get()),
                 "event_date": _extract_event_date(event_cell),
-                "result": clean_text(row.css("td:nth-child(1) a i.b-flag__text::text").get()),
-                "method": " ".join([clean_text(t) for t in row.css("td:nth-child(8) p:nth-child(1)::text").getall() if clean_text(t)]) or None,
+                "result": _extract_result(row.css("td:nth-child(1)")),
+                "method": " ".join(
+                    [
+                        clean_text(t)
+                        for t in row.css(
+                            "td:nth-child(8) p:nth-child(1)::text"
+                        ).getall()
+                        if clean_text(t)
+                    ]
+                )
+                or None,
                 "round": _parse_int(row.css("td:nth-child(9) p::text").get()),
                 "time": clean_text(row.css("td:nth-child(10) p::text").get()),
                 "fight_card_url": clean_text(event_cell.css("a::attr(href)").get()),
@@ -280,7 +325,9 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (
         hero.css("span.b-content__title-highlight::text").getall()
-        or selector.css("h2.b-content__title span.b-content__title-highlight::text").getall()
+        or selector.css(
+            "h2.b-content__title span.b-content__title-highlight::text"
+        ).getall()
         or selector.css(".b-content__title-highlight::text").getall()
         or hero.css("h2::text").getall()
     )
@@ -290,7 +337,11 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
 
     nickname = clean_text(hero.css("span.b-content__Nickname::text").get())
     record_text = clean_text(hero.css("span.b-content__title-record::text").get())
-    record = record_text.split(":")[-1].strip() if record_text and ":" in record_text else record_text
+    record = (
+        record_text.split(":")[-1].strip()
+        if record_text and ":" in record_text
+        else record_text
+    )
 
     bio_map: dict[str, str | None] = {}
     for row in selector.css("ul.b-list__box-list li"):
@@ -315,9 +366,7 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
     for section in stat_containers:
         title = (
             clean_text(
-                section.css(
-                    "h2::text, h3::text, i.b-list__box-item-title::text"
-                ).get()
+                section.css("h2::text, h3::text, i.b-list__box-item-title::text").get()
             )
             or "stats"
         )
@@ -330,10 +379,16 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         existing.update(parsed_section)
 
     fight_history_table = selector.css("table.b-fight-details__table")
-    fight_history = parse_fight_history_rows(fighter_id, fight_history_table) if fight_history_table else []
+    fight_history = (
+        parse_fight_history_rows(fighter_id, fight_history_table)
+        if fight_history_table
+        else []
+    )
 
     weight = bio_map.get("WEIGHT")
-    scraped_division = clean_text(selector.css("div.b-fight-details__person i::text").get())
+    scraped_division = clean_text(
+        selector.css("div.b-fight-details__person i::text").get()
+    )
 
     detail = {
         "item_type": "fighter_detail",
@@ -350,10 +405,19 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         "age": _parse_int(bio_map.get("AGE")),
         "dob": parse_date(bio_map.get("DOB")),
         "division": scraped_division or weight_to_division(weight),
-        "striking": stat_sections.get("striking", {}) or stat_sections.get("strikes", {}),
-        "grappling": stat_sections.get("grappling", {}) or stat_sections.get("grappling_totals", {}),
+        "striking": (
+            stat_sections.get("striking", {})
+            or stat_sections.get("strikes", {})
+            or stat_sections.get("career_statistics", {})
+        ),
+        "grappling": (
+            stat_sections.get("grappling", {})
+            or stat_sections.get("grappling_totals", {})
+            or stat_sections.get("career_statistics", {})
+        ),
         "significant_strikes": stat_sections.get("significant_strikes", {}),
-        "takedown_stats": stat_sections.get("takedowns", {}) or stat_sections.get("grappling", {}),
+        "takedown_stats": stat_sections.get("takedowns", {})
+        or stat_sections.get("grappling", {}),
         "fight_history": fight_history,
     }
     return detail
