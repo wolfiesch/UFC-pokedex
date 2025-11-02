@@ -250,7 +250,7 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
     selector = response if hasattr(response, "css") else Selector(text=response)
     fighter_id = _extract_uuid(getattr(response, "url", None))
 
-    hero = selector.css("div.b-content__banner") or selector.css("div.b-content__title")
+    hero = selector.css(".b-content__banner") or selector.css(".b-content__title")
 
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (

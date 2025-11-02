@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -79,3 +79,6 @@ load-data-details-dry-run: ## Validate detailed fighter data without inserting
 
 reload-data: ## Reload fighters list and detail data into database
 	@$(MAKE) load-data LOAD_DATA_ARGS="--load-details"
+
+update-records: ## Fast update of fighter records only (~1.5 min for all fighters)
+	.venv/bin/python -m scripts.update_fighter_records

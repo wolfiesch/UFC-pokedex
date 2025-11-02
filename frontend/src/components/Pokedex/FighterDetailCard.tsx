@@ -43,42 +43,46 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading }: Pro
         <Info label="Division" value={fighter.division ?? "—"} />
       </section>
 
-      <StatsDisplay title="Striking" stats={fighter.striking} />
-      <StatsDisplay title="Grappling" stats={fighter.grappling} />
-      <StatsDisplay title="Significant Strikes" stats={fighter.significant_strikes} />
-      <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />
+      {Object.keys(fighter.striking).length > 0 && <StatsDisplay title="Striking" stats={fighter.striking} />}
+      {Object.keys(fighter.grappling).length > 0 && <StatsDisplay title="Grappling" stats={fighter.grappling} />}
+      {Object.keys(fighter.significant_strikes).length > 0 && <StatsDisplay title="Significant Strikes" stats={fighter.significant_strikes} />}
+      {Object.keys(fighter.takedown_stats).length > 0 && <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />}
 
-      <section>
-        <h3 className="text-xl font-semibold text-pokedexYellow">Fight History</h3>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-800 text-left text-xs">
-            <thead className="bg-slate-900/70 text-slate-400">
-              <tr>
-                <th className="px-3 py-2">Event</th>
-                <th className="px-3 py-2">Date</th>
-                <th className="px-3 py-2">Opponent</th>
-                <th className="px-3 py-2">Result</th>
-                <th className="px-3 py-2">Method</th>
-                <th className="px-3 py-2">Round</th>
-                <th className="px-3 py-2">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-200">
-              {fighter.fight_history.map((fight) => (
-                <tr key={fight.fight_id}>
-                  <td className="px-3 py-2">{fight.event_name}</td>
-                  <td className="px-3 py-2">{fight.event_date ?? "—"}</td>
-                  <td className="px-3 py-2">{fight.opponent}</td>
-                  <td className="px-3 py-2">{fight.result}</td>
-                  <td className="px-3 py-2">{fight.method}</td>
-                  <td className="px-3 py-2">{fight.round ?? "—"}</td>
-                  <td className="px-3 py-2">{fight.time ?? "—"}</td>
+      {fighter.fight_history.filter((fight) => fight.event_name !== null).length > 0 && (
+        <section>
+          <h3 className="text-xl font-semibold text-pokedexYellow">Fight History</h3>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-800 text-left text-xs">
+              <thead className="bg-slate-900/70 text-slate-400">
+                <tr>
+                  <th className="px-3 py-2">Event</th>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Opponent</th>
+                  <th className="px-3 py-2">Result</th>
+                  <th className="px-3 py-2">Method</th>
+                  <th className="px-3 py-2">Round</th>
+                  <th className="px-3 py-2">Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody className="divide-y divide-slate-800 text-slate-200">
+                {fighter.fight_history
+                  .filter((fight) => fight.event_name !== null)
+                  .map((fight) => (
+                    <tr key={fight.fight_id}>
+                      <td className="px-3 py-2">{fight.event_name}</td>
+                      <td className="px-3 py-2">{fight.event_date ?? "—"}</td>
+                      <td className="px-3 py-2">{fight.opponent}</td>
+                      <td className="px-3 py-2">{fight.result}</td>
+                      <td className="px-3 py-2">{fight.method}</td>
+                      <td className="px-3 py-2">{fight.round ?? "—"}</td>
+                      <td className="px-3 py-2">{fight.time ?? "—"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </article>
   );
 }
