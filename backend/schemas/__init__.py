@@ -8,9 +8,13 @@ from backend.schemas.fighter import (  # noqa: F401
 )
 from backend.schemas.stats import (  # noqa: F401
     AverageFightDuration,
+    LeaderboardDefinition,
     LeaderboardEntry,
     LeaderboardsResponse,
-    MetricLeaderboard,
+    StatsSummaryMetric,
+    StatsSummaryResponse,
+    TrendPoint,
+    TrendSeries,
     TrendsResponse,
     WinStreakSummary,
 )

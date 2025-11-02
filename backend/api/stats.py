@@ -4,15 +4,19 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query
 
 from backend.services.fighter_service import FighterService, get_fighter_service
-from backend.schemas.stats import LeaderboardsResponse, TrendsResponse
+from backend.schemas.stats import (
+    LeaderboardsResponse,
+    StatsSummaryResponse,
+    TrendsResponse,
+)
 
 router = APIRouter()
 
 
-@router.get("/summary")
+@router.get("/summary", response_model=StatsSummaryResponse)
 async def stats_summary(
     service: FighterService = Depends(get_fighter_service),
-) -> dict[str, float]:
+) -> StatsSummaryResponse:
     return await service.get_stats_summary()
 
 

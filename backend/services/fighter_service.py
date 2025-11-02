@@ -12,7 +12,7 @@ from backend.db.repositories import PostgreSQLFighterRepository
 from backend.schemas.fighter import FighterDetail, FighterListItem
 from backend.schemas.stats import (
     LeaderboardsResponse,
-    MetricLeaderboard,
+    StatsSummaryResponse,
     TrendsResponse,
 )
 
@@ -26,7 +26,7 @@ class FighterRepositoryProtocol:
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Retrieve a single fighter with rich detail by unique identifier."""
 
-    async def stats_summary(self) -> dict[str, float]:
+    async def stats_summary(self) -> StatsSummaryResponse:
         """Provide high-level metrics describing the indexed roster."""
 
     async def get_leaderboards(
@@ -129,7 +129,7 @@ class FighterService:
 
         return await self._repository.get_fighter(fighter_id)
 
-    async def get_stats_summary(self) -> dict[str, float]:
+    async def get_stats_summary(self) -> StatsSummaryResponse:
         """Expose system-level counts such as fighters indexed for dashboards."""
 
         return await self._repository.stats_summary()

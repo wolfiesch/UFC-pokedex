@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from datetime import date
 
-from sqlalchemy import Float, cast, func, select
+from sqlalchemy import Float, case, cast, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,9 +11,13 @@ from backend.db.models import Fight, Fighter, fighter_stats
 from backend.schemas.fighter import FighterDetail, FighterListItem, FightHistoryEntry
 from backend.schemas.stats import (
     AverageFightDuration,
+    LeaderboardDefinition,
     LeaderboardEntry,
     LeaderboardsResponse,
-    MetricLeaderboard,
+    StatsSummaryMetric,
+    StatsSummaryResponse,
+    TrendPoint,
+    TrendSeries,
     TrendsResponse,
     WinStreakSummary,
 )
@@ -100,6 +104,16 @@ class PostgreSQLFighterRepository:
             for fight in fighter.fights
         ]
 
+        # Sort fight history: upcoming fights first, then past fights by most recent
+        fight_history.sort(
+            key=lambda fight: (
+                # Primary: upcoming fights first (result="next" → 0, others → 1)
+                0 if fight.result == "next" else 1,
+                # Secondary: most recent first (use min date for nulls to push them last)
+                -(fight.event_date or date.min).toordinal(),
+            )
+        )
+
         return FighterDetail(
             fighter_id=fighter.id,
             detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
@@ -121,16 +135,23 @@ class PostgreSQLFighterRepository:
             fight_history=fight_history,
         )
 
-    async def stats_summary(self) -> dict[str, float]:
+    async def stats_summary(self) -> StatsSummaryResponse:
         """Get aggregate statistics about fighters."""
         # Count total fighters
         count_query = select(func.count(Fighter.id))
         result = await self._session.execute(count_query)
         total_fighters = result.scalar() or 0
 
-        return {
-            "fighters_indexed": float(total_fighters),
-        }
+        return StatsSummaryResponse(
+            metrics=[
+                StatsSummaryMetric(
+                    id="fighters_indexed",
+                    label="Fighters Indexed",
+                    value=float(total_fighters),
+                    description="Total number of UFC fighters in the database",
+                )
+            ]
+        )
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:
         """Create a new fighter in the database."""
@@ -231,14 +252,29 @@ class PostgreSQLFighterRepository:
             limit=limit,
         )
 
-        return LeaderboardsResponse(
-            accuracy=MetricLeaderboard(
-                metric=accuracy_metric, entries=accuracy_entries
-            ),
-            submissions=MetricLeaderboard(
-                metric=submissions_metric, entries=submissions_entries
-            ),
-        )
+        leaderboards = []
+
+        if accuracy_entries:
+            leaderboards.append(
+                LeaderboardDefinition(
+                    metric_id=accuracy_metric,
+                    title="Striking Accuracy",
+                    description="Fighters with the highest significant strike accuracy",
+                    entries=accuracy_entries,
+                )
+            )
+
+        if submissions_entries:
+            leaderboards.append(
+                LeaderboardDefinition(
+                    metric_id=submissions_metric,
+                    title="Submissions",
+                    description="Fighters with the most submission attempts per fight",
+                    entries=submissions_entries,
+                )
+            )
+
+        return LeaderboardsResponse(leaderboards=leaderboards)
 
     async def get_trends(
         self,
@@ -257,9 +293,53 @@ class PostgreSQLFighterRepository:
             start_date=start_date, end_date=end_date, time_bucket=time_bucket
         )
 
-        return TrendsResponse(
-            longest_win_streaks=streaks, average_fight_durations=average_durations
-        )
+        trends: list[TrendSeries] = []
+
+        # Transform win streaks into TrendSeries format
+        # Each fighter gets their own series with a single point (their max streak)
+        for streak in streaks:
+            if streak.last_win_date:
+                trends.append(
+                    TrendSeries(
+                        metric_id="win_streak",
+                        fighter_id=streak.fighter_id,
+                        label=f"{streak.fighter_name} - Win Streak",
+                        points=[
+                            TrendPoint(
+                                timestamp=streak.last_win_date.isoformat(),
+                                value=float(streak.streak),
+                            )
+                        ],
+                    )
+                )
+
+        # Transform average durations into TrendSeries format
+        # Group by division to create time-series for each division
+        duration_by_division: dict[str, list[TrendPoint]] = {}
+        for duration in average_durations:
+            division_key = duration.division or "All Divisions"
+            if division_key not in duration_by_division:
+                duration_by_division[division_key] = []
+            duration_by_division[division_key].append(
+                TrendPoint(
+                    timestamp=duration.bucket_start.isoformat(),
+                    value=duration.average_duration_minutes,
+                )
+            )
+
+        # Create TrendSeries for each division
+        for division, points in duration_by_division.items():
+            # Sort points by timestamp
+            points.sort(key=lambda p: p.timestamp)
+            trends.append(
+                TrendSeries(
+                    metric_id=f"avg_duration_{division.lower().replace(' ', '_')}",
+                    label=f"{division} - Average Fight Duration",
+                    points=points,
+                )
+            )
+
+        return TrendsResponse(trends=trends)
 
     async def _collect_leaderboard_entries(
         self,
@@ -299,9 +379,8 @@ class PostgreSQLFighterRepository:
             LeaderboardEntry(
                 fighter_id=row.fighter_id,
                 fighter_name=row.name,
-                division=row.division,
-                metric=metric_name,
-                value=float(row.numeric_value),
+                metric_value=float(row.numeric_value),
+                detail_url=f"/fighters/{row.fighter_id}",
             )
             for row in rows
         ]
