@@ -24,6 +24,7 @@ from backend.schemas.fighter import (
     PaginatedFightersResponse,
 )
 from backend.schemas.stats import (
+    LeaderboardDefinition,
     LeaderboardsResponse,
     StatsSummaryResponse,
     TrendsResponse,
@@ -90,8 +91,16 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             )
         }
 
-    async def list_fighters(self) -> Iterable[FighterListItem]:
-        return list(self._fighters.values())
+    async def list_fighters(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> Iterable[FighterListItem]:
+        """Return fighters in insertion order while honoring pagination hints."""
+
+        fighters = list(self._fighters.values())
+        start = 0 if offset is None or offset < 0 else offset
+        if limit is None or limit < 0:
+            return fighters[start:]
+        return fighters[start : start + limit]
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         return self._fighters.get(fighter_id)
@@ -110,10 +119,28 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
     ) -> LeaderboardsResponse:
         """Return empty leaderboard shells for the in-memory prototype repository."""
 
-        return LeaderboardsResponse(
-            accuracy=MetricLeaderboard(metric=accuracy_metric, entries=[]),
-            submissions=MetricLeaderboard(metric=submissions_metric, entries=[]),
-        )
+        placeholder_leaderboards: list[LeaderboardDefinition] = [
+            LeaderboardDefinition(
+                metric_id=accuracy_metric,
+                title=f"{accuracy_metric.replace('_', ' ').title()} Leaderboard",
+                description=(
+                    "Placeholder leaderboard for accuracy-focused metrics while the "
+                    "prototype repository lacks persistent data."
+                ),
+                entries=[],
+            ),
+            LeaderboardDefinition(
+                metric_id=submissions_metric,
+                title=f"{submissions_metric.replace('_', ' ').title()} Leaderboard",
+                description=(
+                    "Placeholder leaderboard for submission-focused metrics while the "
+                    "prototype repository lacks persistent data."
+                ),
+                entries=[],
+            ),
+        ]
+
+        return LeaderboardsResponse(leaderboards=placeholder_leaderboards)
 
     async def get_trends(
         self,
@@ -373,7 +400,9 @@ class FighterService:
             cached = await self._cache_get(cache_key)
             if isinstance(cached, list):
                 try:
-                    return [FighterComparisonEntry.model_validate(item) for item in cached]
+                    return [
+                        FighterComparisonEntry.model_validate(item) for item in cached
+                    ]
                 except Exception:  # pragma: no cover
                     pass
 
