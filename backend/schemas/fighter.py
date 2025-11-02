@@ -31,6 +31,7 @@ class FighterListItem(BaseModel):
     reach: str | None = None
     stance: str | None = None
     dob: date | None = None
+    image_url: str | None = None
 
 
 class FighterDetail(FighterListItem):

@@ -22,6 +22,18 @@ export default function FighterCard({ fighter }: Props) {
   return (
     <Link href={`/fighters/${fighter.fighter_id}`} className="block">
       <article className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg transition hover:border-pokedexYellow/60 hover:shadow-pokedexYellow/30">
+        {fighter.image_url && (
+          <div className="mb-4 flex justify-center">
+            <img
+              src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
+              alt={fighter.name}
+              className="h-32 w-32 rounded-lg object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+        )}
         <header className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-pokedexYellow">{fighter.name}</h2>
           <button

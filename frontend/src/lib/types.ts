@@ -9,6 +9,7 @@ export type FighterListItem = {
   reach?: string | null;
   stance?: string | null;
   dob?: string | null;
+  image_url?: string | null;
 };
 
 export type FightHistoryEntry = {

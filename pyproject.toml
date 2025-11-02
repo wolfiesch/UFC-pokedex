@@ -19,6 +19,7 @@ dependencies = [
     "tenacity==8.2.3",
     "python-dotenv==1.0.1",
     "rich==13.7.1",
+    "rapidfuzz==3.10.1",
 ]
 
 [project.optional-dependencies]

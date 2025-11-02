@@ -55,6 +55,7 @@ class PostgreSQLFighterRepository:
                 reach=fighter.reach,
                 stance=fighter.stance,
                 dob=fighter.dob,
+                image_url=fighter.image_url,
             )
             for fighter in fighters
         ]
@@ -124,6 +125,7 @@ class PostgreSQLFighterRepository:
             reach=fighter.reach,
             stance=fighter.stance,
             dob=fighter.dob,
+            image_url=fighter.image_url,
             record=fighter.record,
             leg_reach=fighter.leg_reach,
             division=fighter.division,
@@ -218,6 +220,7 @@ class PostgreSQLFighterRepository:
                 stance=fighter.stance,
                 dob=fighter.dob,
                 division=fighter.division,
+                image_url=fighter.image_url,
             )
             for fighter in fighters
         ]
@@ -585,4 +588,5 @@ class PostgreSQLFighterRepository:
             reach=fighter.reach,
             stance=fighter.stance,
             dob=fighter.dob,
+            image_url=fighter.image_url,
         )

@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -22,6 +22,9 @@ class Fighter(Base):
     stance: Mapped[str | None]
     dob: Mapped[date | None]
     record: Mapped[str | None]
+    sherdog_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    image_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    image_scraped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="fighter")
 

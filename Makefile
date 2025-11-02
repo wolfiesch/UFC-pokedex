@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -46,8 +46,58 @@ scraper: ## Run full scraper crawl (fighters list)
 scraper-details: ## Run scraper for fighter details
 	.venv/bin/scrapy crawl fighter_detail -a input_file="data/processed/fighters_list.jsonl"
 
+export-active-fighters: ## Export active UFC fighters to JSON for Sherdog matching
+	.venv/bin/python -m scripts.export_active_fighters
+
+export-active-fighters-sample: ## Export sample fighters for testing (10 fighters)
+	.venv/bin/python -m scripts.export_active_fighters --limit 10
+
+scrape-sherdog-search: ## Search Sherdog for UFC fighters and calculate match confidence
+	.venv/bin/scrapy crawl sherdog_search
+
+verify-sherdog-matches: ## Interactive CLI to verify ambiguous Sherdog matches
+	.venv/bin/python -m scripts.verify_sherdog_matches
+
+scrape-sherdog-images: ## Download fighter images from Sherdog
+	.venv/bin/scrapy crawl sherdog_images
+
+update-fighter-images: ## Update database with Sherdog IDs and image paths
+	.venv/bin/python -m scripts.update_fighter_images
+
+sherdog-workflow: ## Run complete Sherdog image scraping workflow
+	@echo "Step 1: Exporting active fighters..."
+	@$(MAKE) export-active-fighters
+	@echo "\nStep 2: Searching Sherdog for matches..."
+	@$(MAKE) scrape-sherdog-search
+	@echo "\nStep 3: Verifying matches (interactive)..."
+	@$(MAKE) verify-sherdog-matches
+	@echo "\nStep 4: Downloading images..."
+	@$(MAKE) scrape-sherdog-images
+	@echo "\nStep 5: Updating database..."
+	@$(MAKE) update-fighter-images
+	@echo "\n✓ Sherdog workflow complete!"
+
+sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
+	@echo "Step 1: Exporting sample fighters..."
+	@$(MAKE) export-active-fighters-sample
+	@echo "\nStep 2: Searching Sherdog for matches..."
+	@$(MAKE) scrape-sherdog-search
+	@echo "\nStep 3: Verifying matches (interactive)..."
+	@$(MAKE) verify-sherdog-matches
+	@echo "\nStep 4: Downloading images..."
+	@$(MAKE) scrape-sherdog-images
+	@echo "\nStep 5: Updating database..."
+	@$(MAKE) update-fighter-images
+	@echo "\n✓ Sherdog sample workflow complete!"
+
 frontend: ## Start only the Next.js frontend
 	cd frontend && pnpm dev
+
+tunnel-frontend: ## Start Cloudflare tunnel for frontend (port 3000)
+	cloudflared tunnel --url http://localhost:3000
+
+tunnel-api: ## Start Cloudflare tunnel for API (port 8000)
+	cloudflared tunnel --url http://localhost:8000
 
 db-upgrade: ## Run database migrations (apply schema changes)
 	.venv/bin/python -m alembic upgrade head

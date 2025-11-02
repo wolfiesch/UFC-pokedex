@@ -28,11 +28,25 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading }: Pro
 
   return (
     <article className="space-y-6 rounded-3xl border-4 border-pokedexBlue bg-slate-950/90 p-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-pokedexYellow">{fighter.name}</h1>
-        {fighter.nickname && <h2 className="text-lg text-slate-400">&quot;{fighter.nickname}&quot;</h2>}
-        <p className="text-sm text-slate-400">{fighter.record ?? "Record unavailable"}</p>
-      </header>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+        {fighter.image_url && (
+          <div className="flex-shrink-0">
+            <img
+              src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
+              alt={fighter.name}
+              className="h-48 w-48 rounded-lg object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+        )}
+        <header className="flex flex-1 flex-col gap-1">
+          <h1 className="text-3xl font-bold text-pokedexYellow">{fighter.name}</h1>
+          {fighter.nickname && <h2 className="text-lg text-slate-400">&quot;{fighter.nickname}&quot;</h2>}
+          <p className="text-sm text-slate-400">{fighter.record ?? "Record unavailable"}</p>
+        </header>
+      </div>
       <section className="grid grid-cols-2 gap-4 text-sm text-slate-200 md:grid-cols-4">
         <Info label="Height" value={fighter.height} />
         <Info label="Weight" value={fighter.weight} />

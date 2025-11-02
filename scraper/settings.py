@@ -11,6 +11,7 @@ USER_AGENT = "UFC-Pokedex-Scraper/0.1 (+https://github.com/example/ufc-pokedex)"
 ITEM_PIPELINES = {
     "scraper.pipelines.validation.ValidationPipeline": 100,
     "scraper.pipelines.storage.StoragePipeline": 200,
+    "scraper.pipelines.sherdog_storage.SherdogStoragePipeline": 300,
 }
 
 LOG_LEVEL = "INFO"
