@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 """Load scraped fighter data from JSON files into the PostgreSQL database."""
 from __future__ import annotations
 
@@ -25,7 +26,9 @@ load_dotenv()
 console = Console()
 
 
-LANDED_ATTEMPT_RE = re.compile(r"(?P<landed>\d+)\s*(?:of|/)\s*(?P<attempted>\d+)", re.IGNORECASE)
+LANDED_ATTEMPT_RE = re.compile(
+    r"(?P<landed>\d+)\s*(?:of|/)\s*(?P<attempted>\d+)", re.IGNORECASE
+)
 PERCENT_RE = re.compile(r"(?P<pct>\d+(?:\.\d+)?)%")
 
 
@@ -88,6 +91,7 @@ def _format_percentage(value: float, decimals: int = 1) -> str:
 
 
 def _average(total: float, count: int) -> float | None:
+    """Return the average of ``total`` over ``count`` while guarding division by zero."""
     if count <= 0:
         return None
     return total / count
@@ -107,73 +111,273 @@ def _compute_accuracy(
     return None
 
 
-def calculate_fighter_stats(fight_history: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
-    """Aggregate per-fight stats into career averages.
+def _parse_fight_duration_seconds(time_value: Any, round_value: Any) -> int | None:
+    """Convert round/time metadata into elapsed fight seconds.
 
-    UFCStats.com provides simple counts per fight (not landed/attempted format):
-    - knockdowns: total knockdowns in the fight
-    - total_strikes: total strikes landed in the fight
-    - takedowns: total takedowns in the fight
-    - submissions: total submission attempts in the fight
+    ``time_value`` is expected to be an ``MM:SS`` string, while ``round_value`` is
+    the 1-indexed round in which the bout ended. The UFC standard round length is
+    five minutes, so the calculation multiplies completed rounds by 300 seconds
+    and adds the remaining seconds from ``time_value``. Invalid or missing values
+    return ``None`` so the caller can gracefully skip the sample.
     """
-    knockdowns_total = {"total": 0, "count": 0}
-    strikes_total = {"total": 0, "count": 0}
-    takedowns_total = {"total": 0, "count": 0}
-    submissions_total = {"total": 0, "count": 0}
+
+    if time_value in (None, "", "--") or round_value in (None, "", "--"):
+        return None
+
+    try:
+        round_number = int(round_value)
+    except (TypeError, ValueError):
+        return None
+
+    time_text = str(time_value).strip()
+    if not time_text or ":" not in time_text:
+        return None
+
+    minutes_text, seconds_text = time_text.split(":", 1)
+    try:
+        minutes = int(minutes_text)
+        seconds = int(seconds_text)
+    except ValueError:
+        return None
+
+    base_seconds = max(round_number - 1, 0) * 300
+    return base_seconds + minutes * 60 + seconds
+
+
+def _coerce_event_date(value: Any) -> date | None:
+    """Attempt to normalise event dates into ``date`` objects for sorting."""
+
+    if isinstance(value, date):
+        return value
+    if value in (None, "", "--"):
+        return None
+    try:
+        return date.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def calculate_longest_win_streak(fight_history: list[dict[str, Any]]) -> int:
+    """Return the longest consecutive win streak ordered by event date."""
+
+    if not fight_history:
+        return 0
+
+    sortable_fights = []
+    for fight in fight_history:
+        event_date = _coerce_event_date(fight.get("event_date"))
+        if event_date is None:
+            # Without a date we cannot deterministically place the fight, so skip it.
+            continue
+        sortable_fights.append((event_date, fight))
+
+    if not sortable_fights:
+        return 0
+
+    sortable_fights.sort(key=lambda item: item[0])
+
+    longest = 0
+    current = 0
+    for _, fight in sortable_fights:
+        result = str(fight.get("result", "")).strip().upper()
+        if result.startswith("W"):
+            current += 1
+            longest = max(longest, current)
+        elif result:
+            current = 0
+
+    return longest
+
+
+def calculate_fighter_stats(
+    fight_history: list[dict[str, Any]],
+) -> dict[str, dict[str, str]]:
+    """Aggregate per-fight stats into the structure consumed by ``fighter_stats``.
+
+    The routine normalises landed/attempted totals, accuracy percentages, and
+    integer counts surfaced in the scraped payload. Metrics are grouped under
+    category dictionaries mirroring ``fighter_stats`` rows, including:
+
+    - ``significant_strikes``: averages, attempts, and accuracy percentage.
+    - ``striking``: total strikes, total-strike accuracy, and knockdown averages.
+    - ``grappling``: takedown averages, accuracy, submission totals/averages.
+    - ``takedown_stats``: legacy takedown averages/accuracy for compatibility.
+    - ``career``: average fight duration (seconds) and longest win streak.
+    """
+
+    sig_totals = {
+        "landed": 0,
+        "attempted": 0,
+        "count": 0,
+        "pct_sum": 0.0,
+        "pct_count": 0,
+    }
+    total_strike_totals = {
+        "landed": 0,
+        "attempted": 0,
+        "count": 0,
+    }
+    takedown_totals = {
+        "landed": 0,
+        "attempted": 0,
+        "count": 0,
+    }
+    knockdown_totals = {"total": 0, "count": 0}
+    submission_totals = {"total": 0, "count": 0}
+    durations: list[int] = []
 
     for fight in fight_history or []:
         stats = fight.get("stats") or {}
 
-        # Parse simple numeric values (not "landed of attempted" format)
+        sig_counts = _parse_landed_attempted(stats.get("sig_strikes"))
+        if sig_counts is not None:
+            landed, attempted = sig_counts
+            sig_totals["landed"] += landed
+            sig_totals["attempted"] += attempted
+            sig_totals["count"] += 1
+
+        sig_pct = _parse_percentage(stats.get("sig_strikes_pct"))
+        if sig_pct is not None:
+            sig_totals["pct_sum"] += sig_pct
+            sig_totals["pct_count"] += 1
+
+        total_strike_counts = _parse_landed_attempted(stats.get("total_strikes"))
+        if total_strike_counts is not None:
+            landed, attempted = total_strike_counts
+            total_strike_totals["landed"] += landed
+            total_strike_totals["attempted"] += attempted
+            total_strike_totals["count"] += 1
+
+        takedown_counts = _parse_landed_attempted(stats.get("takedowns"))
+        if takedown_counts is not None:
+            landed, attempted = takedown_counts
+            takedown_totals["landed"] += landed
+            takedown_totals["attempted"] += attempted
+            takedown_totals["count"] += 1
+
         knockdowns = _parse_int_stat(stats.get("knockdowns"))
         if knockdowns is not None:
-            knockdowns_total["total"] += knockdowns
-            knockdowns_total["count"] += 1
-
-        total_strikes = _parse_int_stat(stats.get("total_strikes"))
-        if total_strikes is not None:
-            strikes_total["total"] += total_strikes
-            strikes_total["count"] += 1
-
-        takedowns = _parse_int_stat(stats.get("takedowns"))
-        if takedowns is not None:
-            takedowns_total["total"] += takedowns
-            takedowns_total["count"] += 1
+            knockdown_totals["total"] += knockdowns
+            knockdown_totals["count"] += 1
 
         submissions = _parse_int_stat(stats.get("submissions"))
         if submissions is not None:
-            submissions_total["total"] += submissions
-            submissions_total["count"] += 1
+            submission_totals["total"] += submissions
+            submission_totals["count"] += 1
+
+        duration_seconds = _parse_fight_duration_seconds(
+            fight.get("time"), fight.get("round")
+        )
+        if duration_seconds is not None:
+            durations.append(duration_seconds)
 
     results: dict[str, dict[str, str]] = {}
 
-    # Calculate striking stats (total strikes and knockdowns)
-    avg_strikes = _average(strikes_total["total"], strikes_total["count"])
-    avg_knockdowns = _average(knockdowns_total["total"], knockdowns_total["count"])
-    if avg_strikes is not None or avg_knockdowns is not None:
-        striking_category = {}
-        if avg_strikes is not None:
-            striking_category["avg_total_strikes"] = _format_number(avg_strikes)
-        if avg_knockdowns is not None:
-            striking_category["avg_knockdowns"] = _format_number(avg_knockdowns)
-        results["striking"] = striking_category
+    # Significant striking metrics
+    if sig_totals["count"] > 0:
+        sig_metrics: dict[str, str] = {}
+        landed_avg = _average(sig_totals["landed"], sig_totals["count"])
+        attempted_avg = _average(sig_totals["attempted"], sig_totals["count"])
+        accuracy = _compute_accuracy(
+            sig_totals["landed"],
+            sig_totals["attempted"],
+            sig_totals["pct_sum"],
+            sig_totals["pct_count"],
+        )
+        if landed_avg is not None:
+            sig_metrics["avg_landed"] = _format_number(landed_avg)
+        if attempted_avg is not None:
+            sig_metrics["avg_attempted"] = _format_number(attempted_avg)
+        if accuracy is not None:
+            sig_metrics["accuracy_pct"] = _format_percentage(accuracy)
+        if sig_metrics:
+            results["significant_strikes"] = sig_metrics
 
-    # Calculate grappling stats (takedowns and submissions)
-    avg_takedowns = _average(takedowns_total["total"], takedowns_total["count"])
-    avg_submissions = _average(submissions_total["total"], submissions_total["count"])
-    if avg_takedowns is not None or avg_submissions is not None:
-        grappling_category = {}
-        if avg_takedowns is not None:
-            grappling_category["avg_takedowns"] = _format_number(avg_takedowns)
-        if avg_submissions is not None:
-            grappling_category["avg_submissions"] = _format_number(avg_submissions)
-        results["grappling"] = grappling_category
+    # Total striking metrics + knockdowns
+    striking_metrics: dict[str, str] = {}
+    if total_strike_totals["count"] > 0:
+        landed_avg = _average(
+            total_strike_totals["landed"], total_strike_totals["count"]
+        )
+        attempted_avg = _average(
+            total_strike_totals["attempted"], total_strike_totals["count"]
+        )
+        accuracy = _compute_accuracy(
+            total_strike_totals["landed"],
+            total_strike_totals["attempted"],
+            0,
+            0,
+        )
+        if landed_avg is not None:
+            striking_metrics["total_strikes_landed_avg"] = _format_number(landed_avg)
+        if attempted_avg is not None:
+            striking_metrics["total_strikes_attempted_avg"] = _format_number(
+                attempted_avg
+            )
+        if accuracy is not None:
+            striking_metrics["total_strikes_accuracy_pct"] = _format_percentage(
+                accuracy
+            )
 
-    # Also put takedowns in takedown_stats for compatibility
-    if avg_takedowns is not None:
-        results["takedown_stats"] = {
-            "avg_takedowns": _format_number(avg_takedowns)
-        }
+    knockdown_avg = _average(knockdown_totals["total"], knockdown_totals["count"])
+    if knockdown_avg is not None:
+        striking_metrics["avg_knockdowns"] = _format_number(knockdown_avg)
+    if striking_metrics:
+        results["striking"] = striking_metrics
+
+    # Grappling metrics and takedown stats (legacy consumers rely on both categories)
+    takedown_metrics: dict[str, str] = {}
+    grappling_metrics: dict[str, str] = {}
+    if takedown_totals["count"] > 0:
+        takedown_landed_avg = _average(
+            takedown_totals["landed"], takedown_totals["count"]
+        )
+        takedown_attempted_avg = _average(
+            takedown_totals["attempted"], takedown_totals["count"]
+        )
+        takedown_accuracy = _compute_accuracy(
+            takedown_totals["landed"], takedown_totals["attempted"], 0, 0
+        )
+        if takedown_landed_avg is not None:
+            takedown_metrics["takedowns_completed_avg"] = _format_number(
+                takedown_landed_avg
+            )
+            grappling_metrics["takedowns_avg"] = _format_number(takedown_landed_avg)
+        if takedown_attempted_avg is not None:
+            takedown_metrics["takedowns_attempted_avg"] = _format_number(
+                takedown_attempted_avg
+            )
+        if takedown_accuracy is not None:
+            formatted_accuracy = _format_percentage(takedown_accuracy)
+            takedown_metrics["takedown_accuracy_pct"] = formatted_accuracy
+            grappling_metrics["takedown_accuracy_pct"] = formatted_accuracy
+
+    submission_avg = _average(submission_totals["total"], submission_totals["count"])
+    if submission_avg is not None:
+        grappling_metrics["avg_submissions"] = _format_number(submission_avg)
+    if submission_totals["total"] > 0:
+        grappling_metrics["total_submissions"] = _format_number(
+            float(submission_totals["total"]), decimals=0
+        )
+
+    if takedown_metrics:
+        results["takedown_stats"] = takedown_metrics
+    if grappling_metrics:
+        results["grappling"] = grappling_metrics
+
+    # Career metrics such as time-in-cage averages and win streaks
+    career_metrics: dict[str, str] = {}
+    if durations:
+        avg_duration = _average(sum(durations), len(durations))
+        if avg_duration is not None:
+            career_metrics["avg_fight_duration_seconds"] = _format_number(avg_duration)
+
+    longest_streak = calculate_longest_win_streak(fight_history)
+    if longest_streak > 0:
+        career_metrics["longest_win_streak"] = str(longest_streak)
+
+    if career_metrics:
+        results["career"] = career_metrics
 
     return results
 
@@ -184,7 +388,9 @@ async def upsert_fighter_stats(
     aggregated_stats: dict[str, dict[str, str]],
 ) -> None:
     """Replace fighter_stats rows for a fighter with fresh aggregates."""
-    await session.execute(delete(fighter_stats).where(fighter_stats.c.fighter_id == fighter_id))
+    await session.execute(
+        delete(fighter_stats).where(fighter_stats.c.fighter_id == fighter_id)
+    )
 
     rows: list[dict[str, Any]] = []
     for category, metrics in (aggregated_stats or {}).items():
@@ -203,6 +409,7 @@ async def upsert_fighter_stats(
     if rows:
         await session.execute(insert(fighter_stats), rows)
 
+
 def _parse_date(value: Any) -> date | None:
     """Convert ISO strings to date objects expected by SQLAlchemy models."""
     if value in (None, ""):
@@ -216,9 +423,13 @@ def _parse_date(value: Any) -> date | None:
         try:
             return date.fromisoformat(text)
         except ValueError:
-            console.print(f"[yellow]Unable to parse date '{value}', storing as NULL[/yellow]")
+            console.print(
+                f"[yellow]Unable to parse date '{value}', storing as NULL[/yellow]"
+            )
             return None
-    console.print(f"[yellow]Unexpected date value type {type(value)!r}; storing as NULL[/yellow]")
+    console.print(
+        f"[yellow]Unexpected date value type {type(value)!r}; storing as NULL[/yellow]"
+    )
     return None
 
 
@@ -264,7 +475,9 @@ async def load_fighters_from_jsonl(
                         continue
 
                     if dry_run:
-                        console.print(f"[cyan]Would load fighter: {data.get('name')}[/cyan]")
+                        console.print(
+                            f"[cyan]Would load fighter: {data.get('name')}[/cyan]"
+                        )
                         loaded_count += 1
                         continue
 
@@ -293,7 +506,9 @@ async def load_fighters_from_jsonl(
                     console.print(f"[red]Line {line_num}: JSON decode error: {e}[/red]")
                     skipped_count += 1
                 except Exception as e:
-                    console.print(f"[red]Line {line_num}: Error loading fighter: {e}[/red]")
+                    console.print(
+                        f"[red]Line {line_num}: Error loading fighter: {e}[/red]"
+                    )
                     if not dry_run and session.in_transaction():
                         await session.rollback()
                     skipped_count += 1
@@ -324,7 +539,9 @@ async def load_fighter_detail(
             return False
 
         if dry_run:
-            console.print(f"[cyan]Would load detailed data for: {data.get('name')}[/cyan]")
+            console.print(
+                f"[cyan]Would load detailed data for: {data.get('name')}[/cyan]"
+            )
             return True
 
         # Update fighter with detailed data
@@ -347,9 +564,7 @@ async def load_fighter_detail(
         fighter.record = data.get("record")
 
         # Delete old fights for this fighter to allow re-scraping with updated data
-        await session.execute(
-            delete(Fight).where(Fight.fighter_id == fighter_id)
-        )
+        await session.execute(delete(Fight).where(Fight.fighter_id == fighter_id))
 
         # Load fight history
         fight_history = data.get("fight_history", [])
@@ -391,13 +606,17 @@ async def main(args: argparse.Namespace) -> None:
     console.print("[bold blue]UFC Fighter Data Loader[/bold blue]\n")
 
     if args.dry_run:
-        console.print("[yellow]DRY RUN MODE - No data will be written to database[/yellow]\n")
+        console.print(
+            "[yellow]DRY RUN MODE - No data will be written to database[/yellow]\n"
+        )
 
     async with get_session() as session:
         if args.fighter_id:
             # Load specific fighter detail
             detail_path = Path(f"data/processed/fighters/{args.fighter_id}.json")
-            success = await load_fighter_detail(session, detail_path, dry_run=args.dry_run)
+            success = await load_fighter_detail(
+                session, detail_path, dry_run=args.dry_run
+            )
             if success:
                 console.print(f"[green]✓ Loaded fighter {args.fighter_id}[/green]")
             else:
@@ -410,31 +629,41 @@ async def main(args: argparse.Namespace) -> None:
                 session, list_path, limit=args.limit, dry_run=args.dry_run
             )
 
-            console.print(f"\n[green]✓ Loaded {loaded_count} fighters from list[/green]")
+            console.print(
+                f"\n[green]✓ Loaded {loaded_count} fighters from list[/green]"
+            )
 
             # Optionally load detailed data for all fighters
             if args.load_details:
                 fighters_dir = Path("data/processed/fighters")
                 if fighters_dir.exists():
                     fighter_files = list(fighters_dir.glob("*.json"))
-                    console.print(f"\n[blue]Loading detailed data for {len(fighter_files)} fighters...[/blue]")
+                    console.print(
+                        f"\n[blue]Loading detailed data for {len(fighter_files)} fighters...[/blue]"
+                    )
 
                     success_count = 0
                     for fighter_file in fighter_files:
                         if args.limit and success_count >= args.limit:
                             break
 
-                        success = await load_fighter_detail(session, fighter_file, dry_run=args.dry_run)
+                        success = await load_fighter_detail(
+                            session, fighter_file, dry_run=args.dry_run
+                        )
                         if success:
                             success_count += 1
 
-                    console.print(f"[green]✓ Loaded detailed data for {success_count} fighters[/green]")
+                    console.print(
+                        f"[green]✓ Loaded detailed data for {success_count} fighters[/green]"
+                    )
 
     console.print("\n[bold green]Data loading complete![/bold green]")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Load scraped fighter data into database")
+    parser = argparse.ArgumentParser(
+        description="Load scraped fighter data into database"
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
