@@ -179,7 +179,7 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
             return None
         # Each cell has two <p> elements: fighter's stat and opponent's stat
         # We only want the first one (the fighter's stat)
-        stat_candidates: list[str | None] = cell.css(
+        stat_candidates: list[str] = cell.css(
             "p.b-fight-details__table-text::text, p::text, ::text"
         ).getall()
         for candidate in stat_candidates:
