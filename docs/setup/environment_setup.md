@@ -72,3 +72,17 @@ This checklist captures the reproducible steps for establishing local tooling re
 2. `make scrape-sample` (scrapes a small fighter subset and writes to `data/samples`).
 3. `make dev` (starts API + frontend concurrently).
 
+## Regenerating Aggregated Stats
+
+When fighter detail JSON fixtures are refreshed you should rebuild the aggregated metrics that power the
+Stats Hub leaderboards. Use the async loader script to recompute totals and averages:
+
+```bash
+uv run scripts/load_scraped_data.py --dry-run  # preview changes without mutating the database
+uv run scripts/load_scraped_data.py            # upserts fighters, fights, and stats
+```
+
+You can pass `--fighter-id <uuid>` to target a single fighter or `--limit <n>` when loading from the
+list JSONL. The script automatically recalculates per-category statistics and writes them to the
+`fighter_stats` table.
+

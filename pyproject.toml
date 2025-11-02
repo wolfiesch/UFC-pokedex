@@ -41,7 +41,7 @@ exclude = ["frontend"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "S", "C4"]
-ignore = ["B008"]  # Allow function default arguments with calls (use carefully)
+ignore = ["B008", "S101"]  # Allow fixtures with call defaults and test-time `assert`
 
 [tool.pytest.ini_options]
 minversion = "8.0"
