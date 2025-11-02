@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 pytest.importorskip("sqlalchemy")
+pytest.importorskip("pytest_asyncio")
 
 import pytest_asyncio
 from sqlalchemy import insert
@@ -10,7 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from backend.db.models import Base, Fighter, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
-from scripts.load_scraped_data import calculate_fighter_stats
+from scripts.load_scraped_data import (
+    calculate_fighter_stats,
+    calculate_longest_win_streak,
+)
 
 
 @pytest_asyncio.fixture
@@ -27,50 +33,101 @@ async def session() -> AsyncSession:
     await engine.dispose()
 
 
-def test_calculate_fighter_stats_averages() -> None:
-    fights = [
+@pytest.fixture
+def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
+    """Provide diversified fight samples for accuracy, submissions, and duration checks."""
+
+    return [
         {
-            "stats": {
-                "sig_strikes": "20 of 40",
-                "sig_strikes_pct": "50%",
-                "total_strikes": "60 of 120",
-                "takedowns": "2 of 4",
-            }
-        },
-        {
+            "event_date": "2024-05-01",
+            "result": "W",
+            "round": 3,
+            "time": "04:30",
             "stats": {
                 "sig_strikes": "30 of 60",
                 "sig_strikes_pct": "50%",
                 "total_strikes": "50 of 100",
                 "takedowns": "3 of 6",
-            }
+                "knockdowns": "0",
+                "submissions": "2",
+            },
+        },
+        {
+            "event_date": "2024-03-01",
+            "result": "W",
+            "round": 2,
+            "time": "03:00",
+            "stats": {
+                "sig_strikes": "20 of 40",
+                "sig_strikes_pct": "50%",
+                "total_strikes": "60 of 120",
+                "takedowns": "2 of 4",
+                "knockdowns": "1",
+                "submissions": "1",
+            },
         },
     ]
 
-    aggregated = calculate_fighter_stats(fights)
+
+def test_calculate_fighter_stats_averages(
+    fight_history_with_rich_metrics: list[dict[str, Any]],
+) -> None:
+    """Aggregate averages should normalise landed/attempted data and derived accuracy."""
+
+    aggregated = calculate_fighter_stats(fight_history_with_rich_metrics)
 
     assert aggregated["significant_strikes"]["avg_landed"] == "25"
     assert aggregated["significant_strikes"]["avg_attempted"] == "50"
     assert aggregated["significant_strikes"]["accuracy_pct"] == "50%"
+
     assert aggregated["striking"]["total_strikes_landed_avg"] == "55"
     assert aggregated["striking"]["total_strikes_attempted_avg"] == "110"
     assert aggregated["striking"]["total_strikes_accuracy_pct"] == "50%"
+    assert aggregated["striking"]["avg_knockdowns"] == "0.5"
+
     assert aggregated["takedown_stats"]["takedowns_completed_avg"] == "2.5"
     assert aggregated["takedown_stats"]["takedowns_attempted_avg"] == "5"
     assert aggregated["takedown_stats"]["takedown_accuracy_pct"] == "50%"
+
     assert aggregated["grappling"]["takedowns_avg"] == "2.5"
     assert aggregated["grappling"]["takedown_accuracy_pct"] == "50%"
+    assert aggregated["grappling"]["avg_submissions"] == "1.5"
+    assert aggregated["grappling"]["total_submissions"] == "3"
+
+    assert aggregated["career"]["avg_fight_duration_seconds"] == "675"
+    assert aggregated["career"]["longest_win_streak"] == "2"
 
 
 def test_calculate_fighter_stats_handles_missing_values() -> None:
     fights = [
-        {"stats": {"sig_strikes": "--", "sig_strikes_pct": None, "total_strikes": None, "takedowns": None}},
+        {
+            "stats": {
+                "sig_strikes": "--",
+                "sig_strikes_pct": None,
+                "total_strikes": None,
+                "takedowns": None,
+            }
+        },
         {"stats": {}},
     ]
 
     aggregated = calculate_fighter_stats(fights)
 
     assert aggregated == {}
+
+
+def test_calculate_longest_win_streak_orders_by_event_date() -> None:
+    """Win streak helper should evaluate chronological order regardless of input ordering."""
+
+    fights: list[dict[str, Any]] = [
+        {"event_date": "2024-05-01", "result": "W"},
+        {"event_date": "2024-01-01", "result": "W"},
+        {"event_date": "2024-02-01", "result": "W"},
+        {"event_date": "2024-03-01", "result": "W"},
+        {"event_date": "2024-04-01", "result": "L"},
+    ]
+
+    assert calculate_longest_win_streak(fights) == 3
 
 
 @pytest.mark.asyncio
