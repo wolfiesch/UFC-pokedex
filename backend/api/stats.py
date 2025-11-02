@@ -1,6 +1,10 @@
-from fastapi import APIRouter, Depends
+from datetime import date
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query
 
 from backend.services.fighter_service import FighterService, get_fighter_service
+from backend.schemas.stats import LeaderboardsResponse, TrendsResponse
 
 router = APIRouter()
 
@@ -10,3 +14,60 @@ async def stats_summary(
     service: FighterService = Depends(get_fighter_service),
 ) -> dict[str, float]:
     return await service.get_stats_summary()
+
+
+@router.get("/leaderboards", response_model=LeaderboardsResponse)
+async def stats_leaderboards(
+    limit: int = Query(10, ge=1, le=50, description="Maximum entries per leaderboard."),
+    accuracy_metric: str = Query(
+        "sig_strikes_accuracy_pct",
+        description="fighter_stats.metric name representing accuracy to rank.",
+    ),
+    submissions_metric: str = Query(
+        "avg_submissions",
+        description="fighter_stats.metric name representing submissions to rank.",
+    ),
+    start_date: date | None = Query(
+        None, description="Optional inclusive lower bound on fight event dates."
+    ),
+    end_date: date | None = Query(
+        None, description="Optional inclusive upper bound on fight event dates."
+    ),
+    service: FighterService = Depends(get_fighter_service),
+) -> LeaderboardsResponse:
+    """Expose fighter leaderboards for accuracy- and submission-oriented metrics."""
+
+    return await service.get_leaderboards(
+        limit=limit,
+        accuracy_metric=accuracy_metric,
+        submissions_metric=submissions_metric,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+@router.get("/trends", response_model=TrendsResponse)
+async def stats_trends(
+    start_date: date | None = Query(
+        None, description="Optional inclusive lower bound on fight event dates."
+    ),
+    end_date: date | None = Query(
+        None, description="Optional inclusive upper bound on fight event dates."
+    ),
+    time_bucket: Literal["month", "quarter", "year"] = Query(
+        "month",
+        description="Temporal grouping for average fight durations.",
+    ),
+    streak_limit: int = Query(
+        5, ge=1, le=50, description="Maximum fighters returned for win streak trends."
+    ),
+    service: FighterService = Depends(get_fighter_service),
+) -> TrendsResponse:
+    """Return historical streaks and fight duration aggregations for dashboards."""
+
+    return await service.get_trends(
+        start_date=start_date,
+        end_date=end_date,
+        time_bucket=time_bucket,
+        streak_limit=streak_limit,
+    )

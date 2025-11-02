@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("sqlalchemy")
 
-import pytest_asyncio
+pytest_asyncio = pytest.importorskip("pytest_asyncio")
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -64,7 +64,14 @@ def test_calculate_fighter_stats_averages() -> None:
 
 def test_calculate_fighter_stats_handles_missing_values() -> None:
     fights = [
-        {"stats": {"sig_strikes": "--", "sig_strikes_pct": None, "total_strikes": None, "takedowns": None}},
+        {
+            "stats": {
+                "sig_strikes": "--",
+                "sig_strikes_pct": None,
+                "total_strikes": None,
+                "takedowns": None,
+            }
+        },
         {"stats": {}},
     ]
 
