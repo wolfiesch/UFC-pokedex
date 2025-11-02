@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.db.models import Fight, Fighter, fighter_stats
-from backend.schemas.fighter import FighterDetail, FighterListItem, FightHistoryEntry
+from backend.schemas.fighter import (
+    FighterComparisonEntry,
+    FighterDetail,
+    FighterListItem,
+    FightHistoryEntry,
+)
 from backend.schemas.stats import (
     AverageFightDuration,
     LeaderboardDefinition,
@@ -106,14 +111,14 @@ class PostgreSQLFighterRepository:
         ]
 
         # Sort fight history: upcoming fights first, then past fights by most recent
-        fight_history.sort(
-            key=lambda fight: (
-                # Primary: upcoming fights first (result="next" → 0, others → 1)
-                0 if fight.result == "next" else 1,
-                # Secondary: most recent first (use min date for nulls to push them last)
-                -(fight.event_date or date.min).toordinal(),
+            fight_history.sort(
+                key=lambda fight: (
+                    # Primary: upcoming fights first (result="next" → 0, others → 1)
+                    0 if fight.result == "next" else 1,
+                    # Secondary: most recent first (use min date for nulls to push them last)
+                    -(fight.event_date or date.min).toordinal(),
+                )
             )
-        )
 
         return FighterDetail(
             fighter_id=fighter.id,
@@ -134,6 +139,7 @@ class PostgreSQLFighterRepository:
             grappling=stats_map.get("grappling", {}),
             significant_strikes=stats_map.get("significant_strikes", {}),
             takedown_stats=stats_map.get("takedown_stats", {}),
+            career=stats_map.get("career", {}),
             fight_history=fight_history,
         )
 
@@ -144,16 +150,62 @@ class PostgreSQLFighterRepository:
         result = await self._session.execute(count_query)
         total_fighters = result.scalar() or 0
 
-        return StatsSummaryResponse(
-            metrics=[
+        metrics: list[StatsSummaryMetric] = [
+            StatsSummaryMetric(
+                id="fighters_indexed",
+                label="Fighters Indexed",
+                value=float(total_fighters),
+                description="Total number of UFC fighters ingested from UFCStats.",
+            )
+        ]
+
+        avg_sig_accuracy = await self._average_metric("sig_strikes_accuracy_pct")
+        if avg_sig_accuracy is not None:
+            metrics.append(
                 StatsSummaryMetric(
-                    id="fighters_indexed",
-                    label="Fighters Indexed",
-                    value=float(total_fighters),
-                    description="Total number of UFC fighters in the database",
+                    id="avg_sig_strikes_accuracy_pct",
+                    label="Avg. Sig. Strike Accuracy",
+                    value=round(avg_sig_accuracy, 1),
+                    description="Average significant strike accuracy across the roster (%).",
                 )
-            ]
+            )
+
+        avg_takedown_accuracy = await self._average_metric("takedown_accuracy_pct")
+        if avg_takedown_accuracy is not None:
+            metrics.append(
+                StatsSummaryMetric(
+                    id="avg_takedown_accuracy_pct",
+                    label="Avg. Takedown Accuracy",
+                    value=round(avg_takedown_accuracy, 1),
+                    description="Average takedown accuracy rate across all fighters (%).",
+                )
+            )
+
+        avg_submissions = await self._average_metric("avg_submissions")
+        if avg_submissions is not None:
+            metrics.append(
+                StatsSummaryMetric(
+                    id="avg_submission_attempts",
+                    label="Avg. Submission Attempts",
+                    value=round(avg_submissions, 2),
+                    description="Average submission attempts per fight recorded for the roster.",
+                )
+            )
+
+        avg_fight_duration_seconds = await self._average_metric(
+            "avg_fight_duration_seconds"
         )
+        if avg_fight_duration_seconds is not None:
+            metrics.append(
+                StatsSummaryMetric(
+                    id="avg_fight_duration_minutes",
+                    label="Avg. Fight Duration",
+                    value=round(avg_fight_duration_seconds / 60, 1),
+                    description="Average fight duration (minutes) derived from recorded bouts.",
+                )
+            )
+
+        return StatsSummaryResponse(metrics=metrics)
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:
         """Create a new fighter in the database."""
@@ -191,39 +243,120 @@ class PostgreSQLFighterRepository:
         return fight
 
     async def search_fighters(
-        self, query: str | None = None, stance: str | None = None
-    ) -> Iterable[FighterListItem]:
-        """Search fighters by name or filter by stance."""
-        stmt = select(Fighter)
+        self,
+        query: str | None = None,
+        stance: str | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[list[FighterListItem], int]:
+        """Search fighters by name or stance with pagination support."""
 
+        filters = []
         if query:
-            stmt = stmt.where(
-                (Fighter.name.ilike(f"%{query}%"))
-                | (Fighter.nickname.ilike(f"%{query}%"))
+            pattern = f"%{query}%"
+            filters.append(
+                (Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern))
             )
-
         if stance:
-            stmt = stmt.where(Fighter.stance == stance)
+            filters.append(Fighter.stance == stance)
+
+        stmt = select(Fighter).order_by(Fighter.name)
+        count_stmt = select(func.count()).select_from(Fighter)
+
+        for condition in filters:
+            stmt = stmt.where(condition)
+            count_stmt = count_stmt.where(condition)
+
+        if offset is not None and offset > 0:
+            stmt = stmt.offset(offset)
+        if limit is not None and limit > 0:
+            stmt = stmt.limit(limit)
 
         result = await self._session.execute(stmt)
         fighters = result.scalars().all()
 
-        return [
-            FighterListItem(
-                fighter_id=fighter.id,
-                detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                name=fighter.name,
-                nickname=fighter.nickname,
-                height=fighter.height,
-                weight=fighter.weight,
-                reach=fighter.reach,
-                stance=fighter.stance,
-                dob=fighter.dob,
-                division=fighter.division,
-                image_url=fighter.image_url,
+        count_result = await self._session.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        return (
+            [
+                FighterListItem(
+                    fighter_id=fighter.id,
+                    detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
+                    name=fighter.name,
+                    nickname=fighter.nickname,
+                    height=fighter.height,
+                    weight=fighter.weight,
+                    reach=fighter.reach,
+                    stance=fighter.stance,
+                    dob=fighter.dob,
+                    division=fighter.division,
+                )
+                for fighter in fighters
+            ],
+            total,
+        )
+
+    async def get_fighters_for_comparison(
+        self, fighter_ids: Sequence[str]
+    ) -> list[FighterComparisonEntry]:
+        """Return stats snapshots for the requested fighters in the input order."""
+
+        if not fighter_ids:
+            return []
+
+        ordered_ids: list[str] = []
+        for fighter_id in fighter_ids:
+            if fighter_id not in ordered_ids:
+                ordered_ids.append(fighter_id)
+
+        fighters_stmt = select(Fighter).where(Fighter.id.in_(ordered_ids))
+        fighters_result = await self._session.execute(fighters_stmt)
+        fighters = fighters_result.scalars().all()
+        fighter_map = {fighter.id: fighter for fighter in fighters}
+
+        stats_stmt = (
+            select(
+                fighter_stats.c.fighter_id,
+                fighter_stats.c.category,
+                fighter_stats.c.metric,
+                fighter_stats.c.value,
             )
-            for fighter in fighters
-        ]
+            .where(fighter_stats.c.fighter_id.in_(ordered_ids))
+            .order_by(fighter_stats.c.fighter_id)
+        )
+
+        stats_result = await self._session.execute(stats_stmt)
+        stats_by_fighter: dict[str, dict[str, dict[str, str]]] = {}
+        for fighter_id, category, metric, value in stats_result.all():
+            if fighter_id is None or metric is None or value is None:
+                continue
+            category_bucket = stats_by_fighter.setdefault(fighter_id, {})
+            metric_bucket = category_bucket.setdefault(category or "misc", {})
+            metric_bucket[metric] = value
+
+        comparison: list[FighterComparisonEntry] = []
+        for fighter_id in ordered_ids:
+            fighter = fighter_map.get(fighter_id)
+            if fighter is None:
+                continue
+            stats_map = stats_by_fighter.get(fighter_id, {})
+            comparison.append(
+                FighterComparisonEntry(
+                    fighter_id=fighter_id,
+                    name=fighter.name,
+                    record=fighter.record,
+                    division=fighter.division,
+                    striking=stats_map.get("striking", {}),
+                    grappling=stats_map.get("grappling", {}),
+                    significant_strikes=stats_map.get("significant_strikes", {}),
+                    takedown_stats=stats_map.get("takedown_stats", {}),
+                    career=stats_map.get("career", {}),
+                )
+            )
+
+        return comparison
 
     async def count_fighters(self) -> int:
         """Get the total count of fighters in the database."""
@@ -395,6 +528,21 @@ class PostgreSQLFighterRepository:
         sanitized = func.nullif(trimmed, "")
         sanitized = func.nullif(sanitized, "--")
         return cast(sanitized, Float)
+
+    async def _average_metric(self, metric_name: str) -> float | None:
+        """Compute the average value for the given metric across all fighters."""
+
+        value_column = self._numeric_stat_value()
+        stmt = (
+            select(func.avg(value_column))
+            .where(fighter_stats.c.metric == metric_name)
+            .where(value_column.is_not(None))
+        )
+        result = await self._session.execute(stmt)
+        value = result.scalar()
+        if value is None:
+            return None
+        return float(value)
 
     async def _calculate_win_streaks(
         self,

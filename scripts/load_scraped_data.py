@@ -17,6 +17,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.cache import (
+    CacheClient,
+    get_cache_client,
+    invalidate_collections,
+    invalidate_fighter,
+)
 from backend.db.connection import get_session
 from backend.db.models import Fight, Fighter, fighter_stats
 
@@ -189,8 +195,28 @@ def calculate_longest_win_streak(fight_history: list[dict[str, Any]]) -> int:
     return longest
 
 
+def _store_stat(
+    results: dict[str, dict[str, str]],
+    category: str,
+    metric: str,
+    raw_value: Any,
+) -> None:
+    """Insert a metric into the aggregated results if the value is non-empty."""
+
+    if raw_value in (None, "", "--"):
+        return
+
+    value = str(raw_value).strip()
+    if not value:
+        return
+
+    bucket = results.setdefault(category, {})
+    bucket[metric] = value
+
+
 def calculate_fighter_stats(
     fight_history: list[dict[str, Any]],
+    summary_stats: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, str]]:
     """Aggregate per-fight stats into the structure consumed by ``fighter_stats``.
 
@@ -198,12 +224,20 @@ def calculate_fighter_stats(
     integer counts surfaced in the scraped payload. Metrics are grouped under
     category dictionaries mirroring ``fighter_stats`` rows, including:
 
-    - ``significant_strikes``: averages, attempts, and accuracy percentage.
-    - ``striking``: total strikes, total-strike accuracy, and knockdown averages.
-    - ``grappling``: takedown averages, accuracy, submission totals/averages.
-    - ``takedown_stats``: legacy takedown averages/accuracy for compatibility.
+    - ``significant_strikes``: tempo, accuracy, and defense metrics.
+    - ``striking``: total strike output plus knockdown averages.
+    - ``grappling``: takedown volume, accuracy, defence, and submission pressure.
+    - ``takedown_stats``: compatibility surface for historic consumers.
     - ``career``: average fight duration (seconds) and longest win streak.
     """
+
+    summary_stats = summary_stats or {}
+
+    def _find_summary_section(keys: set[str]) -> dict[str, Any]:
+        for section in summary_stats.values():
+            if any(key in section for key in keys):
+                return section
+        return {}
 
     sig_totals = {
         "landed": 0,
@@ -235,6 +269,11 @@ def calculate_fighter_stats(
             sig_totals["landed"] += landed
             sig_totals["attempted"] += attempted
             sig_totals["count"] += 1
+        else:
+            landed = _parse_int_stat(stats.get("sig_strikes"))
+            if landed is not None:
+                sig_totals["landed"] += landed
+                sig_totals["count"] += 1
 
         sig_pct = _parse_percentage(stats.get("sig_strikes_pct"))
         if sig_pct is not None:
@@ -247,6 +286,11 @@ def calculate_fighter_stats(
             total_strike_totals["landed"] += landed
             total_strike_totals["attempted"] += attempted
             total_strike_totals["count"] += 1
+        else:
+            landed = _parse_int_stat(stats.get("total_strikes"))
+            if landed is not None:
+                total_strike_totals["landed"] += landed
+                total_strike_totals["count"] += 1
 
         takedown_counts = _parse_landed_attempted(stats.get("takedowns"))
         if takedown_counts is not None:
@@ -254,6 +298,11 @@ def calculate_fighter_stats(
             takedown_totals["landed"] += landed
             takedown_totals["attempted"] += attempted
             takedown_totals["count"] += 1
+        else:
+            landed = _parse_int_stat(stats.get("takedowns"))
+            if landed is not None:
+                takedown_totals["landed"] += landed
+                takedown_totals["count"] += 1
 
         knockdowns = _parse_int_stat(stats.get("knockdowns"))
         if knockdowns is not None:
@@ -273,97 +322,127 @@ def calculate_fighter_stats(
 
     results: dict[str, dict[str, str]] = {}
 
-    # Significant striking metrics
-    if sig_totals["count"] > 0:
-        sig_metrics: dict[str, str] = {}
-        landed_avg = _average(sig_totals["landed"], sig_totals["count"])
-        attempted_avg = _average(sig_totals["attempted"], sig_totals["count"])
-        accuracy = _compute_accuracy(
-            sig_totals["landed"],
-            sig_totals["attempted"],
-            sig_totals["pct_sum"],
-            sig_totals["pct_count"],
-        )
-        if landed_avg is not None:
-            sig_metrics["avg_landed"] = _format_number(landed_avg)
-        if attempted_avg is not None:
-            sig_metrics["avg_attempted"] = _format_number(attempted_avg)
-        if accuracy is not None:
-            sig_metrics["accuracy_pct"] = _format_percentage(accuracy)
-        if sig_metrics:
-            results["significant_strikes"] = sig_metrics
+    striking_summary = _find_summary_section({"slpm", "str_acc", "sapm", "str_def"})
+    grappling_summary = _find_summary_section({"td_avg", "td_acc", "td_def", "sub_avg"})
+    significant_summary = summary_stats.get("significant_strikes", {})
+    takedown_summary = summary_stats.get("takedown_stats", {})
 
-    # Total striking metrics + knockdowns
-    striking_metrics: dict[str, str] = {}
+    STRIKING_SUMMARY_MAP: dict[str, list[tuple[str, str]]] = {
+        "slpm": [
+            ("significant_strikes", "sig_strikes_landed_per_min"),
+            ("striking", "sig_strikes_landed_per_min"),
+        ],
+        "sapm": [
+            ("significant_strikes", "sig_strikes_absorbed_per_min"),
+            ("striking", "sig_strikes_absorbed_per_min"),
+        ],
+        "str_acc": [
+            ("significant_strikes", "sig_strikes_accuracy_pct"),
+            ("striking", "sig_strikes_accuracy_pct"),
+        ],
+        "str_def": [
+            ("significant_strikes", "sig_strikes_defense_pct"),
+            ("striking", "sig_strikes_defense_pct"),
+        ],
+    }
+
+    for key, targets in STRIKING_SUMMARY_MAP.items():
+        value = striking_summary.get(key) or significant_summary.get(key)
+        for category, metric in targets:
+            _store_stat(results, category, metric, value)
+
+    GRAPPLING_SUMMARY_MAP: dict[str, list[tuple[str, str]]] = {
+        "td_avg": [
+            ("grappling", "takedowns_avg"),
+            ("takedown_stats", "takedowns_completed_avg"),
+        ],
+        "td_acc": [
+            ("grappling", "takedown_accuracy_pct"),
+            ("takedown_stats", "takedown_accuracy_pct"),
+        ],
+        "td_def": [
+            ("grappling", "takedown_defense_pct"),
+            ("takedown_stats", "takedown_defense_pct"),
+        ],
+        "sub_avg": [
+            ("grappling", "avg_submissions"),
+        ],
+    }
+
+    for key, targets in GRAPPLING_SUMMARY_MAP.items():
+        value = (
+            grappling_summary.get(key)
+            or takedown_summary.get(key)
+            or striking_summary.get(key)
+        )
+        for category, metric in targets:
+            _store_stat(results, category, metric, value)
+
+    # Derived per-fight averages
+    if sig_totals["count"] > 0:
+        landed_avg = _average(sig_totals["landed"], sig_totals["count"])
+        if landed_avg is not None:
+            _store_stat(
+                results,
+                "significant_strikes",
+                "sig_strikes_landed_avg",
+                _format_number(landed_avg),
+            )
+
     if total_strike_totals["count"] > 0:
         landed_avg = _average(
             total_strike_totals["landed"], total_strike_totals["count"]
         )
-        attempted_avg = _average(
-            total_strike_totals["attempted"], total_strike_totals["count"]
-        )
-        accuracy = _compute_accuracy(
-            total_strike_totals["landed"],
-            total_strike_totals["attempted"],
-            0,
-            0,
-        )
         if landed_avg is not None:
-            striking_metrics["total_strikes_landed_avg"] = _format_number(landed_avg)
-        if attempted_avg is not None:
-            striking_metrics["total_strikes_attempted_avg"] = _format_number(
-                attempted_avg
-            )
-        if accuracy is not None:
-            striking_metrics["total_strikes_accuracy_pct"] = _format_percentage(
-                accuracy
+            _store_stat(
+                results,
+                "striking",
+                "total_strikes_landed_avg",
+                _format_number(landed_avg),
             )
 
     knockdown_avg = _average(knockdown_totals["total"], knockdown_totals["count"])
     if knockdown_avg is not None:
-        striking_metrics["avg_knockdowns"] = _format_number(knockdown_avg)
-    if striking_metrics:
-        results["striking"] = striking_metrics
+        _store_stat(
+            results,
+            "striking",
+            "avg_knockdowns",
+            _format_number(knockdown_avg),
+        )
 
-    # Grappling metrics and takedown stats (legacy consumers rely on both categories)
-    takedown_metrics: dict[str, str] = {}
-    grappling_metrics: dict[str, str] = {}
     if takedown_totals["count"] > 0:
-        takedown_landed_avg = _average(
+        landed_avg = _average(
             takedown_totals["landed"], takedown_totals["count"]
         )
-        takedown_attempted_avg = _average(
-            takedown_totals["attempted"], takedown_totals["count"]
-        )
-        takedown_accuracy = _compute_accuracy(
-            takedown_totals["landed"], takedown_totals["attempted"], 0, 0
-        )
-        if takedown_landed_avg is not None:
-            takedown_metrics["takedowns_completed_avg"] = _format_number(
-                takedown_landed_avg
+        if landed_avg is not None:
+            _store_stat(
+                results,
+                "takedown_stats",
+                "takedowns_completed_avg",
+                _format_number(landed_avg),
             )
-            grappling_metrics["takedowns_avg"] = _format_number(takedown_landed_avg)
-        if takedown_attempted_avg is not None:
-            takedown_metrics["takedowns_attempted_avg"] = _format_number(
-                takedown_attempted_avg
+            _store_stat(
+                results,
+                "grappling",
+                "takedowns_avg",
+                _format_number(landed_avg),
             )
-        if takedown_accuracy is not None:
-            formatted_accuracy = _format_percentage(takedown_accuracy)
-            takedown_metrics["takedown_accuracy_pct"] = formatted_accuracy
-            grappling_metrics["takedown_accuracy_pct"] = formatted_accuracy
 
     submission_avg = _average(submission_totals["total"], submission_totals["count"])
     if submission_avg is not None:
-        grappling_metrics["avg_submissions"] = _format_number(submission_avg)
-    if submission_totals["total"] > 0:
-        grappling_metrics["total_submissions"] = _format_number(
-            float(submission_totals["total"]), decimals=0
+        _store_stat(
+            results,
+            "grappling",
+            "avg_submissions",
+            _format_number(submission_avg),
         )
-
-    if takedown_metrics:
-        results["takedown_stats"] = takedown_metrics
-    if grappling_metrics:
-        results["grappling"] = grappling_metrics
+    if submission_totals["total"] > 0:
+        _store_stat(
+            results,
+            "grappling",
+            "total_submissions",
+            _format_number(float(submission_totals["total"]), decimals=0),
+        )
 
     # Career metrics such as time-in-cage averages and win streaks
     career_metrics: dict[str, str] = {}
@@ -375,7 +454,6 @@ def calculate_fighter_stats(
     longest_streak = calculate_longest_win_streak(fight_history)
     if longest_streak > 0:
         career_metrics["longest_win_streak"] = str(longest_streak)
-
     if career_metrics:
         results["career"] = career_metrics
 
@@ -523,6 +601,7 @@ async def load_fighter_detail(
     session: AsyncSession,
     json_path: Path,
     dry_run: bool = False,
+    cache: CacheClient | None = None,
 ) -> bool:
     """Load detailed fighter data from individual JSON file."""
     if not json_path.exists():
@@ -588,10 +667,28 @@ async def load_fighter_detail(
             )
             await session.merge(fight)
 
-        aggregated_stats = calculate_fighter_stats(fight_history)
+        summary_payload = {
+            key: data.get(key) or {}
+            for key in (
+                "career_statistics",
+                "striking",
+                "grappling",
+                "significant_strikes",
+                "takedown_stats",
+                "career",
+            )
+        }
+        summary_payload = {key: value for key, value in summary_payload.items() if value}
+
+        aggregated_stats = calculate_fighter_stats(
+            fight_history,
+            summary_stats=summary_payload,
+        )
         await upsert_fighter_stats(session, fighter_id, aggregated_stats)
 
         await session.commit()
+        if cache is not None and not dry_run:
+            await invalidate_fighter(cache, fighter_id)
         return True
 
     except Exception as e:
@@ -610,12 +707,25 @@ async def main(args: argparse.Namespace) -> None:
             "[yellow]DRY RUN MODE - No data will be written to database[/yellow]\n"
         )
 
+    cache_client: CacheClient | None = None
+    if not args.dry_run:
+        try:
+            cache_client = await get_cache_client()
+        except Exception as cache_error:  # pragma: no cover - best effort logging
+            console.print(
+                f"[yellow]Warning: unable to connect to Redis cache ({cache_error}). Proceeding without caching.[/yellow]"
+            )
+            cache_client = None
+
     async with get_session() as session:
         if args.fighter_id:
             # Load specific fighter detail
             detail_path = Path(f"data/processed/fighters/{args.fighter_id}.json")
             success = await load_fighter_detail(
-                session, detail_path, dry_run=args.dry_run
+                session,
+                detail_path,
+                dry_run=args.dry_run,
+                cache=cache_client,
             )
             if success:
                 console.print(f"[green]✓ Loaded fighter {args.fighter_id}[/green]")
@@ -648,7 +758,10 @@ async def main(args: argparse.Namespace) -> None:
                             break
 
                         success = await load_fighter_detail(
-                            session, fighter_file, dry_run=args.dry_run
+                            session,
+                            fighter_file,
+                            dry_run=args.dry_run,
+                            cache=cache_client,
                         )
                         if success:
                             success_count += 1
@@ -656,6 +769,9 @@ async def main(args: argparse.Namespace) -> None:
                     console.print(
                         f"[green]✓ Loaded detailed data for {success_count} fighters[/green]"
                     )
+
+    if cache_client is not None and not args.dry_run:
+        await invalidate_collections(cache_client)
 
     console.print("\n[bold green]Data loading complete![/bold green]")
 

@@ -34,6 +34,7 @@ export type FighterDetail = FighterListItem & {
   grappling: Record<string, string | number | null | undefined>;
   significant_strikes: Record<string, string | number | null | undefined>;
   takedown_stats: Record<string, string | number | null | undefined>;
+  career: Record<string, string | number | null | undefined>;
   fight_history: FightHistoryEntry[];
 };
 
@@ -138,4 +139,20 @@ export interface StatsTrendsResponse {
   trends: TrendSeries[];
   /** ISO timestamp describing when the trend dataset was generated. */
   generated_at?: string;
+}
+
+export interface FighterComparisonEntry {
+  fighter_id: string;
+  name: string;
+  record?: string | null;
+  division?: string | null;
+  striking: Record<string, string | number | null | undefined>;
+  grappling: Record<string, string | number | null | undefined>;
+  significant_strikes: Record<string, string | number | null | undefined>;
+  takedown_stats: Record<string, string | number | null | undefined>;
+  career: Record<string, string | number | null | undefined>;
+}
+
+export interface FighterComparisonResponse {
+  fighters: FighterComparisonEntry[];
 }

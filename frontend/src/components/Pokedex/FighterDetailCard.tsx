@@ -61,6 +61,7 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading }: Pro
       {Object.keys(fighter.grappling).length > 0 && <StatsDisplay title="Grappling" stats={fighter.grappling} />}
       {Object.keys(fighter.significant_strikes).length > 0 && <StatsDisplay title="Significant Strikes" stats={fighter.significant_strikes} />}
       {Object.keys(fighter.takedown_stats).length > 0 && <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />}
+      {Object.keys(fighter.career).length > 0 && <StatsDisplay title="Career" stats={fighter.career} />}
 
       {fighter.fight_history.filter((fight) => fight.event_name !== null).length > 0 && (
         <section>

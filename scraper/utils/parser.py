@@ -126,20 +126,45 @@ def parse_fighter_list_row(row: Selector) -> dict[str, Any] | None:
 
 
 def parse_stat_section(section: Selector) -> dict[str, Any]:
+    """Normalise statistics blocks found on fighter detail pages.
+
+    The UFCStats markup has evolved from <section> + <li> structures to nested
+    <div> blocks containing ``.b-list__box-list-item`` rows. This helper walks
+    any combination of ``li`` or ``div`` rows and extracts the first clean value
+    that does not simply repeat the label text.
+    """
+
     stats: dict[str, Any] = {}
-    for row in section.css("li"):
-        label = clean_text(row.css("i::text").get())
-        if not label:
-            label = clean_text(row.css("span.b-list__info-box-title::text").get())
+    rows = section.css("li, .b-list__box-list-item")
+
+    for row in rows:
+        label_candidates = row.css(
+            "i::text, span.b-list__info-box-title::text, p.b-list__info-box-title::text"
+        )
+        label = next(
+            (clean_text(text) for text in label_candidates.getall() if clean_text(text)),
+            None,
+        )
         if not label:
             continue
-        value_candidates: Iterable[str | None] = row.css("strong::text").getall() or row.css(
-            "span::text"
-        ).getall()
-        if not value_candidates:
-            value_candidates = row.css("::text").getall()
-        value = next((clean_text(val) for val in value_candidates if clean_text(val)), None)
-        stats[slugify(label.replace(":", ""))] = value
+
+        normalized_label = label.replace(":", "")
+
+        value = None
+        for raw_value in row.css("strong::text, span::text, ::text").getall():
+            cleaned = clean_text(raw_value)
+            if not cleaned:
+                continue
+            if cleaned == label or cleaned == normalized_label:
+                continue
+            value = cleaned
+            break
+
+        if value is None:
+            continue
+
+        stats[slugify(normalized_label)] = value
+
     return stats
 
 
@@ -284,10 +309,25 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         )
         bio_map[label.upper()] = value
 
-    stat_sections = {}
-    for section in selector.css("section.b-list__info-box"):
-        title = clean_text(section.css("h2::text, h3::text").get()) or "stats"
-        stat_sections[slugify(title)] = parse_stat_section(section)
+    stat_sections: dict[str, dict[str, Any]] = {}
+    stat_containers = selector.css("section.b-list__info-box, div.b-list__info-box")
+
+    for section in stat_containers:
+        title = (
+            clean_text(
+                section.css(
+                    "h2::text, h3::text, i.b-list__box-item-title::text"
+                ).get()
+            )
+            or "stats"
+        )
+        title = title.replace(":", "")
+        parsed_section = parse_stat_section(section)
+        if not parsed_section:
+            continue
+        key = slugify(title)
+        existing = stat_sections.setdefault(key, {})
+        existing.update(parsed_section)
 
     fight_history_table = selector.css("table.b-fight-details__table")
     fight_history = parse_fight_history_rows(fighter_id, fight_history_table) if fight_history_table else []

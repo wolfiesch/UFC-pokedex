@@ -10,7 +10,17 @@ import { getRandomFighter } from "@/lib/api";
 
 export default function HomePage() {
   const router = useRouter();
-  const { fighters, isLoading, error, total, offset, hasMore, nextPage, prevPage } =
+  const {
+    fighters,
+    isLoading,
+    error,
+    total,
+    offset,
+    hasMore,
+    nextPage,
+    prevPage,
+    limit,
+  } =
     useFighters();
   const { stanceFilter, setStanceFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
@@ -51,6 +61,7 @@ export default function HomePage() {
         error={error}
         total={total}
         offset={offset}
+        limit={limit}
         hasMore={hasMore}
         onNextPage={nextPage}
         onPrevPage={prevPage}

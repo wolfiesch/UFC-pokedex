@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMetricLabel } from "@/lib/format";
+
 type StatsDisplayProps = {
   title: string;
   stats: Record<string, string | number | null | undefined>;
@@ -12,7 +14,7 @@ export default function StatsDisplay({ title, stats }: StatsDisplayProps) {
       <dl className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-300 sm:grid-cols-3">
         {Object.entries(stats).map(([key, value]) => (
           <div key={key}>
-            <dt className="font-semibold text-slate-100">{key.replace(/_/g, " ")}</dt>
+            <dt className="font-semibold text-slate-100">{formatMetricLabel(key)}</dt>
             <dd>{value ?? "—"}</dd>
           </div>
         ))}

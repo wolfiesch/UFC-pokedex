@@ -1,15 +1,28 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.cache import (
+    CacheClient,
+    comparison_key,
+    detail_key,
+    get_cache_client,
+    list_key,
+    search_key,
+)
 from backend.db.connection import get_db
 from backend.db.repositories import PostgreSQLFighterRepository
-from backend.schemas.fighter import FighterDetail, FighterListItem
+from backend.schemas.fighter import (
+    FighterComparisonEntry,
+    FighterDetail,
+    FighterListItem,
+    PaginatedFightersResponse,
+)
 from backend.schemas.stats import (
     LeaderboardsResponse,
     StatsSummaryResponse,
@@ -49,6 +62,11 @@ class FighterRepositoryProtocol:
         streak_limit: int,
     ) -> TrendsResponse:
         """Summarize longitudinal streaks and fight duration trends within the roster."""
+
+    async def get_fighters_for_comparison(
+        self, fighter_ids: Sequence[str]
+    ) -> list[FighterComparisonEntry]:
+        """Return stat snapshots for the provided fighter identifiers."""
 
 
 class InMemoryFighterRepository(FighterRepositoryProtocol):
@@ -109,25 +127,129 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
 
         return TrendsResponse()
 
+    async def get_fighters_for_comparison(
+        self, fighter_ids: Sequence[str]
+    ) -> list[FighterComparisonEntry]:
+        fighters: list[FighterComparisonEntry] = []
+        for fighter_id in fighter_ids:
+            detail = self._fighters.get(fighter_id)
+            if detail is None:
+                continue
+            fighters.append(
+                FighterComparisonEntry(
+                    fighter_id=detail.fighter_id,
+                    name=detail.name,
+                    record=detail.record,
+                    division=detail.division,
+                    striking=detail.striking,
+                    grappling=detail.grappling,
+                    significant_strikes=detail.significant_strikes,
+                    takedown_stats=detail.takedown_stats,
+                    career={},
+                )
+            )
+        return fighters
+
+    async def search_fighters(
+        self,
+        query: str | None = None,
+        stance: str | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[list[FighterListItem], int]:
+        fighters = list(self._fighters.values())
+        query_lower = query.lower() if query else None
+        stance_lower = stance.lower() if stance else None
+        filtered: list[FighterListItem] = []
+        for fighter in fighters:
+            name_match = True
+            if query_lower:
+                name_parts = [fighter.name, fighter.nickname or ""]
+                haystack = " ".join(part for part in name_parts if part).lower()
+                name_match = query_lower in haystack
+            stance_match = True
+            if stance_lower:
+                fighter_stance = (fighter.stance or "").lower()
+                stance_match = fighter_stance == stance_lower
+            if name_match and stance_match:
+                filtered.append(fighter)
+
+        total = len(filtered)
+        start = offset or 0
+        if start < 0:
+            start = 0
+        end = start + limit if limit is not None and limit > 0 else total
+        return filtered[start:end], total
+
 
 class FighterService:
     def __init__(
-        self, repository: FighterRepositoryProtocol | PostgreSQLFighterRepository
+        self,
+        repository: FighterRepositoryProtocol | PostgreSQLFighterRepository,
+        cache: CacheClient | None = None,
     ) -> None:
         self._repository = repository
+        self._cache = cache
+
+    async def _cache_get(self, key: str) -> Any:
+        if self._cache is None:
+            return None
+        return await self._cache.get_json(key)
+
+    async def _cache_set(self, key: str, value: Any, ttl: int | None = None) -> None:
+        if self._cache is None:
+            return
+        await self._cache.set_json(key, value, ttl=ttl)
 
     async def list_fighters(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[FighterListItem]:
         """Return paginated fighter summaries from the backing repository."""
 
+        use_cache = (
+            self._cache is not None
+            and limit is not None
+            and offset is not None
+            and limit >= 0
+            and offset >= 0
+        )
+        cache_key = list_key(limit, offset) if use_cache else None
+
+        if use_cache and cache_key is not None:
+            cached = await self._cache_get(cache_key)
+            if isinstance(cached, list):
+                try:
+                    return [FighterListItem.model_validate(item) for item in cached]
+                except Exception:  # pragma: no cover - defensive fallback
+                    pass
+
         fighters = await self._repository.list_fighters(limit=limit, offset=offset)
-        return list(fighters)
+        fighter_list = list(fighters)
+
+        if use_cache and cache_key is not None:
+            await self._cache_set(
+                cache_key,
+                [fighter.model_dump() for fighter in fighter_list],
+                ttl=300,
+            )
+
+        return fighter_list
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Fetch a single fighter profile including detailed statistics."""
+        cache_key = detail_key(fighter_id)
+        cached = await self._cache_get(cache_key)
+        if isinstance(cached, dict):
+            try:
+                return FighterDetail.model_validate(cached)
+            except Exception:  # pragma: no cover - defensive fallback
+                pass
 
-        return await self._repository.get_fighter(fighter_id)
+        fighter = await self._repository.get_fighter(fighter_id)
+        if fighter:
+            await self._cache_set(cache_key, fighter.model_dump(), ttl=600)
+        return fighter
 
     async def get_stats_summary(self) -> StatsSummaryResponse:
         """Expose system-level counts such as fighters indexed for dashboards."""
@@ -158,21 +280,54 @@ class FighterService:
             return random.choice(fighter_list)
 
     async def search_fighters(
-        self, query: str | None = None, stance: str | None = None
-    ) -> list[FighterListItem]:
-        """Search fighters by name or filter by stance."""
-        if hasattr(self._repository, "search_fighters"):
-            fighters = await self._repository.search_fighters(
-                query=query, stance=stance
+        self,
+        query: str | None = None,
+        stance: str | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> PaginatedFightersResponse:
+        """Search fighters by name or stance with pagination."""
+
+        resolved_limit = limit if limit is not None and limit > 0 else 20
+        resolved_offset = offset if offset is not None and offset >= 0 else 0
+
+        normalized_query = (query or "").strip()
+        normalized_stance = (stance or "").strip()
+
+        use_cache = self._cache is not None and (normalized_query or normalized_stance)
+        cache_key = (
+            search_key(
+                normalized_query,
+                normalized_stance if normalized_stance else None,
+                resolved_limit,
+                resolved_offset,
             )
-            return list(fighters)
+            if use_cache
+            else None
+        )
+
+        if cache_key is not None:
+            cached = await self._cache_get(cache_key)
+            if isinstance(cached, dict):
+                try:
+                    return PaginatedFightersResponse.model_validate(cached)
+                except Exception:  # pragma: no cover
+                    pass
+
+        if hasattr(self._repository, "search_fighters"):
+            fighters, total = await self._repository.search_fighters(
+                query=query,
+                stance=stance,
+                limit=resolved_limit,
+                offset=resolved_offset,
+            )
         else:
-            # Fallback for repositories that don't support search natively.
-            fighters = await self._repository.list_fighters()
-            query_lower = query.lower() if query else None
-            stance_lower = stance.lower() if stance else None
+            fighters_iterable = await self._repository.list_fighters()
+            query_lower = normalized_query.lower() if normalized_query else None
+            stance_lower = normalized_stance.lower() if normalized_stance else None
             filtered: list[FighterListItem] = []
-            for fighter in fighters:
+            for fighter in fighters_iterable:
                 name_match = True
                 if query_lower:
                     name_parts = [
@@ -187,7 +342,71 @@ class FighterService:
                     stance_match = fighter_stance == stance_lower
                 if name_match and stance_match:
                     filtered.append(fighter)
-            return filtered
+
+            total = len(filtered)
+            end_index = resolved_offset + resolved_limit
+            fighters = filtered[resolved_offset:end_index]
+
+        has_more = resolved_offset + len(fighters) < total
+        response = PaginatedFightersResponse(
+            fighters=fighters,
+            total=total,
+            limit=resolved_limit,
+            offset=resolved_offset,
+            has_more=has_more,
+        )
+
+        if cache_key is not None:
+            await self._cache_set(cache_key, response.model_dump(), ttl=300)
+
+        return response
+
+    async def compare_fighters(
+        self, fighter_ids: Sequence[str]
+    ) -> list[FighterComparisonEntry]:
+        """Retrieve comparable stat bundles for the requested fighters."""
+
+        use_cache = self._cache is not None and len(fighter_ids) >= 2
+        cache_key = comparison_key(fighter_ids) if use_cache else None
+
+        if cache_key is not None:
+            cached = await self._cache_get(cache_key)
+            if isinstance(cached, list):
+                try:
+                    return [FighterComparisonEntry.model_validate(item) for item in cached]
+                except Exception:  # pragma: no cover
+                    pass
+
+        if hasattr(self._repository, "get_fighters_for_comparison"):
+            fighters = await self._repository.get_fighters_for_comparison(fighter_ids)
+        else:
+            fighters = []
+            for fighter_id in fighter_ids:
+                detail = await self._repository.get_fighter(fighter_id)
+                if detail is None:
+                    continue
+                fighters.append(
+                    FighterComparisonEntry(
+                        fighter_id=detail.fighter_id,
+                        name=detail.name,
+                        record=detail.record,
+                        division=detail.division,
+                        striking=detail.striking,
+                        grappling=detail.grappling,
+                        significant_strikes=detail.significant_strikes,
+                        takedown_stats=detail.takedown_stats,
+                        career=getattr(detail, "career", {}),
+                    )
+                )
+
+        if cache_key is not None and fighters:
+            await self._cache_set(
+                cache_key,
+                [entry.model_dump() for entry in fighters],
+                ttl=600,
+            )
+
+        return fighters
 
     async def get_leaderboards(
         self,
@@ -226,7 +445,11 @@ class FighterService:
         )
 
 
-def get_fighter_service(session: AsyncSession = Depends(get_db)) -> FighterService:
-    """FastAPI dependency that provides FighterService with PostgreSQL repository."""
+async def get_fighter_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheClient = Depends(get_cache_client),
+) -> FighterService:
+    """FastAPI dependency that wires the repository and cache layer."""
+
     repository = PostgreSQLFighterRepository(session)
-    return FighterService(repository)
+    return FighterService(repository, cache=cache)

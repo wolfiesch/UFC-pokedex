@@ -66,41 +66,110 @@ def test_parse_fighter_detail_page():
           <li><i>DOB:</i><span>Jun 15, 1990</span></li>
           <li><i>AGE:</i><span>33</span></li>
         </ul>
-        <section class="b-list__info-box">
-          <h2>Striking</h2>
-          <ul>
-            <li><i>SLpM:</i><strong>5.35</strong></li>
-            <li><i>Str. Acc.:</i><strong>50%</strong></li>
-          </ul>
-        </section>
-        <section class="b-list__info-box">
-          <h2>Grappling</h2>
-          <ul>
-            <li><i>TDAvg.:</i><strong>2.00</strong></li>
-            <li><i>TD Acc.:</i><strong>40%</strong></li>
-          </ul>
-        </section>
+        <div class="b-list__info-box b-list__info-box_style_middle-width js-guide clearfix">
+          <div class="b-list__info-box-left clearfix">
+            <div class="b-list__info-box-left">
+              <i class="b-list__box-item-title">
+                Career statistics:
+              </i>
+              <ul class="b-list__box-list b-list__box-list_margin-top">
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    SLpM:
+                  </i>
+                  5.35
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    Str. Acc.:
+                  </i>
+                  50%
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    SApM:
+                  </i>
+                  3.10
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    Str. Def.:
+                  </i>
+                  55%
+                </li>
+              </ul>
+            </div>
+            <div class="b-list__info-box-right b-list__info-box_style-margin-right">
+              <ul class="b-list__box-list b-list__box-list_margin-top">
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    TD Avg.:
+                  </i>
+                  2.00
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    TD Acc.:
+                  </i>
+                  40%
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    TD Def.:
+                  </i>
+                  75%
+                </li>
+                <li class="b-list__box-list-item b-list__box-list-item_type_block">
+                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                    Sub. Avg.:
+                  </i>
+                  1.2
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <table class="b-fight-details__table">
           <tbody>
             <tr class="b-fight-details__table-row">
               <td>
-                W
-                <a href="http://ufcstats.com/fight-details/99999999-aaaa-bbbb-cccc-dddddddddddd">Details</a>
+                <a href="http://ufcstats.com/fight-details/99999999-aaaa-bbbb-cccc-dddddddddddd">W</a>
               </td>
               <td>
-                <a href="http://ufcstats.com/fighter-details/bbbbbbbb-cccc-dddd-eeee-ffffffffffff">Jane Smith</a>
+                <p><a href="http://ufcstats.com/fighter-details/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee">John Doe</a></p>
+                <p><a href="http://ufcstats.com/fighter-details/bbbbbbbb-cccc-dddd-eeee-ffffffffffff">Jane Smith</a></p>
               </td>
-              <td>50 of 100</td>
-              <td>50%</td>
-              <td>60 of 120</td>
-              <td>2 of 5</td>
               <td>
-                <a href="http://ufcstats.com/event-details/eeeeeeee-ffff-gggg-hhhh-iiiiiiiiiiii">UFC 300</a>
-                <span>Apr 13, 2024</span>
+                <p>1</p>
+                <p>0</p>
               </td>
-              <td>KO/TKO</td>
-              <td>2</td>
-              <td>03:15</td>
+              <td>
+                <p>55</p>
+                <p>40</p>
+              </td>
+              <td>
+                <p>3</p>
+                <p>1</p>
+              </td>
+              <td>
+                <p>1</p>
+                <p>0</p>
+              </td>
+              <td>
+                <p>
+                  <a href="http://ufcstats.com/event-details/eeeeeeee-ffff-gggg-hhhh-iiiiiiiiiiii">UFC 300</a>
+                </p>
+                <p>Apr 13, 2024</p>
+              </td>
+              <td>
+                <p>KO/TKO</p>
+              </td>
+              <td>
+                <p>2</p>
+              </td>
+              <td>
+                <p>03:15</p>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -127,7 +196,9 @@ def test_parse_fighter_detail_page():
     assert detail["age"] == 33
     assert detail["division"] == "Middleweight"
     assert detail["striking"]["slpm"] == "5.35"
-    assert detail["grappling"]["tdavg"] == "2.00"
+    assert detail["striking"]["str_acc"] == "50%"
+    assert detail["grappling"]["td_avg"] == "2.00"
+    assert detail["grappling"]["td_acc"] == "40%"
     fight = detail["fight_history"][0]
     assert fight["fight_id"] == "99999999-aaaa-bbbb-cccc-dddddddddddd"
     assert fight["opponent_id"] == "bbbbbbbb-cccc-dddd-eeee-ffffffffffff"
@@ -137,10 +208,10 @@ def test_parse_fighter_detail_page():
     assert fight["method"] == "KO/TKO"
     assert fight["round"] == 2
     assert fight["time"] == "03:15"
-    assert fight["stats"]["sig_strikes"] == "50 of 100"
-    assert fight["stats"]["sig_strikes_pct"] == "50%"
-    assert fight["stats"]["total_strikes"] == "60 of 120"
-    assert fight["stats"]["takedowns"] == "2 of 5"
+    assert fight["stats"]["knockdowns"] == "1"
+    assert fight["stats"]["total_strikes"] == "55"
+    assert fight["stats"]["takedowns"] == "3"
+    assert fight["stats"]["submissions"] == "1"
 
 
 def test_parse_fighter_detail_page_prefers_scraped_division():
@@ -180,10 +251,10 @@ def test_parse_fight_history_stats_handles_missing_values():
             <tr class="b-fight-details__table-row">
               <td></td>
               <td></td>
-              <td>--</td>
-              <td>--</td>
-              <td>--</td>
-              <td>--</td>
+              <td><p>--</p><p>--</p></td>
+              <td><p>--</p><p>--</p></td>
+              <td><p>--</p><p>--</p></td>
+              <td><p>--</p><p>--</p></td>
               <td></td>
               <td></td>
               <td></td>
@@ -203,7 +274,7 @@ def test_parse_fight_history_stats_handles_missing_values():
     detail = parser.parse_fighter_detail_page(response)
 
     stats = detail["fight_history"][0]["stats"]
-    assert stats["sig_strikes"] is None
-    assert stats["sig_strikes_pct"] is None
+    assert stats["knockdowns"] is None
     assert stats["total_strikes"] is None
     assert stats["takedowns"] is None
+    assert stats["submissions"] is None

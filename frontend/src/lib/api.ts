@@ -1,5 +1,8 @@
 import type {
+  FighterComparisonEntry,
+  FighterComparisonResponse,
   FighterListItem,
+  PaginatedFightersResponse,
   LeaderboardDefinition,
   LeaderboardEntry,
   StatsLeaderboardsResponse,
@@ -18,6 +21,67 @@ function buildRequestInit(init?: RequestInit): RequestInit {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeFighterListItemPayload(item: unknown): FighterListItem | null {
+  if (!isRecord(item)) {
+    return null;
+  }
+  const fighterId = typeof item.fighter_id === "string" ? item.fighter_id : null;
+  const detailUrl = typeof item.detail_url === "string" ? item.detail_url : null;
+  const name = typeof item.name === "string" ? item.name : null;
+  if (!fighterId || !detailUrl || !name) {
+    return null;
+  }
+  return {
+    fighter_id: fighterId,
+    detail_url: detailUrl,
+    name,
+    nickname: typeof item.nickname === "string" ? item.nickname : null,
+    division: typeof item.division === "string" ? item.division : null,
+    height: typeof item.height === "string" ? item.height : null,
+    weight: typeof item.weight === "string" ? item.weight : null,
+    reach: typeof item.reach === "string" ? item.reach : null,
+    stance: typeof item.stance === "string" ? item.stance : null,
+    dob: typeof item.dob === "string" ? item.dob : null,
+  };
+}
+
+function normalizePaginatedFightersResponse(
+  payload: unknown,
+  fallbackLimit: number,
+  fallbackOffset: number
+): PaginatedFightersResponse {
+  if (!isRecord(payload)) {
+    return {
+      fighters: [],
+      total: 0,
+      limit: fallbackLimit,
+      offset: fallbackOffset,
+      has_more: false,
+    };
+  }
+
+  const fightersSource = Array.isArray(payload.fighters) ? payload.fighters : [];
+  const fighters = fightersSource
+    .map((item) => normalizeFighterListItemPayload(item))
+    .filter((item): item is FighterListItem => item !== null);
+
+  const total = typeof payload.total === "number" ? payload.total : fighters.length;
+  const limit = typeof payload.limit === "number" ? payload.limit : fallbackLimit;
+  const offset = typeof payload.offset === "number" ? payload.offset : fallbackOffset;
+  const hasMore =
+    typeof payload.has_more === "boolean"
+      ? payload.has_more
+      : offset + fighters.length < total;
+
+  return {
+    fighters,
+    total,
+    limit,
+    offset,
+    has_more: hasMore,
+  };
 }
 
 function toTitleCase(id: string): string {
@@ -160,6 +224,39 @@ function normalizeTrends(payload: unknown): StatsTrendsResponse {
   return { trends, generated_at: generatedAt };
 }
 
+function normalizeStatsCategory(
+  category: unknown
+): Record<string, string | number> {
+  if (!isRecord(category)) {
+    return {};
+  }
+  const stats: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(category)) {
+    if (typeof value === "string" || typeof value === "number") {
+      stats[key] = value;
+    }
+  }
+  return stats;
+}
+
+function normalizeComparisonEntry(entry: unknown): FighterComparisonEntry | null {
+  if (!isRecord(entry) || typeof entry.fighter_id !== "string" || typeof entry.name !== "string") {
+    return null;
+  }
+
+  return {
+    fighter_id: entry.fighter_id,
+    name: entry.name,
+    record: typeof entry.record === "string" ? entry.record : null,
+    division: typeof entry.division === "string" ? entry.division : null,
+    striking: normalizeStatsCategory(entry.striking),
+    grappling: normalizeStatsCategory(entry.grappling),
+    significant_strikes: normalizeStatsCategory(entry.significant_strikes),
+    takedown_stats: normalizeStatsCategory(entry.takedown_stats),
+    career: normalizeStatsCategory(entry.career),
+  };
+}
+
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 }
@@ -184,7 +281,33 @@ export async function getFighters(
   if (!response.ok) {
     throw new Error("Failed to fetch fighters");
   }
-  return response.json();
+  const payload = await response.json();
+  return normalizePaginatedFightersResponse(payload, limit, offset);
+}
+
+export async function searchFighters(
+  query: string,
+  stance: string | null = null,
+  limit = 20,
+  offset = 0
+): Promise<PaginatedFightersResponse> {
+  const trimmed = query.trim();
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (trimmed.length > 0) {
+    params.set("q", trimmed);
+  }
+  if (stance && stance.length > 0) {
+    params.set("stance", stance);
+  }
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+  const response = await fetch(`${apiUrl}/search/?${params.toString()}`, buildRequestInit());
+  if (!response.ok) {
+    throw new Error("Failed to search fighters");
+  }
+  const payload = await response.json();
+  return normalizePaginatedFightersResponse(payload, limit, offset);
 }
 
 export async function getRandomFighter(): Promise<FighterListItem> {
@@ -241,4 +364,40 @@ export async function getStatsTrends(init?: RequestInit): Promise<StatsTrendsRes
   }
   const payload = await response.json();
   return normalizeTrends(payload);
+}
+
+export async function compareFighters(
+  fighterIds: string[]
+): Promise<FighterComparisonResponse> {
+  if (fighterIds.length < 2) {
+    throw new Error("Select at least two fighters to compare.");
+  }
+
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  fighterIds.forEach((id) => {
+    if (id) {
+      params.append("fighter_ids", id);
+    }
+  });
+
+  const response = await fetch(
+    `${apiUrl}/fighters/compare?${params.toString()}`,
+    buildRequestInit()
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch fighter comparison data");
+  }
+
+  const payload = await response.json();
+  if (!isRecord(payload)) {
+    return { fighters: [] };
+  }
+
+  const fightersSource = Array.isArray(payload.fighters) ? payload.fighters : [];
+  const fighters = fightersSource
+    .map((entry) => normalizeComparisonEntry(entry))
+    .filter((entry): entry is FighterComparisonEntry => entry !== null);
+
+  return { fighters };
 }

@@ -42,6 +42,7 @@ class FighterDetail(FighterListItem):
     grappling: dict[str, Any] = Field(default_factory=dict)
     significant_strikes: dict[str, Any] = Field(default_factory=dict)
     takedown_stats: dict[str, Any] = Field(default_factory=dict)
+    career: dict[str, Any] = Field(default_factory=dict)
     fight_history: list[FightHistoryEntry] = Field(default_factory=list)
 
 
@@ -51,3 +52,19 @@ class PaginatedFightersResponse(BaseModel):
     limit: int
     offset: int
     has_more: bool
+
+
+class FighterComparisonEntry(BaseModel):
+    fighter_id: str
+    name: str
+    record: str | None = None
+    division: str | None = None
+    striking: dict[str, Any] = Field(default_factory=dict)
+    grappling: dict[str, Any] = Field(default_factory=dict)
+    significant_strikes: dict[str, Any] = Field(default_factory=dict)
+    takedown_stats: dict[str, Any] = Field(default_factory=dict)
+    career: dict[str, Any] = Field(default_factory=dict)
+
+
+class FighterComparisonResponse(BaseModel):
+    fighters: list[FighterComparisonEntry] = Field(default_factory=list)

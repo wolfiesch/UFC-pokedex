@@ -44,10 +44,9 @@ def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
             "round": 3,
             "time": "04:30",
             "stats": {
-                "sig_strikes": "30 of 60",
-                "sig_strikes_pct": "50%",
-                "total_strikes": "50 of 100",
-                "takedowns": "3 of 6",
+                "sig_strikes": "45",
+                "total_strikes": "80",
+                "takedowns": "3",
                 "knockdowns": "0",
                 "submissions": "2",
             },
@@ -58,10 +57,9 @@ def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
             "round": 2,
             "time": "03:00",
             "stats": {
-                "sig_strikes": "20 of 40",
-                "sig_strikes_pct": "50%",
-                "total_strikes": "60 of 120",
-                "takedowns": "2 of 4",
+                "sig_strikes": "35",
+                "total_strikes": "70",
+                "takedowns": "2",
                 "knockdowns": "1",
                 "submissions": "1",
             },
@@ -69,33 +67,132 @@ def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
     ]
 
 
+@pytest.fixture
+def summary_stats_payload() -> dict[str, dict[str, Any]]:
+    return {
+        "career_statistics": {
+            "slpm": "5.35",
+            "str_acc": "52%",
+            "sapm": "3.10",
+            "str_def": "55%",
+            "td_avg": "2.00",
+            "td_acc": "44%",
+            "td_def": "78%",
+            "sub_avg": "1.2",
+        }
+    }
+
+
 def test_calculate_fighter_stats_averages(
     fight_history_with_rich_metrics: list[dict[str, Any]],
+    summary_stats_payload: dict[str, dict[str, Any]],
 ) -> None:
-    """Aggregate averages should normalise landed/attempted data and derived accuracy."""
+    """Aggregate averages should normalise fight data and merge scraper summaries."""
 
-    aggregated = calculate_fighter_stats(fight_history_with_rich_metrics)
+    aggregated = calculate_fighter_stats(
+        fight_history_with_rich_metrics, summary_stats=summary_stats_payload
+    )
 
-    assert aggregated["significant_strikes"]["avg_landed"] == "25"
-    assert aggregated["significant_strikes"]["avg_attempted"] == "50"
-    assert aggregated["significant_strikes"]["accuracy_pct"] == "50%"
+    significant = aggregated["significant_strikes"]
+    assert significant["sig_strikes_landed_per_min"] == "5.35"
+    assert significant["sig_strikes_absorbed_per_min"] == "3.10"
+    assert significant["sig_strikes_accuracy_pct"] == "52%"
+    assert significant["sig_strikes_defense_pct"] == "55%"
+    assert significant["sig_strikes_landed_avg"] == "40"
 
-    assert aggregated["striking"]["total_strikes_landed_avg"] == "55"
-    assert aggregated["striking"]["total_strikes_attempted_avg"] == "110"
-    assert aggregated["striking"]["total_strikes_accuracy_pct"] == "50%"
-    assert aggregated["striking"]["avg_knockdowns"] == "0.5"
+    striking = aggregated["striking"]
+    assert striking["total_strikes_landed_avg"] == "75"
+    assert striking["avg_knockdowns"] == "0.5"
+    assert striking["sig_strikes_accuracy_pct"] == "52%"
 
-    assert aggregated["takedown_stats"]["takedowns_completed_avg"] == "2.5"
-    assert aggregated["takedown_stats"]["takedowns_attempted_avg"] == "5"
-    assert aggregated["takedown_stats"]["takedown_accuracy_pct"] == "50%"
+    takedowns = aggregated["takedown_stats"]
+    assert takedowns["takedowns_completed_avg"] == "2.5"
+    assert takedowns["takedown_accuracy_pct"] == "44%"
+    assert takedowns["takedown_defense_pct"] == "78%"
 
-    assert aggregated["grappling"]["takedowns_avg"] == "2.5"
-    assert aggregated["grappling"]["takedown_accuracy_pct"] == "50%"
-    assert aggregated["grappling"]["avg_submissions"] == "1.5"
-    assert aggregated["grappling"]["total_submissions"] == "3"
+    grappling = aggregated["grappling"]
+    assert grappling["takedowns_avg"] == "2.5"
+    assert grappling["takedown_accuracy_pct"] == "44%"
+    assert grappling["takedown_defense_pct"] == "78%"
+    assert grappling["avg_submissions"] == "1.5"
+    assert grappling["total_submissions"] == "3"
 
-    assert aggregated["career"]["avg_fight_duration_seconds"] == "675"
-    assert aggregated["career"]["longest_win_streak"] == "2"
+    career = aggregated["career"]
+    assert career["avg_fight_duration_seconds"] == "675"
+    assert career["longest_win_streak"] == "2"
+
+
+@pytest.mark.asyncio
+async def test_stats_summary_includes_derived_metrics(session: AsyncSession) -> None:
+    fighter_one = Fighter(id="fighter-one", name="Fighter One")
+    fighter_two = Fighter(id="fighter-two", name="Fighter Two")
+    session.add_all([fighter_one, fighter_two])
+    await session.flush()
+
+    await session.execute(
+        insert(fighter_stats),
+        [
+            {
+                "fighter_id": "fighter-one",
+                "category": "significant_strikes",
+                "metric": "sig_strikes_accuracy_pct",
+                "value": "50%",
+            },
+            {
+                "fighter_id": "fighter-two",
+                "category": "significant_strikes",
+                "metric": "sig_strikes_accuracy_pct",
+                "value": "60%",
+            },
+            {
+                "fighter_id": "fighter-one",
+                "category": "takedown_stats",
+                "metric": "takedown_accuracy_pct",
+                "value": "40%",
+            },
+            {
+                "fighter_id": "fighter-two",
+                "category": "takedown_stats",
+                "metric": "takedown_accuracy_pct",
+                "value": "50%",
+            },
+            {
+                "fighter_id": "fighter-one",
+                "category": "grappling",
+                "metric": "avg_submissions",
+                "value": "1.0",
+            },
+            {
+                "fighter_id": "fighter-two",
+                "category": "grappling",
+                "metric": "avg_submissions",
+                "value": "2.0",
+            },
+            {
+                "fighter_id": "fighter-one",
+                "category": "career",
+                "metric": "avg_fight_duration_seconds",
+                "value": "600",
+            },
+            {
+                "fighter_id": "fighter-two",
+                "category": "career",
+                "metric": "avg_fight_duration_seconds",
+                "value": "300",
+            },
+        ],
+    )
+    await session.commit()
+
+    repo = PostgreSQLFighterRepository(session)
+    summary = await repo.stats_summary()
+
+    metrics = {metric.id: metric.value for metric in summary.metrics}
+    assert metrics["fighters_indexed"] == 2
+    assert metrics["avg_sig_strikes_accuracy_pct"] == pytest.approx(55.0, rel=1e-3)
+    assert metrics["avg_takedown_accuracy_pct"] == pytest.approx(45.0, rel=1e-3)
+    assert metrics["avg_submission_attempts"] == pytest.approx(1.5, rel=1e-3)
+    assert metrics["avg_fight_duration_minutes"] == pytest.approx(7.5, rel=1e-3)
 
 
 def test_calculate_fighter_stats_handles_missing_values() -> None:
@@ -154,20 +251,20 @@ async def test_get_fighter_returns_aggregated_stats(session: AsyncSession) -> No
             {
                 "fighter_id": fighter.id,
                 "category": "significant_strikes",
-                "metric": "avg_landed",
-                "value": "25",
+                "metric": "sig_strikes_accuracy_pct",
+                "value": "52%",
             },
             {
                 "fighter_id": fighter.id,
                 "category": "striking",
-                "metric": "total_strikes_accuracy_pct",
-                "value": "45%",
+                "metric": "total_strikes_landed_avg",
+                "value": "75",
             },
             {
                 "fighter_id": fighter.id,
                 "category": "grappling",
-                "metric": "takedowns_avg",
-                "value": "2.5",
+                "metric": "avg_submissions",
+                "value": "1.5",
             },
         ],
     )
@@ -177,6 +274,73 @@ async def test_get_fighter_returns_aggregated_stats(session: AsyncSession) -> No
     detail = await repo.get_fighter(fighter.id)
 
     assert detail is not None
-    assert detail.significant_strikes["avg_landed"] == "25"
-    assert detail.striking["total_strikes_accuracy_pct"] == "45%"
-    assert detail.grappling["takedowns_avg"] == "2.5"
+    assert detail.significant_strikes["sig_strikes_accuracy_pct"] == "52%"
+    assert detail.striking["total_strikes_landed_avg"] == "75"
+    assert detail.grappling["avg_submissions"] == "1.5"
+
+
+@pytest.mark.asyncio
+async def test_compare_fighters_returns_stats(session: AsyncSession) -> None:
+    first = Fighter(id="alpha", name="Alpha", record="10-2-0", division="Lightweight")
+    second = Fighter(id="bravo", name="Bravo", record="8-1-0", division="Lightweight")
+    session.add_all([first, second])
+    await session.flush()
+
+    await session.execute(
+        insert(fighter_stats),
+        [
+            {
+                "fighter_id": "alpha",
+                "category": "significant_strikes",
+                "metric": "sig_strikes_accuracy_pct",
+                "value": "55%",
+            },
+            {
+                "fighter_id": "bravo",
+                "category": "significant_strikes",
+                "metric": "sig_strikes_accuracy_pct",
+                "value": "60%",
+            },
+            {
+                "fighter_id": "alpha",
+                "category": "grappling",
+                "metric": "avg_submissions",
+                "value": "1.0",
+            },
+            {
+                "fighter_id": "bravo",
+                "category": "grappling",
+                "metric": "avg_submissions",
+                "value": "1.5",
+            },
+        ],
+    )
+    await session.commit()
+
+    repo = PostgreSQLFighterRepository(session)
+    comparison = await repo.get_fighters_for_comparison(["alpha", "bravo"])
+
+    assert [entry.fighter_id for entry in comparison] == ["alpha", "bravo"]
+    assert comparison[0].significant_strikes["sig_strikes_accuracy_pct"] == "55%"
+    assert comparison[1].grappling["avg_submissions"] == "1.5"
+
+
+@pytest.mark.asyncio
+async def test_search_fighters_supports_pagination(session: AsyncSession) -> None:
+    fighters = [
+        Fighter(id="alpha", name="Alpha Fighter"),
+        Fighter(id="albert", name="Albert Champion"),
+        Fighter(id="bravo", name="Bravo Contender"),
+    ]
+    session.add_all(fighters)
+    await session.flush()
+
+    repo = PostgreSQLFighterRepository(session)
+    page_one, total = await repo.search_fighters(query="Al", limit=1, offset=0)
+    page_two, _ = await repo.search_fighters(query="Al", limit=1, offset=1)
+
+    assert total == 2
+    assert len(page_one) == 1
+    assert len(page_two) == 1
+    assert page_one[0].name.startswith("Alpha")
+    assert page_two[0].name.startswith("Albert")

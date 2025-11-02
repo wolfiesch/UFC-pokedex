@@ -10,6 +10,7 @@ type Props = {
   // Pagination props
   total?: number;
   offset?: number;
+  limit?: number;
   hasMore?: boolean;
   onNextPage?: () => void;
   onPrevPage?: () => void;
@@ -21,6 +22,7 @@ export default function FighterGrid({
   error,
   total = 0,
   offset = 0,
+  limit = 20,
   hasMore = false,
   onNextPage,
   onPrevPage,
@@ -42,8 +44,9 @@ export default function FighterGrid({
   }
 
   const showPagination = onNextPage && onPrevPage && total > 0;
-  const currentPage = Math.floor(offset / 20) + 1;
-  const totalPages = Math.ceil(total / 20);
+  const pageSize = limit > 0 ? limit : 20;
+  const currentPage = Math.floor(offset / pageSize) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div>
