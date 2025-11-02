@@ -408,12 +408,14 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         "striking": (
             stat_sections.get("striking", {})
             or stat_sections.get("strikes", {})
-            or stat_sections.get("career_statistics", {})
+            or stat_sections.get("career_statistics", {}).get("striking", {})
+            or {}
         ),
         "grappling": (
             stat_sections.get("grappling", {})
             or stat_sections.get("grappling_totals", {})
-            or stat_sections.get("career_statistics", {})
+            or stat_sections.get("career_statistics", {}).get("grappling", {})
+            or {}
         ),
         "significant_strikes": stat_sections.get("significant_strikes", {}),
         "takedown_stats": stat_sections.get("takedowns", {})
