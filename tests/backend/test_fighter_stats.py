@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pytest
@@ -11,8 +12,9 @@ pytest_asyncio = pytest.importorskip("pytest_asyncio")
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.db.models import Base, Fighter, fighter_stats
+from backend.db.models import Base, Fight, Fighter, FighterStats, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
+from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (
     calculate_fighter_stats,
     calculate_longest_win_streak,
@@ -277,6 +279,83 @@ async def test_get_fighter_returns_aggregated_stats(session: AsyncSession) -> No
     assert detail.significant_strikes["sig_strikes_accuracy_pct"] == "52%"
     assert detail.striking["total_strikes_landed_avg"] == "75"
     assert detail.grappling["avg_submissions"] == "1.5"
+
+
+@pytest.mark.asyncio
+async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> None:
+    """Ensure upcoming bouts precede past fights sorted by recency."""
+
+    # Create a fighter record to anchor the upcoming and historical fights.
+    fighter: Fighter = Fighter(id="fighter-ordering", name="Ordering Test")
+    session.add_all([fighter, FighterStats(fighter_id=fighter.id)])
+    await session.flush()
+
+    # Define precise event dates to make the intended ordering explicit.
+    upcoming_date: date = date(2025, 1, 1)
+    recent_past_date: date = date(2024, 5, 15)
+    oldest_past_date: date = date(2023, 9, 10)
+
+    # Construct fights with type annotations so ordering expectations are unambiguous for readers.
+    upcoming_fight: Fight = Fight(
+        id="fight-upcoming",
+        fighter_id=fighter.id,
+        opponent_id="opponent-upcoming",
+        opponent_name="Future Opponent",
+        event_name="Future Event",
+        event_date=upcoming_date,
+        result="next",
+        method=None,
+        round=None,
+        time=None,
+        fight_card_url="https://example.com/future",
+    )
+    recent_past_fight: Fight = Fight(
+        id="fight-recent",
+        fighter_id=fighter.id,
+        opponent_id="opponent-recent",
+        opponent_name="Recent Opponent",
+        event_name="Recent Event",
+        event_date=recent_past_date,
+        result="W",
+        method="Decision",
+        round=3,
+        time="05:00",
+        fight_card_url="https://example.com/recent",
+    )
+    oldest_past_fight: Fight = Fight(
+        id="fight-oldest",
+        fighter_id=fighter.id,
+        opponent_id="opponent-oldest",
+        opponent_name="Oldest Opponent",
+        event_name="Oldest Event",
+        event_date=oldest_past_date,
+        result="L",
+        method="Submission",
+        round=1,
+        time="01:30",
+        fight_card_url="https://example.com/oldest",
+    )
+
+    session.add_all([upcoming_fight, recent_past_fight, oldest_past_fight])
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    fighter_detail: FighterDetail | None = await repository.get_fighter(fighter.id)
+
+    assert fighter_detail is not None
+
+    ordered_results: list[tuple[str, date | None]] = [
+        (entry.result, entry.event_date) for entry in fighter_detail.fight_history
+    ]
+
+    expected_order: list[tuple[str, date | None]] = [
+        ("next", upcoming_date),
+        ("W", recent_past_date),
+        ("L", oldest_past_date),
+    ]
+
+    # The repository should report upcoming fights first and sort past results in reverse chronological order.
+    assert ordered_results == expected_order
 
 
 @pytest.mark.asyncio
