@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+
 import StatsDisplay from "@/components/StatsDisplay";
 import { LeaderboardTable, TrendChart } from "@/components/StatsHub";
+import { Badge } from "@/components/ui/badge";
 import {
   getStatsLeaderboards,
   getStatsSummary,
@@ -19,11 +21,6 @@ export const metadata: Metadata = {
     "Explore aggregated UFC fighter insights including KPIs, leaderboards, and historical trends.",
 };
 
-/**
- * Transform the summary response into the object shape expected by the
- * `StatsDisplay` component, mapping human-readable labels to their numeric KPI
- * values.
- */
 function formatSummaryMetrics(summary: StatsSummaryResponse | null) {
   if (!summary || summary.metrics.length === 0) {
     return null;
@@ -34,10 +31,6 @@ function formatSummaryMetrics(summary: StatsSummaryResponse | null) {
   }, {});
 }
 
-/**
- * Helper that surfaces any optional metric descriptions so the Stats Hub can
- * render contextual copy beneath the KPI cards.
- */
 function extractMetricDetails(summary: StatsSummaryResponse | null) {
   if (!summary) {
     return [] as StatsSummaryResponse["metrics"];
@@ -45,10 +38,6 @@ function extractMetricDetails(summary: StatsSummaryResponse | null) {
   return summary.metrics.filter((metric) => Boolean(metric.description));
 }
 
-/**
- * Safety wrapper to guard against null responses from the leaderboard endpoint
- * while preserving strict typing when data is available.
- */
 function leaderboardsFromResponse(response: StatsLeaderboardsResponse | null) {
   if (!response) {
     return [] as LeaderboardDefinition[];
@@ -101,60 +90,75 @@ export default async function StatsHubPage() {
       : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-12">
-      <header className="space-y-3 text-center md:text-left">
-        <p className="text-sm uppercase tracking-[0.2em] text-pokedexYellow">Analytics</p>
-        <h1 className="text-3xl font-bold text-slate-50 md:text-4xl">Stats Hub</h1>
-        <p className="text-base text-slate-300 md:max-w-2xl">
-          Dive into platform-wide UFC fighter insights. Review high-impact KPIs,
-          explore competitive leaderboards, and investigate how performance
-          metrics evolve over time.
+    <section className="container flex flex-col gap-12 py-12">
+      <header className="space-y-4">
+        <Badge variant="outline" className="w-fit tracking-[0.35em]">
+          Analytics
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">Stats Hub</h1>
+        <p className="max-w-2xl text-lg text-muted-foreground">
+          Dive into platform-wide UFC fighter insights. Review high-impact KPIs, explore
+          competitive leaderboards, and investigate how metrics evolve over time.
         </p>
         {formattedGeneratedAt ? (
-          <p className="text-xs text-slate-500">Last updated: {formattedGeneratedAt}</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Last updated: {formattedGeneratedAt}
+          </p>
         ) : null}
       </header>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-slate-100">Summary KPIs</h2>
-          <span className="text-xs uppercase tracking-widest text-slate-500">Overview</span>
+      <section className="space-y-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Summary KPIs</h2>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Overview
+          </span>
         </div>
         {summaryError ? (
-          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          <div
+            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+            role="alert"
+          >
             {summaryError}
-          </p>
+          </div>
         ) : summaryStats ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <StatsDisplay title="Key Indicators" stats={summaryStats} />
           </div>
         ) : (
-          <p className="py-6 text-center text-sm text-slate-400" role="status">
+          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
             Summary metrics are currently unavailable.
-          </p>
+          </div>
         )}
 
         {summaryDescriptions.length > 0 ? (
-          <dl className="grid gap-4 rounded-lg border border-slate-800 bg-slate-950/80 p-5 text-sm text-slate-300 md:grid-cols-2">
+          <dl className="grid gap-4 rounded-3xl border border-border bg-card/80 p-6 text-sm text-foreground/80 md:grid-cols-2">
             {summaryDescriptions.map((metric) => (
               <div key={metric.id}>
-                <dt className="font-semibold text-slate-100">{metric.label}</dt>
-                <dd>{metric.description}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  {metric.label}
+                </dt>
+                <dd className="mt-2">{metric.description}</dd>
               </div>
             ))}
           </dl>
         ) : null}
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-slate-100">Leaderboards</h2>
-          <span className="text-xs uppercase tracking-widest text-slate-500">Competition</span>
+      <section className="space-y-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Leaderboards</h2>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Competition
+          </span>
         </div>
         {leaderboardsError ? (
-          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          <div
+            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+            role="alert"
+          >
             {leaderboardsError}
-          </p>
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {leaderboardDefinitions.length > 0 ? (
@@ -168,23 +172,31 @@ export default async function StatsHubPage() {
                 />
               ))
             ) : (
-              <p className="py-6 text-center text-sm text-slate-400 md:col-span-2" role="status">
+              <div
+                className="py-6 text-center text-sm text-muted-foreground md:col-span-2"
+                role="status"
+              >
                 Leaderboard data has not been published yet.
-              </p>
+              </div>
             )}
           </div>
         )}
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-slate-100">Trends</h2>
-          <span className="text-xs uppercase tracking-widest text-slate-500">Trajectory</span>
+      <section className="space-y-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Trends</h2>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Trajectory
+          </span>
         </div>
         {trendsError ? (
-          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          <div
+            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+            role="alert"
+          >
             {trendsError}
-          </p>
+          </div>
         ) : trends && trends.trends.length > 0 ? (
           <div className="grid gap-6 lg:grid-cols-2">
             {trends.trends.map((seriesGroup) => (
@@ -197,11 +209,11 @@ export default async function StatsHubPage() {
             ))}
           </div>
         ) : (
-          <p className="py-6 text-center text-sm text-slate-400" role="status">
+          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
             Historical trend data will appear once enough events are ingested.
-          </p>
+          </div>
         )}
       </section>
-    </div>
+    </section>
   );
 }

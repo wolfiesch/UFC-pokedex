@@ -14,11 +14,16 @@ export function useFighters(initialLimit = 20) {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pageSize = initialLimit;
 
-  const loadFighters = async (newOffset: number) => {
-    setIsLoading(true);
+  const loadFighters = async (newOffset: number, append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const trimmedSearch = (searchTerm ?? "").trim();
@@ -26,31 +31,48 @@ export function useFighters(initialLimit = 20) {
 
       if (isFiltering) {
         const data = await searchFighters(trimmedSearch, stance, pageSize, newOffset);
-        setFighters(data.fighters);
+        if (append) {
+          setFighters((prev) => [...prev, ...data.fighters]);
+        } else {
+          setFighters(data.fighters);
+        }
         setTotal(data.total);
         setHasMore(data.has_more);
         setOffset(data.offset);
       } else {
         const data = await getFighters(pageSize, newOffset);
-        setFighters(data.fighters);
+        if (append) {
+          setFighters((prev) => [...prev, ...data.fighters]);
+        } else {
+          setFighters(data.fighters);
+        }
         setTotal(data.total);
         setHasMore(data.has_more);
         setOffset(data.offset);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
-      setFighters([]);
+      if (!append) {
+        setFighters([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
-  const nextPage = () => loadFighters(offset + pageSize);
-  const prevPage = () => loadFighters(Math.max(0, offset - pageSize));
+  const loadMore = () => {
+    if (!hasMore || isLoadingMore) return;
+    void loadFighters(offset + pageSize, true);
+  };
 
   useEffect(() => {
     setOffset(0);
-    void loadFighters(0);
+    setFighters([]);
+    void loadFighters(0, false);
   }, [searchTerm, stance, pageSize]);
 
   return {
@@ -59,9 +81,9 @@ export function useFighters(initialLimit = 20) {
     offset,
     hasMore,
     isLoading,
+    isLoadingMore,
     error,
-    nextPage,
-    prevPage,
+    loadMore,
     limit: pageSize,
   };
 }

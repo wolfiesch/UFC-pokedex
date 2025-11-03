@@ -117,7 +117,7 @@ function normalizeStatsSummary(payload: unknown): StatsSummaryResponse {
       return { metrics, generated_at: generatedAt };
     }
     const derivedMetrics: StatsSummaryMetric[] = Object.entries(payload)
-      .filter(([, value]) => typeof value === "number")
+      .filter((entry): entry is [string, number] => typeof entry[1] === "number")
       .map(([key, value]) => ({
         id: key,
         label: toTitleCase(key),
@@ -156,26 +156,27 @@ function normalizeLeaderboards(payload: unknown): StatsLeaderboardsResponse {
   }
   const generatedAt = typeof payload.generated_at === "string" ? payload.generated_at : undefined;
   const leaderboardsSource = Array.isArray(payload.leaderboards) ? payload.leaderboards : [];
-  const leaderboards: LeaderboardDefinition[] = leaderboardsSource
-    .map((item, index) => {
-      if (!isRecord(item)) {
-        return null;
-      }
-      const entriesSource = Array.isArray(item.entries) ? item.entries : [];
-      const entries = entriesSource
-        .map((entry, entryIndex) => normalizeLeaderboardEntry(entry, entryIndex))
-        .filter((entryItem): entryItem is LeaderboardEntry => entryItem !== null);
-      const metricId = typeof item.metric_id === "string" ? item.metric_id : `metric-${index}`;
-      const title = typeof item.title === "string" ? item.title : toTitleCase(metricId);
-      const description = typeof item.description === "string" ? item.description : undefined;
-      return {
-        metric_id: metricId,
-        title,
-        description,
-        entries,
-      };
-    })
-    .filter((leaderboard): leaderboard is LeaderboardDefinition => leaderboard !== null);
+  const leaderboards = leaderboardsSource.reduce<LeaderboardDefinition[]>((acc, item, index) => {
+    if (!isRecord(item)) {
+      return acc;
+    }
+    const entriesSource = Array.isArray(item.entries) ? item.entries : [];
+    const entries = entriesSource
+      .map((entry, entryIndex) => normalizeLeaderboardEntry(entry, entryIndex))
+      .filter((entryItem): entryItem is LeaderboardEntry => entryItem !== null);
+    const metricId = typeof item.metric_id === "string" ? item.metric_id : `metric-${index}`;
+    const title = typeof item.title === "string" ? item.title : toTitleCase(metricId);
+    const description = typeof item.description === "string" ? item.description : undefined;
+
+    acc.push({
+      metric_id: metricId,
+      title,
+      description,
+      entries,
+    });
+
+    return acc;
+  }, []);
 
   return { leaderboards, generated_at: generatedAt };
 }
@@ -200,26 +201,26 @@ function normalizeTrends(payload: unknown): StatsTrendsResponse {
   }
   const generatedAt = typeof payload.generated_at === "string" ? payload.generated_at : undefined;
   const trendsSource = Array.isArray(payload.trends) ? payload.trends : [];
-  const trends: TrendSeries[] = trendsSource
-    .map((series, index) => {
-      if (!isRecord(series)) {
-        return null;
-      }
-      const metricId = typeof series.metric_id === "string" ? series.metric_id : `trend-${index}`;
-      const label = typeof series.label === "string" ? series.label : toTitleCase(metricId);
-      const fighterId = typeof series.fighter_id === "string" ? series.fighter_id : undefined;
-      const pointsSource = Array.isArray(series.points) ? series.points : [];
-      const points = pointsSource
-        .map((point) => normalizeTrendPoint(point))
-        .filter((point): point is TrendPoint => point !== null);
-      return {
-        metric_id: metricId,
-        fighter_id: fighterId,
-        label,
-        points,
-      };
-    })
-    .filter((series): series is TrendSeries => series !== null);
+  const trends = trendsSource.reduce<TrendSeries[]>((acc, series, index) => {
+    if (!isRecord(series)) {
+      return acc;
+    }
+    const metricId = typeof series.metric_id === "string" ? series.metric_id : `trend-${index}`;
+    const label = typeof series.label === "string" ? series.label : toTitleCase(metricId);
+    const fighterId = typeof series.fighter_id === "string" ? series.fighter_id : undefined;
+    const pointsSource = Array.isArray(series.points) ? series.points : [];
+    const points = pointsSource
+      .map((point) => normalizeTrendPoint(point))
+      .filter((point): point is TrendPoint => point !== null);
+
+    acc.push({
+      metric_id: metricId,
+      fighter_id: fighterId,
+      label,
+      points,
+    });
+    return acc;
+  }, []);
 
   return { trends, generated_at: generatedAt };
 }
@@ -259,14 +260,6 @@ function normalizeComparisonEntry(entry: unknown): FighterComparisonEntry | null
 
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-}
-
-export interface PaginatedFightersResponse {
-  fighters: FighterListItem[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
 }
 
 export async function getFighters(

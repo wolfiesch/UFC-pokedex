@@ -62,11 +62,25 @@ class SherdogImagesSpider(scrapy.Spider):
 
         logger.info(f"Loaded mapping for {len(mapping)} fighters")
 
+        skipped_count = 0
         for ufc_id, sherdog_data in mapping.items():
             sherdog_url = sherdog_data.get("sherdog_url")
 
             if not sherdog_url:
                 logger.warning(f"No Sherdog URL for UFC fighter {ufc_id}")
+                continue
+
+            # Check if image already exists (any extension)
+            existing_image = None
+            for ext in ['jpg', 'png', 'gif']:
+                image_path = self.images_dir / f"{ufc_id}.{ext}"
+                if image_path.exists():
+                    existing_image = image_path
+                    break
+
+            if existing_image:
+                logger.debug(f"Image already exists for {ufc_id}, skipping: {existing_image}")
+                skipped_count += 1
                 continue
 
             yield scrapy.Request(
@@ -75,6 +89,8 @@ class SherdogImagesSpider(scrapy.Spider):
                 meta={"ufc_id": ufc_id, "sherdog_data": sherdog_data},
                 dont_filter=True,
             )
+
+        logger.info(f"Skipped {skipped_count} fighters with existing images")
 
     def parse_fighter_page(self, response: scrapy.http.Response):
         """Parse Sherdog fighter page and extract image.

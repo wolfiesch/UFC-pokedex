@@ -6,12 +6,16 @@ afterEach(() => {
   cleanup();
 });
 
-class MockResizeObserver implements ResizeObserver {
+class MockResizeObserver {
   observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
 }
 
-if (typeof window !== "undefined" && !("ResizeObserver" in window)) {
-  window.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+const globalWithResizeObserver = globalThis as typeof globalThis & {
+  ResizeObserver?: unknown;
+};
+
+if (typeof globalWithResizeObserver.ResizeObserver === "undefined") {
+  globalWithResizeObserver.ResizeObserver = MockResizeObserver;
 }

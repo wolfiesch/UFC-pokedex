@@ -2,6 +2,8 @@
 
 import type { ChangeEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+
 type FilterPanelProps = {
   stances: string[];
   selectedStance: string | null;
@@ -15,23 +17,34 @@ export default function FilterPanel({ stances, selectedStance, onStanceChange }:
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200">
-      <label htmlFor="stance-filter" className="font-semibold">
-        Stance
-      </label>
-      <select
-        id="stance-filter"
-        value={selectedStance ?? "all"}
-        onChange={handleChange}
-        className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1 text-sm"
-      >
-        <option value="all">All</option>
-        {stances.map((stance) => (
-          <option key={stance} value={stance}>
-            {stance}
-          </option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-3 rounded-3xl border border-border bg-card/60 p-4 shadow-subtle sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="stance-filter" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+          Stance
+        </label>
+        <select
+          id="stance-filter"
+          value={selectedStance ?? "all"}
+          onChange={handleChange}
+          className="h-10 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-48"
+        >
+          <option value="all">All</option>
+          {stances.map((stance) => (
+            <option key={stance} value={stance}>
+              {stance}
+            </option>
+          ))}
+        </select>
+      </div>
+      {selectedStance ? (
+        <Button
+          variant="ghost"
+          className="w-full justify-center sm:w-auto"
+          onClick={() => onStanceChange(null)}
+        >
+          Clear filter
+        </Button>
+      ) : null}
     </div>
   );
 }

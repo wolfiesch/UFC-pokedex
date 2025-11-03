@@ -13,15 +13,8 @@ import {
 } from "recharts";
 import type { TrendSeries } from "@/lib/types";
 
-/** Palette of accessible, high-contrast colours for multi-series charts. */
-const SERIES_COLORS = [
-  "#fbbf24",
-  "#38bdf8",
-  "#f472b6",
-  "#22c55e",
-  "#a855f7",
-  "#f97316",
-];
+/** Palette of high-contrast monochrome tones for multi-series charts. */
+const SERIES_COLORS = ["#0a0a0a", "#2f2f2f", "#555555", "#7a7a7a", "#a0a0a0", "#cfcfcf"];
 
 /**
  * Props definition for the inner chart component that directly utilises the
@@ -97,14 +90,14 @@ function TrendChartInnerComponent({ series }: TrendChartInnerProps) {
   return (
     <ResponsiveContainer width="100%" height={320}>
       <LineChart data={data} margin={{ top: 16, right: 24, bottom: 16, left: 0 }}>
-        <CartesianGrid stroke="#1e293b" strokeDasharray="4 4" />
-        <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} />
-        <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} allowDecimals />
+        <CartesianGrid stroke="#e5e5e5" strokeDasharray="4 4" />
+        <XAxis dataKey="label" stroke="#525252" tickLine={false} axisLine={false} />
+        <YAxis stroke="#525252" tickLine={false} axisLine={false} allowDecimals />
         <Tooltip
           contentStyle={{
-            backgroundColor: "#0f172a",
-            borderColor: "#334155",
-            color: "#f8fafc",
+            backgroundColor: "#ffffff",
+            borderColor: "#1f1f1f",
+            color: "#111111",
           }}
           labelFormatter={(value) => `Date: ${value}`}
         />

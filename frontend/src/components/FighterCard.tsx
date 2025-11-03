@@ -4,6 +4,16 @@ import Link from "next/link";
 
 import type { FighterListItem } from "@/lib/types";
 import { useFavorites } from "@/hooks/useFavorites";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   fighter: FighterListItem;
@@ -20,56 +30,83 @@ export default function FighterCard({ fighter }: Props) {
   };
 
   return (
-    <Link href={`/fighters/${fighter.fighter_id}`} className="block">
-      <article className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg transition hover:border-pokedexYellow/60 hover:shadow-pokedexYellow/30">
-        {fighter.image_url && (
-          <div className="mb-4 flex justify-center">
-            <img
-              src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
-              alt={fighter.name}
-              className="h-32 w-32 rounded-lg object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
+    <Link href={`/fighters/${fighter.fighter_id}`} className="group block h-full">
+      <Card className="h-full overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl">
+        <CardHeader className="p-6 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-2xl group-hover:text-foreground/80">
+                {fighter.name}
+              </CardTitle>
+              {fighter.nickname ? (
+                <CardDescription className="text-sm tracking-tight">
+                  &ldquo;{fighter.nickname}&rdquo;
+                </CardDescription>
+              ) : null}
+            </div>
+            <Button
+              variant={isFavorite ? "default" : "outline"}
+              size="sm"
+              onClick={handleFavoriteClick}
+            >
+              {isFavorite ? "Favorited" : "Favorite"}
+            </Button>
           </div>
-        )}
-        <header className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-pokedexYellow">{fighter.name}</h2>
-          <button
-            type="button"
-            onClick={handleFavoriteClick}
-            className="rounded-full border border-pokedexYellow px-3 py-1 text-xs uppercase tracking-wide text-pokedexYellow hover:bg-pokedexYellow hover:text-slate-950"
-          >
-            {isFavorite ? "Remove" : "Favorite"}
-          </button>
-        </header>
-        {fighter.nickname && (
-          <p className="text-sm text-slate-400">&quot;{fighter.nickname}&quot;</p>
-        )}
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-          <div>
-            <dt className="font-semibold text-slate-100">Height</dt>
-            <dd>{fighter.height ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-slate-100">Weight</dt>
-            <dd>{fighter.weight ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-slate-100">Reach</dt>
-            <dd>{fighter.reach ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-slate-100">Stance</dt>
-            <dd>{fighter.stance ?? "—"}</dd>
-          </div>
-        </dl>
-        <footer className="mt-4 flex items-center justify-between text-xs text-pokedexBlue">
-          <span>{fighter.division ?? "Unknown Division"}</span>
-          <span className="underline-offset-2 hover:underline">View details →</span>
-        </footer>
-      </article>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {fighter.image_url ? (
+            <div className="flex justify-center">
+              <div className="relative h-36 w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
+                  alt={fighter.name}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  onError={(event) => {
+                    (event.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <dl className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Height
+              </dt>
+              <dd className="text-base">{fighter.height ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Weight
+              </dt>
+              <dd className="text-base">{fighter.weight ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Reach
+              </dt>
+              <dd className="text-base">{fighter.reach ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Stance
+              </dt>
+              <dd className="text-base">{fighter.stance ?? "—"}</dd>
+            </div>
+          </dl>
+        </CardContent>
+
+        <CardFooter className="items-center justify-between pt-0">
+          <Badge variant="outline" className="uppercase tracking-tight">
+            {fighter.division ?? "Unknown Division"}
+          </Badge>
+          <span className="text-xs font-medium uppercase tracking-[0.4em] text-muted-foreground">
+            View →
+          </span>
+        </CardFooter>
+      </Card>
     </Link>
   );
 }

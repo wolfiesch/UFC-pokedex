@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function SearchBar() {
   const setSearchTerm = useFavoritesStore((state) => state.setSearchTerm);
@@ -10,24 +12,37 @@ export default function SearchBar() {
 
   return (
     <form
-      className="flex flex-col gap-2 md:flex-row"
+      className="flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 shadow-subtle sm:flex-row sm:items-center"
       onSubmit={(event) => {
         event.preventDefault();
-        setSearchTerm(value);
+        setSearchTerm(value.trim());
       }}
     >
-      <input
+      <Input
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-100 outline-none focus:border-pokedexYellow"
         placeholder="Search fighters by name or nickname..."
+        aria-label="Search fighters"
+        className="flex-1 bg-background/70"
       />
-      <button
-        type="submit"
-        className="rounded-lg bg-pokedexYellow px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-pokedexYellow/80"
-      >
-        Search
-      </button>
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <Button type="submit" className="w-full sm:w-auto">
+          Search
+        </Button>
+        {value ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setValue("");
+              setSearchTerm("");
+            }}
+          >
+            Reset
+          </Button>
+        ) : null}
+      </div>
     </form>
   );
 }

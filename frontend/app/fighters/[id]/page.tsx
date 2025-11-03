@@ -12,7 +12,7 @@ export default function FighterDetailPage() {
   const { fighter, isLoading } = useFighter(fighterId);
 
   return (
-    <section className="mx-auto max-w-4xl space-y-8 px-4 py-12">
+    <section className="container max-w-5xl space-y-10 py-12">
       <FighterDetailCard fighterId={fighterId} fighter={fighter} isLoading={isLoading} />
       {fighter ? (
         <FighterComparisonPanel

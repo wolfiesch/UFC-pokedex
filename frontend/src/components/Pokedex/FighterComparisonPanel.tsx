@@ -5,6 +5,23 @@ import { useEffect, useMemo, useState } from "react";
 import { compareFighters, searchFighters } from "@/lib/api";
 import { formatCategoryLabel, formatMetricLabel } from "@/lib/format";
 import type { FighterComparisonEntry, FighterListItem } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const CATEGORY_KEYS = [
   "significant_strikes",
@@ -62,7 +79,7 @@ export default function FighterComparisonPanel({
         if (!cancelled) {
           setOptions(
             results.fighters
-              .filter((item) => item.fighter_id !== primaryFighterId)
+              .filter((item: FighterListItem) => item.fighter_id !== primaryFighterId)
               .slice(0, 6)
           );
         }
@@ -83,9 +100,7 @@ export default function FighterComparisonPanel({
     };
   }, [primaryFighterId, query]);
 
-  const fighterColumns = useMemo(() => {
-    return comparison?.entries ?? [];
-  }, [comparison]);
+  const fighterColumns = useMemo(() => comparison?.entries ?? [], [comparison]);
 
   const visibleCategories = useMemo(() => {
     if (!comparison) {
@@ -128,126 +143,130 @@ export default function FighterComparisonPanel({
   }
 
   return (
-    <section className="mt-10 space-y-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg">
-      <header className="space-y-1">
-        <h2 className="text-xl font-semibold text-pokedexYellow">Compare Stats</h2>
-        <p className="text-sm text-slate-400">
+    <Card className="rounded-3xl border-border bg-card/80">
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-2xl">Compare Stats</CardTitle>
+        <CardDescription>
           Select another fighter to stack their metrics against {primaryFighterName || "this fighter"}.
-        </p>
-      </header>
-
-      <div className="flex flex-col gap-3 md:flex-row">
-        <div className="flex flex-1 flex-col gap-2">
-          <label htmlFor="comparison-search" className="text-xs uppercase tracking-wide text-slate-500">
-            Search fighters
-          </label>
-          <input
-            id="comparison-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Start typing a fighter name..."
-            className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 focus:border-pokedexYellow focus:outline-none"
-          />
-          {isSearching ? (
-            <p className="text-xs text-slate-500">Searching…</p>
-          ) : options.length > 0 ? (
-            <ul className="space-y-1">
-              {options.map((option) => (
-                <li key={option.fighter_id}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(option)}
-                    className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-pokedexYellow hover:text-pokedexYellow"
-                  >
-                    <span className="block font-semibold">{option.name}</span>
-                    {option.nickname ? (
-                      <span className="block text-xs text-slate-500">{option.nickname}</span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : query.trim().length >= 2 ? (
-            <p className="text-xs text-slate-500">No fighters matched that search.</p>
-          ) : null}
-        </div>
-
-        <div className="flex items-end">
-          <button
-            type="button"
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end">
+          <div className="flex flex-1 flex-col gap-2">
+            <label
+              htmlFor="comparison-search"
+              className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground"
+            >
+              Search fighters
+            </label>
+            <Input
+              id="comparison-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Start typing a fighter name..."
+            />
+            {isSearching ? (
+              <p className="text-xs text-muted-foreground">Searching…</p>
+            ) : options.length > 0 ? (
+              <ul className="grid gap-2">
+                {options.map((option) => (
+                  <li key={option.fighter_id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(option)}
+                      className="flex w-full flex-col rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-background"
+                    >
+                      <span className="text-sm font-semibold">{option.name}</span>
+                      {option.nickname ? (
+                        <span className="text-xs text-muted-foreground">
+                          &ldquo;{option.nickname}&rdquo;
+                        </span>
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : query.trim().length >= 2 ? (
+              <p className="text-xs text-muted-foreground">No fighters matched that search.</p>
+            ) : null}
+          </div>
+          <Button
+            variant="ghost"
             onClick={handleReset}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-pokedexYellow hover:text-pokedexYellow"
+            className="w-full justify-center md:w-auto"
           >
             Reset
-          </button>
+          </Button>
         </div>
-      </div>
 
-      {error ? (
-        <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
-          {error}
-        </p>
-      ) : null}
+        {error ? (
+          <div
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
 
-      {isLoading ? (
-        <p className="py-6 text-center text-sm text-slate-400" role="status">
-          Loading comparison…
-        </p>
-      ) : comparison && visibleCategories.length > 0 ? (
-        <div className="space-y-6">
-          {visibleCategories.map((category) => {
-            const metrics = new Set<string>();
-            comparison.entries.forEach((entry) => {
-              Object.keys(categoryStats(entry, category)).forEach((metricKey) =>
-                metrics.add(metricKey)
-              );
-            });
-            const rows = Array.from(metrics);
-            return (
-              <div key={category} className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-100">
-                  {formatCategoryLabel(category)}
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
-                    <thead className="bg-slate-900/60 text-xs uppercase tracking-wide text-slate-400">
-                      <tr>
-                        <th scope="col" className="px-4 py-3">
-                          Metric
-                        </th>
+        {isLoading ? (
+          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+            Loading comparison…
+          </div>
+        ) : comparison && visibleCategories.length > 0 ? (
+          <div className="space-y-8">
+            {visibleCategories.map((category) => {
+              const metrics = new Set<string>();
+              comparison.entries.forEach((entry) => {
+                Object.keys(categoryStats(entry, category)).forEach((metricKey) =>
+                  metrics.add(metricKey)
+                );
+              });
+              const rows = Array.from(metrics);
+              return (
+                <div key={category} className="space-y-3">
+                  <h3 className="text-lg font-semibold">
+                    {formatCategoryLabel(category)}
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="[&_th]:whitespace-nowrap">
+                        <TableHead className="w-52">Metric</TableHead>
                         {fighterColumns.map((entry) => (
-                          <th key={`${category}-${entry.fighter_id}`} scope="col" className="px-4 py-3">
+                          <TableHead key={`${category}-${entry.fighter_id}`}>
                             {entry.name}
-                          </th>
+                          </TableHead>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800 text-slate-200">
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {rows.map((metricKey) => (
-                        <tr key={`${category}-${metricKey}`}>
-                          <td className="px-4 py-3 font-semibold text-slate-300">
+                        <TableRow key={`${category}-${metricKey}`}>
+                          <TableCell className="font-medium">
                             {formatMetricLabel(metricKey)}
-                          </td>
+                          </TableCell>
                           {fighterColumns.map((entry) => (
-                            <td key={`${entry.fighter_id}-${category}-${metricKey}`} className="px-4 py-3 font-mono text-sm">
+                            <TableCell
+                              key={`${entry.fighter_id}-${category}-${metricKey}`}
+                              className="font-mono text-sm"
+                            >
                               {normaliseValue(categoryStats(entry, category)[metricKey])}
-                            </td>
+                            </TableCell>
                           ))}
-                        </tr>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="py-6 text-center text-sm text-slate-500">
-          Search for another fighter to kick off a side-by-side comparison.
-        </p>
-      )}
-    </section>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            Search for another fighter to kick off a side-by-side comparison.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

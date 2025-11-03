@@ -39,6 +39,17 @@ export type FighterDetail = FighterListItem & {
 };
 
 /**
+ * Paginated subset of fighters returned from index and search endpoints.
+ */
+export interface PaginatedFightersResponse {
+  fighters: FighterListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+/**
  * Numerical key performance indicator (KPI) surfaced as part of the aggregated
  * statistics summary feed. Each metric is designed to provide a concise
  * high-level snapshot of platform-wide performance.

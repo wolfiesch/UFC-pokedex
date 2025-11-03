@@ -1,7 +1,23 @@
 "use client";
 
 import Link from "next/link";
+
 import type { LeaderboardEntry } from "@/lib/types";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /**
  * Props describing the configuration for a leaderboard table instance. Each
@@ -36,56 +52,48 @@ function renderLeaderboardBody({
 }: Pick<LeaderboardTableProps, "entries" | "metricLabel">) {
   if (entries.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-slate-400" role="status">
+      <div className="py-6 text-center text-sm text-muted-foreground" role="status">
         No leaderboard data available yet. Check back soon as new fights are
         processed.
-      </p>
+      </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
-        <thead className="bg-slate-900/60 text-xs uppercase tracking-wide text-slate-400">
-          <tr>
-            <th scope="col" className="px-4 py-3">
-              Rank
-            </th>
-            <th scope="col" className="px-4 py-3">
-              Fighter
-            </th>
-            <th scope="col" className="px-4 py-3 text-right">
-              {metricLabel ?? "Score"}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-800">
-          {entries.map((entry, index) => (
-            <tr key={`${entry.fighter_id}-${index}`} className="hover:bg-slate-900/40">
-              <td className="px-4 py-3 font-semibold text-slate-300">{index + 1}</td>
-              <td className="px-4 py-3">
-                {entry.detail_url ? (
-                  <Link
-                    href={entry.detail_url}
-                    className="text-pokedexYellow transition hover:text-yellow-300"
-                  >
-                    <span className="sr-only">View fighter profile:</span>
-                    {entry.fighter_name}
-                  </Link>
-                ) : (
-                  <span>{entry.fighter_name}</span>
-                )}
-              </td>
-              <td className="px-4 py-3 text-right font-mono font-semibold text-slate-100">
-                {entry.metric_value.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-16">Rank</TableHead>
+          <TableHead>Fighter</TableHead>
+          <TableHead className="text-right">{metricLabel ?? "Score"}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {entries.map((entry, index) => (
+          <TableRow key={`${entry.fighter_id}-${index}`}>
+            <TableCell className="text-sm font-semibold">{index + 1}</TableCell>
+            <TableCell>
+              {entry.detail_url ? (
+                <Link
+                  href={entry.detail_url}
+                  className="font-medium text-foreground transition hover:text-foreground/70"
+                >
+                  <span className="sr-only">View fighter profile:</span>
+                  {entry.fighter_name}
+                </Link>
+              ) : (
+                <span>{entry.fighter_name}</span>
+              )}
+            </TableCell>
+            <TableCell className="text-right font-mono text-sm font-semibold">
+              {entry.metric_value.toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -103,25 +111,27 @@ export default function LeaderboardTable({
   error,
 }: LeaderboardTableProps) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-950/80 p-5 shadow-lg">
-      <header className="space-y-1">
-        <h3 className="text-lg font-semibold text-pokedexYellow">{title}</h3>
-        {description ? (
-          <p className="text-sm text-slate-400">{description}</p>
-        ) : null}
-      </header>
-
-      {error ? (
-        <p className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
-          {error}
-        </p>
-      ) : isLoading ? (
-        <p className="animate-pulse py-6 text-center text-sm text-slate-400" role="status">
-          Loading leaderboard…
-        </p>
-      ) : (
-        renderLeaderboardBody({ entries, metricLabel })
-      )}
-    </section>
+    <Card className="rounded-3xl border-border bg-card/80">
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-xl">{title}</CardTitle>
+        {description ? <CardDescription>{description}</CardDescription> : null}
+      </CardHeader>
+      <CardContent>
+        {error ? (
+          <div
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : isLoading ? (
+          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+            Loading leaderboard…
+          </div>
+        ) : (
+          renderLeaderboardBody({ entries, metricLabel })
+        )}
+      </CardContent>
+    </Card>
   );
 }

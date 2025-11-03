@@ -7,21 +7,20 @@ import SearchBar from "@/components/SearchBar";
 import { useFighters } from "@/hooks/useFighters";
 import { useSearch } from "@/hooks/useSearch";
 import { getRandomFighter } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const router = useRouter();
   const {
     fighters,
     isLoading,
+    isLoadingMore,
     error,
     total,
-    offset,
     hasMore,
-    nextPage,
-    prevPage,
-    limit,
-  } =
-    useFighters();
+    loadMore,
+  } = useFighters();
   const { stanceFilter, setStanceFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
 
@@ -35,19 +34,27 @@ export default function HomePage() {
   };
 
   return (
-    <section className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-12">
-      <header className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-pokedexYellow">UFC Fighter Pokedex</h1>
-        <p className="text-slate-400">
-          Browse {total > 0 ? `${total} ` : ""}UFC fighters, view stats, and curate your
-          favorites.
-        </p>
-        <button
+    <section className="container flex flex-col gap-10 py-12">
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <Badge variant="outline" className="w-fit tracking-[0.35em]">
+            Roster
+          </Badge>
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+            UFC Fighter Pokedex
+          </h1>
+          <p className="max-w-2xl text-lg text-muted-foreground">
+            Browse {total > 0 ? `${total.toLocaleString()} ` : ""}UFC fighters, explore their
+            profiles, and curate your favourites in a streamlined monochrome UI.
+          </p>
+        </div>
+        <Button
           onClick={handleRandomFighter}
-          className="w-fit rounded-lg bg-pokedexRed px-6 py-3 font-bold text-white transition-colors hover:bg-red-600"
+          size="lg"
+          className="w-full justify-center sm:w-fit"
         >
           🎲 Random Fighter
-        </button>
+        </Button>
       </header>
       <SearchBar />
       <FilterPanel
@@ -58,13 +65,11 @@ export default function HomePage() {
       <FighterGrid
         fighters={fighters}
         isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
         error={error}
         total={total}
-        offset={offset}
-        limit={limit}
         hasMore={hasMore}
-        onNextPage={nextPage}
-        onPrevPage={prevPage}
+        onLoadMore={loadMore}
       />
     </section>
   );
