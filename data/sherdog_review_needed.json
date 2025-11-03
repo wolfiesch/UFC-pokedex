@@ -80,18 +80,1248 @@
     "reason": "confidence < 60%"
   },
   {
-    "ufc_id": "98c23cb6da5b3352",
-    "name": "Aleksei Oleinik",
-    "reason": "confidence < 60%"
-  },
-  {
     "ufc_id": "e2ccd9a9ace60de7",
     "name": "Aleksei Kunchenko",
     "reason": "confidence < 60%"
   },
   {
+    "ufc_id": "98c23cb6da5b3352",
+    "name": "Aleksei Oleinik",
+    "reason": "confidence < 60%"
+  },
+  {
     "ufc_id": "bf9bc96336922271",
     "name": "Alex Ricci",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "938ea36fe9c269f0",
+    "name": "Alexander Morgan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c0badf3243907e59",
+    "name": "Alexandr Romanov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "73a78713bd899f4c",
+    "name": "Allen Frye Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "74d35fbc9c6a61bd",
+    "name": "Alvaro Herrera Mendoza",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d4a31850a7457f1b",
+    "name": "Amanda Cooper",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4b450aa602611baa",
+    "name": "Angel De Anda",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "52e76bb4b3e852f3",
+    "name": "Antonio Carlos Junior",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7d420039bbfe7c1a",
+    "name": "Aoriqileng",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8d4943a9ce9f521b",
+    "name": "Artenus Young",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1ef0eae31904e534",
+    "name": "Artur Oumakhanov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8be9deb7d6b36354",
+    "name": "Asjabharan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "73c7cfa551289285",
+    "name": "BJ Penn",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fd7acf42bd6e7e95",
+    "name": "Bazigit Atajev",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b6c37948cb226e8c",
+    "name": "Benardo Sopaj",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c2299ec916bc7c56",
+    "name": "Benoit Saint Denis",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "efd2b3e9bb7965a4",
+    "name": "Bharat Kandare",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eff9074bc066f0f2",
+    "name": "Bia Mesquita",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fa07345cc9db5cc9",
+    "name": "Billy Ray Goff",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9edf2c9082cc2cd8",
+    "name": "Blood Diamond",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f5e4ce11afbdfb61",
+    "name": "Brandon Michaels",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6c011be66326ad97",
+    "name": "Bruno Korea",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6eae26c44e505775",
+    "name": "Bryce Mejia",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "5d7bdab5e03e3216",
+    "name": "CB Dollaway",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7da5839b223f3728",
+    "name": "CJ Hamilton",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c0eecd851dbf3146",
+    "name": "CJ Keith",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4c91eb190d5e0dd9",
+    "name": "CJ Marsh",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "077e3ace32b72be9",
+    "name": "CJ Vergara",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a8c9d16fe2a14d72",
+    "name": "CM Punk",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a653cb5eb4b39339",
+    "name": "Caio Bittencourt",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a314687f372b2cec",
+    "name": "Carl Malenko",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e8efeb9cf33b1941",
+    "name": "Cesar Marscucci",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "24174a3f44ce8e03",
+    "name": "Chan-Mi Jeon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "117a06469813e4ef",
+    "name": "ChangHo Lee",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "29ab96eae72bad9f",
+    "name": "ChangMin Yoon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "feedf3053472fe56",
+    "name": "Charles Radtke",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e0c6edcb5b5d0b90",
+    "name": "Chepe Mariscal",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "54c2576b7f2f1f57",
+    "name": "Chris Ewert",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2d6d6ffe5a446ea2",
+    "name": "Christian Ocon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7269329bd87eb479",
+    "name": "Christophe Leninger",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "05560764359161e4",
+    "name": "Constantinos Philippou",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f689bd7bbd14b392",
+    "name": "Cyborg Abreu",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eefc73b53d4a05d7",
+    "name": "Dan Manasoiu",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "87f3bbf52e6c9dc9",
+    "name": "Daniel Spohn",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a66395395b5f1394",
+    "name": "Danny Downes",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "07047eb7d17fb0a2",
+    "name": "Daria Zhelezniakova",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "98b76850b5f1e836",
+    "name": "Dave Rickels",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0db70ca89e1c7374",
+    "name": "Dieusel Berto",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a1d6b308781aa2f5",
+    "name": "Dimitiri Wanderley",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "ad3a5e465c76e499",
+    "name": "Dinis Paiva Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "75afb06215a07341",
+    "name": "Dmitrii Smoliakov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "85ff1b9471d35238",
+    "name": "Dmitry Sosnovskiy",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "3be16d817b36098b",
+    "name": "DongHun Choi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0505e27a5d00704a",
+    "name": "DongHyun Seo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e93b04e308913c2e",
+    "name": "Dooho Choi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "155a02a8b4311057",
+    "name": "Dos Caras Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f9c7fe2682af3802",
+    "name": "Edson Drago",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "62f3039da2f92a8c",
+    "name": "Eduardo Chapolin",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c8d46028907bcece",
+    "name": "Eduardo Torres Caut",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7ee1babb99f30115",
+    "name": "Emily Fernandez",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f79e7f138bf50cc0",
+    "name": "EoJin Park",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "377bc9dc0b2745f9",
+    "name": "Eric Steenberg",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d57e6a8971b6d2bd",
+    "name": "Erick Wanderlei",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2963369e327e1979",
+    "name": "Fabricio Guerreiro",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "346f789951e85f3f",
+    "name": "Fedor Nikolov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "566ff9546fc29acd",
+    "name": "Felipe Pena",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6cbb7661c3258617",
+    "name": "Felix Lee Mitchell",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7977fb0fd9c5955d",
+    "name": "Fellipe Andrew",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "db3c4a884d704efe",
+    "name": "Gabriel Arges",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1c0ffc63d8ec8f45",
+    "name": "Gary Mangat",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6506c1d34da9c013",
+    "name": "Georges St-Pierre",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "00a3ff40c4b2cf21",
+    "name": "Glaico Franca Moreira",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fa37628269132d1a",
+    "name": "Godofredo Pepey",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d8a58e797518f011",
+    "name": "Haisam Rida",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "67ec58d7cf599835",
+    "name": "Han Ten Yun",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2bc47c7cc6c05bd7",
+    "name": "HanSeul Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a8c3ce469cb8b130",
+    "name": "Helena Crevar",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1f8cd7634e8286ff",
+    "name": "Henrique Da Silva Lopes",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "01fcef7e3d051722",
+    "name": "Henry Briones",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2719f300b0439039",
+    "name": "Ho Bae Myeon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e9e7e1c8ff289e1b",
+    "name": "Humberto Brown Morrison",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c5dc1bf9b78f262c",
+    "name": "Hyeonjong Song",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b671bdf981ad527d",
+    "name": "HyunSung Park",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "442c9011034ae1fd",
+    "name": "Ian Machado Garry",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8a19676a3388845a",
+    "name": "Idris Wasi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c6becb722706c7d8",
+    "name": "Iouri Kotchkine",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0e2c2daf11b5d8f2",
+    "name": "Issac DeJesus",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "3ec1e4ba98c9c85a",
+    "name": "JC Cottrell",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6fd953151d981979",
+    "name": "JJ Aldrich",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d562b12b8fe88336",
+    "name": "JJ Ambrose",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "aa40fe6038db56cb",
+    "name": "JJ Okanovich",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0b362247806341e5",
+    "name": "JP Buys",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "954e3f4e2b0e6510",
+    "name": "JP Felty",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8112c9a23dccc759",
+    "name": "JR Coughran",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2a0b19a96f848eff",
+    "name": "JW Wright",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7a703c565ccaa18f",
+    "name": "Jacare Souza",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "237187ed9f419285",
+    "name": "Jack McGlaughlin",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "222d6b547de2e035",
+    "name": "Jadson Costa",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fe1595732dfb08fc",
+    "name": "JaeHyun Park",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "5870bd1eadf4f322",
+    "name": "Jason Freeman",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e60201cfab7d656d",
+    "name": "Jean Francois Lenogue",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d008d785f6347dc2",
+    "name": "JeongYeong Lee",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2d0b10789feafddb",
+    "name": "Jerome LeBanner",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "893d51aaf024eddd",
+    "name": "Jimy Hettes",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "371efa53bd0cf669",
+    "name": "Jin Bala",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c14a683dac2ebc4c",
+    "name": "Jiniushiyue",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "86248c84834238e7",
+    "name": "Joe Lowry",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "07f72a2a7591b409",
+    "name": "Jon Jones",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2694c4997a51ed01",
+    "name": "Jon Kunneman",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0577808d22dfe79c",
+    "name": "Jon Olav Einemo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a44020ea2e8cd026",
+    "name": "JooSang Yoo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1e75e6c9de99fa76",
+    "name": "Jorge Interiano",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "baa9be02c3e3e038",
+    "name": "Jose Daniel Medina",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "83825fad27ab3581",
+    "name": "Joseph Gigliotti",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "821cd80aab70d5f9",
+    "name": "Josh Shockman",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d538f13ab21d9633",
+    "name": "Joshua Wang-Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "285ae0b4a68221f4",
+    "name": "JunYong Park",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b24666e26bd750a3",
+    "name": "JunYoung Hong",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b6033505c245e28b",
+    "name": "JungHyun Lee",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "487c170da059857d",
+    "name": "Junya Kudo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9cd047a828dd7515",
+    "name": "KB Bhullar",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b7ffa72aa148599a",
+    "name": "KJ Noons",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "ec18eb918121787c",
+    "name": "Kazula Vargas",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c398235fcaf8d71d",
+    "name": "Kelly Kobold",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "93c9897f0f9f5dab",
+    "name": "Kelly Velasco",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "923767209632e08a",
+    "name": "Ken Cross",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "749f572d1d3161fb",
+    "name": "Khalil Rountree Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2558ae2e5671e318",
+    "name": "Khaos Williams",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "887961364be5ceb3",
+    "name": "King Green",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "296a120cb880477b",
+    "name": "Kiru Sahota",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b42d3a1469dab722",
+    "name": "Koya Kanda",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "751aa58b7fb03c74",
+    "name": "Kwon Wonil",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "5a9f7b5ffebdd6e7",
+    "name": "KyeungPyo Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e7ecfab8fd86d3e1",
+    "name": "KyuSung Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6dab8ce5e4bffe77",
+    "name": "LC Davis",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e44c679c30403cba",
+    "name": "Lacey Schuckman",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e99821959a840bb8",
+    "name": "Lara Procopio",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "28e088bbcaaa6366",
+    "name": "Leonardo Silva de Oliveira",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9ac4e43ed56429ed",
+    "name": "Levi Rodrigues Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4e30e4250cb08b61",
+    "name": "Loma Lookboonmee",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8e5d953bdb9ae5e7",
+    "name": "Loopy Godinez",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0e8744ded08ee5fb",
+    "name": "Louis Jauregui",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b160e4f251283d70",
+    "name": "Lucasz Sudolski",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b5f44dcb863f595b",
+    "name": "Luke Flores",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "5a4913108a3b9190",
+    "name": "Lv Zhenhong",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2fee10d5cf86bfca",
+    "name": "Maia Stevenson",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4e77d070239699e2",
+    "name": "Maiju Kujala",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "cc6f9d1e89f3449a",
+    "name": "Manvel Gamburyan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d53482bef23235ba",
+    "name": "Marcio Alexandre Junior",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "095854a135e6db55",
+    "name": "Marcus Buchecha",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e5a898f2a1afec67",
+    "name": "Mashrabjon Ruzibaev",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d023ae89a2a4a41e",
+    "name": "Matthew Riddle",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c788481ae19e798d",
+    "name": "Mayana Kellem",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "01c9e4013afce141",
+    "name": "Michael Aswell Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "87f0b37f153cf497",
+    "name": "Michael Byrnes",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9297ce6eee046f7a",
+    "name": "Michael Mangan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8126e4dff0cdf69e",
+    "name": "Micol Di Segni",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eaea0fc7b76525a8",
+    "name": "Mike Guymon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b71667c778b6d9e5",
+    "name": "Mikhail Iloukhine",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6343a95f1d9e6a33",
+    "name": "MinWoo Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b205d4f2ff44bc89",
+    "name": "Naho Sugiyuma",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6e9f40c706f91f32",
+    "name": "Nate Maness",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "60917f79b7271d83",
+    "name": "Nicdali Rivera-Calanoc",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2f6dc878d653c442",
+    "name": "Nick Meregali",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1a50e734bb54861a",
+    "name": "OJ Dominguez",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "86cb6f5b1ca98dc0",
+    "name": "Oleksandr Doskalchuk",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e7bc606d269896aa",
+    "name": "Osamu Tachihikari",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "50db8711c70196cd",
+    "name": "Ovince Saint Preux",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6967153c7edb4d87",
+    "name": "Ozzy Diaz",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6e7c758f5cdec01a",
+    "name": "Paddy Holohan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2cfba6c837c03ed0",
+    "name": "Patchy Mix",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "01dfb60661153735",
+    "name": "Paulo Renato Junior",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6ef65b6a152e49d5",
+    "name": "Philip De Fries",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eee8efec7b951d84",
+    "name": "Philip Perez",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "126bdc1710a8cbf4",
+    "name": "Qiu Lun",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8e32bfcff3ec1717",
+    "name": "RJ Clifford",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "09a4447655fd4b7b",
+    "name": "Rafael Cerqueira",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7d0a1968b38ca439",
+    "name": "Ramazan Temirov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "373be586f370d400",
+    "name": "Raquel Pa'aluhi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2f04c4183523be2e",
+    "name": "Ray Seraille",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9f5609dba6584ab2",
+    "name": "Regina Malpica Rivera",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b6452706b373eea1",
+    "name": "Renato Moicano",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e6b233a007cb06c4",
+    "name": "Reynaldo Trujillo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "90063913321e7670",
+    "name": "Reza Arianto",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "22ee260735da0d58",
+    "name": "Richard Crunkilton",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "43db649da89fac4b",
+    "name": "Rilley Dutro",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9d7fbf438766791f",
+    "name": "Roberta Rovel",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "5af26b3201690d29",
+    "name": "Rodney Faverus",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2d2239d0f6fa83dd",
+    "name": "Rodolfo Marques Diniz",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c4731f43693b96b8",
+    "name": "Rodolfo Rubio Perez",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "37b1696e6d115957",
+    "name": "Rolando Delgado",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "37ce890a4670b287",
+    "name": "Roman Bravo-Young",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a13d755965a4ec9f",
+    "name": "Rongzhu",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b71ce838b01f2cad",
+    "name": "Rony Jason",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9f7787e56a6bc0f4",
+    "name": "Sako Chivitchian",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2067a177a2842fbf",
+    "name": "Sammy Morgan",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "27c59ac201539d10",
+    "name": "Sanford Alton Meeks",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "00b490982afd1b17",
+    "name": "SangHoon Yoo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e9712cad24948ce1",
+    "name": "SangWon Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a264d4e9a4d6bfe4",
+    "name": "Sangwook Kim",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "88d7b6d8230e1f3f",
+    "name": "Saparbeg Safarov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4a07b1988477502c",
+    "name": "Seokhyeon Ko",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "10d4575f497face4",
+    "name": "SeongChan Hong",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "df9e9c1f65805d29",
+    "name": "Sergey Ignatov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "adccbc19b22e19af",
+    "name": "SeungGuk Choi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a68575214ecad140",
+    "name": "SeungWoo Choi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "dfbb95ca0c143988",
+    "name": "Shana Olsen",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d85cf12439945941",
+    "name": "Spencer Hearns",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "710d93f1508f7104",
+    "name": "Stevie Lynch",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a474aade8eb3a8f0",
+    "name": "SuYoung You",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1dd1a3aacde66f72",
+    "name": "Sulangrangbo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "3cf18e01cb6cbde3",
+    "name": "Sumudaerji",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d31cbcdd7d69536d",
+    "name": "TJ Brown",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fa238ecfd048f7d8",
+    "name": "TJ Cook",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c849740a3ff51931",
+    "name": "TJ Dillashaw",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "a26198ba5093147e",
+    "name": "TJ Grant",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e1acbb6352ca3551",
+    "name": "TJ Hepburn",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "cd2e5a390821fb48",
+    "name": "TJ Laramie",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d25b93992f285953",
+    "name": "TJ O'Brien",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8f2939f5fd9cca1e",
+    "name": "TJ Waldburger",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "cc900af167fbedfd",
+    "name": "Timothy Johnson",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eb49fe2f85ae9526",
+    "name": "Tommy Cuozzi Jr.",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "de83f920fd302871",
+    "name": "Tommy Gantt",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1411c630ba711b64",
+    "name": "Tommy Speer",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e065b4a42a6c2c79",
+    "name": "Top Noi Kiwram",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "563a1d42bb0e3cef",
+    "name": "Tre'ston Vines",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "bf5183e1c1afc3b2",
+    "name": "Trenell Young",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b76ed59283d3559c",
+    "name": "Tsuyoshi Kohsaka",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "eaa0a728cc91ef60",
+    "name": "Tsuyoshi Tamakairiki",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "3e8118c1ab52f211",
+    "name": "Tuco Tokkos",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "7a47e068f8017019",
+    "name": "Val Woodburn",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "30b577b112bef42d",
+    "name": "Vernon Ramos Ho",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6c9b66b43663f2f7",
+    "name": "Viktoriia Dudakova",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fc08099550072fe4",
+    "name": "Waldo Cortes Acosta",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "008c6e1a25751575",
+    "name": "Wesley Little",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "dfc7f0a2d91ad337",
+    "name": "Willian Colorado",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "aaeb55084b198a39",
+    "name": "WonBin Ki",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "2296125b6c362355",
+    "name": "Wulijiburen",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "daa89f01e1c0f42a",
+    "name": "Xue Do Won",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "762572d67204fadb",
+    "name": "YeDam Seo",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "3f11fd1751fa83b1",
+    "name": "Yizha",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6420efac0578988b",
+    "name": "Yoshiki Takahashi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0efb0d4ebb950fcb",
+    "name": "YoungJae Song",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "4c12aa7ca246e7a4",
+    "name": "Yuhi Sano",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "c7b0081edfef4bc7",
+    "name": "YunSeong Jang",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "51d2aaaca56e5b40",
+    "name": "Yurij Kiseliov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "03dee485905dbc9f",
+    "name": "Zachary Scroggin",
     "reason": "confidence < 60%"
   },
   {
@@ -118,6 +1348,409 @@
       "division": null,
       "record": null,
       "confidence": 67.27
+    }
+  },
+  {
+    "ufc_id": "34e552520a934063",
+    "name": "Brad Scott",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 27206,
+      "sherdog_url": "https://www.sherdog.com/fighter/Scott-Brady-27206",
+      "name": "Scott Brady",
+      "division": null,
+      "record": null,
+      "confidence": 67.14
+    }
+  },
+  {
+    "ufc_id": "b35d1650c78c2948",
+    "name": "Bu-Kyung Jung",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 27180,
+      "sherdog_url": "https://www.sherdog.com/fighter/Bu-Kyung-Jung-27180",
+      "name": "Bu Kyung Jung",
+      "division": null,
+      "record": null,
+      "confidence": 65.38
+    }
+  },
+  {
+    "ufc_id": "8ebc3a8da015d70c",
+    "name": "Cam Rowston",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 239381,
+      "sherdog_url": "https://www.sherdog.com/fighter/Cameron-Rowston-239381",
+      "name": "Cameron Rowston",
+      "division": null,
+      "record": null,
+      "confidence": 60.77
+    }
+  },
+  {
+    "ufc_id": "f12f979b657ab876",
+    "name": "Dan Barrera",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 23762,
+      "sherdog_url": "https://www.sherdog.com/fighter/Daniel-Barrera-23762",
+      "name": "Daniel Barrera",
+      "division": null,
+      "record": null,
+      "confidence": 62.8
+    }
+  },
+  {
+    "ufc_id": "cc3147b49c7d7d92",
+    "name": "Dan Stittgen",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 42258,
+      "sherdog_url": "https://www.sherdog.com/fighter/Daniel-Stittgen-42258",
+      "name": "Daniel Stittgen",
+      "division": null,
+      "record": null,
+      "confidence": 63.33
+    }
+  },
+  {
+    "ufc_id": "a24e080000fa7a35",
+    "name": "Darrel Gholar",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 213,
+      "sherdog_url": "https://www.sherdog.com/fighter/Darrell-Gholar-213",
+      "name": "Darrell Gholar",
+      "division": null,
+      "record": null,
+      "confidence": 67.78
+    }
+  },
+  {
+    "ufc_id": "5eb50529a8418b77",
+    "name": "Gabe Green",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 18561,
+      "sherdog_url": "https://www.sherdog.com/fighter/Gabe-Greenberg-18561",
+      "name": "Gabe Greenberg",
+      "division": null,
+      "record": null,
+      "confidence": 60.0
+    }
+  },
+  {
+    "ufc_id": "f9d0cae37dabfafc",
+    "name": "Ike Villanueva",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 452741,
+      "sherdog_url": "https://www.sherdog.com/fighter/Iker-Villanueva-452741",
+      "name": "Iker Villanueva",
+      "division": null,
+      "record": null,
+      "confidence": 67.93
+    }
+  },
+  {
+    "ufc_id": "8cf90e41646491fd",
+    "name": "Ilima Macfarlane",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 162961,
+      "sherdog_url": "https://www.sherdog.com/fighter/IlimaLei-Macfarlane-162961",
+      "name": "Ilima-Lei Macfarlane",
+      "division": null,
+      "record": null,
+      "confidence": 63.33
+    }
+  },
+  {
+    "ufc_id": "17c6e35e4da505b0",
+    "name": "J.T Taylor",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 4429,
+      "sherdog_url": "https://www.sherdog.com/fighter/JT-Taylor-4429",
+      "name": "J.T. Taylor",
+      "division": null,
+      "record": null,
+      "confidence": 67.14
+    }
+  },
+  {
+    "ufc_id": "6751eacd16bd59bc",
+    "name": "Josh Culibao",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 222801,
+      "sherdog_url": "https://www.sherdog.com/fighter/Joshua-Culibao-222801",
+      "name": "Joshua Culibao",
+      "division": null,
+      "record": null,
+      "confidence": 65.38
+    }
+  },
+  {
+    "ufc_id": "e05f4ce199baca91",
+    "name": "Khadzhi Bestaev",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 164821,
+      "sherdog_url": "https://www.sherdog.com/fighter/Khadzhimurat-Bestaev-164821",
+      "name": "Khadzhimurat Bestaev",
+      "division": null,
+      "record": null,
+      "confidence": 61.43
+    }
+  },
+  {
+    "ufc_id": "1bda4867f1baceac",
+    "name": "Kier Gooch",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 20895,
+      "sherdog_url": "https://www.sherdog.com/fighter/Kierre-Gooch-20895",
+      "name": "Kierre Gooch",
+      "division": null,
+      "record": null,
+      "confidence": 64.55
+    }
+  },
+  {
+    "ufc_id": "cf772fb504842dc3",
+    "name": "Kiril Sidelnikov",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 20856,
+      "sherdog_url": "https://www.sherdog.com/fighter/Kirill-Sidelnikov-20856",
+      "name": "Kirill Sidelnikov",
+      "division": null,
+      "record": null,
+      "confidence": 68.18
+    }
+  },
+  {
+    "ufc_id": "843dd76c50cae0f6",
+    "name": "Lina Kvokov",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 30953,
+      "sherdog_url": "https://www.sherdog.com/fighter/Akulina-Kvokov-30953",
+      "name": "Akulina Kvokov",
+      "division": null,
+      "record": null,
+      "confidence": 62.8
+    }
+  },
+  {
+    "ufc_id": "c0386644627a7ee5",
+    "name": "Mana Martinez",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 130553,
+      "sherdog_url": "https://www.sherdog.com/fighter/Leomana-Martinez-130553",
+      "name": "Leomana Martinez",
+      "division": null,
+      "record": null,
+      "confidence": 63.79
+    }
+  },
+  {
+    "ufc_id": "60193e707634e560",
+    "name": "Montse Rendon",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 392870,
+      "sherdog_url": "https://www.sherdog.com/fighter/Montserrat-Rendon-392870",
+      "name": "Montserrat Rendon",
+      "division": null,
+      "record": null,
+      "confidence": 62.0
+    }
+  },
+  {
+    "ufc_id": "8d11d9c13e2ccdf7",
+    "name": "Muhammad Naimov",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 228381,
+      "sherdog_url": "https://www.sherdog.com/fighter/Muhammadjon-Naimov-228381",
+      "name": "Muhammadjon Naimov",
+      "division": null,
+      "record": null,
+      "confidence": 64.55
+    }
+  },
+  {
+    "ufc_id": "8e382b585a92affe",
+    "name": "Phil Rowe",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 121067,
+      "sherdog_url": "https://www.sherdog.com/fighter/Philip-Rowe-121067",
+      "name": "Philip Rowe",
+      "division": null,
+      "record": null,
+      "confidence": 64.0
+    }
+  },
+  {
+    "ufc_id": "ed069a95aaaf4f56",
+    "name": "Raou Raou",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 4758,
+      "sherdog_url": "https://www.sherdog.com/fighter/Raoul-Raoul-4758",
+      "name": "Raoul Raoul",
+      "division": null,
+      "record": null,
+      "confidence": 63.33
+    }
+  },
+  {
+    "ufc_id": "611b9c068c9e2c44",
+    "name": "Rich Bouphanouvong",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 55536,
+      "sherdog_url": "https://www.sherdog.com/fighter/Richard-Bouphanouvong-55536",
+      "name": "Richard Bouphanouvong",
+      "division": null,
+      "record": null,
+      "confidence": 65.38
+    }
+  },
+  {
+    "ufc_id": "dc0f07928009a127",
+    "name": "Rob Emerson",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 5286,
+      "sherdog_url": "https://www.sherdog.com/fighter/Robert-Emerson-5286",
+      "name": "Robert Emerson",
+      "division": null,
+      "record": null,
+      "confidence": 62.8
+    }
+  },
+  {
+    "ufc_id": "960d6cae8879ba2b",
+    "name": "Robert Peralta",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 207217,
+      "sherdog_url": "https://www.sherdog.com/fighter/Roberto-Peralta-207217",
+      "name": "Roberto Peralta",
+      "division": null,
+      "record": null,
+      "confidence": 67.93
+    }
+  },
+  {
+    "ufc_id": "57887765f831e228",
+    "name": "Roldan Sangcha'an",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 103497,
+      "sherdog_url": "https://www.sherdog.com/fighter/Roldan-Sangchaan-103497",
+      "name": "Roldan Sangcha-an",
+      "division": null,
+      "record": null,
+      "confidence": 66.47
+    }
+  },
+  {
+    "ufc_id": "06734ca9d88dec3a",
+    "name": "Shara Magomedov",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 313819,
+      "sherdog_url": "https://www.sherdog.com/fighter/Sharapudin-Magomedov-313819",
+      "name": "Sharapudin Magomedov",
+      "division": null,
+      "record": null,
+      "confidence": 61.43
+    }
+  },
+  {
+    "ufc_id": "3cf68c1d17f66af7",
+    "name": "Siala Siliga",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 9068,
+      "sherdog_url": "https://www.sherdog.com/fighter/SialaMou-Siliga-9068",
+      "name": "Siala-Mou Siliga",
+      "division": null,
+      "record": null,
+      "confidence": 61.43
+    }
+  },
+  {
+    "ufc_id": "0eef1bf99afd4ff2",
+    "name": "Steve Mann",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 91741,
+      "sherdog_url": "https://www.sherdog.com/fighter/Steven-Mann-91741",
+      "name": "Steven Mann",
+      "division": null,
+      "record": null,
+      "confidence": 67.14
+    }
+  },
+  {
+    "ufc_id": "0e46690e55a8df75",
+    "name": "Timmy Cuamba",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 316223,
+      "sherdog_url": "https://www.sherdog.com/fighter/Timothy-Cuamba-316223",
+      "name": "Timothy Cuamba",
+      "division": null,
+      "record": null,
+      "confidence": 60.77
+    }
+  },
+  {
+    "ufc_id": "36ab6af06e312b41",
+    "name": "Tom Sauer",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 790,
+      "sherdog_url": "https://www.sherdog.com/fighter/Tommy-Sauer-790",
+      "name": "Tommy Sauer",
+      "division": null,
+      "record": null,
+      "confidence": 64.0
+    }
+  },
+  {
+    "ufc_id": "cc49ada1ea955b13",
+    "name": "Vanilto Antunes",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 183297,
+      "sherdog_url": "https://www.sherdog.com/fighter/Vanilton-Antunes-183297",
+      "name": "Vanilton Antunes",
+      "division": null,
+      "record": null,
+      "confidence": 68.06
+    }
+  },
+  {
+    "ufc_id": "b4443fae47e7eb9d",
+    "name": "Wes Schultz",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 338469,
+      "sherdog_url": "https://www.sherdog.com/fighter/Wesley-Schultz-338469",
+      "name": "Wesley Schultz",
+      "division": null,
+      "record": null,
+      "confidence": 62.8
     }
   }
 ]
