@@ -14,6 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { resolveImageUrl } from "@/lib/utils";
 
 type Props = {
   fighter: FighterListItem;
@@ -22,6 +23,7 @@ type Props = {
 export default function FighterCard({ fighter }: Props) {
   const { favorites, toggleFavorite } = useFavorites();
   const isFavorite = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
+  const imageSrc = resolveImageUrl(fighter.image_url);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,13 +57,14 @@ export default function FighterCard({ fighter }: Props) {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {fighter.image_url ? (
+          {imageSrc ? (
             <div className="flex justify-center">
-              <div className="relative h-36 w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted">
+              <div className="relative aspect-[3/4] w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted p-2">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
+                  src={imageSrc}
                   alt={fighter.name}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-contain transition duration-500"
+                  loading="lazy"
                   onError={(event) => {
                     (event.target as HTMLImageElement).style.display = "none";
                   }}

@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { resolveImageUrl } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -43,18 +44,20 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading }: Pro
   }
 
   const fightHistory = fighter.fight_history.filter((fight) => fight.event_name !== null);
+  const imageSrc = resolveImageUrl(fighter.image_url);
 
   return (
     <Card className="space-y-8 rounded-3xl border-border bg-card/80">
       <CardHeader className="space-y-6 pb-0">
         <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-start">
-          {fighter.image_url ? (
+          {imageSrc ? (
             <div className="flex items-start justify-center">
-              <div className="relative h-48 w-48 overflow-hidden rounded-2xl border border-border/70 bg-muted">
+              <div className="relative aspect-[3/4] w-44 max-w-[220px] overflow-hidden rounded-2xl border border-border/70 bg-muted p-3 md:w-full">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/${fighter.image_url}`}
+                  src={imageSrc}
                   alt={fighter.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
+                  loading="lazy"
                   onError={(event) => {
                     (event.target as HTMLImageElement).style.display = "none";
                   }}

@@ -12,8 +12,164 @@ import type {
   TrendPoint,
   TrendSeries,
 } from "./types";
+import { ApiError, ErrorResponseData } from "./errors";
+import { logger } from "./logger";
 
 const REQUEST_OPTIONS: RequestInit = { cache: "no-store" };
+const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000; // 1 second base delay
+
+/**
+ * Sleep for a specified duration (for retry delays)
+ */
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay
+ */
+function getRetryDelay(retryCount: number, baseDelay = RETRY_DELAY_MS): number {
+  return baseDelay * Math.pow(2, retryCount - 1);
+}
+
+/**
+ * Fetch with timeout support
+ */
+async function fetchWithTimeout(
+  url: string,
+  init?: RequestInit,
+  timeoutMs = DEFAULT_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw ApiError.fromTimeout(timeoutMs);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Parse error response from backend
+ */
+async function parseErrorResponse(
+  response: Response
+): Promise<ApiError> {
+  const requestId = response.headers.get("X-Request-ID") || undefined;
+
+  try {
+    const data: ErrorResponseData = await response.json();
+    return ApiError.fromResponse(data, response.status);
+  } catch {
+    // If we can't parse the error response, create a generic error
+    return new ApiError(
+      response.statusText || "Request failed",
+      {
+        statusCode: response.status,
+        detail: `HTTP ${response.status} error occurred`,
+        requestId,
+      }
+    );
+  }
+}
+
+/**
+ * Fetch with retry logic for retryable errors
+ */
+async function fetchWithRetry(
+  url: string,
+  init?: RequestInit,
+  options: {
+    timeoutMs?: number;
+    maxRetries?: number;
+    retryDelay?: number;
+  } = {}
+): Promise<Response> {
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    maxRetries = MAX_RETRY_ATTEMPTS,
+    retryDelay = RETRY_DELAY_MS,
+  } = options;
+
+  let lastError: ApiError | null = null;
+  const method = init?.method || "GET";
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const startTime = Date.now();
+
+      if (attempt > 0) {
+        const delay = getRetryDelay(attempt, retryDelay);
+        logger.logRetry(method, url, attempt, maxRetries);
+        await sleep(delay);
+      }
+
+      logger.logRequest(method, url, { attempt });
+
+      const response = await fetchWithTimeout(url, init, timeoutMs);
+      const duration = Date.now() - startTime;
+
+      logger.logResponse(method, url, response.status, duration);
+
+      if (!response.ok) {
+        const error = await parseErrorResponse(response);
+        error.retryCount = attempt;
+
+        // Don't retry if error is not retryable
+        if (!error.isRetryable || attempt === maxRetries) {
+          logger.logApiError(method, url, error);
+          throw error;
+        }
+
+        lastError = error;
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        lastError = error;
+
+        // Don't retry if error is not retryable
+        if (!error.isRetryable || attempt === maxRetries) {
+          logger.logApiError(method, url, error);
+          throw error;
+        }
+      } else if (error instanceof Error) {
+        // Network error or other fetch error
+        lastError = ApiError.fromNetworkError(error, attempt);
+
+        if (attempt === maxRetries) {
+          logger.logApiError(method, url, lastError);
+          throw lastError;
+        }
+      } else {
+        // Unknown error type
+        const unknownError = new ApiError("Unknown error occurred", {
+          detail: String(error),
+          retryCount: attempt,
+        });
+        logger.logApiError(method, url, unknownError);
+        throw unknownError;
+      }
+    }
+  }
+
+  // This should never be reached, but TypeScript needs it
+  throw lastError || new ApiError("Request failed after retries");
+}
 
 function buildRequestInit(init?: RequestInit): RequestInit {
   return { ...REQUEST_OPTIONS, ...init };
@@ -267,15 +423,24 @@ export async function getFighters(
   offset = 0
 ): Promise<PaginatedFightersResponse> {
   const apiUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${apiUrl}/fighters/?limit=${limit}&offset=${offset}`,
-    buildRequestInit()
-  );
-  if (!response.ok) {
-    throw new Error("Failed to fetch fighters");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/fighters/?limit=${limit}&offset=${offset}`,
+      buildRequestInit()
+    );
+    const payload = await response.json();
+    return normalizePaginatedFightersResponse(payload, limit, offset);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  const payload = await response.json();
-  return normalizePaginatedFightersResponse(payload, limit, offset);
 }
 
 export async function searchFighters(
@@ -295,21 +460,43 @@ export async function searchFighters(
   }
   params.set("limit", String(limit));
   params.set("offset", String(offset));
-  const response = await fetch(`${apiUrl}/search/?${params.toString()}`, buildRequestInit());
-  if (!response.ok) {
-    throw new Error("Failed to search fighters");
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/search/?${params.toString()}`,
+      buildRequestInit()
+    );
+    const payload = await response.json();
+    return normalizePaginatedFightersResponse(payload, limit, offset);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  const payload = await response.json();
-  return normalizePaginatedFightersResponse(payload, limit, offset);
 }
 
 export async function getRandomFighter(): Promise<FighterListItem> {
   const apiUrl = getApiBaseUrl();
-  const response = await fetch(`${apiUrl}/fighters/random`, buildRequestInit());
-  if (!response.ok) {
-    throw new Error("Failed to fetch random fighter");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/fighters/random`,
+      buildRequestInit()
+    );
+    return response.json();
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  return response.json();
 }
 
 /**
@@ -319,12 +506,21 @@ export async function getRandomFighter(): Promise<FighterListItem> {
  */
 export async function getStatsSummary(init?: RequestInit): Promise<StatsSummaryResponse> {
   const apiUrl = getApiBaseUrl();
-  const response = await fetch(`${apiUrl}/stats/summary`, buildRequestInit(init));
-  if (!response.ok) {
-    throw new Error("Failed to fetch stats summary");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/stats/summary`,
+      buildRequestInit(init)
+    );
+    const payload = await response.json();
+    return normalizeStatsSummary(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  const payload = await response.json();
-  return normalizeStatsSummary(payload);
 }
 
 /**
@@ -336,12 +532,21 @@ export async function getStatsLeaderboards(
   init?: RequestInit
 ): Promise<StatsLeaderboardsResponse> {
   const apiUrl = getApiBaseUrl();
-  const response = await fetch(`${apiUrl}/stats/leaderboards`, buildRequestInit(init));
-  if (!response.ok) {
-    throw new Error("Failed to fetch stats leaderboards");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/stats/leaderboards`,
+      buildRequestInit(init)
+    );
+    const payload = await response.json();
+    return normalizeLeaderboards(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  const payload = await response.json();
-  return normalizeLeaderboards(payload);
 }
 
 /**
@@ -351,19 +556,31 @@ export async function getStatsLeaderboards(
  */
 export async function getStatsTrends(init?: RequestInit): Promise<StatsTrendsResponse> {
   const apiUrl = getApiBaseUrl();
-  const response = await fetch(`${apiUrl}/stats/trends`, buildRequestInit(init));
-  if (!response.ok) {
-    throw new Error("Failed to fetch stats trends");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/stats/trends`,
+      buildRequestInit(init)
+    );
+    const payload = await response.json();
+    return normalizeTrends(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-  const payload = await response.json();
-  return normalizeTrends(payload);
 }
 
 export async function compareFighters(
   fighterIds: string[]
 ): Promise<FighterComparisonResponse> {
   if (fighterIds.length < 2) {
-    throw new Error("Select at least two fighters to compare.");
+    throw new ApiError("Select at least two fighters to compare.", {
+      statusCode: 400,
+      detail: "Comparison requires at least two fighter IDs",
+    });
   }
 
   const apiUrl = getApiBaseUrl();
@@ -374,23 +591,29 @@ export async function compareFighters(
     }
   });
 
-  const response = await fetch(
-    `${apiUrl}/fighters/compare?${params.toString()}`,
-    buildRequestInit()
-  );
-  if (!response.ok) {
-    throw new Error("Failed to fetch fighter comparison data");
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/fighters/compare?${params.toString()}`,
+      buildRequestInit()
+    );
+
+    const payload = await response.json();
+    if (!isRecord(payload)) {
+      return { fighters: [] };
+    }
+
+    const fightersSource = Array.isArray(payload.fighters) ? payload.fighters : [];
+    const fighters = fightersSource
+      .map((entry) => normalizeComparisonEntry(entry))
+      .filter((entry): entry is FighterComparisonEntry => entry !== null);
+
+    return { fighters };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
-
-  const payload = await response.json();
-  if (!isRecord(payload)) {
-    return { fighters: [] };
-  }
-
-  const fightersSource = Array.isArray(payload.fighters) ? payload.fighters : [];
-  const fighters = fightersSource
-    .map((entry) => normalizeComparisonEntry(entry))
-    .filter((entry): entry is FighterComparisonEntry => entry !== null);
-
-  return { fighters };
 }

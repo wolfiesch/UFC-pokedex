@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -27,18 +27,50 @@ test: ## Run unit tests across the repo
 scrape-sample: ## Run sample scrape to populate data/samples
 	python -m scripts.scrape_sample
 
-dev: ## Start backend and frontend in development mode
-	@set -euo pipefail; \
-	trap 'kill 0' INT TERM EXIT; \
-	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} & \
-	if [ -n "$${WEB_PORT:-}" ]; then \
-		cd frontend && PORT=$$WEB_PORT pnpm dev; \
-	else \
-		cd frontend && pnpm dev; \
-	fi
+dev: ## Start backend, frontend, and Cloudflare tunnels with auto-config
+	@echo "🔄 Stopping existing processes..."
+	@pkill cloudflared 2>/dev/null || true
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@echo ""
+	@echo "🚇 Starting Cloudflare tunnels..."
+	@TUNNEL_OUTPUT=$$(bash scripts/start_tunnels.sh); \
+	FRONTEND_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "FRONTEND_URL=" | cut -d'=' -f2); \
+	API_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "API_URL=" | cut -d'=' -f2); \
+	echo ""; \
+	echo "📝 Updating configuration files..."; \
+	sed -i.bak "s|CORS_ALLOW_ORIGINS=.*|CORS_ALLOW_ORIGINS=$$FRONTEND_URL|" .env && rm .env.bak; \
+	sed -i.bak "s|NEXT_PUBLIC_API_BASE_URL=.*|NEXT_PUBLIC_API_BASE_URL=$$API_URL|" frontend/.env.local && rm frontend/.env.local.bak; \
+	echo ""; \
+	echo "🚀 Starting services..."; \
+	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \
+	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
+	sleep 2; \
+	cd frontend && pnpm dev > /tmp/frontend.log 2>&1 & \
+	sleep 3; \
+	echo ""; \
+	echo "✅ All services started!"; \
+	echo ""; \
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+	echo "📍 LOCAL URLs:"; \
+	echo "   Frontend: http://localhost:3000"; \
+	echo "   Backend:  http://localhost:8000"; \
+	echo ""; \
+	echo "🌐 PUBLIC URLs (Cloudflare Tunnels):"; \
+	echo "   Frontend: $$FRONTEND_URL"; \
+	echo "   Backend:  $$API_URL"; \
+	echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+	echo ""; \
+	echo "Press Ctrl+C to stop all services"; \
+	tail -f /tmp/backend.log /tmp/frontend.log
 
-api: ## Start only the FastAPI backend
-	.venv/bin/uvicorn backend.main:app --reload
+api: ## Start only the FastAPI backend (kills existing process on port 8000)
+	@echo "Stopping any existing process on port 8000..."
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@echo "Starting backend..."
+	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000}
 
 scraper: ## Run full scraper crawl (fighters list)
 	.venv/bin/scrapy crawl fighters_list
@@ -106,14 +138,22 @@ sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
 	@$(MAKE) update-fighter-images
 	@echo "\n✓ Sherdog sample workflow complete!"
 
-frontend: ## Start only the Next.js frontend
-	cd frontend && pnpm dev
+frontend: ## Start only the Next.js frontend (kills existing process on port 3000)
+	@echo "Stopping any existing process on port 3000..."
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@echo "Starting frontend..."
+	@cd frontend && pnpm dev
 
 tunnel-frontend: ## Start Cloudflare tunnel for frontend (port 3000)
 	cloudflared tunnel --url http://localhost:3000
 
 tunnel-api: ## Start Cloudflare tunnel for API (port 8000)
 	cloudflared tunnel --url http://localhost:8000
+
+tunnel-stop: ## Stop all Cloudflare tunnels
+	@echo "Stopping all Cloudflare tunnels..."
+	@pkill cloudflared 2>/dev/null && echo "✓ Tunnels stopped" || echo "No tunnels running"
 
 db-upgrade: ## Run database migrations (apply schema changes)
 	.venv/bin/python -m alembic upgrade head

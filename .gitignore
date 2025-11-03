@@ -42,3 +42,8 @@ tests/e2e/screenshots/
 /.scrapy/data/cache/scrapy_cache
 /.scrapy/data/cache/scrapy_cache/sherdog_search/f0
 /.scrapy/data/cache
+
+# Cloudflare Tunnels
+/tmp/tunnel-*.log
+/tmp/backend.log
+/tmp/frontend.log
