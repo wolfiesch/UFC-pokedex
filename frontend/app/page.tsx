@@ -20,6 +20,7 @@ export default function HomePage() {
     total,
     hasMore,
     loadMore,
+    retry,
   } = useFighters();
   const { stanceFilter, setStanceFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
@@ -70,6 +71,7 @@ export default function HomePage() {
         total={total}
         hasMore={hasMore}
         onLoadMore={loadMore}
+        onRetry={retry}
       />
     </section>
   );

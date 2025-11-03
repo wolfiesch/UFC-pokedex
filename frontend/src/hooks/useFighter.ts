@@ -1,53 +1,97 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { FighterDetail } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/api";
+import { ApiError, NotFoundError } from "@/lib/errors";
 
 export function useFighter(fighterId: string) {
   const [fighter, setFighter] = useState<FighterDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async (active: { current: boolean }) => {
     if (!fighterId) return;
-    let active = true;
-    async function load() {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${getApiBaseUrl()}/fighters/${fighterId}`, {
-          cache: "no-store",
-        });
-        if (response.status === 404) {
-          if (active) {
-            setFighter(null);
-          }
-          return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/fighters/${fighterId}`, {
+        cache: "no-store",
+      });
+
+      if (!active.current) return;
+
+      if (response.status === 404) {
+        const notFoundError = new NotFoundError(
+          "Fighter",
+          `Fighter with ID "${fighterId}" not found`
+        );
+        setError(notFoundError);
+        setFighter(null);
+        return;
+      }
+
+      if (!response.ok) {
+        // Try to parse error response from backend
+        try {
+          const errorData = await response.json();
+          const apiError = ApiError.fromResponse(errorData, response.status);
+          setError(apiError);
+        } catch {
+          // Fallback if response is not JSON
+          const apiError = new ApiError(
+            `Failed to load fighter`,
+            {
+              statusCode: response.status,
+              detail: `HTTP ${response.status} ${response.statusText}`,
+            }
+          );
+          setError(apiError);
         }
-        if (!response.ok) {
-          throw new Error(`Failed to load fighter (${response.status})`);
-        }
-        const data: FighterDetail = await response.json();
-        if (active) {
-          setFighter(data);
-        }
-      } catch (err) {
-        if (active) {
-          setError(err instanceof Error ? err.message : "Unknown error");
-          setFighter(null);
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        setFighter(null);
+        return;
+      }
+
+      const data: FighterDetail = await response.json();
+      if (active.current) {
+        setFighter(data);
+      }
+    } catch (err) {
+      if (!active.current) return;
+
+      const apiError = err instanceof ApiError
+        ? err
+        : ApiError.fromNetworkError(
+            err instanceof Error ? err : new Error("Unknown error")
+          );
+
+      setError(apiError);
+      setFighter(null);
+    } finally {
+      if (active.current) {
+        setIsLoading(false);
       }
     }
-    void load();
-    return () => {
-      active = false;
-    };
   }, [fighterId]);
 
-  return { fighter, isLoading, error };
+  /**
+   * Retry loading the fighter
+   */
+  const retry = useCallback(() => {
+    const active = { current: true };
+    void load(active);
+  }, [load]);
+
+  useEffect(() => {
+    const active = { current: true };
+    void load(active);
+    return () => {
+      active.current = false;
+    };
+  }, [load]);
+
+  return { fighter, isLoading, error, retry };
 }

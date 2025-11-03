@@ -310,23 +310,26 @@ class FighterService:
         self,
         query: str | None = None,
         stance: str | None = None,
+        division: str | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> PaginatedFightersResponse:
-        """Search fighters by name or stance with pagination."""
+        """Search fighters by name, stance, or division with pagination."""
 
         resolved_limit = limit if limit is not None and limit > 0 else 20
         resolved_offset = offset if offset is not None and offset >= 0 else 0
 
         normalized_query = (query or "").strip()
         normalized_stance = (stance or "").strip()
+        normalized_division = (division or "").strip()
 
-        use_cache = self._cache is not None and (normalized_query or normalized_stance)
+        use_cache = self._cache is not None and (normalized_query or normalized_stance or normalized_division)
         cache_key = (
             search_key(
                 normalized_query,
                 normalized_stance if normalized_stance else None,
+                normalized_division if normalized_division else None,
                 resolved_limit,
                 resolved_offset,
             )

@@ -3,15 +3,17 @@
 import { useEffect, useRef } from "react";
 import FighterCard from "./FighterCard";
 import type { FighterListItem } from "@/lib/types";
+import type { ApiError } from "@/lib/errors";
 
 type Props = {
   fighters: FighterListItem[];
   isLoading?: boolean;
   isLoadingMore?: boolean;
-  error?: string | null;
+  error?: ApiError | null;
   total?: number;
   hasMore?: boolean;
   onLoadMore?: () => void;
+  onRetry?: () => void;
 };
 
 export default function FighterGrid({
@@ -22,6 +24,7 @@ export default function FighterGrid({
   total = 0,
   hasMore = false,
   onLoadMore,
+  onRetry,
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -53,8 +56,97 @@ export default function FighterGrid({
 
   if (error) {
     return (
-      <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive-foreground">
-        Unable to load fighters right now. Error: {error}
+      <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6">
+        <div className="mb-4 flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-6 w-6 text-destructive"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="mb-1 font-semibold text-destructive-foreground">
+              Unable to load fighters
+            </h3>
+            <p className="mb-2 text-sm text-destructive-foreground/90">
+              {error.getUserMessage()}
+            </p>
+
+            {/* Technical details */}
+            <details className="mb-4 text-xs text-destructive-foreground/75">
+              <summary className="cursor-pointer hover:text-destructive-foreground">
+                Technical Details
+              </summary>
+              <div className="mt-2 space-y-1 rounded-lg border border-destructive/20 bg-background/50 p-3 font-mono">
+                <p>
+                  <span className="font-semibold">Error Type:</span> {error.errorType}
+                </p>
+                <p>
+                  <span className="font-semibold">Status Code:</span> {error.statusCode}
+                </p>
+                {error.requestId && (
+                  <p>
+                    <span className="font-semibold">Request ID:</span> {error.requestId}
+                  </p>
+                )}
+                {error.timestamp && (
+                  <p>
+                    <span className="font-semibold">Timestamp:</span>{" "}
+                    {error.timestamp.toLocaleString()}
+                  </p>
+                )}
+                {error.retryCount > 0 && (
+                  <p>
+                    <span className="font-semibold">Retry Attempts:</span> {error.retryCount}
+                  </p>
+                )}
+                {error.retryAfter && (
+                  <p>
+                    <span className="font-semibold">Retry After:</span> {error.retryAfter}s
+                  </p>
+                )}
+              </div>
+            </details>
+
+            <div className="flex gap-2">
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
+                >
+                  Retry
+                </button>
+              )}
+              {error.isRetryable && (
+                <span className="flex items-center gap-1 rounded-full border border-destructive/20 bg-background/50 px-3 py-2 text-xs text-destructive-foreground/75">
+                  <svg
+                    className="h-3 w-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  This error may be temporary
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

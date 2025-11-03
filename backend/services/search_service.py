@@ -14,6 +14,7 @@ class SearchService:
         self,
         query: str | None = None,
         stance: str | None = None,
+        division: str | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
@@ -23,6 +24,7 @@ class SearchService:
         return await self._fighter_service.search_fighters(
             query=query,
             stance=stance,
+            division=division,
             limit=limit,
             offset=offset,
         )

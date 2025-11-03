@@ -9,11 +9,17 @@ import { useFighter } from "@/hooks/useFighter";
 export default function FighterDetailPage() {
   const params = useParams<{ id: string }>();
   const fighterId = params?.id ?? "";
-  const { fighter, isLoading } = useFighter(fighterId);
+  const { fighter, isLoading, error, retry } = useFighter(fighterId);
 
   return (
     <section className="container max-w-5xl space-y-10 py-12">
-      <FighterDetailCard fighterId={fighterId} fighter={fighter} isLoading={isLoading} />
+      <FighterDetailCard
+        fighterId={fighterId}
+        fighter={fighter}
+        isLoading={isLoading}
+        error={error}
+        onRetry={retry}
+      />
       {fighter ? (
         <FighterComparisonPanel
           primaryFighterId={fighterId}

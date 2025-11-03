@@ -33,12 +33,14 @@ def list_key(limit: int, offset: int) -> str:
 def search_key(
     query: str,
     stance: str | None,
+    division: str | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> str:
     parts = [
         query.strip().lower(),
         (stance or "").strip().lower(),
+        (division or "").strip().lower(),
         str(limit) if limit is not None else "",
         str(offset) if offset is not None else "",
     ]

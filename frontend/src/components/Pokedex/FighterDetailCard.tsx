@@ -2,6 +2,8 @@
 
 import StatsDisplay from "@/components/StatsDisplay";
 import type { FighterDetail } from "@/lib/types";
+import type { ApiError } from "@/lib/errors";
+import { ErrorType } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -24,18 +26,113 @@ type Props = {
   fighterId: string;
   fighter: FighterDetail | null;
   isLoading: boolean;
+  error?: ApiError | null;
+  onRetry?: () => void;
 };
 
-export default function FighterDetailCard({ fighterId, fighter, isLoading }: Props) {
+export default function FighterDetailCard({ fighterId, fighter, isLoading, error, onRetry }: Props) {
   if (isLoading) {
     return (
       <Card className="rounded-3xl border-border bg-card/80 p-6 text-sm text-muted-foreground">
-        Loading fighter details…
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-foreground" />
+          Loading fighter details…
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    const isNotFound = error.errorType === ErrorType.NOT_FOUND;
+
+    return (
+      <Card className="rounded-3xl border-destructive/30 bg-destructive/10 p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-6 w-6 text-destructive"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {isNotFound ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              )}
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="mb-1 font-semibold text-destructive-foreground">
+              {isNotFound ? "Fighter not found" : "Unable to load fighter"}
+            </h3>
+            <p className="mb-2 text-sm text-destructive-foreground/90">
+              {error.getUserMessage()}
+            </p>
+
+            {/* Technical details */}
+            <details className="mb-4 text-xs text-destructive-foreground/75">
+              <summary className="cursor-pointer hover:text-destructive-foreground">
+                Technical Details
+              </summary>
+              <div className="mt-2 space-y-1 rounded-lg border border-destructive/20 bg-background/50 p-3 font-mono">
+                <p>
+                  <span className="font-semibold">Fighter ID:</span> {fighterId}
+                </p>
+                <p>
+                  <span className="font-semibold">Error Type:</span> {error.errorType}
+                </p>
+                <p>
+                  <span className="font-semibold">Status Code:</span> {error.statusCode}
+                </p>
+                {error.requestId && (
+                  <p>
+                    <span className="font-semibold">Request ID:</span> {error.requestId}
+                  </p>
+                )}
+                {error.timestamp && (
+                  <p>
+                    <span className="font-semibold">Timestamp:</span>{" "}
+                    {error.timestamp.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </details>
+
+            <div className="flex gap-2">
+              {onRetry && !isNotFound && (
+                <button
+                  onClick={onRetry}
+                  className="rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
+                >
+                  Retry
+                </button>
+              )}
+              <a
+                href="/"
+                className="rounded-full border border-input bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Go Back Home
+              </a>
+            </div>
+          </div>
+        </div>
       </Card>
     );
   }
 
   if (!fighter) {
+    // Fallback if no error but also no fighter (shouldn't happen with new error handling)
     return (
       <Card className="rounded-3xl border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive-foreground">
         Fighter with id <code>{fighterId}</code> was not found.

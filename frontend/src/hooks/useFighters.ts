@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { FighterListItem } from "@/lib/types";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { getFighters, searchFighters } from "@/lib/api";
+import { ApiError } from "@/lib/errors";
 
 export function useFighters(initialLimit = 20) {
   const searchTerm = useFavoritesStore((state) => state.searchTerm);
@@ -15,43 +16,52 @@ export function useFighters(initialLimit = 20) {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const pageSize = initialLimit;
 
-  const loadFighters = async (newOffset: number, append = false) => {
+  // Store last request params for retry
+  const lastRequestRef = useRef<{ offset: number; append: boolean } | null>(null);
+
+  const loadFighters = useCallback(async (newOffset: number, append = false) => {
+    // Store request params for potential retry
+    lastRequestRef.current = { offset: newOffset, append };
+
     if (append) {
       setIsLoadingMore(true);
     } else {
       setIsLoading(true);
     }
     setError(null);
+
     try {
       const trimmedSearch = (searchTerm ?? "").trim();
       const isFiltering = Boolean(trimmedSearch || stance);
 
+      let data;
       if (isFiltering) {
-        const data = await searchFighters(trimmedSearch, stance, pageSize, newOffset);
-        if (append) {
-          setFighters((prev) => [...prev, ...data.fighters]);
-        } else {
-          setFighters(data.fighters);
-        }
-        setTotal(data.total);
-        setHasMore(data.has_more);
-        setOffset(data.offset);
+        data = await searchFighters(trimmedSearch, stance, pageSize, newOffset);
       } else {
-        const data = await getFighters(pageSize, newOffset);
-        if (append) {
-          setFighters((prev) => [...prev, ...data.fighters]);
-        } else {
-          setFighters(data.fighters);
-        }
-        setTotal(data.total);
-        setHasMore(data.has_more);
-        setOffset(data.offset);
+        data = await getFighters(pageSize, newOffset);
       }
+
+      if (append) {
+        setFighters((prev) => [...prev, ...data.fighters]);
+      } else {
+        setFighters(data.fighters);
+      }
+      setTotal(data.total);
+      setHasMore(data.has_more);
+      setOffset(data.offset);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      const apiError = err instanceof ApiError
+        ? err
+        : new ApiError(
+            err instanceof Error ? err.message : "Unknown error occurred",
+            { statusCode: 0 }
+          );
+
+      setError(apiError);
+
       if (!append) {
         setFighters([]);
       }
@@ -62,18 +72,31 @@ export function useFighters(initialLimit = 20) {
         setIsLoading(false);
       }
     }
-  };
+  }, [searchTerm, stance, pageSize]);
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!hasMore || isLoadingMore) return;
     void loadFighters(offset + pageSize, true);
-  };
+  }, [hasMore, isLoadingMore, offset, pageSize, loadFighters]);
+
+  /**
+   * Retry the last failed request
+   */
+  const retry = useCallback(() => {
+    if (lastRequestRef.current) {
+      const { offset: retryOffset, append } = lastRequestRef.current;
+      void loadFighters(retryOffset, append);
+    } else {
+      // No previous request, start fresh
+      void loadFighters(0, false);
+    }
+  }, [loadFighters]);
 
   useEffect(() => {
     setOffset(0);
     setFighters([]);
     void loadFighters(0, false);
-  }, [searchTerm, stance, pageSize]);
+  }, [loadFighters]);
 
   return {
     fighters,
@@ -84,6 +107,7 @@ export function useFighters(initialLimit = 20) {
     isLoadingMore,
     error,
     loadMore,
+    retry,
     limit: pageSize,
   };
 }
