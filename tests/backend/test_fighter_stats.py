@@ -12,7 +12,7 @@ pytest_asyncio = pytest.importorskip("pytest_asyncio")
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.db.models import Base, Fighter, fighter_stats
+from backend.db.models import Base, Fight, Fighter, FighterStats, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
 from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (
@@ -287,7 +287,7 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
 
     # Create a fighter record to anchor the upcoming and historical fights.
     fighter: Fighter = Fighter(id="fighter-ordering", name="Ordering Test")
-    session.add(fighter)
+    session.add_all([fighter, FighterStats(fighter_id=fighter.id)])
     await session.flush()
 
     # Define precise event dates to make the intended ordering explicit.
