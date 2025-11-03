@@ -349,6 +349,7 @@ class FighterService:
             fighters, total = await self._repository.search_fighters(
                 query=query,
                 stance=stance,
+                division=division,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
@@ -356,6 +357,7 @@ class FighterService:
             fighters_iterable = await self._repository.list_fighters()
             query_lower = normalized_query.lower() if normalized_query else None
             stance_lower = normalized_stance.lower() if normalized_stance else None
+            division_lower = normalized_division.lower() if normalized_division else None
             filtered: list[FighterListItem] = []
             for fighter in fighters_iterable:
                 name_match = True
@@ -370,7 +372,11 @@ class FighterService:
                 if stance_lower:
                     fighter_stance = (getattr(fighter, "stance", None) or "").lower()
                     stance_match = fighter_stance == stance_lower
-                if name_match and stance_match:
+                division_match = True
+                if division_lower:
+                    fighter_division = (getattr(fighter, "division", None) or "").lower()
+                    division_match = fighter_division == division_lower
+                if name_match and stance_match and division_match:
                     filtered.append(fighter)
 
             total = len(filtered)

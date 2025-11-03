@@ -246,11 +246,12 @@ class PostgreSQLFighterRepository:
         self,
         query: str | None = None,
         stance: str | None = None,
+        division: str | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
-        """Search fighters by name or stance with pagination support."""
+        """Search fighters by name, stance, or division with pagination support."""
 
         filters = []
         if query:
@@ -260,6 +261,8 @@ class PostgreSQLFighterRepository:
             )
         if stance:
             filters.append(Fighter.stance == stance)
+        if division:
+            filters.append(Fighter.division == division)
 
         stmt = select(Fighter).order_by(Fighter.name)
         count_stmt = select(func.count()).select_from(Fighter)

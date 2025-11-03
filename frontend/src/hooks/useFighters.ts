@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/errors";
 export function useFighters(initialLimit = 20) {
   const searchTerm = useFavoritesStore((state) => state.searchTerm);
   const stance = useFavoritesStore((state) => state.stanceFilter);
+  const division = useFavoritesStore((state) => state.divisionFilter);
   const [fighters, setFighters] = useState<FighterListItem[]>([]);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
@@ -35,11 +36,11 @@ export function useFighters(initialLimit = 20) {
 
     try {
       const trimmedSearch = (searchTerm ?? "").trim();
-      const isFiltering = Boolean(trimmedSearch || stance);
+      const isFiltering = Boolean(trimmedSearch || stance || division);
 
       let data;
       if (isFiltering) {
-        data = await searchFighters(trimmedSearch, stance, pageSize, newOffset);
+        data = await searchFighters(trimmedSearch, stance, division, pageSize, newOffset);
       } else {
         data = await getFighters(pageSize, newOffset);
       }
@@ -72,7 +73,7 @@ export function useFighters(initialLimit = 20) {
         setIsLoading(false);
       }
     }
-  }, [searchTerm, stance, pageSize]);
+  }, [searchTerm, stance, division, pageSize]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || isLoadingMore) return;

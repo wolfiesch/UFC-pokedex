@@ -446,6 +446,7 @@ export async function getFighters(
 export async function searchFighters(
   query: string,
   stance: string | null = null,
+  division: string | null = null,
   limit = 20,
   offset = 0
 ): Promise<PaginatedFightersResponse> {
@@ -457,6 +458,9 @@ export async function searchFighters(
   }
   if (stance && stance.length > 0) {
     params.set("stance", stance);
+  }
+  if (division && division.length > 0) {
+    params.set("division", division);
   }
   params.set("limit", String(limit));
   params.set("offset", String(offset));

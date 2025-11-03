@@ -22,8 +22,20 @@ export default function HomePage() {
     loadMore,
     retry,
   } = useFighters();
-  const { stanceFilter, setStanceFilter } = useSearch();
+  const { stanceFilter, setStanceFilter, divisionFilter, setDivisionFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
+  const divisions = [
+    "Bantamweight",
+    "Featherweight",
+    "Flyweight",
+    "Heavyweight",
+    "Light Heavyweight",
+    "Lightweight",
+    "Middleweight",
+    "Strawweight",
+    "Super Heavyweight",
+    "Welterweight",
+  ];
 
   const handleRandomFighter = async () => {
     try {
@@ -62,6 +74,9 @@ export default function HomePage() {
         stances={stances}
         selectedStance={stanceFilter}
         onStanceChange={setStanceFilter}
+        divisions={divisions}
+        selectedDivision={divisionFilter}
+        onDivisionChange={setDivisionFilter}
       />
       <FighterGrid
         fighters={fighters}
