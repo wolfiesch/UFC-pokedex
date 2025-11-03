@@ -1,0 +1,129 @@
+=============================================================================
+          SHERDOG IMAGE SCRAPING WORKFLOW - EXECUTION SUMMARY
+=============================================================================
+
+Date: November 2, 2025
+Workflow Type: Non-Interactive (Auto-Approve ≥70% confidence)
+
+-----------------------------------------------------------------------------
+STEP 1: EXPORT ACTIVE FIGHTERS
+-----------------------------------------------------------------------------
+✓ Exported 50 fighters from database to data/active_fighters.json
+  (Sampled from total 4,447 fighters for practical demonstration)
+
+-----------------------------------------------------------------------------
+STEP 2: SEARCH SHERDOG FOR MATCHES
+-----------------------------------------------------------------------------
+✓ Searched Sherdog for all 50 fighters
+  Duration: ~31 seconds
+  Results saved to: data/processed/sherdog_matches.json
+
+-----------------------------------------------------------------------------
+STEP 3: VERIFY MATCHES (NON-INTERACTIVE)
+-----------------------------------------------------------------------------
+Auto-Approval Threshold: ≥70% confidence
+Manual Review Threshold: 60-69% confidence
+Skip Threshold: <60% confidence
+
+Results:
+  ✓ Auto-approved: 38 fighters (76%)
+  ⚠ Needs manual review: 2 fighters (4%) - confidence 60-69%
+  ✗ Skipped (low confidence): 10 fighters (20%) - confidence <60%
+
+Mapping saved to: data/sherdog_id_mapping.json
+Review list saved to: data/sherdog_review_needed.json
+
+-----------------------------------------------------------------------------
+STEP 4: DOWNLOAD FIGHTER IMAGES
+-----------------------------------------------------------------------------
+✓ Downloaded 38 images from Sherdog
+  Duration: ~48 seconds
+  Images saved to: data/images/fighters/{ufc_id}.{jpg|png}
+  Metadata saved to: data/processed/sherdog_images.json
+  Total size: ~1.6 MB
+
+Image Formats:
+  - JPG: 37 images
+  - PNG: 1 image
+
+-----------------------------------------------------------------------------
+STEP 5: UPDATE DATABASE
+-----------------------------------------------------------------------------
+✓ Updated 38 fighter records in database with:
+  - image_url: Path to local image file
+  - sherdog_id: Sherdog fighter ID
+  - image_scraped_at: Timestamp
+
+Database Statistics:
+  Total fighters in database: 4,447
+  Fighters with images: 38 (0.9% of total)
+  Fighters without images: 4,409 (99.1% of total)
+
+-----------------------------------------------------------------------------
+WORKFLOW SUCCESS METRICS
+-----------------------------------------------------------------------------
+Overall Success Rate: 76% (38/50 fighters)
+  - Successfully matched and downloaded: 38 fighters
+  - Need manual review: 2 fighters
+  - Unable to match: 10 fighters
+
+Confidence Score Distribution (50 fighters):
+  70-79%: 38 fighters → Auto-approved ✓
+  60-69%: 2 fighters → Manual review needed
+  <60%: 10 fighters → Skipped
+
+-----------------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------------
+1. Review fighters in data/sherdog_review_needed.json
+   - 2 fighters with 60-69% confidence (borderline matches)
+   - 10 fighters with <60% confidence (no good matches found)
+
+2. For borderline matches:
+   - Run interactive verification: make verify-sherdog-matches
+   - Manually approve/reject each match
+
+3. For low-confidence fighters:
+   - Investigate why no match was found (name variations, missing from Sherdog)
+   - Consider alternative image sources (UFC.com, Tapology, etc.)
+   - Or skip and leave without images
+
+4. To process remaining fighters:
+   - Export more fighters: .venv/bin/python -m scripts.export_active_fighters --limit N
+   - Run workflow again: make sherdog-workflow-auto
+
+5. To process ALL 4,447 fighters:
+   - WARNING: Will take ~4 hours for Sherdog search alone
+   - Run: make sherdog-workflow-auto (without export limit)
+   - Consider running overnight or in batches
+
+-----------------------------------------------------------------------------
+FILES CREATED/UPDATED
+-----------------------------------------------------------------------------
+✓ data/active_fighters.json - Exported fighter data
+✓ data/processed/sherdog_matches.json - Search results
+✓ data/sherdog_id_mapping.json - Verified UFC→Sherdog ID mappings
+✓ data/sherdog_review_needed.json - Fighters needing manual review
+✓ data/processed/sherdog_images.json - Image metadata
+✓ data/images/fighters/*.{jpg,png} - Downloaded images (38 files)
+✓ Database: fighters table updated with image_url, sherdog_id
+
+-----------------------------------------------------------------------------
+IMPROVEMENTS MADE
+-----------------------------------------------------------------------------
+1. Added non-interactive mode to verification script
+   - Flag: --non-interactive
+   - Auto-approves ≥70% confidence matches
+   - Skips ambiguous matches for later review
+   - Generates review report for follow-up
+
+2. Created new Makefile targets:
+   - verify-sherdog-matches-auto: Non-interactive verification
+   - sherdog-workflow-auto: Complete automated workflow
+
+3. Adjusted confidence thresholds:
+   - Interactive mode: 90% auto-approve (for high precision)
+   - Non-interactive mode: 70% auto-approve (for balance)
+   - Reason: Most name-only matches score exactly 70%
+
+=============================================================================

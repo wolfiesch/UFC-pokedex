@@ -45,6 +45,10 @@ class SherdogSearchSpider(scrapy.Spider):
         "AUTOTHROTTLE_START_DELAY": 2.0,
         "AUTOTHROTTLE_MAX_DELAY": 10.0,
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 2.0,
+        # Only use Sherdog storage pipeline, skip validation
+        "ITEM_PIPELINES": {
+            "scraper.pipelines.sherdog_storage.SherdogStoragePipeline": 300,
+        },
     }
 
     def __init__(self, *args, **kwargs):

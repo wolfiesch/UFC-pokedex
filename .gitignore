@@ -38,3 +38,7 @@ playwright-report/
 playwright/.cache/
 tests/e2e/screenshots/
 /.scrapy/data/cache/scrapy_cache
+/.scrapy/data/cache
+/.scrapy/data/cache/scrapy_cache
+/.scrapy/data/cache/scrapy_cache/sherdog_search/f0
+/.scrapy/data/cache

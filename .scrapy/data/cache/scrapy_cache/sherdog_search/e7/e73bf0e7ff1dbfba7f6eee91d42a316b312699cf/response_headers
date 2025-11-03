@@ -1,18 +1,19 @@
-Date: Sun, 02 Nov 2025 04:21:09 GMT
+Date: Mon, 03 Nov 2025 07:09:03 GMT
 Content-Type: text/html; charset=UTF-8
 Content-Encoding: gzip
 Cache-Control: max-age=300, s-maxage=300
 Edge-Control: max-age=300, s-maxage=300
-X-Generated: Sun, 02 Nov 2025 04:21:08 GMT
+X-Generated: Mon, 03 Nov 2025 07:09:03 GMT
 Content-Security-Policy: upgrade-insecure-requests;
-X-Served-By: sdc-fe-httpd-prd-7db56f77bd-9pz76
-X-Varnish: 68438805
+X-Served-By: sdc-fe-httpd-prd-7db56f77bd-rnmff
+X-Varnish: 67893822
 Via: 1.1 varnish-v4
 X-Cache: MISS from sdc-fe-varnish-prd-694c585f59-57t4n
-Last-Modified: Sun, 02 Nov 2025 04:21:09 GMT
-Cf-Cache-Status: MISS
-Server-Timing: cfCacheStatus;desc="MISS"
-Server-Timing: cfOrigin;dur=268,cfEdge;dur=126
+Last-Modified: Mon, 03 Nov 2025 07:09:03 GMT
+Cf-Cache-Status: EXPIRED
+Set-Cookie: __cf_bm=sOdDVvfREBig.0AWLTCGlnIZ7pwskD8nATCACIn7I58-1762153743-1.0.1.1-_eWYL3brJHA6wLpHEoEYYW5cDOYro3POstUm1U_Piu1SzuH1rICNcYh1dywR7yJRqUip0xCL_yXcx8zaE8MMnYUtBvozTg8LIPNZjRqogNE; path=/; expires=Mon, 03-Nov-25 07:39:03 GMT; domain=.sherdog.com; HttpOnly; Secure; SameSite=None
+Server-Timing: cfCacheStatus;desc="EXPIRED"
+Server-Timing: cfOrigin;dur=215,cfEdge;dur=137
 Vary: Accept-Encoding
 Server: cloudflare
-Cf-Ray: 9980d7e97aa2f40f-SJC
+Cf-Ray: 998a0b3eed089e6b-SJC

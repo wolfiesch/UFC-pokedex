@@ -1,0 +1,123 @@
+[
+  {
+    "ufc_id": "009c4420727149ea",
+    "name": "AJ Dobson",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "725b1abc9a39d873",
+    "name": "AJ Fletcher",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "0adf1aacda5e26ac",
+    "name": "AJ Fonseca",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "18e4f61f16f458c6",
+    "name": "AJ Matthews",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f3ec0214794a699e",
+    "name": "AJ McKee",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "fce9b4056a8ef559",
+    "name": "AJ Siscoe",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "b593cd58b0afffb0",
+    "name": "Abdellah Er-Ramy",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "968764372c49eab6",
+    "name": "Abdul Azeem Badakhshi",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "cb1b4d237b0079e6",
+    "name": "Abongo Humphrey",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "36b8f265bcd1b7a4",
+    "name": "Abus Magomedov",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "9b6dcc335ad03696",
+    "name": "Ailiya Muratbek",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "f6bbc6ba4f06ad60",
+    "name": "Alain Van der Merckt",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "483b3170b3c05cf0",
+    "name": "Alan Hiro",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "1897b7b913736a7c",
+    "name": "Alatengheili",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "6e02c318762f52f1",
+    "name": "Alberta Cerra Leon",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "8f2deefe8c5dfb5d",
+    "name": "Alberto Uda",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "98c23cb6da5b3352",
+    "name": "Aleksei Oleinik",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "e2ccd9a9ace60de7",
+    "name": "Aleksei Kunchenko",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "bf9bc96336922271",
+    "name": "Alex Ricci",
+    "reason": "confidence < 60%"
+  },
+  {
+    "ufc_id": "d1053e55f00e53fe",
+    "name": "AJ Cunningham",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 346893,
+      "sherdog_url": "https://www.sherdog.com/fighter/Yajaira-Cunningham-346893",
+      "name": "Yajaira Cunningham",
+      "division": null,
+      "record": null,
+      "confidence": 62.17
+    }
+  },
+  {
+    "ufc_id": "95aff2fd8d09a5f0",
+    "name": "Abdul Rakhman Yakhyaev",
+    "reason": "confidence 60-69%, needs manual review",
+    "best_match": {
+      "sherdog_id": 395509,
+      "sherdog_url": "https://www.sherdog.com/fighter/AbdulRakhman-Yakhyaev-395509",
+      "name": "Abdul-Rakhman Yakhyaev",
+      "division": null,
+      "record": null,
+      "confidence": 67.27
+    }
+  }
+]

@@ -38,7 +38,7 @@ class PostgreSQLFighterRepository:
         self, *, limit: int | None = None, offset: int | None = None
     ) -> Iterable[FighterListItem]:
         """List all fighters with optional pagination."""
-        query = select(Fighter)
+        query = select(Fighter).order_by(Fighter.name, Fighter.id)
 
         if offset is not None:
             query = query.offset(offset)
@@ -111,14 +111,14 @@ class PostgreSQLFighterRepository:
         ]
 
         # Sort fight history: upcoming fights first, then past fights by most recent
-            fight_history.sort(
-                key=lambda fight: (
-                    # Primary: upcoming fights first (result="next" → 0, others → 1)
-                    0 if fight.result == "next" else 1,
-                    # Secondary: most recent first (use min date for nulls to push them last)
-                    -(fight.event_date or date.min).toordinal(),
-                )
+        fight_history.sort(
+            key=lambda fight: (
+                # Primary: upcoming fights first (result="next" → 0, others → 1)
+                0 if fight.result == "next" else 1,
+                # Secondary: most recent first (use min date for nulls to push them last)
+                -(fight.event_date or date.min).toordinal(),
             )
+        )
 
         return FighterDetail(
             fighter_id=fighter.id,

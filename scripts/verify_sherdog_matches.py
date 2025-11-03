@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -49,6 +50,21 @@ def save_mapping(mapping: dict):
     console.print(f"[green]✓[/green] Saved mapping to {mapping_file}")
 
 
+def save_review_report(skipped_fighters: list[dict]):
+    """Save report of fighters that need manual review.
+
+    Args:
+        skipped_fighters: List of fighters that were skipped
+    """
+    review_file = Path("data/sherdog_review_needed.json")
+    review_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with review_file.open("w") as f:
+        json.dump(skipped_fighters, f, indent=2)
+
+    console.print(f"[yellow]⚠[/yellow] Saved {len(skipped_fighters)} fighters needing review to {review_file}")
+
+
 def display_match(ufc_fighter: dict, sherdog_match: dict, confidence: float):
     """Display a match comparison in a formatted table."""
     table = Table(show_header=True, header_style="bold magenta")
@@ -71,12 +87,13 @@ def display_match(ufc_fighter: dict, sherdog_match: dict, confidence: float):
         console.print(f"Sherdog URL: [link]{sherdog_match['sherdog_url']}[/link]")
 
 
-def verify_matches(matches: dict, mapping: dict) -> dict:
+def verify_matches(matches: dict, mapping: dict, non_interactive: bool = False) -> dict:
     """Interactively verify ambiguous matches.
 
     Args:
         matches: Dict of UFC ID -> match data
         mapping: Existing Sherdog ID mapping
+        non_interactive: If True, skip manual review and only auto-approve high confidence
 
     Returns:
         Updated mapping with user-verified matches
@@ -84,9 +101,14 @@ def verify_matches(matches: dict, mapping: dict) -> dict:
     console.print("\n[bold cyan]Sherdog Fighter Match Verification[/bold cyan]\n")
 
     # Separate matches by confidence level
-    high_confidence = []  # >= 90%
-    needs_review = []     # 60-90%
-    low_confidence = []   # < 60%
+    # Adjust thresholds based on non_interactive mode
+    high_threshold = 70 if non_interactive else 90
+    low_threshold = 60
+
+    high_confidence = []  # >= threshold
+    needs_review = []     # between low and high threshold
+    low_confidence = []   # < low_threshold
+    skipped_for_review = []  # Fighters to review manually later
 
     for ufc_id, match_data in matches.items():
         ufc_fighter = match_data["ufc_fighter"]
@@ -99,15 +121,15 @@ def verify_matches(matches: dict, mapping: dict) -> dict:
         best_match = top_matches[0]
         confidence = best_match["confidence"]
 
-        if confidence >= 90:
+        if confidence >= high_threshold:
             high_confidence.append((ufc_id, ufc_fighter, best_match))
-        elif confidence >= 60:
+        elif confidence >= low_threshold:
             needs_review.append((ufc_id, ufc_fighter, top_matches))
         else:
             low_confidence.append((ufc_id, ufc_fighter, best_match))
 
     # Auto-approve high confidence matches
-    console.print(f"[green]✓[/green] Auto-approving {len(high_confidence)} high-confidence matches (≥90%)")
+    console.print(f"[green]✓[/green] Auto-approving {len(high_confidence)} high-confidence matches (≥{high_threshold}%)")
     for ufc_id, ufc_fighter, match in high_confidence:
         if ufc_id not in mapping and match and match.get("sherdog_id"):
             mapping[ufc_id] = {
@@ -119,9 +141,31 @@ def verify_matches(matches: dict, mapping: dict) -> dict:
 
     # Skip low confidence matches
     console.print(f"[yellow]⚠[/yellow] Skipping {len(low_confidence)} low-confidence matches (<60%)")
+    for ufc_id, ufc_fighter, _ in low_confidence:
+        skipped_for_review.append({
+            "ufc_id": ufc_id,
+            "name": ufc_fighter["name"],
+            "reason": "confidence < 60%",
+        })
 
     # Manual review for ambiguous matches
-    console.print(f"\n[cyan]Review {len(needs_review)} ambiguous matches (60-90% confidence)[/cyan]\n")
+    if non_interactive:
+        console.print(f"[yellow]⚠[/yellow] Skipping {len(needs_review)} ambiguous matches ({low_threshold}-{high_threshold-1}% confidence) - non-interactive mode")
+        for ufc_id, ufc_fighter, top_matches in needs_review:
+            skipped_for_review.append({
+                "ufc_id": ufc_id,
+                "name": ufc_fighter["name"],
+                "reason": f"confidence {low_threshold}-{high_threshold-1}%, needs manual review",
+                "best_match": top_matches[0] if top_matches else None,
+            })
+
+        # Save skipped fighters for later review
+        if skipped_for_review:
+            save_review_report(skipped_for_review)
+
+        return mapping
+
+    console.print(f"\n[cyan]Review {len(needs_review)} ambiguous matches ({low_threshold}-{high_threshold-1}% confidence)[/cyan]\n")
 
     for idx, (ufc_id, ufc_fighter, top_matches) in enumerate(needs_review, 1):
         # Skip if already mapped
@@ -173,6 +217,14 @@ def verify_matches(matches: dict, mapping: dict) -> dict:
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="Verify Sherdog fighter matches")
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Run in non-interactive mode (auto-approve ≥70%% confidence only)",
+    )
+    args = parser.parse_args()
+
     console.print("[bold cyan]Loading Sherdog matches...[/bold cyan]")
 
     matches = load_matches()
@@ -185,14 +237,24 @@ def main():
     console.print(f"Loaded {len(matches)} fighter matches")
     console.print(f"Existing mappings: {len(mapping)}")
 
+    if args.non_interactive:
+        console.print("[yellow]Running in non-interactive mode[/yellow]")
+
     # Run verification
-    updated_mapping = verify_matches(matches, mapping)
+    updated_mapping = verify_matches(matches, mapping, non_interactive=args.non_interactive)
 
     # Save results
     save_mapping(updated_mapping)
 
     console.print(f"\n[green]✓[/green] Verification complete!")
     console.print(f"Total mapped fighters: {len(updated_mapping)}")
+
+    if args.non_interactive:
+        review_file = Path("data/sherdog_review_needed.json")
+        if review_file.exists():
+            with review_file.open() as f:
+                needs_review = json.load(f)
+            console.print(f"[yellow]⚠[/yellow] {len(needs_review)} fighters need manual review (see {review_file})")
 
 
 if __name__ == "__main__":

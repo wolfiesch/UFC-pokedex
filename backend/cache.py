@@ -47,8 +47,7 @@ def search_key(
 
 
 def comparison_key(fighter_ids: Sequence[str]) -> str:
-    ordered = sorted(fighter_ids)
-    signature = "|".join(ordered)
+    signature = "|".join(fighter_ids)
     digest = sha256(signature.encode("utf-8")).hexdigest()
     return f"{_COMPARISON_PREFIX}:{digest}:{signature}"
 

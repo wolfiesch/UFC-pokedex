@@ -1,18 +1,18 @@
-Date: Sun, 02 Nov 2025 04:20:42 GMT
+Date: Mon, 03 Nov 2025 06:54:27 GMT
 Content-Type: text/html; charset=UTF-8
 Content-Encoding: gzip
 Cache-Control: max-age=300, s-maxage=300
 Edge-Control: max-age=300, s-maxage=300
-X-Generated: Sun, 02 Nov 2025 04:20:42 GMT
+X-Generated: Mon, 03 Nov 2025 06:54:27 GMT
 Content-Security-Policy: upgrade-insecure-requests;
-X-Served-By: sdc-fe-httpd-prd-7db56f77bd-ssbmn
-X-Varnish: 37764167
+X-Served-By: sdc-fe-httpd-prd-7db56f77bd-5xrsc
+X-Varnish: 71108492
 Via: 1.1 varnish-v4
-X-Cache: MISS from sdc-fe-varnish-prd-694c585f59-hsgn9
-Last-Modified: Sun, 02 Nov 2025 04:20:42 GMT
-Cf-Cache-Status: MISS
-Server-Timing: cfCacheStatus;desc="MISS"
-Server-Timing: cfOrigin;dur=230,cfEdge;dur=148
+X-Cache: MISS from sdc-fe-varnish-prd-694c585f59-57t4n
+Last-Modified: Mon, 03 Nov 2025 06:54:27 GMT
+Cf-Cache-Status: EXPIRED
+Server-Timing: cfCacheStatus;desc="EXPIRED"
+Server-Timing: cfOrigin;dur=203,cfEdge;dur=134
 Vary: Accept-Encoding
 Server: cloudflare
-Cf-Ray: 9980d7465868963f-SJC
+Cf-Ray: 9989f5dc88c3250d-SJC
