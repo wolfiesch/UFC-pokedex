@@ -196,7 +196,7 @@ export function extractFightWebInsights(
         division:
           typeof item.division === "string"
             ? item.division
-            : (item.division as string | null),
+            : null,
         totalFights:
           typeof item.total_fights === "number" ? item.total_fights : 0,
         degree: typeof item.degree === "number" ? item.degree : 0,
