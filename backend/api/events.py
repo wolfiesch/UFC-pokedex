@@ -43,7 +43,9 @@ async def list_completed_events(
     service: EventService = Depends(get_event_service),
 ) -> PaginatedEventsResponse:
     """List completed UFC events with pagination."""
-    return await service.get_paginated_events(status="completed", limit=limit, offset=offset)
+    return await service.get_paginated_events(
+        status="completed", limit=limit, offset=offset
+    )
 
 
 @router.get("/search/", response_model=PaginatedEventsResponse)
@@ -51,8 +53,12 @@ async def search_events(
     q: str | None = Query(None, description="Search query for event name or location"),
     year: int | None = Query(None, description="Filter by year"),
     location: str | None = Query(None, description="Filter by location"),
-    event_type: str | None = Query(None, description="Filter by event type (ppv, fight_night, etc.)"),
-    status: str | None = Query(None, description="Filter by status (upcoming, completed)"),
+    event_type: str | None = Query(
+        None, description="Filter by event type (ppv, fight_night, etc.)"
+    ),
+    status: str | None = Query(
+        None, description="Filter by status (upcoming, completed)"
+    ),
     limit: int = Query(20, ge=1, le=100, description="Number of events to return"),
     offset: int = Query(0, ge=0, description="Number of events to skip"),
     service: EventService = Depends(get_event_service),
@@ -78,7 +84,15 @@ async def get_filter_options(
     return EventFilterOptions(
         years=years,
         locations=locations,
-        event_types=["ppv", "fight_night", "ufc_on_espn", "ufc_on_abc", "tuf_finale", "other"],
+        event_types=[
+            "ppv",
+            "fight_night",
+            "ufc_on_espn",
+            "ufc_on_abc",
+            "tuf_finale",
+            "contender_series",
+            "other",
+        ],
     )
 
 
