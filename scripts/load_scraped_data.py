@@ -663,7 +663,7 @@ async def load_fighter_detail(
                 round=fight_data.get("round"),
                 time=fight_data.get("time"),
                 fight_card_url=fight_data.get("fight_card_url"),
-                stats=fight_data.get("stats") or {},
+                stats=fight_data.get("stats"),
                 # The scraped JSON includes an optional textual weight class label
                 # that we mirror directly into persistent storage so downstream
                 # services (event detail views, fighter timelines, etc.) can render
