@@ -48,9 +48,11 @@ echo ""
 echo -e "${GREEN}[1/3] Building Next.js for production...${NC}"
 cd "$FRONTEND_DIR"
 
-# Clean previous build to avoid stale cache issues
-echo "Cleaning previous build..."
+# Clean all caches to avoid build corruption
+echo "Cleaning all build caches..."
 rm -rf .next
+rm -rf node_modules/.cache
+rm -rf .swc
 
 if [ -n "$PROD_API_URL" ]; then
     export NEXT_PUBLIC_API_BASE_URL="$PROD_API_URL"

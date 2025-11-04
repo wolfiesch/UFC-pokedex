@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import FighterCard from "./FighterCard";
+import SkeletonFighterCard from "./SkeletonFighterCard";
 import type { FighterListItem } from "@/lib/types";
 import type { ApiError } from "@/lib/errors";
 
@@ -47,9 +48,10 @@ export default function FighterGrid({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-border bg-card/60 p-8 text-sm text-muted-foreground">
-        <span className="inline-flex h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-foreground" />
-        Loading fighters…
+      <div className="grid auto-rows-fr grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <SkeletonFighterCard key={i} />
+        ))}
       </div>
     );
   }
