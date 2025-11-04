@@ -1,0 +1,35 @@
+# UFC Pokedex Cloudflare Tunnel Configuration Template
+# This is a reference template. The actual config is created at ~/.cloudflared/config.yml
+# by running: bash scripts/setup_tunnel.sh
+
+# Tunnel ID (generated during setup)
+tunnel: YOUR_TUNNEL_ID_HERE
+
+# Credentials file path (generated during tunnel creation)
+credentials-file: /Users/YOUR_USERNAME/.cloudflared/YOUR_TUNNEL_ID.json
+
+# Ingress rules define how traffic is routed
+ingress:
+  # Frontend (Next.js on port 3000)
+  - hostname: ufc.wolfgangschoenberger.com
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Backend API (FastAPI on port 8000)
+  - hostname: api.ufc.wolfgangschoenberger.com
+    service: http://localhost:8000
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all rule (required by Cloudflare)
+  # Returns 404 for any other hostname
+  - service: http_status:404
+
+# Additional configuration options (optional):
+#
+# logDirectory: /var/log/cloudflared
+# loglevel: info
+# transport-loglevel: warn
+# retries: 5
+# grace-period: 30s
