@@ -1,0 +1,108 @@
+fighter_id,fighter_name,wikipedia_name,division,is_current_champion,is_former_champion,was_interim,first_title_date,last_title_date,reign_count,match_confidence
+6b453bc35a823c3f,Jack Della Maddalena,jack della maddalena,Welterweight,True,False,False,2025-05-10,2025-05-10,1,100.0%
+d910665038efc639,Carla Esparza,carla esparza,s Strawweight,False,True,False,2022-05-07,2022-05-07,2,100.0%
+07225ba28ae309b6,Charles Oliveira,charles oliveira,Lightweight,False,True,False,2021-05-15,2021-05-15,1,100.0%
+6a1901c62ab3870f,Jessica Andrade,jessica andrade,s Strawweight,False,True,False,2019-05-11,2019-05-11,1,100.0%
+d28dee5c705991df,Stipe Miocic,stipe miocic,Heavyweight,False,True,False,2016-05-14,2016-05-14,2,100.0%
+d967f0128c323de6,Daniel Cormier,daniel cormier,Light Heavyweight,False,True,False,2015-05-23,2015-05-23,1,100.0%
+c849740a3ff51931,TJ Dillashaw,tj dillashaw,Bantamweight,False,True,False,2014-05-24,2014-05-24,2,100.0%
+140745cbbcb023ac,Mauricio Rua,mauricio rua,Light Heavyweight,False,True,False,2010-05-08,2010-05-08,1,100.0%
+f7a7f7118d4b01b6,Lyoto Machida,lyoto machida,Light Heavyweight,False,True,False,2009-05-23,2009-05-23,1,100.0%
+ffc088e64fab57e9,Quinton Jackson,quinton jackson,Light Heavyweight,False,True,False,2007-05-26,2007-05-26,1,100.0%
+952f6fa06f25a0ec,Carlos Newton,carlos newton,Welterweight,False,True,False,2001-05-04,2001-05-04,1,100.0%
+03688dc3c3af3ac1,Bas Rutten,bas rutten,Heavyweight,False,True,False,1999-05-07,1999-05-07,1,100.0%
+c670aa48827d6be6,Dan Severn,dan severn,Superfight,False,True,False,1996-05-17,1996-05-17,1,100.0%
+21b8a0f5c231096f,Mark Coleman,mark coleman,Heavyweight,False,True,False,,,1,100.0%
+33e33d51f289d2a1,Maurice Smith,maurice smith,Heavyweight,False,True,False,,,1,100.0%
+0aa92558424ced9e,Randy Couture,randy couture,Heavyweight,False,True,False,,,3,100.0%
+6859f67468ba8489,Kevin Randleman,kevin randleman,Heavyweight,False,True,False,,,1,100.0%
+ad3f53c454cbbead,Josh Barnett,josh barnett,Heavyweight,False,True,False,,,1,100.0%
+50cc91ce2982785d,Ricco Rodriguez,ricco rodriguez,Heavyweight,False,True,False,,,1,100.0%
+2a542ee8a8b83559,Tim Sylvia,tim sylvia,Heavyweight,False,True,False,,,2,100.0%
+1ff9589f9065a9ed,Frank Mir,frank mir,Heavyweight,False,True,False,,,1,100.0%
+3738e68d2261e60f,Andrei Arlovski,andrei arlovski,Heavyweight,False,True,False,,,1,100.0%
+513c6f1715e547a8,Brock Lesnar,brock lesnar,Heavyweight,False,True,False,,,1,100.0%
+0ff11cc094e887bc,Cain Velasquez,cain velasquez,Heavyweight,False,True,False,,,2,100.0%
+63def5a5662a6917,Junior Dos Santos,junior dos santos,Heavyweight,False,True,False,,,1,100.0%
+492b202d2064e7a9,Fabricio Werdum,fabricio werdum,Heavyweight,False,True,False,,,1,100.0%
+8d03ce87ca14e778,Francis Ngannou,francis ngannou,Heavyweight,False,True,False,,,1,100.0%
+07f72a2a7591b409,Jon Jones,jon jones,Heavyweight,False,True,False,,,1,100.0%
+399afbabc02376b5,Tom Aspinall,tom aspinall,Heavyweight,True,False,False,,,1,100.0%
+fcaae0385b514f11,Frank Shamrock,frank shamrock,Light Heavyweight,False,True,False,,,1,100.0%
+2f732dd9210d301f,Tito Ortiz,tito ortiz,Light Heavyweight,False,True,False,,,1,100.0%
+0ee783aa00e468f0,Vitor Belfort,vitor belfort,Light Heavyweight,False,True,False,,,1,100.0%
+a390eb8a9b2df298,Chuck Liddell,chuck liddell,Light Heavyweight,False,True,False,,,1,100.0%
+fcffee71cff5530e,Forrest Griffin,forrest griffin,Light Heavyweight,False,True,False,,,1,100.0%
+ee779c43a8926d52,Rashad Evans,rashad evans,Light Heavyweight,False,True,False,,,1,100.0%
+99df7d0a2a08a8a8,Jan Blachowicz,jan blachowicz,Light Heavyweight,False,True,False,,,1,100.0%
+7ff97850e8c32bda,Glover Teixeira,glover teixeira,Light Heavyweight,False,True,False,,,1,100.0%
+009341ed974bad72,Jiri Prochazka,jiri prochazka,Light Heavyweight,False,True,False,,,1,100.0%
+5444c5a201d3ee5a,Jamahal Hill,jamahal hill,Light Heavyweight,False,True,False,,,1,100.0%
+e5549c82bfb5582d,Alex Pereira,alex pereira,Light Heavyweight,True,False,False,,,2,100.0%
+d802174b0c0c1f4e,Magomed Ankalaev,magomed ankalaev,Light Heavyweight,False,True,False,,,1,100.0%
+275cafc9de131c83,Dave Menne,dave menne,Middleweight,False,True,False,,,1,100.0%
+85d905f7c4f5a1af,Murilo Bustamante,murilo bustamante,Middleweight,False,True,False,,,1,100.0%
+8f2d9ee27f206f1f,Evan Tanner,evan tanner,Middleweight,False,True,False,,,1,100.0%
+d897897060f10a3a,Rich Franklin,rich franklin,Middleweight,False,True,False,,,1,100.0%
+1f454354805b6f75,Anderson Silva,anderson silva,Middleweight,False,True,False,,,1,100.0%
+3a8176e15b9887c1,Chris Weidman,chris weidman,Middleweight,False,True,False,,,1,100.0%
+00e11b5c8b7bfeeb,Luke Rockhold,luke rockhold,Middleweight,False,True,False,,,1,100.0%
+2b93ebd9f5417ad2,Michael Bisping,michael bisping,Middleweight,False,True,False,,,1,100.0%
+6506c1d34da9c013,Georges St-Pierre,georges st-pierre,Middleweight,False,True,False,,,1,100.0%
+e1147d3d2dabe1ce,Robert Whittaker,robert whittaker,Middleweight,False,True,False,,,1,100.0%
+1338e2c7480bdf9e,Israel Adesanya,israel adesanya,Middleweight,False,True,False,,,2,100.0%
+0d8011111be000b2,Sean Strickland,sean strickland,Middleweight,False,True,False,,,1,100.0%
+0d7b51c9d2649a6e,Dricus Du Plessis,dricus du plessis,Middleweight,False,True,False,,,1,100.0%
+767755fd74662dbf,Khamzat Chimaev,khamzat chimaev,Middleweight,True,False,False,,,1,100.0%
+cedfdf8d423d500c,Pat Miletich,pat miletich,Welterweight,False,True,False,,,1,100.0%
+621a6c59f88a44fe,Matt Hughes,matt hughes,Welterweight,False,True,False,,,2,100.0%
+73c7cfa551289285,BJ Penn,bj penn,Welterweight,False,True,False,,,1,100.0%
+86dfed7cc24a9fa7,Matt Serra,matt serra,Welterweight,False,True,False,,,1,100.0%
+0941df56f6ac954b,Johny Hendricks,johny hendricks,Welterweight,False,True,False,,,1,100.0%
+f2925e6db404bf1d,Robbie Lawler,robbie lawler,Welterweight,False,True,False,,,1,100.0%
+effd9de9937996f8,Tyron Woodley,tyron woodley,Welterweight,False,True,False,,,1,100.0%
+f1b2aa7853d1ed6e,Kamaru Usman,kamaru usman,Welterweight,False,True,False,,,1,100.0%
+f1fac969a1d70b08,Leon Edwards,leon edwards,Welterweight,False,True,False,,,1,100.0%
+b1b0729d27936f2f,Belal Muhammad,belal muhammad,Welterweight,False,True,False,,,1,100.0%
+44260175069b6276,Jens Pulver,jens pulver,Lightweight,False,True,False,,,1,100.0%
+029880cdbf5ca089,Sean Sherk,sean sherk,Lightweight,False,True,False,,,1,100.0%
+f2688492b9a525a3,Frankie Edgar,frankie edgar,Lightweight,False,True,False,,,1,100.0%
+2676b28836a5a836,Benson Henderson,benson henderson,Lightweight,False,True,False,,,1,100.0%
+cbb682f5fcc44bfc,Anthony Pettis,anthony pettis,Lightweight,False,True,False,,,1,100.0%
+6a2f7c151031653d,Rafael Dos Anjos,rafael dos anjos,Lightweight,False,True,False,,,1,100.0%
+33a331684283900f,Eddie Alvarez,eddie alvarez,Lightweight,False,True,False,,,1,100.0%
+f4c49976c75c5ab2,Conor McGregor,conor mcgregor,Lightweight,False,True,False,,,1,100.0%
+032cc3922d871c7f,Khabib Nurmagomedov,khabib nurmagomedov,Lightweight,False,True,False,,,1,100.0%
+275aca31f61ba28c,Islam Makhachev,islam makhachev,Lightweight,False,True,False,,,1,100.0%
+54f64b5e283b0ce7,Ilia Topuria,ilia topuria,Lightweight,True,False,False,,,1,100.0%
+d0f3959b4a9747e6,Jose Aldo,jose aldo,Featherweight,False,True,False,,,1,100.0%
+150ff4cc642270b9,Max Holloway,max holloway,Featherweight,False,True,False,,,1,100.0%
+e1248941344b3288,Alexander Volkanovski,alexander volkanovski,Featherweight,True,False,False,,,2,100.0%
+10f3ba6cd2f44a97,Dominick Cruz,dominick cruz,Bantamweight,False,True,False,,,2,100.0%
+2c99576fefe53c7c,Renan Barao,renan barao,Bantamweight,False,True,False,,,1,100.0%
+d8c7c61b176e3994,Cody Garbrandt,cody garbrandt,Bantamweight,False,True,False,,,1,100.0%
+056c493bbd76a918,Henry Cejudo,henry cejudo,Bantamweight,False,True,False,,,1,100.0%
+d661ce4da776fc20,Petr Yan,petr yan,Bantamweight,False,True,False,,,1,100.0%
+cb696ebfb6598724,Aljamain Sterling,aljamain sterling,Bantamweight,False,True,False,,,1,100.0%
+b50a426a33da0012,Sean O'Malley,sean o'malley,Bantamweight,False,True,False,,,1,100.0%
+c03520b5c88ed6b4,Merab Dvalishvili,merab dvalishvili,Bantamweight,True,False,False,,,1,100.0%
+8a304bfd6bf04a57,Demetrious Johnson,demetrious johnson,Flyweight,False,True,False,,,1,100.0%
+aa72b0f831d0bfe5,Deiveson Figueiredo,deiveson figueiredo,Flyweight,False,True,False,,,2,100.0%
+792be9a24df82ed6,Brandon Moreno,brandon moreno,Flyweight,False,True,False,,,2,100.0%
+a0f0004aadf10b71,Alexandre Pantoja,alexandre pantoja,Flyweight,True,False,False,,,1,100.0%
+8bdac25ce0bb874d,Ronda Rousey,ronda rousey,s Bantamweight,False,True,False,,,1,100.0%
+634e2fb70bde3fd5,Holly Holm,holly holm,s Bantamweight,False,True,False,,,1,100.0%
+b96619b3acd7d9da,Miesha Tate,miesha tate,s Bantamweight,False,True,False,,,1,100.0%
+80fa8218c99f9c58,Amanda Nunes,amanda nunes,s Bantamweight,False,True,False,,,2,100.0%
+3253b16d38ae087d,Julianna Pena,julianna pena,s Bantamweight,False,True,False,,,2,100.0%
+fc169c387b4b465d,Raquel Pennington,raquel pennington,s Bantamweight,False,True,False,,,1,100.0%
+1af1170ed937cba7,Kayla Harrison,kayla harrison,s Bantamweight,True,False,False,,,1,100.0%
+1de9ad94de18eeaf,Nicco Montano,nicco montano,s Flyweight,False,True,False,,,1,100.0%
+132deb59abae64b1,Valentina Shevchenko,valentina shevchenko,s Flyweight,True,False,False,,,2,100.0%
+e8b731feff72294b,Alexa Grasso,alexa grasso,s Flyweight,False,True,False,,,1,100.0%
+3d6749c4267da18f,Joanna Jedrzejczyk,joanna jedrzejczyk,s Strawweight,False,True,False,,,1,100.0%
+47b63240018d5d86,Rose Namajunas,rose namajunas,s Strawweight,False,True,False,,,2,100.0%
+1ebe20ebbfa15e29,Zhang Weili,zhang weili,s Strawweight,False,True,False,,,2,100.0%
+7447e9f28508106a,Mackenzie Dern,mackenzie dern,s Strawweight,True,False,False,,,1,100.0%
+63b65af1c5cb02cb,Ken Shamrock,ken shamrock,Superfight,False,True,False,,,1,100.0%
+1d239d571e342453,Germaine de Randamie,germaine de randamie,s Featherweight,False,True,False,,,1,100.0%

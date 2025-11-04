@@ -3,6 +3,7 @@ from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -62,6 +63,11 @@ class Fighter(Base):
     sherdog_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image_scraped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Champion status fields
+    is_current_champion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    is_former_champion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    championship_history: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="fighter")
 

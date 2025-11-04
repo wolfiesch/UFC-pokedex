@@ -33,6 +33,8 @@ class FighterListItem(BaseModel):
     stance: str | None = None
     dob: date | None = None
     image_url: str | None = None
+    is_current_champion: bool = False
+    is_former_champion: bool = False
 
 
 class FighterDetail(FighterListItem):
@@ -44,6 +46,7 @@ class FighterDetail(FighterListItem):
     takedown_stats: dict[str, Any] = Field(default_factory=dict)
     career: dict[str, Any] = Field(default_factory=dict)
     fight_history: list[FightHistoryEntry] = Field(default_factory=list)
+    championship_history: dict[str, Any] = Field(default_factory=dict)
 
 
 class PaginatedFightersResponse(BaseModel):
@@ -64,6 +67,8 @@ class FighterComparisonEntry(BaseModel):
     significant_strikes: dict[str, Any] = Field(default_factory=dict)
     takedown_stats: dict[str, Any] = Field(default_factory=dict)
     career: dict[str, Any] = Field(default_factory=dict)
+    is_current_champion: bool = False
+    is_former_champion: bool = False
 
 
 class FighterComparisonResponse(BaseModel):

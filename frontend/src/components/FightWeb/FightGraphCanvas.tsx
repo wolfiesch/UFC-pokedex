@@ -18,6 +18,7 @@ type FightGraphCanvasProps = {
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
   palette?: Map<string, string> | null;
+  nodeColorMap?: Map<string, string> | null;
   minFightsThreshold?: number; // Add this prop
 };
 
@@ -47,6 +48,7 @@ export function FightGraphCanvas({
   selectedNodeId = null,
   onSelectNode,
   palette: paletteProp = null,
+  nodeColorMap = null,
   minFightsThreshold = 2, // Default: show edges with 2+ fights
 }: FightGraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -420,7 +422,11 @@ export function FightGraphCanvas({
                     ? 0.95
                     : 0.2;
               const strokeWidth = isFocus ? 3 : isNeighbor ? 2 : 1.2;
-              const fillColor = colorForDivision(node.division, palette);
+              // Use nodeColorMap if available (for recency-based coloring in single division),
+              // otherwise fall back to division-based coloring
+              const fillColor =
+                nodeColorMap?.get(node.id) ??
+                colorForDivision(node.division, palette);
 
               return (
                 <g key={node.id}>

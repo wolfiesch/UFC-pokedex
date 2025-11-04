@@ -81,14 +81,15 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
   }
 
   // Normalize result to lowercase for comparison
-  const firstResult = firstFight.result.toLowerCase();
+  const firstResult = firstFight.result.toLowerCase().trim();
   let streakType: "win" | "loss" | "draw" | "none" = "none";
 
-  if (firstResult.includes("win")) {
+  // Handle various result formats: "win", "w", "loss", "l", "draw", "d"
+  if (firstResult === "w" || firstResult.includes("win")) {
     streakType = "win";
-  } else if (firstResult.includes("loss")) {
+  } else if (firstResult === "l" || firstResult.includes("loss")) {
     streakType = "loss";
-  } else if (firstResult.includes("draw")) {
+  } else if (firstResult === "d" || firstResult.includes("draw")) {
     streakType = "draw";
   }
 
@@ -99,12 +100,17 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
   // Count consecutive results of the same type
   let count = 0;
   for (const fight of sortedFights) {
-    const result = fight.result.toLowerCase();
+    const result = fight.result.toLowerCase().trim();
+
+    // Handle various result formats: "win"/"w", "loss"/"l", "draw"/"d"
+    const isWin = result === "w" || result.includes("win");
+    const isLoss = result === "l" || result.includes("loss");
+    const isDraw = result === "d" || result.includes("draw");
 
     if (
-      (streakType === "win" && result.includes("win")) ||
-      (streakType === "loss" && result.includes("loss")) ||
-      (streakType === "draw" && result.includes("draw"))
+      (streakType === "win" && isWin) ||
+      (streakType === "loss" && isLoss) ||
+      (streakType === "draw" && isDraw)
     ) {
       count++;
     } else {
@@ -112,7 +118,13 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
     }
   }
 
-  const label = `${count} ${streakType}${count !== 1 ? "s" : ""}`;
+  // Only show streaks of 2 or more
+  if (count < 2) {
+    return { type: "none", count: 0, label: "No streak" };
+  }
+
+  // Label is just the number (e.g., "15" instead of "15 wins")
+  const label = `${count}`;
 
   return { type: streakType, count, label };
 }

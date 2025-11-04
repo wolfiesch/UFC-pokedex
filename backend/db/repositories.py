@@ -177,6 +177,8 @@ class PostgreSQLFighterRepository:
                 stance=fighter.stance,
                 dob=fighter.dob,
                 image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                is_current_champion=fighter.is_current_champion,
+                is_former_champion=fighter.is_former_champion,
             )
             for fighter in fighters
         ]
@@ -343,6 +345,9 @@ class PostgreSQLFighterRepository:
             takedown_stats=stats_map.get("takedown_stats", {}),
             career=stats_map.get("career", {}),
             fight_history=fight_history,
+            is_current_champion=fighter.is_current_champion,
+            is_former_champion=fighter.is_former_champion,
+            championship_history=fighter.championship_history or {},
         )
 
     async def get_fight_graph(

@@ -15,6 +15,8 @@ import { clampLimit, normalizeFilters } from "./filter-utils";
 import { extractFightWebInsights } from "./insight-utils";
 import {
   createDivisionColorScale,
+  createRecencyColorScale,
+  DEFAULT_NODE_COLOR,
   deriveEventYearBounds,
 } from "./graph-layout";
 
@@ -159,6 +161,46 @@ export function FightWebClient({
     return createDivisionColorScale(graphData.nodes);
   }, [graphData]);
 
+  // Detect if we're filtered to a single division
+  const isSingleDivision = useMemo(() => {
+    if (!appliedFilters.division || !graphData) {
+      return false;
+    }
+
+    const filterDivision = appliedFilters.division.trim();
+    if (filterDivision.length === 0) {
+      return false;
+    }
+
+    // Check if all nodes (with divisions) match the filter
+    const nodesWithDivision = graphData.nodes.filter(
+      (node) => node.division && node.division.trim().length > 0
+    );
+
+    if (nodesWithDivision.length === 0) {
+      return false;
+    }
+
+    // All nodes should match the filtered division
+    return nodesWithDivision.every(
+      (node) => node.division?.trim() === filterDivision
+    );
+  }, [appliedFilters.division, graphData]);
+
+  // Create recency-based color map when single division is detected
+  const nodeColorMap = useMemo(() => {
+    if (!isSingleDivision || !graphData || !appliedFilters.division) {
+      return null;
+    }
+
+    // Get the division's base color from the palette
+    const divisionColor =
+      palette.get(appliedFilters.division.trim()) ?? DEFAULT_NODE_COLOR;
+
+    // Create recency-based color scale
+    return createRecencyColorScale(graphData.nodes, divisionColor);
+  }, [isSingleDivision, graphData, appliedFilters.division, palette]);
+
   const insights = useMemo(
     () => extractFightWebInsights(graphData),
     [graphData],
@@ -286,6 +328,7 @@ export function FightWebClient({
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
             palette={palette}
+            nodeColorMap={nodeColorMap}
           />
 
           <FightWebSelectedFighter

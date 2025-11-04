@@ -520,6 +520,16 @@ export interface components {
             takedown_stats?: Record<string, never>;
             /** Career */
             career?: Record<string, never>;
+            /**
+             * Is Current Champion
+             * @default false
+             */
+            is_current_champion: boolean;
+            /**
+             * Is Former Champion
+             * @default false
+             */
+            is_former_champion: boolean;
         };
         /** FighterComparisonResponse */
         FighterComparisonResponse: {
@@ -555,6 +565,16 @@ export interface components {
             dob?: string | null;
             /** Image Url */
             image_url?: string | null;
+            /**
+             * Is Current Champion
+             * @default false
+             */
+            is_current_champion: boolean;
+            /**
+             * Is Former Champion
+             * @default false
+             */
+            is_former_champion: boolean;
             /** Leg Reach */
             leg_reach?: string | null;
             /** Age */
@@ -571,6 +591,8 @@ export interface components {
             career?: Record<string, never>;
             /** Fight History */
             fight_history?: components["schemas"]["FightHistoryEntry"][];
+            /** Championship History */
+            championship_history?: Record<string, never>;
         };
         /** FighterListItem */
         FighterListItem: {
@@ -601,6 +623,16 @@ export interface components {
             dob?: string | null;
             /** Image Url */
             image_url?: string | null;
+            /**
+             * Is Current Champion
+             * @default false
+             */
+            is_current_champion: boolean;
+            /**
+             * Is Former Champion
+             * @default false
+             */
+            is_former_champion: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

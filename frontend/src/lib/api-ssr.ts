@@ -1,0 +1,130 @@
+/**
+ * Server-side API client for SSG/ISR
+ * This module provides fetch functions optimized for static generation at build time.
+ * Unlike the client-side api.ts, these functions:
+ * - Use default Next.js caching behavior
+ * - Don't include complex retry logic (build fails fast if API is down)
+ * - Are designed to run in React Server Components only
+ */
+
+import type {
+  FighterDetail,
+  FighterListItem,
+  PaginatedFightersResponse,
+} from "./types";
+
+function getApiBaseUrl(): string {
+  // For SSR, always use localhost to avoid SSL issues with tunnels
+  // The NEXT_PUBLIC_API_BASE_URL is only for client-side fetching
+  return process.env.NEXT_SSR_API_BASE_URL ?? "http://localhost:8000";
+}
+
+/**
+ * Fetch paginated fighters list for SSG
+ * Used by home page static generation
+ */
+export async function getFightersSSR(
+  limit = 20,
+  offset = 0
+): Promise<PaginatedFightersResponse> {
+  const apiUrl = getApiBaseUrl();
+  const response = await fetch(
+    `${apiUrl}/fighters/?limit=${limit}&offset=${offset}`,
+    {
+      // Allow Next.js to cache this for ISR
+      next: { revalidate: false }, // Static at build time
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch fighters: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch single fighter detail for SSG/ISR
+ * Used by fighter detail page generation
+ */
+export async function getFighterSSR(fighterId: string): Promise<FighterDetail> {
+  const apiUrl = getApiBaseUrl();
+  const response = await fetch(`${apiUrl}/fighters/${fighterId}`, {
+    // ISR: cache for 24 hours (86400 seconds)
+    next: { revalidate: 86400 },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`Fighter not found: ${fighterId}`);
+    }
+    throw new Error(
+      `Failed to fetch fighter: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch all fighter IDs for generateStaticParams
+ * Fetches all fighters, sorts by most recent fight date, returns top N
+ */
+export async function getAllFighterIdsSSR(
+  topN = 500
+): Promise<Array<{ id: string }>> {
+  const apiUrl = getApiBaseUrl();
+
+  // Strategy: Fetch fighters in batches until we have all of them
+  const allFighters: FighterListItem[] = [];
+  const batchSize = 1000;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await fetch(
+      `${apiUrl}/fighters/?limit=${batchSize}&offset=${offset}`,
+      {
+        next: { revalidate: false }, // Static at build time
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data: PaginatedFightersResponse = await response.json();
+    allFighters.push(...data.fighters);
+
+    hasMore = data.has_more;
+    offset += batchSize;
+
+    // Safety limit: don't fetch more than 10,000 fighters
+    if (offset >= 10000) {
+      break;
+    }
+  }
+
+  // Sort by most recent fighters (those with complete data are likely more active)
+  // Prioritize fighters with:
+  // 1. Non-null division (active fighters)
+  // 2. Non-null record (have fights)
+  // 3. Alphabetically by name as fallback
+  const sortedFighters = allFighters.sort((a, b) => {
+    // Prioritize fighters with division
+    if (a.division && !b.division) return -1;
+    if (!a.division && b.division) return 1;
+
+    // Then by name alphabetically
+    return a.name.localeCompare(b.name);
+  });
+
+  // Take top N fighters
+  return sortedFighters.slice(0, topN).map((fighter) => ({
+    id: fighter.fighter_id,
+  }));
+}

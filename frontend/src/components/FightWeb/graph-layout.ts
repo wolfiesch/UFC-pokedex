@@ -17,7 +17,7 @@ const COLOR_PALETTE = [
   "#22c55e",
 ];
 
-const DEFAULT_NODE_COLOR = "#64748b";
+export const DEFAULT_NODE_COLOR = "#64748b";
 
 export interface LayoutNode extends FightGraphNode {
   id: string;
@@ -252,6 +252,182 @@ export function colorForDivision(
     return DEFAULT_NODE_COLOR;
   }
   return palette.get(division) ?? DEFAULT_NODE_COLOR;
+}
+
+/**
+ * Convert hex color to HSL
+ */
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  // Remove # if present
+  const cleanHex = hex.replace("#", "");
+  const r = Number.parseInt(cleanHex.substring(0, 2), 16) / 255;
+  const g = Number.parseInt(cleanHex.substring(2, 4), 16) / 255;
+  const b = Number.parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h: h * 360, s, l };
+}
+
+/**
+ * Convert HSL to hex color
+ */
+function hslToHex(h: number, s: number, l: number): string {
+  let r: number;
+  let g: number;
+  let b: number;
+
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p: number, q: number, t: number): number => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h / 360 + 1 / 3);
+    g = hue2rgb(p, q, h / 360);
+    b = hue2rgb(p, q, h / 360 - 1 / 3);
+  }
+
+  const toHex = (x: number): string => {
+    const hex = Math.round(x * 255).toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * Create a color scale based on fight recency (latest_event_date).
+ * Maps fighter IDs to colors where more recent dates get brighter colors
+ * and older dates get dimmer colors, using the division's base color as the hue.
+ */
+export function createRecencyColorScale(
+  nodes: FightGraphNode[],
+  divisionColor: string
+): Map<string, string> {
+  const colorMap = new Map<string, string>();
+
+  if (nodes.length === 0) {
+    return colorMap;
+  }
+
+  // Parse dates and find range
+  const dates: Array<{ id: string; timestamp: number }> = [];
+
+  for (const node of nodes) {
+    if (!node.latest_event_date) {
+      continue;
+    }
+
+    try {
+      const date = new Date(node.latest_event_date);
+      if (!Number.isNaN(date.getTime())) {
+        dates.push({
+          id: node.fighter_id,
+          timestamp: date.getTime(),
+        });
+      }
+    } catch {
+      // Invalid date, skip
+    }
+  }
+
+  if (dates.length === 0) {
+    // No valid dates, return default color for all nodes
+    for (const node of nodes) {
+      colorMap.set(node.fighter_id, divisionColor);
+    }
+    return colorMap;
+  }
+
+  // Find min and max timestamps
+  const timestamps = dates.map((d) => d.timestamp);
+  const minTimestamp = Math.min(...timestamps);
+  const maxTimestamp = Math.max(...timestamps);
+  const dateRange = maxTimestamp - minTimestamp;
+
+  // Convert base color to HSL
+  const baseHsl = hexToHsl(divisionColor);
+  if (!baseHsl) {
+    // Fallback if color conversion fails
+    for (const node of nodes) {
+      colorMap.set(node.fighter_id, divisionColor);
+    }
+    return colorMap;
+  }
+
+  // Calculate recency-based colors
+  for (const node of nodes) {
+    const dateEntry = dates.find((d) => d.id === node.fighter_id);
+    if (!dateEntry) {
+      // Missing date - use dimmed color
+      colorMap.set(
+        node.fighter_id,
+        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4)
+      );
+      continue;
+    }
+
+    // Normalize timestamp to 0-1 (1 = most recent, 0 = oldest)
+    const normalized =
+      dateRange > 0
+        ? (dateEntry.timestamp - minTimestamp) / dateRange
+        : 1;
+
+    // Map recency to lightness and saturation:
+    // Recent (high normalized): high saturation, high lightness
+    // Old (low normalized): low saturation, low lightness
+    // Use a non-linear curve for better visual distinction
+    const recencyFactor = Math.pow(normalized, 0.7); // Slight curve
+
+    // Adjust saturation: 0.3 (dim) to 1.0 (full)
+    const saturation = 0.3 + recencyFactor * 0.7;
+    // Adjust lightness: 0.35 (dark) to 0.65 (bright) - keeping within readable range
+    const lightness = 0.35 + recencyFactor * 0.3;
+
+    const color = hslToHex(baseHsl.h, saturation, lightness);
+    colorMap.set(node.fighter_id, color);
+  }
+
+  // Handle nodes without dates
+  for (const node of nodes) {
+    if (!colorMap.has(node.fighter_id)) {
+      colorMap.set(
+        node.fighter_id,
+        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4)
+      );
+    }
+  }
+
+  return colorMap;
 }
 
 function parseYear(value: unknown): number | null {

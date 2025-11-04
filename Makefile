@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -193,6 +193,70 @@ sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
 	@$(MAKE) update-fighter-images
 	@echo "\n✓ Sherdog sample workflow complete!"
 
+scrape-images-wikimedia: ## Scrape fighter images from Wikimedia Commons (legal, ~20% coverage)
+	PYTHONPATH=. .venv/bin/python scripts/wikimedia_image_scraper.py --batch-size 50
+
+scrape-images-wikimedia-test: ## Test Wikimedia scraper with 5 fighters
+	PYTHONPATH=. .venv/bin/python scripts/wikimedia_image_scraper.py --test
+
+scrape-images-orchestrator: ## Multi-source image scraper (Wikimedia → Sherdog mapping)
+	PYTHONPATH=. .venv/bin/python scripts/image_scraper_orchestrator.py --batch-size 50
+
+scrape-images-orchestrator-test: ## Test orchestrator with 10 fighters
+	PYTHONPATH=. .venv/bin/python scripts/image_scraper_orchestrator.py --test
+
+scrape-images-orchestrator-all: ## Run orchestrator on ALL missing fighters (no batch limit)
+	@echo "⚠️  This will process ALL fighters missing images (~292)"
+	@echo "   Rate limited to 3 seconds per fighter (~15 minutes total)"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		PYTHONPATH=. .venv/bin/python scripts/image_scraper_orchestrator.py --batch-size 1000; \
+	fi
+
+sync-images-to-db: ## Sync images on disk to database (additions + deletions)
+	PYTHONPATH=. .venv/bin/python scripts/sync_images_to_db.py
+
+review-recent-images: ## Review recently downloaded images (last 24 hours)
+	PYTHONPATH=. .venv/bin/python scripts/review_recent_images.py
+
+remove-bad-images: ## Remove bad images and reset database (edit script first!)
+	PYTHONPATH=. .venv/bin/python scripts/remove_bad_images.py
+
+normalize-images: ## Normalize all fighter images to consistent size (300x300 JPEG)
+	PYTHONPATH=. .venv/bin/python scripts/normalize_fighter_images.py
+
+normalize-images-dry-run: ## Preview normalization without modifying images
+	PYTHONPATH=. .venv/bin/python scripts/normalize_fighter_images.py --dry-run
+
+detect-placeholders: ## Detect Sherdog placeholder images using perceptual hashing
+	PYTHONPATH=. .venv/bin/python scripts/detect_placeholder_images.py
+
+detect-placeholders-with-names: ## Detect placeholders and show fighter names
+	PYTHONPATH=. .venv/bin/python scripts/detect_placeholder_images.py --with-names
+
+validate-images: ## Validate all fighter images using basic checks
+	PYTHONPATH=. .venv/bin/python scripts/validate_fighter_images.py
+
+validate-images-from-file: ## Validate specific fighter IDs from file
+	PYTHONPATH=. .venv/bin/python scripts/validate_fighter_images.py --ids-file data/placeholder_fighter_ids.txt
+
+verify-replacement: ## Verify recently replaced placeholder images (last 2 hours)
+	@echo "🔍 Verifying recently replaced images..."
+	@PYTHONPATH=. .venv/bin/python scripts/verify_replacement.py
+
+replace-placeholders: ## Replace Sherdog placeholder images with Bing images (batch of 50)
+	PYTHONPATH=. .venv/bin/python scripts/replace_placeholder_images.py --batch-size 50 --yes
+
+replace-placeholders-all: ## Replace ALL placeholder images (may take 1+ hours)
+	@echo "⚠️  This will replace all 266 placeholder images"
+	@echo "   Estimated time: 1-1.5 hours"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		PYTHONPATH=. .venv/bin/python scripts/replace_placeholder_images.py --batch-size 300 --yes; \
+	fi
+
 dev-local: ensure-docker ## Start backend + frontend with localhost URLs (no tunnels, no env changes)
 	@echo ""
 	@echo "🔄 Stopping existing processes..."
@@ -312,6 +376,20 @@ reload-data: ## Reload fighters list and detail data into database
 
 update-records: ## Fast update of fighter records only (~1.5 min for all fighters)
 	.venv/bin/python -m scripts.update_fighter_records
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CHAMPION DATA OPERATIONS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+champions-scrape: ## Scrape Wikipedia champions and update database
+	.venv/bin/python scripts/champions_wiki.py
+
+champions-refresh: ## Full refresh: scrape champions, update DB, regenerate types
+	@echo "🏆 Refreshing champion data..."
+	@$(MAKE) champions-scrape
+	@echo "🔄 Regenerating TypeScript types..."
+	@$(MAKE) types-generate
+	@echo "✅ Champion data refreshed!"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # EVENT DATA OPERATIONS

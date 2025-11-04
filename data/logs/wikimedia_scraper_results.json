@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-11-04T11:38:12.529902",
+  "total": 5,
+  "success": 1,
+  "failed": 4,
+  "results": [
+    {
+      "fighter_id": "f689bd7bbd14b392",
+      "name": "Cyborg Abreu",
+      "success": false,
+      "message": "No images found"
+    },
+    {
+      "fighter_id": "6fd953151d981979",
+      "name": "JJ Aldrich",
+      "success": false,
+      "message": "No images found"
+    },
+    {
+      "fighter_id": "1897b7b913736a7c",
+      "name": "Alatengheili",
+      "success": false,
+      "message": "No images found"
+    },
+    {
+      "fighter_id": "7977fb0fd9c5955d",
+      "name": "Fellipe Andrew",
+      "success": false,
+      "message": "No images found"
+    },
+    {
+      "fighter_id": "d562b12b8fe88336",
+      "name": "JJ Ambrose",
+      "success": true,
+      "message": "Downloaded from Wikimedia Commons"
+    }
+  ]
+}
