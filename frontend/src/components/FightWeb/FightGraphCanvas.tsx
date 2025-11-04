@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { FightGraphResponse } from "@/lib/types";
 
@@ -23,6 +17,7 @@ type FightGraphCanvasProps = {
   isLoading?: boolean;
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
+  palette?: Map<string, string> | null;
 };
 
 type TooltipState = {
@@ -50,6 +45,7 @@ export function FightGraphCanvas({
   isLoading = false,
   selectedNodeId = null,
   onSelectNode,
+  palette: paletteProp = null,
 }: FightGraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -107,11 +103,14 @@ export function FightGraphCanvas({
   }, [data]);
 
   const palette = useMemo(() => {
+    if (paletteProp) {
+      return paletteProp;
+    }
     if (!data) {
       return new Map<string, string>();
     }
     return createDivisionColorScale(data.nodes);
-  }, [data]);
+  }, [data, paletteProp]);
 
   const renderGraph = useMemo(() => {
     if (!layout) {
@@ -183,7 +182,9 @@ export function FightGraphCanvas({
 
   useEffect(() => {
     if (!selectedNodeId) {
-      setTooltip((current) => (current && current.node.id === selectedNodeId ? null : current));
+      setTooltip((current) =>
+        current && current.node.id === selectedNodeId ? null : current,
+      );
     }
   }, [selectedNodeId]);
 
@@ -201,7 +202,7 @@ export function FightGraphCanvas({
         y: event.clientY - rect.top,
       });
     },
-    []
+    [],
   );
 
   const handleNodePointerLeave = useCallback(() => {
@@ -215,7 +216,7 @@ export function FightGraphCanvas({
       const next = selectedNodeId === node.id ? null : node.id;
       onSelectNode?.(next);
     },
-    [onSelectNode, selectedNodeId]
+    [onSelectNode, selectedNodeId],
   );
 
   const handleBackgroundClick = useCallback(() => {
@@ -235,10 +236,8 @@ export function FightGraphCanvas({
       const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
       const nextScale = Math.min(3.2, Math.max(0.55, prev.scale * zoomFactor));
       const scaleRatio = nextScale / prev.scale;
-      const translateX =
-        pointerX - scaleRatio * (pointerX - prev.translateX);
-      const translateY =
-        pointerY - scaleRatio * (pointerY - prev.translateY);
+      const translateX = pointerX - scaleRatio * (pointerX - prev.translateX);
+      const translateY = pointerY - scaleRatio * (pointerY - prev.translateY);
       return {
         scale: nextScale,
         translateX,
@@ -264,7 +263,7 @@ export function FightGraphCanvas({
       };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [transform.translateX, transform.translateY]
+    [transform.translateX, transform.translateY],
   );
 
   const handlePointerMove = useCallback(
@@ -280,7 +279,7 @@ export function FightGraphCanvas({
         translateY: panOrigin.current.translateY + dy,
       }));
     },
-    [isPanning]
+    [isPanning],
   );
 
   const endPan = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
@@ -309,7 +308,9 @@ export function FightGraphCanvas({
           <span>FightWeb Graph</span>
         </div>
         <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
-          <span>We could not find enough data to construct the fight network.</span>
+          <span>
+            We could not find enough data to construct the fight network.
+          </span>
         </div>
       </div>
     );
@@ -357,7 +358,11 @@ export function FightGraphCanvas({
               const isConnected =
                 focusNodeId !== null &&
                 (edge.source === focusNodeId || edge.target === focusNodeId);
-              const strokeOpacity = focusNodeId ? (isConnected ? 0.9 : 0.12) : 0.25;
+              const strokeOpacity = focusNodeId
+                ? isConnected
+                  ? 0.9
+                  : 0.12
+                : 0.25;
               const strokeWidth = Math.min(6, 1.2 + Math.log(edge.fights + 1));
               return (
                 <line
@@ -382,7 +387,11 @@ export function FightGraphCanvas({
                 focusNeighbors.has(node.id) &&
                 node.id !== focusNodeId;
               const opacity =
-                focusNodeId === null ? 0.95 : isFocus || isNeighbor ? 0.95 : 0.2;
+                focusNodeId === null
+                  ? 0.95
+                  : isFocus || isNeighbor
+                    ? 0.95
+                    : 0.2;
               const strokeWidth = isFocus ? 3 : isNeighbor ? 2 : 1.2;
               const fillColor = colorForDivision(node.division, palette);
 
@@ -397,8 +406,12 @@ export function FightGraphCanvas({
                     stroke="var(--background)"
                     strokeWidth={strokeWidth}
                     opacity={opacity}
-                    onPointerEnter={(event) => handleNodePointerEnter(node, event)}
-                    onPointerMove={(event) => handleNodePointerEnter(node, event)}
+                    onPointerEnter={(event) =>
+                      handleNodePointerEnter(node, event)
+                    }
+                    onPointerMove={(event) =>
+                      handleNodePointerEnter(node, event)
+                    }
                     onPointerLeave={handleNodePointerLeave}
                     onClick={(event) => handleNodeClick(node, event)}
                   />

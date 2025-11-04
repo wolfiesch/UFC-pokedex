@@ -38,6 +38,9 @@ async def get_fight_graph(
 ) -> FightGraphResponse:
     """Return a graph-friendly representation of fighters and their shared bouts."""
 
+    # Validated metadata now includes pre-computed insights for UI panels, so
+    # keep inputs tidy to ensure consistent caching behaviour downstream.
+
     if start_year is not None and end_year is not None and start_year > end_year:
         raise HTTPException(
             status_code=400,
