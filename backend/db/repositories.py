@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from typing import Any
 
 from sqlalchemy import Float, cast, desc, func, select
@@ -101,31 +101,45 @@ def _empty_breakdown() -> dict[str, int]:
     }
 
 
-def _calculate_age(dob: date | None, *, as_of: date | None = None) -> int | None:
-    """Calculate an integer age in years from a date of birth.
+def _calculate_age(*, dob: date | None, reference_date: date) -> int | None:
+    """Return the fighter's age in whole years relative to ``reference_date``.
+
+    The repository persists birth dates as naive ``date`` objects.  To produce a
+    consistent age value regardless of timezone or repeated invocations within a
+    single request, the caller supplies a ``reference_date`` (typically the
+    cached "today" value).  When a birth date is missing, the schema expects the
+    age field to be ``None`` so API consumers can distinguish between unknown
+    data and a legitimate age of zero.
 
     Args:
-        dob: The date of birth. If None, returns None.
-        as_of: Optional reference date for the calculation. Defaults to today's
-            date in UTC if not provided.
+        dob: The fighter's date of birth, or ``None`` when the value is
+            unavailable in the source dataset.
+        reference_date: The "current" date used for the calculation.  Tests
+            provide a deterministic value to keep expectations stable, while
+            production calls use a timezone-aware UTC date snapshot.
 
     Returns:
-        The computed age in whole years, or None if dob is not available.
+        The integer age when ``dob`` is present.  ``None`` is returned for
+        missing data, and ages are never negative—future-dated birthdays are
+        clamped to zero so downstream code does not encounter surprising
+        negative integers.
     """
 
     if dob is None:
         return None
 
-    # Use UTC to avoid timezone-related off-by-one errors around midnight
-    today = as_of or datetime.now(timezone.utc).date()
+    if dob > reference_date:
+        # Guard against bad data entering the system by never returning a
+        # negative age.  The value will be zero until the reference date moves
+        # beyond the erroneous future birthday.
+        return 0
 
-    years = today.year - dob.year
-    # Subtract one year if birthday has not occurred yet this year
-    if (today.month, today.day) < (dob.month, dob.day):
-        years -= 1
-
-    # Guard against negative ages if future dates somehow slip in
-    return max(years, 0)
+    years_elapsed: int = reference_date.year - dob.year
+    has_had_birthday: bool = (reference_date.month, reference_date.day) >= (
+        dob.month,
+        dob.day,
+    )
+    return years_elapsed if has_had_birthday else years_elapsed - 1
 
 
 class PostgreSQLFighterRepository:
@@ -301,6 +315,12 @@ class PostgreSQLFighterRepository:
             )
         )
 
+        today_utc: date = datetime.now(tz=UTC).date()
+        fighter_age: int | None = _calculate_age(
+            dob=fighter.dob,
+            reference_date=today_utc,
+        )
+
         return FighterDetail(
             fighter_id=fighter.id,
             detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
@@ -315,7 +335,7 @@ class PostgreSQLFighterRepository:
             record=fighter.record,
             leg_reach=fighter.leg_reach,
             division=fighter.division,
-            age=_calculate_age(fighter.dob),
+            age=fighter_age,
             striking=stats_map.get("striking", {}),
             grappling=stats_map.get("grappling", {}),
             significant_strikes=stats_map.get("significant_strikes", {}),
