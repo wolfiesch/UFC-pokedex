@@ -1,8 +1,22 @@
+63def5a5662a6917	Junior Dos Santos	Image file missing
+8dc46e9a7895ce1a	Alexandre Dantas	Image file missing
 53e533db1b8e9712	Jack Nilson	Cannot open image: cannot identify image file 'data/images/fighters/53e533db1b8e9712.jpg'
-6e4acc2c115215b5	Scott Graham	Low complexity (entropy 1.86)
-3e03cec9767d37e6	He-Man Gipson	Low complexity (entropy 2.39)
-d745d4146be48679	Mason Fowler	Low complexity (entropy 1.42)
-7aabd61419f747d1	Tommy Petersen	Low complexity (entropy 0.92), Single color dominates (84.8%)
+103e2e67919379c5	Andy Waters	Image file missing
+bad28b7b34f334de	Tony Halme	Image file missing
+26d61e92a6069cd2	Chad Vance	Image file missing
+6e4acc2c115215b5	Scott Graham	Image file missing
+a2d23e684b3db732	Lu Kai	Image file missing
+1267b631db78665a	Chad Corvin	Image file missing
+3e03cec9767d37e6	He-Man Gipson	Image file missing
+f354c50b8d63d9b3	Matt Pedro	Image file missing
+601f8439a0277670	Juan Cabrera	Image file missing
+31123249b0bbf52e	Matt Brown	Image file missing
+9d61d8cb1c354867	Hussain Rasouli	Image file missing
+6ce9a012e4c6020c	Chad Johnson	Image file missing
+8738eacd62e82a32	Matt Andersen	Image file missing
+d745d4146be48679	Mason Fowler	Image file missing
+7aabd61419f747d1	Tommy Petersen	Image file missing
+37d752ec41ed84bb	Maria Oliveira	Image file missing
+06dced58ca24a6bd	Junior Barata	Image file missing
+498f0d066396ec59	Ron Henderson	Image file missing
 dbd198f780286aca	Angelo Antonio	Image file missing
-bd02e222a6166d50	Daniel Schmitt	Image file missing
-6bb1d2b714d4b3bc	Joey Gilbert	Cannot open image: cannot identify image file 'data/images/fighters/6bb1d2b714d4b3bc.gif'

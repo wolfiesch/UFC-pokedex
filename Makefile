@@ -235,6 +235,21 @@ detect-placeholders: ## Detect Sherdog placeholder images using perceptual hashi
 detect-placeholders-with-names: ## Detect placeholders and show fighter names
 	PYTHONPATH=. .venv/bin/python scripts/detect_placeholder_images.py --with-names
 
+detect-duplicate-photos: ## Find duplicate/similar photos across different fighters
+	PYTHONPATH=. .venv/bin/python scripts/detect_duplicate_photos.py
+
+detect-duplicate-photos-exact: ## Find only exact duplicate photos (faster)
+	PYTHONPATH=. .venv/bin/python scripts/detect_duplicate_photos.py --exact-only
+
+detect-duplicate-photos-strict: ## Find very similar photos (stricter matching)
+	PYTHONPATH=. .venv/bin/python scripts/detect_duplicate_photos.py --similarity 3
+
+review-duplicates: ## Interactive review of duplicate photos with image previews
+	PYTHONPATH=. .venv/bin/python scripts/review_duplicates.py
+
+review-duplicates-ascii: ## Review duplicates with ASCII art previews (universal)
+	PYTHONPATH=. .venv/bin/python scripts/review_duplicates.py --method ascii
+
 validate-images: ## Validate all fighter images using basic checks
 	PYTHONPATH=. .venv/bin/python scripts/validate_fighter_images.py
 

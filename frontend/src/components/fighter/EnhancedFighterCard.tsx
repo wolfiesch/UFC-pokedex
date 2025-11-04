@@ -180,14 +180,38 @@ export function EnhancedFighterCard({ fighter }: EnhancedFighterCardProps) {
               </div>
             )}
 
-            {/* Division Badge */}
-            {fighter.division && (
-              <div className="absolute top-3 left-3">
+            {/* Division and Champion Badges */}
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              {fighter.division && (
                 <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
                   {fighter.division}
                 </span>
-              </div>
-            )}
+              )}
+              {fighter.is_current_champion && (
+                <span className="rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1">
+                  <svg
+                    className="h-3 w-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  CHAMP
+                </span>
+              )}
+              {!fighter.is_current_champion && fighter.is_former_champion && (
+                <span className="rounded-full border border-amber-600/70 bg-black/60 px-3 py-1 text-xs font-semibold text-amber-500 backdrop-blur-sm flex items-center gap-1">
+                  <svg
+                    className="h-3 w-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  FORMER
+                </span>
+              )}
+            </div>
 
             {/* Win Percentage Badge */}
             {winPercentage && (
@@ -326,9 +350,16 @@ export function EnhancedFighterCard({ fighter }: EnhancedFighterCardProps) {
           {/* Fighter Info Section */}
           <div className="flex flex-1 flex-col p-4">
             <div className="mb-2 min-h-[3rem]">
-              <h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
-                {fighter.name}
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
+                  {fighter.name}
+                </h3>
+                {fighter.is_current_champion && (
+                  <span className="text-amber-500 text-lg" title="Current Champion">
+                    ⭐
+                  </span>
+                )}
+              </div>
               {fighter.nickname ? (
                 <p className="text-sm text-muted-foreground">
                   &quot;{fighter.nickname}&quot;

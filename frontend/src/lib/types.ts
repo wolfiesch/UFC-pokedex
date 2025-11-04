@@ -11,6 +11,8 @@ export type FighterListItem = {
   stance?: string | null;
   dob?: string | null;
   image_url?: string | null;
+  is_current_champion?: boolean;
+  is_former_champion?: boolean;
 };
 
 export type FightHistoryEntry = {
@@ -211,6 +213,8 @@ export interface FighterComparisonEntry {
   significant_strikes: Record<string, string | number | null | undefined>;
   takedown_stats: Record<string, string | number | null | undefined>;
   career: Record<string, string | number | null | undefined>;
+  is_current_champion?: boolean;
+  is_former_champion?: boolean;
 }
 
 export interface FighterComparisonResponse {

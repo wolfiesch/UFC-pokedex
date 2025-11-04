@@ -1,0 +1,3592 @@
+Similarity: 98.4% (distance: 1)
+  2891c9f7b26b26fc	Bret Bergmark
+  5f8e00c27b7e7410	Justin Bruckmann
+
+Similarity: 96.9% (distance: 2)
+  0cfbbfa0ba6d9855	Mike Hayes
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 96.9% (distance: 2)
+  f717b6002486f73f	Marcus Silveira
+  a9c45a8b21eabadc	Ralph Gracie
+
+Similarity: 96.9% (distance: 2)
+  31732a614e7a3d1d	Alex Dunworth
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 96.9% (distance: 2)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  831b937811804dad	Min Soo Kim
+
+Similarity: 96.9% (distance: 2)
+  60ba33c3f555a7a3	Josh Grispi
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 96.9% (distance: 2)
+  3a524c6700addc24	Tateki Matsuda
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 96.9% (distance: 2)
+  96c05ba5ab9eccaf	Matt Ramirez
+  831de97afe326478	Dustin Moore
+
+Similarity: 96.9% (distance: 2)
+  f300763147320d12	Liliya Shakirova
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 96.9% (distance: 2)
+  ff584c17bccbae0b	Ahejiang Ailinuer
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 95.3% (distance: 3)
+  cbd6f1abf955e628	Dave Herman
+  f65dcb22dada2223	Josh Sampo
+
+Similarity: 95.3% (distance: 3)
+  10ccf4ec9913cadc	Christian Uflacker
+  7339d340aa2889cb	Kyle Noke
+
+Similarity: 95.3% (distance: 3)
+  950d0ef5c17157c5	Maxim Grishin
+  4e33534d1e036444	Jhonata Silva
+
+Similarity: 95.3% (distance: 3)
+  86597694317e5e1b	Feng Pengchao
+  762226efa2b01654	Ronal Siahaan
+
+Similarity: 95.3% (distance: 3)
+  44f234a36324e6c8	Mario Piazzon
+  49f78022126bf4a4	Cesar Arzamendia
+
+Similarity: 95.3% (distance: 3)
+  8d04923f2db59b7f	Jin Oh Kim
+  d2b1c1317a39f6c6	Satoshi Honma
+
+Similarity: 95.3% (distance: 3)
+  bb2eee4fb3259c01	Mike Moreno
+  0b5b6876c2a4723f	Steve Steinbeiss
+
+Similarity: 95.3% (distance: 3)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  0cfbbfa0ba6d9855	Mike Hayes
+
+Similarity: 95.3% (distance: 3)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  103e2e33a60683e1	Irina Alekseeva
+
+Similarity: 95.3% (distance: 3)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 95.3% (distance: 3)
+  98601a40e9d96047	Jeff Crotty
+  36f3d235493d35ad	Pete Rogers Jr.
+
+Similarity: 95.3% (distance: 3)
+  98601a40e9d96047	Jeff Crotty
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 95.3% (distance: 3)
+  98601a40e9d96047	Jeff Crotty
+  61fb8098ccf81c7f	Antonio Arroyo
+
+Similarity: 95.3% (distance: 3)
+  6f4ec5aa3eced219	Zhu Kangjie
+  e0664abaa023fd6f	Ding Meng
+
+Similarity: 95.3% (distance: 3)
+  9be3728f3f7badb2	Moise Rimbon
+  5f23eaf9e9c34667	Priya Sharma
+
+Similarity: 95.3% (distance: 3)
+  28f62d866c59c709	Waylon Lowe
+  78ac94d54aa7f378	Brandon Lowe
+
+Similarity: 95.3% (distance: 3)
+  117580b232409824	Blake Watkins
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 95.3% (distance: 3)
+  0cfbbfa0ba6d9855	Mike Hayes
+  208b6926916867c7	Zach Rosol
+
+Similarity: 95.3% (distance: 3)
+  0cfbbfa0ba6d9855	Mike Hayes
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 95.3% (distance: 3)
+  0cfbbfa0ba6d9855	Mike Hayes
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 95.3% (distance: 3)
+  140745cbbcb023ac	Mauricio Rua
+  19a8cce18a1cef9e	James Head
+
+Similarity: 95.3% (distance: 3)
+  371a1c91b24dec2b	Mu Bae Choi
+  31da66df48c0c1a0	Kyle Dietz
+
+Similarity: 95.3% (distance: 3)
+  91d73ee59347ac16	Brodie Farber
+  1c7308d2957a12d2	Jonathan Piersma
+
+Similarity: 95.3% (distance: 3)
+  91d73ee59347ac16	Brodie Farber
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 95.3% (distance: 3)
+  74b5736f1df40be3	Scott Ettling
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 95.3% (distance: 3)
+  74b5736f1df40be3	Scott Ettling
+  8e0709784259402d	Dennis Olson
+
+Similarity: 95.3% (distance: 3)
+  19c591115a58982c	Viacheslav Borshchev
+  56bf3ed155bd0fcd	Alexander Poppeck
+
+Similarity: 95.3% (distance: 3)
+  6ceff86fae4f6b3b	Jason DeLucia
+  38b1417ec17072da	Jess Bouscal
+
+Similarity: 95.3% (distance: 3)
+  0f6528b461e47462	Joao Roque
+  9eb069062a0cfc13	Nolan Ticman
+
+Similarity: 95.3% (distance: 3)
+  f717b6002486f73f	Marcus Silveira
+  c9bbf1a0285a8076	Jeff Cox
+
+Similarity: 95.3% (distance: 3)
+  dedc3bb440d09554	Anthony Macias
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 95.3% (distance: 3)
+  8ddf9c51c5fdea75	Rousimar Palhares
+  518e5202a91980d4	Nate Moore
+
+Similarity: 95.3% (distance: 3)
+  bad82b681819b272	Dong Huaxiang
+  1a49e0670dfaca31	Jim Mullen
+
+Similarity: 95.3% (distance: 3)
+  bad82b681819b272	Dong Huaxiang
+  8e32bfcff3ec1717	RJ Clifford
+
+Similarity: 95.3% (distance: 3)
+  3d481aa374c954a1	Aliev Makhmud
+  d30415ec5e8783cd	Kyle Sturgeon
+
+Similarity: 95.3% (distance: 3)
+  f65dcb22dada2223	Josh Sampo
+  2f5cbecbbe18bac4	Shamil Abdurakhimov
+
+Similarity: 95.3% (distance: 3)
+  49b130de1da2e1bf	Sarah Alpar
+  175852708cb55776	Cristina Stanciu
+
+Similarity: 95.3% (distance: 3)
+  49b130de1da2e1bf	Sarah Alpar
+  6d48a2df51749d91	Antonio Trocoli
+
+Similarity: 95.3% (distance: 3)
+  49b130de1da2e1bf	Sarah Alpar
+  a6eb54ae17a551be	Gabriella Fernandes
+
+Similarity: 95.3% (distance: 3)
+  49b130de1da2e1bf	Sarah Alpar
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 95.3% (distance: 3)
+  60098849c703e389	Mark Climaco
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 95.3% (distance: 3)
+  a9c45a8b21eabadc	Ralph Gracie
+  5ca158b1cc9cb242	Jason Godsey
+
+Similarity: 95.3% (distance: 3)
+  6d48a2df51749d91	Antonio Trocoli
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 95.3% (distance: 3)
+  2ac4628c08ec5125	Markus Perez
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 95.3% (distance: 3)
+  276c60b14b571dd4	Takenori Sato
+  1effd880e1f1bb30	Garrett Armfield
+
+Similarity: 95.3% (distance: 3)
+  771b60ff889661c8	Mark Scanlon
+  9a97acbfd5a08bfa	David Martinez
+
+Similarity: 95.3% (distance: 3)
+  f562238becb9ec50	Nick Newell
+  5bdcbd8dd681a257	Jeremiah Metcalf
+
+Similarity: 95.3% (distance: 3)
+  55fa6ce3e522c8bb	Zhalgas Zhumagulov
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 95.3% (distance: 3)
+  31732a614e7a3d1d	Alex Dunworth
+  8c3f3c43c8ceb778	Justin Levens
+
+Similarity: 95.3% (distance: 3)
+  31732a614e7a3d1d	Alex Dunworth
+  e5512a6aed150d8f	Remo Cardarelli
+
+Similarity: 95.3% (distance: 3)
+  bf43fed8f29e1671	Marcin Held
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 95.3% (distance: 3)
+  5f8e00c27b7e7410	Justin Bruckmann
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 95.3% (distance: 3)
+  01b39decaf0abf6a	Benji Radach
+  4c9b84d559822830	Emiliano Sordi
+
+Similarity: 95.3% (distance: 3)
+  01b39decaf0abf6a	Benji Radach
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 95.3% (distance: 3)
+  5ca158b1cc9cb242	Jason Godsey
+  e4bde462b043d3e1	Sanae Kikuta
+
+Similarity: 95.3% (distance: 3)
+  ae922e7d9e852d7a	Kin Moy
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 95.3% (distance: 3)
+  ae922e7d9e852d7a	Kin Moy
+  831de97afe326478	Dustin Moore
+
+Similarity: 95.3% (distance: 3)
+  5f23eaf9e9c34667	Priya Sharma
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 95.3% (distance: 3)
+  f14cf73e51b29254	Sergei Pavlovich
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 95.3% (distance: 3)
+  484acc7b0f856ce9	Ben Saunders
+  2aa49b3766a59bcd	Jordan Mein
+
+Similarity: 95.3% (distance: 3)
+  8126e4dff0cdf69e	Micol Di Segni
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 95.3% (distance: 3)
+  31dbfbe4e7a6727c	Trey Waters
+  56bf3ed155bd0fcd	Alexander Poppeck
+
+Similarity: 95.3% (distance: 3)
+  60ba33c3f555a7a3	Josh Grispi
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 95.3% (distance: 3)
+  c80095f6092271a7	Tim Boetsch
+  e5512a6aed150d8f	Remo Cardarelli
+
+Similarity: 95.3% (distance: 3)
+  95cf6be9071e68b0	Randall Wallace
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 95.3% (distance: 3)
+  c6bf75775b278ed8	Mauricio Alonso
+  78a5eea49638685d	Nick Barnes
+
+Similarity: 95.3% (distance: 3)
+  d0d7160824278840	Junior Assuncao
+  e2ccd9a9ace60de7	Aleksei Kunchenko
+
+Similarity: 95.3% (distance: 3)
+  6b0e83b094f816ac	Shohei Nose
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 95.3% (distance: 3)
+  82a5152216251682	Dan Ige
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 95.3% (distance: 3)
+  e4a47b07044ddd72	Ignacio Bahamondes
+  ac29d508d78384c9	Marcelo Golm
+
+Similarity: 95.3% (distance: 3)
+  72b7c071910990b1	Brandon Sayles
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 95.3% (distance: 3)
+  b24666e26bd750a3	JunYoung Hong
+  762572d67204fadb	YeDam Seo
+
+Similarity: 95.3% (distance: 3)
+  af65aa688d13eedf	Joe Solecki
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 95.3% (distance: 3)
+  af65aa688d13eedf	Joe Solecki
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 95.3% (distance: 3)
+  a12a8314adc1c1c9	Laureano Staropoli
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 95.3% (distance: 3)
+  c21f26bbde777573	Johnny Walker
+  e415ea6f8d41c917	Xie Bin
+
+Similarity: 93.8% (distance: 4)
+  cbd6f1abf955e628	Dave Herman
+  2f5cbecbbe18bac4	Shamil Abdurakhimov
+
+Similarity: 93.8% (distance: 4)
+  cbd6f1abf955e628	Dave Herman
+  f117c3e8c1aa7b9e	Carlton Jones
+
+Similarity: 93.8% (distance: 4)
+  40ff198adda94b9f	Mark Eddiva
+  9fd1f08dd4aec14a	Dave Beneteau
+
+Similarity: 93.8% (distance: 4)
+  b8dc5fbf8338adc5	Isi Fitikefu
+  21b1132949f2a9b0	Steve Berger
+
+Similarity: 93.8% (distance: 4)
+  b8dc5fbf8338adc5	Isi Fitikefu
+  8677e67a75d65b8e	Baergeng Jieleyisi
+
+Similarity: 93.8% (distance: 4)
+  32ab52e5de93092d	Steve Erceg
+  9673a497a9da119a	Polyana Viana
+
+Similarity: 93.8% (distance: 4)
+  3e708ce33b6b18e6	Victor Martinez
+  764342d39cdaa54a	Frank Camacho
+
+Similarity: 93.8% (distance: 4)
+  ce783bf73b5131f9	Eugene Jackson
+  32a4f1235f0dad73	Dan Charles
+
+Similarity: 93.8% (distance: 4)
+  86597694317e5e1b	Feng Pengchao
+  b2d9758cdd124143	Ren Yawei
+
+Similarity: 93.8% (distance: 4)
+  0cf9f5518d6063bb	Angelo Trevino
+  3f24c96753dbd9f9	Scott Bessac
+
+Similarity: 93.8% (distance: 4)
+  d0fd0d9ee560dae7	Brando Pericic
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 93.8% (distance: 4)
+  44f234a36324e6c8	Mario Piazzon
+  369ea36e450ae62a	Armen Petrosyan
+
+Similarity: 93.8% (distance: 4)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  20a0e4cc5227c117	Jose Henrique
+
+Similarity: 93.8% (distance: 4)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  771b60ff889661c8	Mark Scanlon
+
+Similarity: 93.8% (distance: 4)
+  f6e5972c9d16c40e	Victor Rodriguez
+  21b54430c8eeb9cc	Joe Hurley
+
+Similarity: 93.8% (distance: 4)
+  f6e5972c9d16c40e	Victor Rodriguez
+  764342d39cdaa54a	Frank Camacho
+
+Similarity: 93.8% (distance: 4)
+  f6e5972c9d16c40e	Victor Rodriguez
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 93.8% (distance: 4)
+  f6e5972c9d16c40e	Victor Rodriguez
+  5bf31a46becc1204	Michael Trizano
+
+Similarity: 93.8% (distance: 4)
+  ed209f6618c82e41	Hacran Dias
+  81254702b51cc832	Damon Wilson
+
+Similarity: 93.8% (distance: 4)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 93.8% (distance: 4)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  3a524c6700addc24	Tateki Matsuda
+
+Similarity: 93.8% (distance: 4)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 93.8% (distance: 4)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 93.8% (distance: 4)
+  98601a40e9d96047	Jeff Crotty
+  bf43fed8f29e1671	Marcin Held
+
+Similarity: 93.8% (distance: 4)
+  98601a40e9d96047	Jeff Crotty
+  764342d39cdaa54a	Frank Camacho
+
+Similarity: 93.8% (distance: 4)
+  98601a40e9d96047	Jeff Crotty
+  3aa794cbe1e3484b	Josh Copeland
+
+Similarity: 93.8% (distance: 4)
+  6071d786f6187810	Jorgen Kruth
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 93.8% (distance: 4)
+  1c7cce2f5c17160d	Shannon Ritch
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 93.8% (distance: 4)
+  1c7cce2f5c17160d	Shannon Ritch
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 93.8% (distance: 4)
+  36f3d235493d35ad	Pete Rogers Jr.
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 93.8% (distance: 4)
+  9be3728f3f7badb2	Moise Rimbon
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 93.8% (distance: 4)
+  9be3728f3f7badb2	Moise Rimbon
+  312f7d7b2b2f7de4	Djorden Santos
+
+Similarity: 93.8% (distance: 4)
+  56709e66f1c6008f	Cole Smith
+  335ad945324c3a2e	Dave Jansen
+
+Similarity: 93.8% (distance: 4)
+  d52ef694108f8235	Michael McDonald
+  d1e7fc58d4225cdf	Danny Castillo
+
+Similarity: 93.8% (distance: 4)
+  d52ef694108f8235	Michael McDonald
+  aac5ac38148f0528	Paul Kelly
+
+Similarity: 93.8% (distance: 4)
+  762226efa2b01654	Ronal Siahaan
+  a072b512b6f4fc42	Aziz Khaydarov
+
+Similarity: 93.8% (distance: 4)
+  0cfbbfa0ba6d9855	Mike Hayes
+  91d73ee59347ac16	Brodie Farber
+
+Similarity: 93.8% (distance: 4)
+  0cfbbfa0ba6d9855	Mike Hayes
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 93.8% (distance: 4)
+  7498b3ac79a3b948	Taiyilake Nueraji
+  dc1bfd47c3b21ad3	Lu Zhengyong
+
+Similarity: 93.8% (distance: 4)
+  7498b3ac79a3b948	Taiyilake Nueraji
+  3bb030257966b022	Mike Polchlopek
+
+Similarity: 93.8% (distance: 4)
+  7d21de9c6d7c98b2	Rich Clementi
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 93.8% (distance: 4)
+  7d21de9c6d7c98b2	Rich Clementi
+  12d855d12a624da2	Neiman Gracie
+
+Similarity: 93.8% (distance: 4)
+  7d21de9c6d7c98b2	Rich Clementi
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 93.8% (distance: 4)
+  88ffe9745e218dd8	Brett Cooper
+  faf317c665546a36	Santiago Luna
+
+Similarity: 93.8% (distance: 4)
+  371a1c91b24dec2b	Mu Bae Choi
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 93.8% (distance: 4)
+  91d73ee59347ac16	Brodie Farber
+  01b39decaf0abf6a	Benji Radach
+
+Similarity: 93.8% (distance: 4)
+  91d73ee59347ac16	Brodie Farber
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 93.8% (distance: 4)
+  20a0e4cc5227c117	Jose Henrique
+  771b60ff889661c8	Mark Scanlon
+
+Similarity: 93.8% (distance: 4)
+  74b5736f1df40be3	Scott Ettling
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 93.8% (distance: 4)
+  74b5736f1df40be3	Scott Ettling
+  f7ede18b4ec4ec1f	Bobby Escalante
+
+Similarity: 93.8% (distance: 4)
+  19c591115a58982c	Viacheslav Borshchev
+  31dbfbe4e7a6727c	Trey Waters
+
+Similarity: 93.8% (distance: 4)
+  64b8561624d3b15e	Nair Melikyan
+  18d01f7f8338ae72	Vinicius Oliveira
+
+Similarity: 93.8% (distance: 4)
+  e7f51d9f9e9259e7	Thomas Gifford
+  a3f8356ace5e3eb5	Miles McDonald
+
+Similarity: 93.8% (distance: 4)
+  e7f51d9f9e9259e7	Thomas Gifford
+  265589bdd93e7ce5	Lodune Sincaid
+
+Similarity: 93.8% (distance: 4)
+  dc950d59dc590aca	Ebenezer Fontes Braga
+  3bb030257966b022	Mike Polchlopek
+
+Similarity: 93.8% (distance: 4)
+  d156513a19acf856	Sam Alvey
+  5f8e00c27b7e7410	Justin Bruckmann
+
+Similarity: 93.8% (distance: 4)
+  0c258d1d8e16e5f1	Kevin Natividad
+  297a2b35444c245b	Mandy Bohm
+
+Similarity: 93.8% (distance: 4)
+  3c660c90d48fc80d	Tim Kennedy
+  1291dd6b8ab4d952	George Zuniga
+
+Similarity: 93.8% (distance: 4)
+  3c660c90d48fc80d	Tim Kennedy
+  196ed28337adc630	Pat Audinwood
+
+Similarity: 93.8% (distance: 4)
+  c5af5750e8bae4f0	Kyle Bochniak
+  fdfef29ba17ee525	Alex Schoenauer
+
+Similarity: 93.8% (distance: 4)
+  7a613f78dd7ee8f8	Bernardo Magalhaes
+  f14cf73e51b29254	Sergei Pavlovich
+
+Similarity: 93.8% (distance: 4)
+  a3f8356ace5e3eb5	Miles McDonald
+  265589bdd93e7ce5	Lodune Sincaid
+
+Similarity: 93.8% (distance: 4)
+  2b06b6ad5db63348	Brandon Melendez
+  d1dcd4e96464a53d	Jules Bruchez
+
+Similarity: 93.8% (distance: 4)
+  2b06b6ad5db63348	Brandon Melendez
+  8e32bfcff3ec1717	RJ Clifford
+
+Similarity: 93.8% (distance: 4)
+  886264a0c9f4ea5e	Andre Muniz
+  ac40f7e3cbecdda4	Parker Porter
+
+Similarity: 93.8% (distance: 4)
+  01b352b6a9074d5c	Chase Sherman
+  77d7295d1b22c694	Alessio Di Chirico
+
+Similarity: 93.8% (distance: 4)
+  c0c1bc0766df4c00	Joe Warren
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 93.8% (distance: 4)
+  d38e8c6ae2dfc051	Nazareno Malegarie
+  a7151778b3381036	Kurt Holobaugh
+
+Similarity: 93.8% (distance: 4)
+  754968e325d6f60d	Adam Smith
+  f65dcb22dada2223	Josh Sampo
+
+Similarity: 93.8% (distance: 4)
+  2891c9f7b26b26fc	Bret Bergmark
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 93.8% (distance: 4)
+  539ed332b3078821	Sarah Moras
+  d16373b3568678d4	Raimond Magomedaliev
+
+Similarity: 93.8% (distance: 4)
+  79ff6545b0abc685	Kaitlin Young
+  a78a87d8c2bbb1cb	Julija Stoliarenko
+
+Similarity: 93.8% (distance: 4)
+  a77633a989013265	Anthony Adams
+  66579081831db7b0	Eliezer Kubanza
+
+Similarity: 93.8% (distance: 4)
+  73e09f837f3b5ecc	Rogerio Nogueira
+  b5da8f7d05e85a55	Josh Parisian
+
+Similarity: 93.8% (distance: 4)
+  208b6926916867c7	Zach Rosol
+  48d1f690b763934c	Chael Sonnen
+
+Similarity: 93.8% (distance: 4)
+  208b6926916867c7	Zach Rosol
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 93.8% (distance: 4)
+  208b6926916867c7	Zach Rosol
+  831b937811804dad	Min Soo Kim
+
+Similarity: 93.8% (distance: 4)
+  208b6926916867c7	Zach Rosol
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 93.8% (distance: 4)
+  24e9d6b0a24cff9d	Dean Hancock
+  43292ecf0e72c143	Georgi Karakhanyan
+
+Similarity: 93.8% (distance: 4)
+  dedc3bb440d09554	Anthony Macias
+  a497e228cce8a64f	Daichi Kamiya
+
+Similarity: 93.8% (distance: 4)
+  dedc3bb440d09554	Anthony Macias
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 93.8% (distance: 4)
+  dedc3bb440d09554	Anthony Macias
+  e20ad078a7d63361	Julius Anglickas
+
+Similarity: 93.8% (distance: 4)
+  3974fa35c917af1d	Ricardo Lamas
+  4a6dff1b260bcf61	Aleksandre Topuria
+
+Similarity: 93.8% (distance: 4)
+  91186547a7f3f758	Ricardo Almeida
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 93.8% (distance: 4)
+  254ed71756cfd18c	Rana Rudra Pratap Singh
+  8a65fd9ba31fd3f7	Zhang Mingyang
+
+Similarity: 93.8% (distance: 4)
+  518e5202a91980d4	Nate Moore
+  64959f90b6dd9759	Brock Jardine
+
+Similarity: 93.8% (distance: 4)
+  e70de1859b7ee78e	Sultan Aliev
+  501b07aec9b8fc2d	Sam Stout
+
+Similarity: 93.8% (distance: 4)
+  0c670b443c3d269f	Jim Wallhead
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 93.8% (distance: 4)
+  f1d64ae34e088832	Charles Jourdain
+  d747eb273a40a920	Claudio Puelles
+
+Similarity: 93.8% (distance: 4)
+  297a2b35444c245b	Mandy Bohm
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 93.8% (distance: 4)
+  8588d14c4952b9fa	Young Hwang
+  80779d7441af1b52	Christian Morecraft
+
+Similarity: 93.8% (distance: 4)
+  712c4db78b9373d1	Joe Jordan
+  045f25b3a4c08e81	Jack Marshman
+
+Similarity: 93.8% (distance: 4)
+  ec2d13a87d3d9541	Sheldon Westcott
+  18d01f7f8338ae72	Vinicius Oliveira
+
+Similarity: 93.8% (distance: 4)
+  3c48019bc387b80c	Billy Miles
+  40093d1d2d78394e	Charles Rosa
+
+Similarity: 93.8% (distance: 4)
+  1c2a8915f8431507	Erisson Ferreira
+  58d42b9e920b25fc	Canaan Kawaihae
+
+Similarity: 93.8% (distance: 4)
+  369ea36e450ae62a	Armen Petrosyan
+  5bf31a46becc1204	Michael Trizano
+
+Similarity: 93.8% (distance: 4)
+  4311e9d23604205c	Steve Ramirez
+  b0c95dc8e858452c	Akira Shoji
+
+Similarity: 93.8% (distance: 4)
+  49b130de1da2e1bf	Sarah Alpar
+  1f4b1d7d12601c5f	Ivan Shtyrkov
+
+Similarity: 93.8% (distance: 4)
+  175852708cb55776	Cristina Stanciu
+  6d48a2df51749d91	Antonio Trocoli
+
+Similarity: 93.8% (distance: 4)
+  175852708cb55776	Cristina Stanciu
+  a6eb54ae17a551be	Gabriella Fernandes
+
+Similarity: 93.8% (distance: 4)
+  175852708cb55776	Cristina Stanciu
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 93.8% (distance: 4)
+  cac3aaa66c20bee1	Mario Soto
+  d35c3ed553b71fa2	Joe Vedepo
+
+Similarity: 93.8% (distance: 4)
+  34ff304266360297	Manon Fiorot
+  c23e3d4875340d8d	Zhang Tiequan
+
+Similarity: 93.8% (distance: 4)
+  38b1417ec17072da	Jess Bouscal
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 93.8% (distance: 4)
+  38b1417ec17072da	Jess Bouscal
+  49f78022126bf4a4	Cesar Arzamendia
+
+Similarity: 93.8% (distance: 4)
+  1291dd6b8ab4d952	George Zuniga
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 93.8% (distance: 4)
+  103e2e33a60683e1	Irina Alekseeva
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 93.8% (distance: 4)
+  13c4313ed0f744f3	Brad Kohler
+  1a225f04aa6e0739	Kelly Dullanty
+
+Similarity: 93.8% (distance: 4)
+  13c4313ed0f744f3	Brad Kohler
+  ed133185689088b3	Mike Glenn
+
+Similarity: 93.8% (distance: 4)
+  4682bc59d5f55145	Sean Woodson
+  c878270af633eb11	Jordan Wright
+
+Similarity: 93.8% (distance: 4)
+  4682bc59d5f55145	Sean Woodson
+  56bf3ed155bd0fcd	Alexander Poppeck
+
+Similarity: 93.8% (distance: 4)
+  4c288a2b250bb576	Luke Jumeau
+  eda579d906cf0ca2	Hiromitsu Kanehara
+
+Similarity: 93.8% (distance: 4)
+  6d48a2df51749d91	Antonio Trocoli
+  5f23eaf9e9c34667	Priya Sharma
+
+Similarity: 93.8% (distance: 4)
+  6d48a2df51749d91	Antonio Trocoli
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 93.8% (distance: 4)
+  d0314416a7f26527	Michael McDonald
+  d1e7fc58d4225cdf	Danny Castillo
+
+Similarity: 93.8% (distance: 4)
+  d0314416a7f26527	Michael McDonald
+  aac5ac38148f0528	Paul Kelly
+
+Similarity: 93.8% (distance: 4)
+  771b60ff889661c8	Mark Scanlon
+  9fd1f08dd4aec14a	Dave Beneteau
+
+Similarity: 93.8% (distance: 4)
+  771b60ff889661c8	Mark Scanlon
+  e4a47b07044ddd72	Ignacio Bahamondes
+
+Similarity: 93.8% (distance: 4)
+  771b60ff889661c8	Mark Scanlon
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 93.8% (distance: 4)
+  e3f443e4cbc3da8f	Marius Enache
+  a8e6a69796280f17	Nate Marquardt
+
+Similarity: 93.8% (distance: 4)
+  be5aab761c40ef35	Fernando Gonzalez
+  59a9d6dac61c2540	Nariman Abbasov
+
+Similarity: 93.8% (distance: 4)
+  0b5b6876c2a4723f	Steve Steinbeiss
+  1e35aa8955794580	Ulysses Gomez
+
+Similarity: 93.8% (distance: 4)
+  0974d8d4053a7237	Lee Brousseau
+  7be14eaed4c74856	Brian Kelleher
+
+Similarity: 93.8% (distance: 4)
+  c1085e1701b13eca	Joe Pyfer
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 93.8% (distance: 4)
+  c1085e1701b13eca	Joe Pyfer
+  831de97afe326478	Dustin Moore
+
+Similarity: 93.8% (distance: 4)
+  55fa6ce3e522c8bb	Zhalgas Zhumagulov
+  b7c5eb7cdbac6a63	Danny Barlow
+
+Similarity: 93.8% (distance: 4)
+  28c55b4087a6f136	Elvis Mutapcic
+  8a70ceb3edbe757b	Andrew Craig
+
+Similarity: 93.8% (distance: 4)
+  27b1a406ac171b19	Luke Stewart
+  bb140b121283acbb	Donald Sanchez
+
+Similarity: 93.8% (distance: 4)
+  1a49e0670dfaca31	Jim Mullen
+  8e32bfcff3ec1717	RJ Clifford
+
+Similarity: 93.8% (distance: 4)
+  55ee431411ccf07a	Olivier Aubin-Mercier
+  56bc9ccb609df534	Chuck O'Neil
+
+Similarity: 93.8% (distance: 4)
+  a6eb54ae17a551be	Gabriella Fernandes
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 93.8% (distance: 4)
+  48d1f690b763934c	Chael Sonnen
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 93.8% (distance: 4)
+  032b65d5fff611b2	Tsuyoshi Kurihara
+  e51ee8ded927fc51	Chris de la Rocha
+
+Similarity: 93.8% (distance: 4)
+  01b39decaf0abf6a	Benji Radach
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 93.8% (distance: 4)
+  01b39decaf0abf6a	Benji Radach
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 93.8% (distance: 4)
+  01b39decaf0abf6a	Benji Radach
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 93.8% (distance: 4)
+  01b39decaf0abf6a	Benji Radach
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 93.8% (distance: 4)
+  6c2030e0a143a94b	Chris Camozzi
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 93.8% (distance: 4)
+  e7e01e266a9d4342	Ronnie Lawrence
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 93.8% (distance: 4)
+  b2e3aca4cd363477	Chris Cariaso
+  dcdc4503b9d49977	Julia Budd
+
+Similarity: 93.8% (distance: 4)
+  2a6f8136da1e52c0	Koji Kitao
+  a25b71fe5e31fa97	Nobuhiko Takada
+
+Similarity: 93.8% (distance: 4)
+  bbb15f301e4a490a	Jae Suk Lim
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 93.8% (distance: 4)
+  fcffee71cff5530e	Forrest Griffin
+  79899ecf62020f6d	Joe Stevenson
+
+Similarity: 93.8% (distance: 4)
+  fcffee71cff5530e	Forrest Griffin
+  73abb7a5c57fb443	Alexander Trevino
+
+Similarity: 93.8% (distance: 4)
+  f77afa72da84c9a8	Julieta Martinez
+  7c6e87729e824ef4	Ildemar Alcantara
+
+Similarity: 93.8% (distance: 4)
+  7be14eaed4c74856	Brian Kelleher
+  9a97acbfd5a08bfa	David Martinez
+
+Similarity: 93.8% (distance: 4)
+  a7f4d0902bb64092	James Irvin
+  59279a7c978f7da0	Al Iaquinta
+
+Similarity: 93.8% (distance: 4)
+  ae922e7d9e852d7a	Kin Moy
+  f7ede18b4ec4ec1f	Bobby Escalante
+
+Similarity: 93.8% (distance: 4)
+  ae922e7d9e852d7a	Kin Moy
+  ff4c3ab594c7fac3	Cristiano Marcello
+
+Similarity: 93.8% (distance: 4)
+  9f488f520ed25bbf	Kenichi Yamamoto
+  a2b06ca02bca14c0	Harold Howard
+
+Similarity: 93.8% (distance: 4)
+  2ebfbe72ed703925	Tristan Connelly
+  ca43de99b07b6b40	Josh Fremd
+
+Similarity: 93.8% (distance: 4)
+  0d1c163b206e8c5f	Rocky Lee
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 93.8% (distance: 4)
+  0d1c163b206e8c5f	Rocky Lee
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 93.8% (distance: 4)
+  0d1c163b206e8c5f	Rocky Lee
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 93.8% (distance: 4)
+  56bc9ccb609df534	Chuck O'Neil
+  92a9aa9c93192871	Darren Elkins
+
+Similarity: 93.8% (distance: 4)
+  ee9d73f4fee9cbdd	Antonio Rodrigo Nogueira
+  e9213f53ddeca978	Dhiego Lima
+
+Similarity: 93.8% (distance: 4)
+  68dd7b3783c19f9c	Shane Carwin
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 93.8% (distance: 4)
+  5f23eaf9e9c34667	Priya Sharma
+  192520689012c7e4	Suman Mokhtarian
+
+Similarity: 93.8% (distance: 4)
+  764342d39cdaa54a	Frank Camacho
+  494b0bfdbac74502	Brendan O'Reilly
+
+Similarity: 93.8% (distance: 4)
+  f7ede18b4ec4ec1f	Bobby Escalante
+  da0995f19b749cfa	Mark Madsen
+
+Similarity: 93.8% (distance: 4)
+  f8fe2053d73d7bcf	Nick Catone
+  81254702b51cc832	Damon Wilson
+
+Similarity: 93.8% (distance: 4)
+  192520689012c7e4	Suman Mokhtarian
+  32c03df3c9760069	Wendell Oliveira Marques
+
+Similarity: 93.8% (distance: 4)
+  d90b630e0561818b	Gan McGee
+  4e33534d1e036444	Jhonata Silva
+
+Similarity: 93.8% (distance: 4)
+  b8e6393c39cb9740	Sean Wilson
+  4e33534d1e036444	Jhonata Silva
+
+Similarity: 93.8% (distance: 4)
+  b8e6393c39cb9740	Sean Wilson
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 93.8% (distance: 4)
+  9fd1f08dd4aec14a	Dave Beneteau
+  e4a47b07044ddd72	Ignacio Bahamondes
+
+Similarity: 93.8% (distance: 4)
+  6c40705cf6c0d7e2	Hamid Amiri
+  11547e29f253fb89	Marcos Brigagao
+
+Similarity: 93.8% (distance: 4)
+  4c9b84d559822830	Emiliano Sordi
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 93.8% (distance: 4)
+  29ab96eae72bad9f	ChangMin Yoon
+  51c655162e462ceb	Shannon Ross
+
+Similarity: 93.8% (distance: 4)
+  01d2ed8c502e3828	Caros Fodor
+  81254702b51cc832	Damon Wilson
+
+Similarity: 93.8% (distance: 4)
+  b4eeac608fc82f88	Yves Jabouin
+  f21a3d68fb9df387	Scott Norton
+
+Similarity: 93.8% (distance: 4)
+  ed73c85164a5f5a4	Paul Creighton
+  e763679f15326ae1	Brandon Halsey
+
+Similarity: 93.8% (distance: 4)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 93.8% (distance: 4)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 93.8% (distance: 4)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  b07f14fc0e53f8bd	Kaik Brito
+
+Similarity: 93.8% (distance: 4)
+  60ba33c3f555a7a3	Josh Grispi
+  831b937811804dad	Min Soo Kim
+
+Similarity: 93.8% (distance: 4)
+  09c44b317c98bf96	David Velasquez
+  04076783ca83d6ae	Minoru Toyonaga
+
+Similarity: 93.8% (distance: 4)
+  1effd880e1f1bb30	Garrett Armfield
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 93.8% (distance: 4)
+  349aaa3da11eb587	Karo Parisyan
+  72b7c071910990b1	Brandon Sayles
+
+Similarity: 93.8% (distance: 4)
+  831b937811804dad	Min Soo Kim
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 93.8% (distance: 4)
+  79899ecf62020f6d	Joe Stevenson
+  73abb7a5c57fb443	Alexander Trevino
+
+Similarity: 93.8% (distance: 4)
+  94527830000ab715	Rani Yahya
+  a2b06ca02bca14c0	Harold Howard
+
+Similarity: 93.8% (distance: 4)
+  ce05955c26c3c090	Eric Bedard
+  5bf31a46becc1204	Michael Trizano
+
+Similarity: 93.8% (distance: 4)
+  9a97acbfd5a08bfa	David Martinez
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 93.8% (distance: 4)
+  f14f644d41ade29f	Cody Brundage
+  e2ccd9a9ace60de7	Aleksei Kunchenko
+
+Similarity: 93.8% (distance: 4)
+  fd5b6598a3b70c0a	Seth Baczynski
+  3bb030257966b022	Mike Polchlopek
+
+Similarity: 93.8% (distance: 4)
+  5c2ce761399dc9c5	Marcin Bandel
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 93.8% (distance: 4)
+  33a86e839ad202d8	Luis Felipe Dias
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 93.8% (distance: 4)
+  33a86e839ad202d8	Luis Felipe Dias
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 93.8% (distance: 4)
+  641ca2c2ed91b93c	Zygimantas Ramaska
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 93.8% (distance: 4)
+  f300763147320d12	Liliya Shakirova
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 93.8% (distance: 4)
+  98533a2738124a0d	Chad Hanekom
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 93.8% (distance: 4)
+  98533a2738124a0d	Chad Hanekom
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 93.8% (distance: 4)
+  eb70e786bbdf1d16	Yanis Ghemmouri
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  d41937647eae9a34	Reza Nasri
+  771b60ff889661c8	Mark Scanlon
+
+Similarity: 92.2% (distance: 5)
+  cbd6f1abf955e628	Dave Herman
+  886264a0c9f4ea5e	Andre Muniz
+
+Similarity: 92.2% (distance: 5)
+  cbd6f1abf955e628	Dave Herman
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 92.2% (distance: 5)
+  cbd6f1abf955e628	Dave Herman
+  bd5403efbaa445c0	Sean Soriano
+
+Similarity: 92.2% (distance: 5)
+  40ff198adda94b9f	Mark Eddiva
+  ac29d508d78384c9	Marcelo Golm
+
+Similarity: 92.2% (distance: 5)
+  10ccf4ec9913cadc	Christian Uflacker
+  37e03538c960bac6	Abdul-Kerim Edilov
+
+Similarity: 92.2% (distance: 5)
+  eaebaa6801338ea1	Steven Ciaccio
+  fcaae0385b514f11	Frank Shamrock
+
+Similarity: 92.2% (distance: 5)
+  8caca5857ce0e30b	David Lee
+  e2ccd9a9ace60de7	Aleksei Kunchenko
+
+Similarity: 92.2% (distance: 5)
+  8caca5857ce0e30b	David Lee
+  6967153c7edb4d87	Ozzy Diaz
+
+Similarity: 92.2% (distance: 5)
+  83c6c3e0f8bde8ee	Cory Walmsley
+  7d21de9c6d7c98b2	Rich Clementi
+
+Similarity: 92.2% (distance: 5)
+  83c6c3e0f8bde8ee	Cory Walmsley
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  d632d156c0549e07	Nissen Osterneck
+  0b64d0fed453ef7f	Scott Jorgensen
+
+Similarity: 92.2% (distance: 5)
+  429e7d3725852ce9	Royce Gracie
+  4665cbf36b08193b	Chris Avila
+
+Similarity: 92.2% (distance: 5)
+  27541033b97c076d	Kevin Ferguson
+  30a09e43f15f1d75	Paulo Thiago
+
+Similarity: 92.2% (distance: 5)
+  323d4ca260dfa0ba	Esteban Ribovics
+  44f234a36324e6c8	Mario Piazzon
+
+Similarity: 92.2% (distance: 5)
+  950d0ef5c17157c5	Maxim Grishin
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 92.2% (distance: 5)
+  950d0ef5c17157c5	Maxim Grishin
+  b8e6393c39cb9740	Sean Wilson
+
+Similarity: 92.2% (distance: 5)
+  950d0ef5c17157c5	Maxim Grishin
+  145df84ea4dfd904	Jonathan Rivera
+
+Similarity: 92.2% (distance: 5)
+  950d0ef5c17157c5	Maxim Grishin
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  950d0ef5c17157c5	Maxim Grishin
+  99bd51917728c25d	Grant Dawson
+
+Similarity: 92.2% (distance: 5)
+  4565d435005319c0	Minoki Ichihara
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 92.2% (distance: 5)
+  454c3e9d4cd4a1b3	Joe Duarte
+  676a2e5ec4d7338c	Eduardo Dantas
+
+Similarity: 92.2% (distance: 5)
+  7df4d3c38792b083	Bill Duvall
+  63eedfcc73071d41	Lance Gibson
+
+Similarity: 92.2% (distance: 5)
+  7195e2a932686f82	Nick Roehrick
+  19c591115a58982c	Viacheslav Borshchev
+
+Similarity: 92.2% (distance: 5)
+  56116537d71a578c	Bryan Pardoe
+  3c48019bc387b80c	Billy Miles
+
+Similarity: 92.2% (distance: 5)
+  56116537d71a578c	Bryan Pardoe
+  4f2fcbefb668689d	Jake Rosholt
+
+Similarity: 92.2% (distance: 5)
+  ce783bf73b5131f9	Eugene Jackson
+  6b7c7460855dbbb9	Albert Duraev
+
+Similarity: 92.2% (distance: 5)
+  ce783bf73b5131f9	Eugene Jackson
+  c47df9303d318c67	Clay Guida
+
+Similarity: 92.2% (distance: 5)
+  35faad160d346839	Mizuto Hirota
+  20a0e4cc5227c117	Jose Henrique
+
+Similarity: 92.2% (distance: 5)
+  86597694317e5e1b	Feng Pengchao
+  e0664abaa023fd6f	Ding Meng
+
+Similarity: 92.2% (distance: 5)
+  f31c0905045fa100	Eduardo Pamplona
+  c7c39e2fb70248b3	Chad Anheliger
+
+Similarity: 92.2% (distance: 5)
+  93892752c5fc23ca	Jerry Bohlander
+  8e32bfcff3ec1717	RJ Clifford
+
+Similarity: 92.2% (distance: 5)
+  93892752c5fc23ca	Jerry Bohlander
+  31da66df48c0c1a0	Kyle Dietz
+
+Similarity: 92.2% (distance: 5)
+  44f46b0592ca0814	Daniel Pereira
+  856ec65948b7d234	Ryan McGivern
+
+Similarity: 92.2% (distance: 5)
+  4bb0f74d5e26f89a	Ty Flores
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  193b9d1858bc4df3	Dan Hooker
+  ca43de99b07b6b40	Josh Fremd
+
+Similarity: 92.2% (distance: 5)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  9a97acbfd5a08bfa	David Martinez
+
+Similarity: 92.2% (distance: 5)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  37e03538c960bac6	Abdul-Kerim Edilov
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  01dd4cdc2446f665	Gary Padilla
+  1a225f04aa6e0739	Kelly Dullanty
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  91d73ee59347ac16	Brodie Farber
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  01b39decaf0abf6a	Benji Radach
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  e26882820f9e8df5	Mike Lullo
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  dcdc4503b9d49977	Julia Budd
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  59583ff832fe9d68	Krzysztof Soszynski
+  472f6f6e6d962f40	Barb Honchak
+
+Similarity: 92.2% (distance: 5)
+  f6e5972c9d16c40e	Victor Rodriguez
+  c0c1bc0766df4c00	Joe Warren
+
+Similarity: 92.2% (distance: 5)
+  f6e5972c9d16c40e	Victor Rodriguez
+  f14f644d41ade29f	Cody Brundage
+
+Similarity: 92.2% (distance: 5)
+  bb2eee4fb3259c01	Mike Moreno
+  c9bbf1a0285a8076	Jeff Cox
+
+Similarity: 92.2% (distance: 5)
+  8f765fd5775a8873	Rinat Fakhretdinov
+  748d4e35f846a029	Sarah Payant
+
+Similarity: 92.2% (distance: 5)
+  4920292f5d9b76df	Will Santiago
+  e26882820f9e8df5	Mike Lullo
+
+Similarity: 92.2% (distance: 5)
+  4920292f5d9b76df	Will Santiago
+  df5a77121ba84a5d	Alex Stiebling
+
+Similarity: 92.2% (distance: 5)
+  22061ff217907c78	Konstantin Erokhin
+  49f78022126bf4a4	Cesar Arzamendia
+
+Similarity: 92.2% (distance: 5)
+  90e7447d8b7f3f35	Murilo Rua
+  439d4bbefd4e6940	Kevin Haley
+
+Similarity: 92.2% (distance: 5)
+  6f018c039b4d5d80	Jon Fitch
+  56bf3ed155bd0fcd	Alexander Poppeck
+
+Similarity: 92.2% (distance: 5)
+  ed209f6618c82e41	Hacran Dias
+  74b5736f1df40be3	Scott Ettling
+
+Similarity: 92.2% (distance: 5)
+  ed209f6618c82e41	Hacran Dias
+  1ddb480b601cefb1	Chance Rencountre
+
+Similarity: 92.2% (distance: 5)
+  885e7f70dcac0007	Del Hawkins
+  f8fe2053d73d7bcf	Nick Catone
+
+Similarity: 92.2% (distance: 5)
+  cecd72feb0d640e3	Coltin Cole
+  343d57cde1a14338	Matt Ricehouse
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  4d44f37107f01b9b	Tom Lawlor
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  01b39decaf0abf6a	Benji Radach
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  338a11d3674eb2d4	Aaron Wilkinson
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  9dedfdd91070ddd8	Victoria Leonardo
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  5f99b2bafb10305f	Daron Cruickshank
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  338fda4ec7034c5d	Jeremiah O'Neal
+  d16373b3568678d4	Raimond Magomedaliev
+
+Similarity: 92.2% (distance: 5)
+  411d012af19ecb59	Chris Spang
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  c0c1bc0766df4c00	Joe Warren
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  96924b0019b3aff1	Gaston Bolanos
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  882d62561063a927	Jamie Moyle
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  8e0709784259402d	Dennis Olson
+
+Similarity: 92.2% (distance: 5)
+  98601a40e9d96047	Jeff Crotty
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  1f5f75658551f2d3	Sam Fulton
+  523af801b3429015	Allan Zuniga
+
+Similarity: 92.2% (distance: 5)
+  6071d786f6187810	Jorgen Kruth
+  f14cf73e51b29254	Sergei Pavlovich
+
+Similarity: 92.2% (distance: 5)
+  78863e4a28204a6b	Justin Frazier
+  5c7fc58e782b6842	Justin Hawes
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  a3f8356ace5e3eb5	Miles McDonald
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  afe8d5b39ff7fca2	Louis Cosce
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  aa1952ec0b3dd8e1	Kurt Pellegrino
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  c1085e1701b13eca	Joe Pyfer
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  8c3f3c43c8ceb778	Justin Levens
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  1c7cce2f5c17160d	Shannon Ritch
+  e5512a6aed150d8f	Remo Cardarelli
+
+Similarity: 92.2% (distance: 5)
+  7339d340aa2889cb	Kyle Noke
+  96a221341035b701	Nick Gibbons
+
+Similarity: 92.2% (distance: 5)
+  7339d340aa2889cb	Kyle Noke
+  1e38bba6738b7b10	Alfonso Alcarez
+
+Similarity: 92.2% (distance: 5)
+  36f3d235493d35ad	Pete Rogers Jr.
+  bf43fed8f29e1671	Marcin Held
+
+Similarity: 92.2% (distance: 5)
+  36f3d235493d35ad	Pete Rogers Jr.
+  3aa794cbe1e3484b	Josh Copeland
+
+Similarity: 92.2% (distance: 5)
+  9be3728f3f7badb2	Moise Rimbon
+  6d48a2df51749d91	Antonio Trocoli
+
+Similarity: 92.2% (distance: 5)
+  9be3728f3f7badb2	Moise Rimbon
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 92.2% (distance: 5)
+  e78f601035d677f2	Justin Wren
+  46effbd1135423c5	Sean O'Haire
+
+Similarity: 92.2% (distance: 5)
+  117580b232409824	Blake Watkins
+  0cfbbfa0ba6d9855	Mike Hayes
+
+Similarity: 92.2% (distance: 5)
+  89b8d1bf1ff09d1d	Tim Credeur
+  91d73ee59347ac16	Brodie Farber
+
+Similarity: 92.2% (distance: 5)
+  89b8d1bf1ff09d1d	Tim Credeur
+  472f6f6e6d962f40	Barb Honchak
+
+Similarity: 92.2% (distance: 5)
+  56709e66f1c6008f	Cole Smith
+  fd08d6536b7b91f0	Nghiem Van Y
+
+Similarity: 92.2% (distance: 5)
+  20ec0061400178ca	Roberto Traven
+  abbc737317f66b81	Corey Hill
+
+Similarity: 92.2% (distance: 5)
+  31bbd39c0a075d4e	Pingyuan Liu
+  c878270af633eb11	Jordan Wright
+
+Similarity: 92.2% (distance: 5)
+  762226efa2b01654	Ronal Siahaan
+  062e57ca1a3c95a8	Fiona Muxlow
+
+Similarity: 92.2% (distance: 5)
+  762226efa2b01654	Ronal Siahaan
+  b2d9758cdd124143	Ren Yawei
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  1c7308d2957a12d2	Jonathan Piersma
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  4f74c8be51db8a37	Daiju Takase
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  24b033b3daf1c9df	Luiz Cane
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  3143e5daff9e5b71	Jonathan Santa Maria
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  831b937811804dad	Min Soo Kim
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 92.2% (distance: 5)
+  0cfbbfa0ba6d9855	Mike Hayes
+  1db445a4468447d0	Matt Dixon
+
+Similarity: 92.2% (distance: 5)
+  bd878a638e0e3be3	Angela Magana
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 92.2% (distance: 5)
+  bd878a638e0e3be3	Angela Magana
+  3bb030257966b022	Mike Polchlopek
+
+Similarity: 92.2% (distance: 5)
+  aeb6c57b9bd8bc3a	Chase Waldon
+  0974d8d4053a7237	Lee Brousseau
+
+Similarity: 92.2% (distance: 5)
+  e92901944ce91909	Askar Mozharov
+  1ff9589f9065a9ed	Frank Mir
+
+Similarity: 92.2% (distance: 5)
+  7498b3ac79a3b948	Taiyilake Nueraji
+  40093d1d2d78394e	Charles Rosa
+
+Similarity: 92.2% (distance: 5)
+  325ad0dd9126d3df	Randy Costa
+  ca43de99b07b6b40	Josh Fremd
+
+Similarity: 92.2% (distance: 5)
+  7d21de9c6d7c98b2	Rich Clementi
+  265589bdd93e7ce5	Lodune Sincaid
+
+Similarity: 92.2% (distance: 5)
+  7d21de9c6d7c98b2	Rich Clementi
+  8c3f3c43c8ceb778	Justin Levens
+
+Similarity: 92.2% (distance: 5)
+  7d21de9c6d7c98b2	Rich Clementi
+  e763679f15326ae1	Brandon Halsey
+
+Similarity: 92.2% (distance: 5)
+  7d21de9c6d7c98b2	Rich Clementi
+  e5512a6aed150d8f	Remo Cardarelli
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  103e2e33a60683e1	Irina Alekseeva
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  d35c3ed553b71fa2	Joe Vedepo
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  9f488f520ed25bbf	Kenichi Yamamoto
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  b72a60a0cadff408	Louis Gaudinot
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  dcdc4503b9d49977	Julia Budd
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  c6bf75775b278ed8	Mauricio Alonso
+
+Similarity: 92.2% (distance: 5)
+  140745cbbcb023ac	Mauricio Rua
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  edd8d5d8089a35f8	Frank Lester
+  42611508ba8c3298	Johnny Cisneros
+
+Similarity: 92.2% (distance: 5)
+  edd8d5d8089a35f8	Frank Lester
+  f14cf73e51b29254	Sergei Pavlovich
+
+Similarity: 92.2% (distance: 5)
+  3f7c14c7eca7195d	Roy Nelson
+  9c393e836a852f30	Mauricio Ruffy
+
+Similarity: 92.2% (distance: 5)
+  ab7c212de9f66af0	Stephen Palling
+  a1ad35b98a9136e5	Lawrence Lui
+
+Similarity: 92.2% (distance: 5)
+  6256b2b1562cb8e1	James Vick
+  831b937811804dad	Min Soo Kim
+
+Similarity: 92.2% (distance: 5)
+  371a1c91b24dec2b	Mu Bae Choi
+  a36a14985a57a1c6	Zachary Micklewright
+
+Similarity: 92.2% (distance: 5)
+  4665cbf36b08193b	Chris Avila
+  8061a3136026a673	Jeisla Chaves
+
+Similarity: 92.2% (distance: 5)
+  4665cbf36b08193b	Chris Avila
+  61fb8098ccf81c7f	Antonio Arroyo
+
+Similarity: 92.2% (distance: 5)
+  5c7fc58e782b6842	Justin Hawes
+  7691a80e6ca3e55b	Jon Madsen
+
+Similarity: 92.2% (distance: 5)
+  42611508ba8c3298	Johnny Cisneros
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  91d73ee59347ac16	Brodie Farber
+  0d8011111be000b2	Sean Strickland
+
+Similarity: 92.2% (distance: 5)
+  91d73ee59347ac16	Brodie Farber
+  8126e4dff0cdf69e	Micol Di Segni
+
+Similarity: 92.2% (distance: 5)
+  91d73ee59347ac16	Brodie Farber
+  4c9b84d559822830	Emiliano Sordi
+
+Similarity: 92.2% (distance: 5)
+  91d73ee59347ac16	Brodie Farber
+  82a5152216251682	Dan Ige
+
+Similarity: 92.2% (distance: 5)
+  91d73ee59347ac16	Brodie Farber
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  20a0e4cc5227c117	Jose Henrique
+  9a97acbfd5a08bfa	David Martinez
+
+Similarity: 92.2% (distance: 5)
+  20a0e4cc5227c117	Jose Henrique
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  20a0e4cc5227c117	Jose Henrique
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  20a0e4cc5227c117	Jose Henrique
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  57b10fca4f9c9a7a	Alex Oliveira
+  4a99978a0366bb29	Ricky Camp
+
+Similarity: 92.2% (distance: 5)
+  57b10fca4f9c9a7a	Alex Oliveira
+  c9a94278df042f46	Alan Baudot
+
+Similarity: 92.2% (distance: 5)
+  5da4e8dc02e50ac0	Juan Mott
+  2dc7f1762dc0a7ef	Ricardo Morais
+
+Similarity: 92.2% (distance: 5)
+  5da4e8dc02e50ac0	Juan Mott
+  e415ea6f8d41c917	Xie Bin
+
+Similarity: 92.2% (distance: 5)
+  8a64b3f87ad29d1e	Dominic Clark
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  74b5736f1df40be3	Scott Ettling
+  c6668eeb261588d3	Trey Houston
+
+Similarity: 92.2% (distance: 5)
+  74b5736f1df40be3	Scott Ettling
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  74b5736f1df40be3	Scott Ettling
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  c482c8605455a213	Junior Albini
+  36e78278a77006d4	Connor Matthews
+
+Similarity: 92.2% (distance: 5)
+  2284092f8b63273b	Luke Zachrich
+  f201f21cf2c79eb2	Sebastian Szalay
+
+Similarity: 92.2% (distance: 5)
+  0859524157a19045	Ty Miller
+  f1ab6f37492c630a	Carli Judice
+
+Similarity: 92.2% (distance: 5)
+  0859524157a19045	Ty Miller
+  e3162dbdbfd78287	Cody Law
+
+Similarity: 92.2% (distance: 5)
+  dc07493a87dc0a6e	Alex Reyes
+  2be6596a9db33bf5	Jason MacDonald
+
+Similarity: 92.2% (distance: 5)
+  dc07493a87dc0a6e	Alex Reyes
+  9f488f520ed25bbf	Kenichi Yamamoto
+
+Similarity: 92.2% (distance: 5)
+  dc07493a87dc0a6e	Alex Reyes
+  bd92e38aef641673	Herschel Walker
+
+Similarity: 92.2% (distance: 5)
+  dc07493a87dc0a6e	Alex Reyes
+  c6bf75775b278ed8	Mauricio Alonso
+
+Similarity: 92.2% (distance: 5)
+  8851bb0418d27d28	Poppies Martinez
+  338a11d3674eb2d4	Aaron Wilkinson
+
+Similarity: 92.2% (distance: 5)
+  19c591115a58982c	Viacheslav Borshchev
+  4682bc59d5f55145	Sean Woodson
+
+Similarity: 92.2% (distance: 5)
+  19c591115a58982c	Viacheslav Borshchev
+  7030c27fc9778964	Benjamin Bennett
+
+Similarity: 92.2% (distance: 5)
+  64b8561624d3b15e	Nair Melikyan
+  36541f1e6c5d4955	Viviane Araujo
+
+Similarity: 92.2% (distance: 5)
+  e7f51d9f9e9259e7	Thomas Gifford
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  e7f51d9f9e9259e7	Thomas Gifford
+  e7e01e266a9d4342	Ronnie Lawrence
+
+Similarity: 92.2% (distance: 5)
+  e7f51d9f9e9259e7	Thomas Gifford
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 92.2% (distance: 5)
+  e7f51d9f9e9259e7	Thomas Gifford
+  da0995f19b749cfa	Mark Madsen
+
+Similarity: 92.2% (distance: 5)
+  e7f51d9f9e9259e7	Thomas Gifford
+  37cc294027f55e4d	Austin Springer
+
+Similarity: 92.2% (distance: 5)
+  dc950d59dc590aca	Ebenezer Fontes Braga
+  a6a9ab5a824e8f66	Joel Sutton
+
+Similarity: 92.2% (distance: 5)
+  8aabef76351401d0	Theo Rlayang
+  1b38a2b897f6209c	Felipe Silva
+
+Similarity: 92.2% (distance: 5)
+  8aabef76351401d0	Theo Rlayang
+  55fa6ce3e522c8bb	Zhalgas Zhumagulov
+
+Similarity: 92.2% (distance: 5)
+  02d276b7d62b3472	Rudyard Moncayo
+  6ad9058b7c7898b0	Tony DeSouza
+
+Similarity: 92.2% (distance: 5)
+  6ceff86fae4f6b3b	Jason DeLucia
+  6d7886b094b471ac	Sean Gannon
+
+Similarity: 92.2% (distance: 5)
+  6ceff86fae4f6b3b	Jason DeLucia
+  49f78022126bf4a4	Cesar Arzamendia
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  7a613f78dd7ee8f8	Bernardo Magalhaes
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  2891c9f7b26b26fc	Bret Bergmark
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  38b1417ec17072da	Jess Bouscal
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  78ac94d54aa7f378	Brandon Lowe
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  d156513a19acf856	Sam Alvey
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  0c258d1d8e16e5f1	Kevin Natividad
+  a2ea77e974c5889f	Carlos Felipe
+
+Similarity: 92.2% (distance: 5)
+  0c258d1d8e16e5f1	Kevin Natividad
+  67f0d1b1b0b39bec	Christien Savoie
+
+Similarity: 92.2% (distance: 5)
+  ad0e42800a0d8977	Marcus Kowal
+  a2b06ca02bca14c0	Harold Howard
+
+Similarity: 92.2% (distance: 5)
+  3c660c90d48fc80d	Tim Kennedy
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  c5af5750e8bae4f0	Kyle Bochniak
+  c982b98d33825763	Shogo Sato
+
+Similarity: 92.2% (distance: 5)
+  6eae26c44e505775	Bryce Mejia
+  73eb2a552c92a821	Helio Dipp
+
+Similarity: 92.2% (distance: 5)
+  052ceb8976695342	Chase Gormley
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  7a613f78dd7ee8f8	Bernardo Magalhaes
+  dc7927cd622676a7	Victor Altamirano
+
+Similarity: 92.2% (distance: 5)
+  7a613f78dd7ee8f8	Bernardo Magalhaes
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  054defd5420a551f	Rob Kimmons
+  9123c54d0a2b72dd	Christian Colombo
+
+Similarity: 92.2% (distance: 5)
+  a3f8356ace5e3eb5	Miles McDonald
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  a3f8356ace5e3eb5	Miles McDonald
+  e7e01e266a9d4342	Ronnie Lawrence
+
+Similarity: 92.2% (distance: 5)
+  a3f8356ace5e3eb5	Miles McDonald
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 92.2% (distance: 5)
+  a3f8356ace5e3eb5	Miles McDonald
+  ff4c3ab594c7fac3	Cristiano Marcello
+
+Similarity: 92.2% (distance: 5)
+  748d4e35f846a029	Sarah Payant
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  886264a0c9f4ea5e	Andre Muniz
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  886264a0c9f4ea5e	Andre Muniz
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  abcf2cc6efc42031	Iasmin Lucindo
+  cc351e408bbb7d43	Brandon Davis
+
+Similarity: 92.2% (distance: 5)
+  abcf2cc6efc42031	Iasmin Lucindo
+  1effd880e1f1bb30	Garrett Armfield
+
+Similarity: 92.2% (distance: 5)
+  c0c1bc0766df4c00	Joe Warren
+  9123c54d0a2b72dd	Christian Colombo
+
+Similarity: 92.2% (distance: 5)
+  c0c1bc0766df4c00	Joe Warren
+  2c104b7e59a72629	Hong Man Choi
+
+Similarity: 92.2% (distance: 5)
+  c0c1bc0766df4c00	Joe Warren
+  be8ad887e4d674b0	Juan Miranda
+
+Similarity: 92.2% (distance: 5)
+  c0c1bc0766df4c00	Joe Warren
+  3aa794cbe1e3484b	Josh Copeland
+
+Similarity: 92.2% (distance: 5)
+  c0c1bc0766df4c00	Joe Warren
+  0b8d512c79b4baf3	Matt Bessette
+
+Similarity: 92.2% (distance: 5)
+  984d15d5dc7bfcf9	James Bochnovic
+  fdf18227faa596dd	Chad Griggs
+
+Similarity: 92.2% (distance: 5)
+  9eb069062a0cfc13	Nolan Ticman
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  d38e8c6ae2dfc051	Nazareno Malegarie
+  a75a48bfe776b2c2	Jesse Butler
+
+Similarity: 92.2% (distance: 5)
+  754968e325d6f60d	Adam Smith
+  2f5cbecbbe18bac4	Shamil Abdurakhimov
+
+Similarity: 92.2% (distance: 5)
+  4145caa2c999fbac	Dennis Dombrow
+  75e0d3cc2262b732	Shane Roller
+
+Similarity: 92.2% (distance: 5)
+  4145caa2c999fbac	Dennis Dombrow
+  0adf1aacda5e26ac	AJ Fonseca
+
+Similarity: 92.2% (distance: 5)
+  bf12aca029bfcc47	Keith Hackney
+  e51ee8ded927fc51	Chris de la Rocha
+
+Similarity: 92.2% (distance: 5)
+  b0718335e9868cfd	David Hulett
+  be8ad887e4d674b0	Juan Miranda
+
+Similarity: 92.2% (distance: 5)
+  b0718335e9868cfd	David Hulett
+  b9e871af730f826c	Ronald Jhun
+
+Similarity: 92.2% (distance: 5)
+  7a82635ffa9b59fe	Claudionor Fontinelle
+  cce79e827569f26e	Ronys Torres
+
+Similarity: 92.2% (distance: 5)
+  afe8d5b39ff7fca2	Louis Cosce
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  afe8d5b39ff7fca2	Louis Cosce
+  ff4c3ab594c7fac3	Cristiano Marcello
+
+Similarity: 92.2% (distance: 5)
+  afe8d5b39ff7fca2	Louis Cosce
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  539ed332b3078821	Sarah Moras
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 92.2% (distance: 5)
+  539ed332b3078821	Sarah Moras
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 92.2% (distance: 5)
+  f717b6002486f73f	Marcus Silveira
+  5ca158b1cc9cb242	Jason Godsey
+
+Similarity: 92.2% (distance: 5)
+  6db394bf6c3b017c	Leon Aliu
+  c8a49ff2acb6f3c5	Satoshi Ishii
+
+Similarity: 92.2% (distance: 5)
+  c96518b7f6881004	Bob Gilstrap
+  abc8e1423cf5b74e	Ian Rammel
+
+Similarity: 92.2% (distance: 5)
+  0749d968e932df53	Tarec Saffiedine
+  cc300e9aa3063431	Andre Gusmao
+
+Similarity: 92.2% (distance: 5)
+  6b0a6def604de298	Tommy McMillen
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 92.2% (distance: 5)
+  a77633a989013265	Anthony Adams
+  4327506eb9ee342f	Louis Lee Scott
+
+Similarity: 92.2% (distance: 5)
+  fa399f7f6e17f7f5	Adam Piccolotti
+  5d1700cfbaafbe06	Henrique Shiguemoto
+
+Similarity: 92.2% (distance: 5)
+  208b6926916867c7	Zach Rosol
+  1f9c371c93dfd3a9	Ryan McGillivray
+
+Similarity: 92.2% (distance: 5)
+  208b6926916867c7	Zach Rosol
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  208b6926916867c7	Zach Rosol
+  4fe1d105af549845	Jeremiah Labiano
+
+Similarity: 92.2% (distance: 5)
+  208b6926916867c7	Zach Rosol
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  24e9d6b0a24cff9d	Dean Hancock
+  ed73c85164a5f5a4	Paul Creighton
+
+Similarity: 92.2% (distance: 5)
+  9d4522df6fc49a47	Kuniyoshi Hironaka
+  3c48019bc387b80c	Billy Miles
+
+Similarity: 92.2% (distance: 5)
+  f998f5c102250d6e	Yohan Lainesse
+  dedc3bb440d09554	Anthony Macias
+
+Similarity: 92.2% (distance: 5)
+  4ab36d70d1b28b58	Christian Lohsen
+  3f56b99447f00607	Paul Redmond
+
+Similarity: 92.2% (distance: 5)
+  e90d9d0681270953	Marc Cofer
+  1c02b964466c10e4	Ramiro Jimenez
+
+Similarity: 92.2% (distance: 5)
+  4f7e290e71d60f87	Rulon Gardner
+  8677e67a75d65b8e	Baergeng Jieleyisi
+
+Similarity: 92.2% (distance: 5)
+  cb1c09c8126dbee0	Damien Trites
+  06827d70c53ff0d9	Scott Askham
+
+Similarity: 92.2% (distance: 5)
+  6810d8d2dd557cf9	Soichi Nishida
+  8677e67a75d65b8e	Baergeng Jieleyisi
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  103e2e33a60683e1	Irina Alekseeva
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  01b39decaf0abf6a	Benji Radach
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  9f488f520ed25bbf	Kenichi Yamamoto
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  86ad0ae839331bd7	Willie Parks
+  d16373b3568678d4	Raimond Magomedaliev
+
+Similarity: 92.2% (distance: 5)
+  dedc3bb440d09554	Anthony Macias
+  1c3f5e85b59ec710	Brian Johnston
+
+Similarity: 92.2% (distance: 5)
+  dedc3bb440d09554	Anthony Macias
+  66579081831db7b0	Eliezer Kubanza
+
+Similarity: 92.2% (distance: 5)
+  dedc3bb440d09554	Anthony Macias
+  a59bc10f5e9f5fbb	Ananias Mulumba
+
+Similarity: 92.2% (distance: 5)
+  c76ec2bc3a57666a	Mitch Clarke
+  b2e3aca4cd363477	Chris Cariaso
+
+Similarity: 92.2% (distance: 5)
+  24d98df7556ac8af	Stephen Regman
+  bc656db347f31e19	Mike Santiago
+
+Similarity: 92.2% (distance: 5)
+  91186547a7f3f758	Ricardo Almeida
+  dd37fd509af89f15	Josh Koscheck
+
+Similarity: 92.2% (distance: 5)
+  91186547a7f3f758	Ricardo Almeida
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 92.2% (distance: 5)
+  91186547a7f3f758	Ricardo Almeida
+  e4a9dbade7c7e1a7	Rolles Gracie
+
+Similarity: 92.2% (distance: 5)
+  63eedfcc73071d41	Lance Gibson
+  1e35aa8955794580	Ulysses Gomez
+
+Similarity: 92.2% (distance: 5)
+  bad82b681819b272	Dong Huaxiang
+  abc8e1423cf5b74e	Ian Rammel
+
+Similarity: 92.2% (distance: 5)
+  f72465a784c1b084	Jessica Eye
+  a6eb54ae17a551be	Gabriella Fernandes
+
+Similarity: 92.2% (distance: 5)
+  0c670b443c3d269f	Jim Wallhead
+  60029bcf496bd707	Soa Palelei
+
+Similarity: 92.2% (distance: 5)
+  4eccb78d628b2238	Jinensibieke Asikeerbai
+  45c7979c71751fcf	Zhang Qinghe
+
+Similarity: 92.2% (distance: 5)
+  f1d64ae34e088832	Charles Jourdain
+  bbab3baf66128ae2	Javid Basharat
+
+Similarity: 92.2% (distance: 5)
+  f1d64ae34e088832	Charles Jourdain
+  6b8f28da9a483049	Takafumi Otsuka
+
+Similarity: 92.2% (distance: 5)
+  d468288756ae3982	Renato Sobral
+  d73e856f150744b2	Aaron Lanfranco
+
+Similarity: 92.2% (distance: 5)
+  476fe566d2df676e	Modestas Bukauskas
+  776d4262c4da38bf	Pete Rodriguez
+
+Similarity: 92.2% (distance: 5)
+  cc351e408bbb7d43	Brandon Davis
+  1b38a2b897f6209c	Felipe Silva
+
+Similarity: 92.2% (distance: 5)
+  297a2b35444c245b	Mandy Bohm
+  72ea1984c52019b5	Saimon Oliveira
+
+Similarity: 92.2% (distance: 5)
+  040426baba8a45e8	Nate Schroeder
+  a72d260b436924c4	Francisco Bueno
+
+Similarity: 92.2% (distance: 5)
+  712c4db78b9373d1	Joe Jordan
+  d8da10db80131bec	Niko Price
+
+Similarity: 92.2% (distance: 5)
+  712c4db78b9373d1	Joe Jordan
+  a497e228cce8a64f	Daichi Kamiya
+
+Similarity: 92.2% (distance: 5)
+  712c4db78b9373d1	Joe Jordan
+  e4a47b07044ddd72	Ignacio Bahamondes
+
+Similarity: 92.2% (distance: 5)
+  96a221341035b701	Nick Gibbons
+  af49a6c491ca22a3	Kristian Rothaermel
+
+Similarity: 92.2% (distance: 5)
+  0d49ddc07bd8c747	Jonny Carson
+  1e35aa8955794580	Ulysses Gomez
+
+Similarity: 92.2% (distance: 5)
+  0d49ddc07bd8c747	Jonny Carson
+  c982b98d33825763	Shogo Sato
+
+Similarity: 92.2% (distance: 5)
+  0d49ddc07bd8c747	Jonny Carson
+  f34312c2ccfa0e00	Spencer Fisher
+
+Similarity: 92.2% (distance: 5)
+  ec2d13a87d3d9541	Sheldon Westcott
+  351264d11286d09a	Atsushi Yamamoto
+
+Similarity: 92.2% (distance: 5)
+  ec2d13a87d3d9541	Sheldon Westcott
+  36541f1e6c5d4955	Viviane Araujo
+
+Similarity: 92.2% (distance: 5)
+  ec2d13a87d3d9541	Sheldon Westcott
+  2d5fbe2103f97053	Hideo Tokoro
+
+Similarity: 92.2% (distance: 5)
+  492b202d2064e7a9	Fabricio Werdum
+  4f95f74620a6b7a4	David Heath
+
+Similarity: 92.2% (distance: 5)
+  492b202d2064e7a9	Fabricio Werdum
+  7c35f869033901ae	Riki Fukuda
+
+Similarity: 92.2% (distance: 5)
+  1c2a8915f8431507	Erisson Ferreira
+  1effd880e1f1bb30	Garrett Armfield
+
+Similarity: 92.2% (distance: 5)
+  a72d260b436924c4	Francisco Bueno
+  4b2390cfaceb91d8	Naoya Ogawa
+
+Similarity: 92.2% (distance: 5)
+  373be586f370d400	Raquel Pa'aluhi
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 92.2% (distance: 5)
+  369ea36e450ae62a	Armen Petrosyan
+  38b1417ec17072da	Jess Bouscal
+
+Similarity: 92.2% (distance: 5)
+  369ea36e450ae62a	Armen Petrosyan
+  49f78022126bf4a4	Cesar Arzamendia
+
+Similarity: 92.2% (distance: 5)
+  d227958e8a0c1466	Kotetsu Boku
+  59279a7c978f7da0	Al Iaquinta
+
+Similarity: 92.2% (distance: 5)
+  e0c6edcb5b5d0b90	Chepe Mariscal
+  7b4ae3fd439a05b6	Angad Bisht
+
+Similarity: 92.2% (distance: 5)
+  9123c54d0a2b72dd	Christian Colombo
+  349aaa3da11eb587	Karo Parisyan
+
+Similarity: 92.2% (distance: 5)
+  9123c54d0a2b72dd	Christian Colombo
+  72b7c071910990b1	Brandon Sayles
+
+Similarity: 92.2% (distance: 5)
+  296a120cb880477b	Kiru Sahota
+  eda579d906cf0ca2	Hiromitsu Kanehara
+
+Similarity: 92.2% (distance: 5)
+  65ddc8a9ac4e8531	Keita Nakamura
+  b757c73f443d4fca	Olaf Alfonso
+
+Similarity: 92.2% (distance: 5)
+  65ddc8a9ac4e8531	Keita Nakamura
+  d4baaa0630bf5798	Djani Barbir
+
+Similarity: 92.2% (distance: 5)
+  175852708cb55776	Cristina Stanciu
+  1f4b1d7d12601c5f	Ivan Shtyrkov
+
+Similarity: 92.2% (distance: 5)
+  175852708cb55776	Cristina Stanciu
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 92.2% (distance: 5)
+  d1941565abf50b16	Jim Miller
+  06827d70c53ff0d9	Scott Askham
+
+Similarity: 92.2% (distance: 5)
+  d28dee5c705991df	Stipe Miocic
+  9ce6d5a03af801b7	Darren Till
+
+Similarity: 92.2% (distance: 5)
+  03c9994c5b8958ec	John Cholish
+  5f99b2bafb10305f	Daron Cruickshank
+
+Similarity: 92.2% (distance: 5)
+  80779d7441af1b52	Christian Morecraft
+  7b4ae3fd439a05b6	Angad Bisht
+
+Similarity: 92.2% (distance: 5)
+  25af5e832f17b474	Jesus Pinedo
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  38b1417ec17072da	Jess Bouscal
+  029e1293e609fd74	Abubakar Nurmagomedov
+
+Similarity: 92.2% (distance: 5)
+  38b1417ec17072da	Jess Bouscal
+  5f8e00c27b7e7410	Justin Bruckmann
+
+Similarity: 92.2% (distance: 5)
+  38b1417ec17072da	Jess Bouscal
+  5bf31a46becc1204	Michael Trizano
+
+Similarity: 92.2% (distance: 5)
+  1291dd6b8ab4d952	George Zuniga
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  1291dd6b8ab4d952	George Zuniga
+  cd12227edd3f134b	Keith Wisniewski
+
+Similarity: 92.2% (distance: 5)
+  13c4313ed0f744f3	Brad Kohler
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  41f90012b86a11bf	Raphael Pessoa
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  6c40705cf6c0d7e2	Hamid Amiri
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  11547e29f253fb89	Marcos Brigagao
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  1effd880e1f1bb30	Garrett Armfield
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  6ad8e4296f7522d9	Igor Severino
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 92.2% (distance: 5)
+  1b38a2b897f6209c	Felipe Silva
+  c9a94278df042f46	Alan Baudot
+
+Similarity: 92.2% (distance: 5)
+  60098849c703e389	Mark Climaco
+  3a524c6700addc24	Tateki Matsuda
+
+Similarity: 92.2% (distance: 5)
+  a9c45a8b21eabadc	Ralph Gracie
+  0ec821423baa26bd	Scott Fiedler
+
+Similarity: 92.2% (distance: 5)
+  a9c45a8b21eabadc	Ralph Gracie
+  c9bbf1a0285a8076	Jeff Cox
+
+Similarity: 92.2% (distance: 5)
+  4682bc59d5f55145	Sean Woodson
+  87c0b1c696ddfb43	Jonathan Pearce
+
+Similarity: 92.2% (distance: 5)
+  4682bc59d5f55145	Sean Woodson
+  d74cba8566291bfa	Junie Browning
+
+Similarity: 92.2% (distance: 5)
+  977081bc01197656	Scott Ferrozzo
+  36e78278a77006d4	Connor Matthews
+
+Similarity: 92.2% (distance: 5)
+  86b30a86664cb6e4	Isaiah Hill
+  c1085e1701b13eca	Joe Pyfer
+
+Similarity: 92.2% (distance: 5)
+  21b54430c8eeb9cc	Joe Hurley
+  1bcaac2d99b90fce	Sergio Moraes
+
+Similarity: 92.2% (distance: 5)
+  43292ecf0e72c143	Georgi Karakhanyan
+  676a2e5ec4d7338c	Eduardo Dantas
+
+Similarity: 92.2% (distance: 5)
+  1c7308d2957a12d2	Jonathan Piersma
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  1c7308d2957a12d2	Jonathan Piersma
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  d35c3ed553b71fa2	Joe Vedepo
+  15515e797aedc137	Joey Villasenor
+
+Similarity: 92.2% (distance: 5)
+  d35c3ed553b71fa2	Joe Vedepo
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 92.2% (distance: 5)
+  dd37fd509af89f15	Josh Koscheck
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  dd37fd509af89f15	Josh Koscheck
+  a78a87d8c2bbb1cb	Julija Stoliarenko
+
+Similarity: 92.2% (distance: 5)
+  4c288a2b250bb576	Luke Jumeau
+  bc7cf284c1c2f16e	Won Jin Eoh
+
+Similarity: 92.2% (distance: 5)
+  6d48a2df51749d91	Antonio Trocoli
+  1f4b1d7d12601c5f	Ivan Shtyrkov
+
+Similarity: 92.2% (distance: 5)
+  6d48a2df51749d91	Antonio Trocoli
+  e0f959f65d0406b4	Isabela de Padua
+
+Similarity: 92.2% (distance: 5)
+  6d48a2df51749d91	Antonio Trocoli
+  a6c2f5381d575920	Orlando Wiet
+
+Similarity: 92.2% (distance: 5)
+  2ac4628c08ec5125	Markus Perez
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 92.2% (distance: 5)
+  c26ea30823f37316	Chel Erwin-Davis
+  8c169fbe1ac33637	Loik Radzhabov
+
+Similarity: 92.2% (distance: 5)
+  6aa1cbc1466e9a0b	Marcio Cruz
+  e4a9dbade7c7e1a7	Rolles Gracie
+
+Similarity: 92.2% (distance: 5)
+  aa1952ec0b3dd8e1	Kurt Pellegrino
+  8c169fbe1ac33637	Loik Radzhabov
+
+Similarity: 92.2% (distance: 5)
+  aa1952ec0b3dd8e1	Kurt Pellegrino
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  276c60b14b571dd4	Takenori Sato
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 92.2% (distance: 5)
+  046a85108610c0d2	Dashawn Boatwright
+  351264d11286d09a	Atsushi Yamamoto
+
+Similarity: 92.2% (distance: 5)
+  02fc8f50f56eb307	Trent Jenkins
+  2721bb808bb2523c	Curt Warburton
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  0974d8d4053a7237	Lee Brousseau
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  7be14eaed4c74856	Brian Kelleher
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  66579081831db7b0	Eliezer Kubanza
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  a7a3fb5f6c67b122	Dylan Salvador
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  771b60ff889661c8	Mark Scanlon
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  4d44f37107f01b9b	Tom Lawlor
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 92.2% (distance: 5)
+  83a477a7dba1ca58	Clay Harvison
+  b72a60a0cadff408	Louis Gaudinot
+
+Similarity: 92.2% (distance: 5)
+  83a477a7dba1ca58	Clay Harvison
+  a02652d063ef5baa	Isao Kobayashi
+
+Similarity: 92.2% (distance: 5)
+  60029bcf496bd707	Soa Palelei
+  efab191f204ffa17	Nicholas Sergiacomi
+
+Similarity: 92.2% (distance: 5)
+  ac40f7e3cbecdda4	Parker Porter
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  ac40f7e3cbecdda4	Parker Porter
+  bd58d34e39b7b12a	Ben Rothwell
+
+Similarity: 92.2% (distance: 5)
+  ac40f7e3cbecdda4	Parker Porter
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  58d42b9e920b25fc	Canaan Kawaihae
+  6ad8e4296f7522d9	Igor Severino
+
+Similarity: 92.2% (distance: 5)
+  58d42b9e920b25fc	Canaan Kawaihae
+  c9a94278df042f46	Alan Baudot
+
+Similarity: 92.2% (distance: 5)
+  c1085e1701b13eca	Joe Pyfer
+  8c169fbe1ac33637	Loik Radzhabov
+
+Similarity: 92.2% (distance: 5)
+  c1085e1701b13eca	Joe Pyfer
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 92.2% (distance: 5)
+  c1085e1701b13eca	Joe Pyfer
+  f4d92416da98804b	Bassil Hafez
+
+Similarity: 92.2% (distance: 5)
+  c1085e1701b13eca	Joe Pyfer
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  96924b0019b3aff1	Gaston Bolanos
+  b5da8f7d05e85a55	Josh Parisian
+
+Similarity: 92.2% (distance: 5)
+  55fa6ce3e522c8bb	Zhalgas Zhumagulov
+  1effd880e1f1bb30	Garrett Armfield
+
+Similarity: 92.2% (distance: 5)
+  ffc088e64fab57e9	Quinton Jackson
+  31732a614e7a3d1d	Alex Dunworth
+
+Similarity: 92.2% (distance: 5)
+  ffc088e64fab57e9	Quinton Jackson
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  28c55b4087a6f136	Elvis Mutapcic
+  a7f4d0902bb64092	James Irvin
+
+Similarity: 92.2% (distance: 5)
+  28c55b4087a6f136	Elvis Mutapcic
+  a4bf17bd3ba3423b	Yoshiro Maeda
+
+Similarity: 92.2% (distance: 5)
+  28c55b4087a6f136	Elvis Mutapcic
+  7b3c13fe33556a21	Francesco Mazzeo
+
+Similarity: 92.2% (distance: 5)
+  cf772fb504842dc3	Kiril Sidelnikov
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  52f7d300738961ac	Marcio Navarro
+  2b1c6f28039efe36	Joe Cason
+
+Similarity: 92.2% (distance: 5)
+  eda579d906cf0ca2	Hiromitsu Kanehara
+  bbb15f301e4a490a	Jae Suk Lim
+
+Similarity: 92.2% (distance: 5)
+  eda579d906cf0ca2	Hiromitsu Kanehara
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 92.2% (distance: 5)
+  eda579d906cf0ca2	Hiromitsu Kanehara
+  3bb030257966b022	Mike Polchlopek
+
+Similarity: 92.2% (distance: 5)
+  2a542ee8a8b83559	Tim Sylvia
+  be8ad887e4d674b0	Juan Miranda
+
+Similarity: 92.2% (distance: 5)
+  445a98acb8985970	Falaniko Vitale
+  10559c53de0b950e	Joey Gambino
+
+Similarity: 92.2% (distance: 5)
+  265589bdd93e7ce5	Lodune Sincaid
+  e7e01e266a9d4342	Ronnie Lawrence
+
+Similarity: 92.2% (distance: 5)
+  265589bdd93e7ce5	Lodune Sincaid
+  ae922e7d9e852d7a	Kin Moy
+
+Similarity: 92.2% (distance: 5)
+  265589bdd93e7ce5	Lodune Sincaid
+  37cc294027f55e4d	Austin Springer
+
+Similarity: 92.2% (distance: 5)
+  1a49e0670dfaca31	Jim Mullen
+  e51ee8ded927fc51	Chris de la Rocha
+
+Similarity: 92.2% (distance: 5)
+  1a49e0670dfaca31	Jim Mullen
+  7613773461b276f4	Casey Olson
+
+Similarity: 92.2% (distance: 5)
+  d6a3e131ad4ba064	Angga
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  9094a881a7513de3	Kevin Syler
+  e5dc36e0aba7e9da	Alejandro Garcia
+
+Similarity: 92.2% (distance: 5)
+  31732a614e7a3d1d	Alex Dunworth
+  dfae5da5676e4194	Chris Dempsey
+
+Similarity: 92.2% (distance: 5)
+  a6eb54ae17a551be	Gabriella Fernandes
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 92.2% (distance: 5)
+  bf43fed8f29e1671	Marcin Held
+  a1f6999fe57236e0	Wanderlei Silva
+
+Similarity: 92.2% (distance: 5)
+  bf43fed8f29e1671	Marcin Held
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  48d1f690b763934c	Chael Sonnen
+  0d1c163b206e8c5f	Rocky Lee
+
+Similarity: 92.2% (distance: 5)
+  48d1f690b763934c	Chael Sonnen
+  1f9c371c93dfd3a9	Ryan McGillivray
+
+Similarity: 92.2% (distance: 5)
+  5f8e00c27b7e7410	Justin Bruckmann
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  5f8e00c27b7e7410	Justin Bruckmann
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  91e3388e69060e69	Veta Arteaga
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  91e3388e69060e69	Veta Arteaga
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  ab2b4ff41d6ebe0f	Alex Perez
+  78a5eea49638685d	Nick Barnes
+
+Similarity: 92.2% (distance: 5)
+  01b39decaf0abf6a	Benji Radach
+  8126e4dff0cdf69e	Micol Di Segni
+
+Similarity: 92.2% (distance: 5)
+  01b39decaf0abf6a	Benji Radach
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  01b39decaf0abf6a	Benji Radach
+  831b937811804dad	Min Soo Kim
+
+Similarity: 92.2% (distance: 5)
+  01b39decaf0abf6a	Benji Radach
+  82a5152216251682	Dan Ige
+
+Similarity: 92.2% (distance: 5)
+  01b39decaf0abf6a	Benji Radach
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  dc1bfd47c3b21ad3	Lu Zhengyong
+  fd08d6536b7b91f0	Nghiem Van Y
+
+Similarity: 92.2% (distance: 5)
+  6c2030e0a143a94b	Chris Camozzi
+  69ea0119f6f0dfe0	Dan O'Connor
+
+Similarity: 92.2% (distance: 5)
+  36a432f22144843e	Neil Grove
+  6d4b63c767106d3a	Vicente Luque
+
+Similarity: 92.2% (distance: 5)
+  36a432f22144843e	Neil Grove
+  058e4e08a1ad8aba	Dale Hartt
+
+Similarity: 92.2% (distance: 5)
+  e7e01e266a9d4342	Ronnie Lawrence
+  01d2ed8c502e3828	Caros Fodor
+
+Similarity: 92.2% (distance: 5)
+  e7e01e266a9d4342	Ronnie Lawrence
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  e7e01e266a9d4342	Ronnie Lawrence
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  e7e01e266a9d4342	Ronnie Lawrence
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  b2e3aca4cd363477	Chris Cariaso
+  c814b4c899793af6	Rafael Fiziev
+
+Similarity: 92.2% (distance: 5)
+  b2e3aca4cd363477	Chris Cariaso
+  b0f316c60f8d3b47	Josh Ferguson
+
+Similarity: 92.2% (distance: 5)
+  b2e3aca4cd363477	Chris Cariaso
+  d0d7160824278840	Junior Assuncao
+
+Similarity: 92.2% (distance: 5)
+  946f341df6472ee0	Guy Mezger
+  657d0ed181f04215	Chad Leonhardt
+
+Similarity: 92.2% (distance: 5)
+  53f02bbc41d99432	Scott Bills
+  856ec65948b7d234	Ryan McGivern
+
+Similarity: 92.2% (distance: 5)
+  a09ed60aa67a3f67	Farid Basharat
+  d16373b3568678d4	Raimond Magomedaliev
+
+Similarity: 92.2% (distance: 5)
+  d3d1ff3f3dfa0931	Sean Loeffler
+  3bad7ef643840f67	Joe Lauzon
+
+Similarity: 92.2% (distance: 5)
+  fdf18227faa596dd	Chad Griggs
+  b8e6393c39cb9740	Sean Wilson
+
+Similarity: 92.2% (distance: 5)
+  fdf18227faa596dd	Chad Griggs
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  638cfec7ec559d6e	Brandon Thatch
+  98e946879ba20c0f	Boston Salmon
+
+Similarity: 92.2% (distance: 5)
+  bbb15f301e4a490a	Jae Suk Lim
+  31da66df48c0c1a0	Kyle Dietz
+
+Similarity: 92.2% (distance: 5)
+  df05aa15b2d66f57	Chris Tuchscherer
+  4f2fcbefb668689d	Jake Rosholt
+
+Similarity: 92.2% (distance: 5)
+  8c169fbe1ac33637	Loik Radzhabov
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  8c169fbe1ac33637	Loik Radzhabov
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  5d495dec23d7c68e	Francis Marshall
+  528c24b99fbaab79	Johnny Eduardo
+
+Similarity: 92.2% (distance: 5)
+  6e3282d57d2467a0	Nobuhiro Obiya
+  6083f497c22cc075	Yasuhito Namekawa
+
+Similarity: 92.2% (distance: 5)
+  5ca158b1cc9cb242	Jason Godsey
+  d2b1c1317a39f6c6	Satoshi Honma
+
+Similarity: 92.2% (distance: 5)
+  5ca158b1cc9cb242	Jason Godsey
+  7613773461b276f4	Casey Olson
+
+Similarity: 92.2% (distance: 5)
+  5ca158b1cc9cb242	Jason Godsey
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 92.2% (distance: 5)
+  179f1948dc234f1f	Mark Munoz
+  058e4e08a1ad8aba	Dale Hartt
+
+Similarity: 92.2% (distance: 5)
+  179f1948dc234f1f	Mark Munoz
+  5ef0088c1b19beeb	Bryan Caraway
+
+Similarity: 92.2% (distance: 5)
+  cc300e9aa3063431	Andre Gusmao
+  a6959da32f0e6b5d	Kyle Bradley
+
+Similarity: 92.2% (distance: 5)
+  ae922e7d9e852d7a	Kin Moy
+  01d2ed8c502e3828	Caros Fodor
+
+Similarity: 92.2% (distance: 5)
+  ae922e7d9e852d7a	Kin Moy
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  9f488f520ed25bbf	Kenichi Yamamoto
+  30a09e43f15f1d75	Paulo Thiago
+
+Similarity: 92.2% (distance: 5)
+  2ebfbe72ed703925	Tristan Connelly
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 92.2% (distance: 5)
+  94535f76f43b466a	Justin Gonzales
+  59a9d6dac61c2540	Nariman Abbasov
+
+Similarity: 92.2% (distance: 5)
+  dfae5da5676e4194	Chris Dempsey
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  dfae5da5676e4194	Chris Dempsey
+  5bf31a46becc1204	Michael Trizano
+
+Similarity: 92.2% (distance: 5)
+  b5da8f7d05e85a55	Josh Parisian
+  01d2ed8c502e3828	Caros Fodor
+
+Similarity: 92.2% (distance: 5)
+  b5da8f7d05e85a55	Josh Parisian
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  de26d906f2874dd4	Saygid Izagakhmaev
+  5f23eaf9e9c34667	Priya Sharma
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  4c9b84d559822830	Emiliano Sordi
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  f5ff7bcdcfeba3ad	Trevor Prangley
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  831b937811804dad	Min Soo Kim
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  82a5152216251682	Dan Ige
+
+Similarity: 92.2% (distance: 5)
+  0d1c163b206e8c5f	Rocky Lee
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  338a11d3674eb2d4	Aaron Wilkinson
+  93b62c5f2ba18e51	Gustavo Lopez
+
+Similarity: 92.2% (distance: 5)
+  bd58d34e39b7b12a	Ben Rothwell
+  6a8a06b542e1516d	Michiyoshi Ohara
+
+Similarity: 92.2% (distance: 5)
+  bd58d34e39b7b12a	Ben Rothwell
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  351264d11286d09a	Atsushi Yamamoto
+  18d01f7f8338ae72	Vinicius Oliveira
+
+Similarity: 92.2% (distance: 5)
+  68d35296f566792b	Josiane Nunes
+  8c0580d4fff106c1	Kelvin Gastelum
+
+Similarity: 92.2% (distance: 5)
+  b72a60a0cadff408	Louis Gaudinot
+  78a5eea49638685d	Nick Barnes
+
+Similarity: 92.2% (distance: 5)
+  b72a60a0cadff408	Louis Gaudinot
+  aac5ac38148f0528	Paul Kelly
+
+Similarity: 92.2% (distance: 5)
+  5f23eaf9e9c34667	Priya Sharma
+  c9a94278df042f46	Alan Baudot
+
+Similarity: 92.2% (distance: 5)
+  8c3f3c43c8ceb778	Justin Levens
+  12d855d12a624da2	Neiman Gracie
+
+Similarity: 92.2% (distance: 5)
+  8c3f3c43c8ceb778	Justin Levens
+  c80095f6092271a7	Tim Boetsch
+
+Similarity: 92.2% (distance: 5)
+  18d01f7f8338ae72	Vinicius Oliveira
+  36541f1e6c5d4955	Viviane Araujo
+
+Similarity: 92.2% (distance: 5)
+  fcaae0385b514f11	Frank Shamrock
+  7c35f869033901ae	Riki Fukuda
+
+Similarity: 92.2% (distance: 5)
+  e5dc36e0aba7e9da	Alejandro Garcia
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 92.2% (distance: 5)
+  764342d39cdaa54a	Frank Camacho
+  c487223b0289bda9	Hector Aldana
+
+Similarity: 92.2% (distance: 5)
+  764342d39cdaa54a	Frank Camacho
+  61fb8098ccf81c7f	Antonio Arroyo
+
+Similarity: 92.2% (distance: 5)
+  764342d39cdaa54a	Frank Camacho
+  b1d19449397541dc	Askar Askarov
+
+Similarity: 92.2% (distance: 5)
+  764342d39cdaa54a	Frank Camacho
+  62918a2118de08b2	Tom Murphy
+
+Similarity: 92.2% (distance: 5)
+  10559c53de0b950e	Joey Gambino
+  202b0467521c9d6f	Viktor Pesta
+
+Similarity: 92.2% (distance: 5)
+  10559c53de0b950e	Joey Gambino
+  327d5f279895110d	Roman Dolidze
+
+Similarity: 92.2% (distance: 5)
+  f7ede18b4ec4ec1f	Bobby Escalante
+  92b36014314b028b	Peggy Morgan
+
+Similarity: 92.2% (distance: 5)
+  f7ede18b4ec4ec1f	Bobby Escalante
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  f7ede18b4ec4ec1f	Bobby Escalante
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  f7ede18b4ec4ec1f	Bobby Escalante
+  81254702b51cc832	Damon Wilson
+
+Similarity: 92.2% (distance: 5)
+  4f74c8be51db8a37	Daiju Takase
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  4f74c8be51db8a37	Daiju Takase
+  94527830000ab715	Rani Yahya
+
+Similarity: 92.2% (distance: 5)
+  f9f07bb5a43535ed	Carlos Condit
+  11f8860028b68fcf	Aaron Rosa
+
+Similarity: 92.2% (distance: 5)
+  f8fe2053d73d7bcf	Nick Catone
+  be8ad887e4d674b0	Juan Miranda
+
+Similarity: 92.2% (distance: 5)
+  f8fe2053d73d7bcf	Nick Catone
+  3aa794cbe1e3484b	Josh Copeland
+
+Similarity: 92.2% (distance: 5)
+  ff4c3ab594c7fac3	Cristiano Marcello
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  7c35f869033901ae	Riki Fukuda
+  a620638435de0628	Ryan Hayes
+
+Similarity: 92.2% (distance: 5)
+  7c35f869033901ae	Riki Fukuda
+  a6959da32f0e6b5d	Kyle Bradley
+
+Similarity: 92.2% (distance: 5)
+  7c35f869033901ae	Riki Fukuda
+  3a524c6700addc24	Tateki Matsuda
+
+Similarity: 92.2% (distance: 5)
+  7c35f869033901ae	Riki Fukuda
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 92.2% (distance: 5)
+  d90b630e0561818b	Gan McGee
+  61fb8098ccf81c7f	Antonio Arroyo
+
+Similarity: 92.2% (distance: 5)
+  b490def93478ae29	Kyle Kurtz
+  8e0709784259402d	Dennis Olson
+
+Similarity: 92.2% (distance: 5)
+  6741218640534d8b	Garrett Gross
+  38ed5a2299230227	Filip Pejic
+
+Similarity: 92.2% (distance: 5)
+  9dedfdd91070ddd8	Victoria Leonardo
+  4d1e92b61bcef308	Tobias Harila
+
+Similarity: 92.2% (distance: 5)
+  9dedfdd91070ddd8	Victoria Leonardo
+  b07f14fc0e53f8bd	Kaik Brito
+
+Similarity: 92.2% (distance: 5)
+  595db60957de51d3	Michel Pereira
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  595db60957de51d3	Michel Pereira
+  4fe1d105af549845	Jeremiah Labiano
+
+Similarity: 92.2% (distance: 5)
+  618f72750ec50b05	Danny Navarro
+  c6a33ff198aaaeeb	Stephan Bonnar
+
+Similarity: 92.2% (distance: 5)
+  de594b35c45c2e9a	Eduarda Moura
+  f54200f1dfb9b5d4	Aleksander Emelianenko
+
+Similarity: 92.2% (distance: 5)
+  c6a33ff198aaaeeb	Stephan Bonnar
+  2c104b7e59a72629	Hong Man Choi
+
+Similarity: 92.2% (distance: 5)
+  1f9c371c93dfd3a9	Ryan McGillivray
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 92.2% (distance: 5)
+  41f90012b86a11bf	Raphael Pessoa
+  8c0580d4fff106c1	Kelvin Gastelum
+
+Similarity: 92.2% (distance: 5)
+  99506df1af6c8b3b	John Dodson
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 92.2% (distance: 5)
+  c878270af633eb11	Jordan Wright
+  31dbfbe4e7a6727c	Trey Waters
+
+Similarity: 92.2% (distance: 5)
+  c878270af633eb11	Jordan Wright
+  eee0ef3e2b14816b	Kai Kamaka
+
+Similarity: 92.2% (distance: 5)
+  e26882820f9e8df5	Mike Lullo
+  aac5ac38148f0528	Paul Kelly
+
+Similarity: 92.2% (distance: 5)
+  b8e6393c39cb9740	Sean Wilson
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  696002b59f09d73b	Joseph Sandoval
+  c2e3e67b5911bfb7	Diego Brandao
+
+Similarity: 92.2% (distance: 5)
+  696002b59f09d73b	Joseph Sandoval
+  f304aff405c4a8fa	Brian Rogers
+
+Similarity: 92.2% (distance: 5)
+  d4270315cbcf2569	Jacob Malkoun
+  f14f644d41ade29f	Cody Brundage
+
+Similarity: 92.2% (distance: 5)
+  24b033b3daf1c9df	Luiz Cane
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  1a2bf44edb8055b6	Serhiy Sidey
+  b3d21b2610dcfaeb	Emily Whitmire
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  17923f676f100e16	Tallison Teixeira
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  ac29d508d78384c9	Marcelo Golm
+
+Similarity: 92.2% (distance: 5)
+  9fd1f08dd4aec14a	Dave Beneteau
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  421ccfc6ddb17958	Sam Liera
+  e6147d5ab3685899	Donny Walker
+
+Similarity: 92.2% (distance: 5)
+  8c0580d4fff106c1	Kelvin Gastelum
+  67f0d1b1b0b39bec	Christien Savoie
+
+Similarity: 92.2% (distance: 5)
+  8c0580d4fff106c1	Kelvin Gastelum
+  312f7d7b2b2f7de4	Djorden Santos
+
+Similarity: 92.2% (distance: 5)
+  37cc294027f55e4d	Austin Springer
+  e5512a6aed150d8f	Remo Cardarelli
+
+Similarity: 92.2% (distance: 5)
+  668222c99c5c311d	Matt Lucas
+  7613773461b276f4	Casey Olson
+
+Similarity: 92.2% (distance: 5)
+  c2e3e67b5911bfb7	Diego Brandao
+  058e4e08a1ad8aba	Dale Hartt
+
+Similarity: 92.2% (distance: 5)
+  bd92e38aef641673	Herschel Walker
+  045f25b3a4c08e81	Jack Marshman
+
+Similarity: 92.2% (distance: 5)
+  d1e7fc58d4225cdf	Danny Castillo
+  79899ecf62020f6d	Joe Stevenson
+
+Similarity: 92.2% (distance: 5)
+  d1e7fc58d4225cdf	Danny Castillo
+  73abb7a5c57fb443	Alexander Trevino
+
+Similarity: 92.2% (distance: 5)
+  8126e4dff0cdf69e	Micol Di Segni
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 92.2% (distance: 5)
+  8126e4dff0cdf69e	Micol Di Segni
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  8126e4dff0cdf69e	Micol Di Segni
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  7030c27fc9778964	Benjamin Bennett
+  31dbfbe4e7a6727c	Trey Waters
+
+Similarity: 92.2% (distance: 5)
+  4c9b84d559822830	Emiliano Sordi
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  4c9b84d559822830	Emiliano Sordi
+  e4a9dbade7c7e1a7	Rolles Gracie
+
+Similarity: 92.2% (distance: 5)
+  4c9b84d559822830	Emiliano Sordi
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  4c9b84d559822830	Emiliano Sordi
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  c982b98d33825763	Shogo Sato
+  21b1132949f2a9b0	Steve Berger
+
+Similarity: 92.2% (distance: 5)
+  29ab96eae72bad9f	ChangMin Yoon
+  e415ea6f8d41c917	Xie Bin
+
+Similarity: 92.2% (distance: 5)
+  6902fcf0610dd303	Jakub Wiklacz
+  ff2ec83f44000f78	Slim Trabelsi
+
+Similarity: 92.2% (distance: 5)
+  f8c2aba4815876b5	Andrew Martinez
+  6a0b80a24f22e152	Ryan Parker
+
+Similarity: 92.2% (distance: 5)
+  470fedbc8563ac47	Daniel Omielanczuk
+  8c8c92a12621d7e0	Chris Cope
+
+Similarity: 92.2% (distance: 5)
+  be8ad887e4d674b0	Juan Miranda
+  882d62561063a927	Jamie Moyle
+
+Similarity: 92.2% (distance: 5)
+  1e38bba6738b7b10	Alfonso Alcarez
+  4f2fcbefb668689d	Jake Rosholt
+
+Similarity: 92.2% (distance: 5)
+  4c4b44e3cf5815b3	Stephen Banaszak
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  61fb8098ccf81c7f	Antonio Arroyo
+  3aa794cbe1e3484b	Josh Copeland
+
+Similarity: 92.2% (distance: 5)
+  61fb8098ccf81c7f	Antonio Arroyo
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  5f99b2bafb10305f	Daron Cruickshank
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 92.2% (distance: 5)
+  ed133185689088b3	Mike Glenn
+  66ab58d0b3783607	Andrew Holbrook
+
+Similarity: 92.2% (distance: 5)
+  ed133185689088b3	Mike Glenn
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  f71028a6e5128856	Chris Herrera
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  30a09e43f15f1d75	Paulo Thiago
+  e4a9dbade7c7e1a7	Rolles Gracie
+
+Similarity: 92.2% (distance: 5)
+  8a70ceb3edbe757b	Andrew Craig
+  7b3c13fe33556a21	Francesco Mazzeo
+
+Similarity: 92.2% (distance: 5)
+  8a70ceb3edbe757b	Andrew Craig
+  9b5b5a75523728f3	Kazushi Sakuraba
+
+Similarity: 92.2% (distance: 5)
+  1b583c64c23f0c7f	Vinicius Magalhaes
+  b8aef0faf4ce9b31	Sam Sicilia
+
+Similarity: 92.2% (distance: 5)
+  d1a1314976c50bef	Josh Neer
+  c77a953488e5607d	Vinc Pichel
+
+Similarity: 92.2% (distance: 5)
+  d365ee924f5cc3fc	Bao Quach
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  8c8c92a12621d7e0	Chris Cope
+  a497e228cce8a64f	Daichi Kamiya
+
+Similarity: 92.2% (distance: 5)
+  ed73c85164a5f5a4	Paul Creighton
+  60ba33c3f555a7a3	Josh Grispi
+
+Similarity: 92.2% (distance: 5)
+  ed73c85164a5f5a4	Paul Creighton
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  b7c5eb7cdbac6a63	Danny Barlow
+  31d7446b184e3305	Magomed Mustafaev
+
+Similarity: 92.2% (distance: 5)
+  b7c5eb7cdbac6a63	Danny Barlow
+  c9a94278df042f46	Alan Baudot
+
+Similarity: 92.2% (distance: 5)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  95cf6be9071e68b0	Randall Wallace
+
+Similarity: 92.2% (distance: 5)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  f5ff7bcdcfeba3ad	Trevor Prangley
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  31dbfbe4e7a6727c	Trey Waters
+  66579081831db7b0	Eliezer Kubanza
+
+Similarity: 92.2% (distance: 5)
+  60ba33c3f555a7a3	Josh Grispi
+  ebf298f8ac7e232b	David Blanco
+
+Similarity: 92.2% (distance: 5)
+  60ba33c3f555a7a3	Josh Grispi
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  60ba33c3f555a7a3	Josh Grispi
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  3aa794cbe1e3484b	Josh Copeland
+  96c05ba5ab9eccaf	Matt Ramirez
+
+Similarity: 92.2% (distance: 5)
+  3aa794cbe1e3484b	Josh Copeland
+  831de97afe326478	Dustin Moore
+
+Similarity: 92.2% (distance: 5)
+  87f19d19f4cb73f8	Bibulatov Magomed
+  22a1f83edb865aee	Mikheil Sazhiniani
+
+Similarity: 92.2% (distance: 5)
+  95cf6be9071e68b0	Randall Wallace
+  3143e5daff9e5b71	Jonathan Santa Maria
+
+Similarity: 92.2% (distance: 5)
+  95cf6be9071e68b0	Randall Wallace
+  831b937811804dad	Min Soo Kim
+
+Similarity: 92.2% (distance: 5)
+  95cf6be9071e68b0	Randall Wallace
+  1db445a4468447d0	Matt Dixon
+
+Similarity: 92.2% (distance: 5)
+  96c05ba5ab9eccaf	Matt Ramirez
+  082eba4cd80f736f	Jarno Errens
+
+Similarity: 92.2% (distance: 5)
+  96c05ba5ab9eccaf	Matt Ramirez
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  d0d7160824278840	Junior Assuncao
+  f14f644d41ade29f	Cody Brundage
+
+Similarity: 92.2% (distance: 5)
+  08ae3100bf2100ed	Scott McDonald
+  22e07d3da1aa3475	Andrey Pulyaev
+
+Similarity: 92.2% (distance: 5)
+  fa2fca260beeb9c0	Ricky Johnson
+  5159e6ee100c717e	Cedric Doumbe
+
+Similarity: 92.2% (distance: 5)
+  831de97afe326478	Dustin Moore
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  bd85ca0bb4f26cfc	Clint Godfrey
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  ebf298f8ac7e232b	David Blanco
+  ee7b7768a4e6dc45	Ben Reiter
+
+Similarity: 92.2% (distance: 5)
+  1effd880e1f1bb30	Garrett Armfield
+  6b0e83b094f816ac	Shohei Nose
+
+Similarity: 92.2% (distance: 5)
+  4fe1d105af549845	Jeremiah Labiano
+  a78a87d8c2bbb1cb	Julija Stoliarenko
+
+Similarity: 92.2% (distance: 5)
+  4fe1d105af549845	Jeremiah Labiano
+  b07f14fc0e53f8bd	Kaik Brito
+
+Similarity: 92.2% (distance: 5)
+  831b937811804dad	Min Soo Kim
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 92.2% (distance: 5)
+  831b937811804dad	Min Soo Kim
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  831b937811804dad	Min Soo Kim
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  80eacd4da0617c57	Joseph Benavidez
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 92.2% (distance: 5)
+  325550dab63fb25a	Joe Martin
+  cd12227edd3f134b	Keith Wisniewski
+
+Similarity: 92.2% (distance: 5)
+  6b0e83b094f816ac	Shohei Nose
+  312f7d7b2b2f7de4	Djorden Santos
+
+Similarity: 92.2% (distance: 5)
+  40eb2aef4d5577d4	John Yoo
+  cb139171ed1b69fe	Kenny Florian
+
+Similarity: 92.2% (distance: 5)
+  94527830000ab715	Rani Yahya
+  045f25b3a4c08e81	Jack Marshman
+
+Similarity: 92.2% (distance: 5)
+  a78a87d8c2bbb1cb	Julija Stoliarenko
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  a497e228cce8a64f	Daichi Kamiya
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  02500fb9fd79a974	Jason Reinhardt
+  a54fc2d6fc224dc3	Jamie Varner
+
+Similarity: 92.2% (distance: 5)
+  e5512a6aed150d8f	Remo Cardarelli
+  ce05955c26c3c090	Eric Bedard
+
+Similarity: 92.2% (distance: 5)
+  b3d21b2610dcfaeb	Emily Whitmire
+  749f572d1d3161fb	Khalil Rountree Jr.
+
+Similarity: 92.2% (distance: 5)
+  231cae8b77fbbcc1	Khalid Murtazaliev
+  a6c2f5381d575920	Orlando Wiet
+
+Similarity: 92.2% (distance: 5)
+  e4a47b07044ddd72	Ignacio Bahamondes
+  9a97acbfd5a08bfa	David Martinez
+
+Similarity: 92.2% (distance: 5)
+  e4a47b07044ddd72	Ignacio Bahamondes
+  36e78278a77006d4	Connor Matthews
+
+Similarity: 92.2% (distance: 5)
+  fd08d6536b7b91f0	Nghiem Van Y
+  eaa9402e5a7990ad	Braxton Smith
+
+Similarity: 92.2% (distance: 5)
+  8677e67a75d65b8e	Baergeng Jieleyisi
+  5f119b24c0f9679c	Peter Danesoe
+
+Similarity: 92.2% (distance: 5)
+  a36a14985a57a1c6	Zachary Micklewright
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 92.2% (distance: 5)
+  72b7c071910990b1	Brandon Sayles
+  5f33ae0620e050c5	Mando Gutierrez
+
+Similarity: 92.2% (distance: 5)
+  31da66df48c0c1a0	Kyle Dietz
+  fd5b6598a3b70c0a	Seth Baczynski
+
+Similarity: 92.2% (distance: 5)
+  31da66df48c0c1a0	Kyle Dietz
+  bc7cf284c1c2f16e	Won Jin Eoh
+
+Similarity: 92.2% (distance: 5)
+  4a1a492f299581d9	Andy Uhrich
+  55ed59d541f8b90c	Rolando Dy
+
+Similarity: 92.2% (distance: 5)
+  9a97acbfd5a08bfa	David Martinez
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 92.2% (distance: 5)
+  ee7b7768a4e6dc45	Ben Reiter
+  eb70e786bbdf1d16	Yanis Ghemmouri
+
+Similarity: 92.2% (distance: 5)
+  ee7b7768a4e6dc45	Ben Reiter
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  749f572d1d3161fb	Khalil Rountree Jr.
+  312f7d7b2b2f7de4	Djorden Santos
+
+Similarity: 92.2% (distance: 5)
+  5c2ce761399dc9c5	Marcin Bandel
+  33a86e839ad202d8	Luis Felipe Dias
+
+Similarity: 92.2% (distance: 5)
+  5c2ce761399dc9c5	Marcin Bandel
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  5c2ce761399dc9c5	Marcin Bandel
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  5c2ce761399dc9c5	Marcin Bandel
+  5159e6ee100c717e	Cedric Doumbe
+
+Similarity: 92.2% (distance: 5)
+  e87a13e02c01331d	Ali AlQaisi
+  3bb2dc8e87b10a46	David Zawada
+
+Similarity: 92.2% (distance: 5)
+  33a86e839ad202d8	Luis Felipe Dias
+  af65aa688d13eedf	Joe Solecki
+
+Similarity: 92.2% (distance: 5)
+  33a86e839ad202d8	Luis Felipe Dias
+  6aab5c20395ee722	Murtaza Talha
+
+Similarity: 92.2% (distance: 5)
+  33a86e839ad202d8	Luis Felipe Dias
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 92.2% (distance: 5)
+  117a06469813e4ef	ChangHo Lee
+  a474aade8eb3a8f0	SuYoung You
+
+Similarity: 92.2% (distance: 5)
+  117a06469813e4ef	ChangHo Lee
+  36b8f265bcd1b7a4	Abus Magomedov
+
+Similarity: 92.2% (distance: 5)
+  adccbc19b22e19af	SeungGuk Choi
+  7d420039bbfe7c1a	Aoriqileng
+
+Similarity: 92.2% (distance: 5)
+  66579081831db7b0	Eliezer Kubanza
+  4327506eb9ee342f	Louis Lee Scott
+
+Similarity: 92.2% (distance: 5)
+  641ca2c2ed91b93c	Zygimantas Ramaska
+  f300763147320d12	Liliya Shakirova
+
+Similarity: 92.2% (distance: 5)
+  f300763147320d12	Liliya Shakirova
+  ff584c17bccbae0b	Ahejiang Ailinuer
+
+Similarity: 92.2% (distance: 5)
+  f300763147320d12	Liliya Shakirova
+  17923f676f100e16	Tallison Teixeira
+
+Similarity: 92.2% (distance: 5)
+  f300763147320d12	Liliya Shakirova
+  2742f028399bf8c7	Ruel Panales
+
+Similarity: 92.2% (distance: 5)
+  55ed59d541f8b90c	Rolando Dy
+  d7adfcfdf7c6c1f8	Ian Entwistle
+
+Similarity: 92.2% (distance: 5)
+  83825fad27ab3581	Joseph Gigliotti
+  ec18eb918121787c	Kazula Vargas
+
+Similarity: 92.2% (distance: 5)
+  7413b80dbb0f8f9f	Lucas Martins
+  a12a8314adc1c1c9	Laureano Staropoli
+
+Similarity: 92.2% (distance: 5)
+  ff584c17bccbae0b	Ahejiang Ailinuer
+  98533a2738124a0d	Chad Hanekom
+
+Similarity: 92.2% (distance: 5)
+  ff584c17bccbae0b	Ahejiang Ailinuer
+  eb70e786bbdf1d16	Yanis Ghemmouri
+

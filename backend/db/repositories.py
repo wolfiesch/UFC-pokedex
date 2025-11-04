@@ -716,6 +716,8 @@ class PostgreSQLFighterRepository:
                     stance=fighter.stance,
                     dob=fighter.dob,
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                    is_current_champion=fighter.is_current_champion,
+                    is_former_champion=fighter.is_former_champion,
                 )
                 for fighter in fighters
             ],
