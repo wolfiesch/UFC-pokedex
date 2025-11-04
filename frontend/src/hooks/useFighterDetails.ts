@@ -88,6 +88,10 @@ export function useFighterDetails(
 export function clearDetailsCache(): void {
   const client = getRegisteredQueryClient();
   if (!client) {
+    console.warn(
+      "[clearDetailsCache] No QueryClient registered. Cache was not cleared. " +
+      "This may indicate that QueryProvider is not mounted or this is a server-side context."
+    );
     return;
   }
 
