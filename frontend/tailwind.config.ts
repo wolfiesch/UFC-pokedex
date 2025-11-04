@@ -43,6 +43,17 @@ const config: Config = {
       boxShadow: {
         subtle: "0px 10px 30px -20px rgba(0, 0, 0, 0.4)",
       },
+      // Custom glow animation used by FighterImageFrame to keep the gradient border in motion.
+      keyframes: {
+        "border-glow": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+      },
+      animation: {
+        "border-glow": "border-glow 16s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

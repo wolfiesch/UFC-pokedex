@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
+import FighterImageFrame from "@/components/FighterImageFrame";
 import { resolveImageUrl } from "@/lib/utils";
 import {
   Table,
@@ -151,31 +152,35 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
     );
   }
 
-  const imageFrameClass =
-    "relative flex aspect-[3/4] w-48 max-w-[240px] items-center justify-center overflow-hidden rounded-2xl border border-border/70 md:w-full";
+  /**
+   * Keeps the fallback placeholder aligned with the shared FighterImageFrame interior
+   * radius and layout so initials feel intentional within the glowing border.
+   */
+  const placeholderClass =
+    "flex h-full w-full items-center justify-center rounded-[1.18rem] text-white";
 
   return (
     <Card className="space-y-8 rounded-3xl border-border bg-card/80">
       <CardHeader className="space-y-6 pb-0">
         <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-start">
           <div className="flex items-start justify-center">
-            {shouldShowImage ? (
-              <div className={`${imageFrameClass} bg-muted/50`}>
+            <FighterImageFrame size="lg" className="md:w-full">
+              {shouldShowImage ? (
                 <img
                   src={imageSrc ?? ""}
                   alt={fighter.name}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_22px_35px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:scale-[1.06] group-hover/fighter-frame:rotate-[0.65deg]"
                   loading="lazy"
                   onError={() => setImageError(true)}
                 />
-              </div>
-            ) : (
-              <FighterImagePlaceholder
-                name={fighter.name}
-                division={fighter.division}
-                className={imageFrameClass}
-              />
-            )}
+              ) : (
+                <FighterImagePlaceholder
+                  name={fighter.name}
+                  division={fighter.division}
+                  className={placeholderClass}
+                />
+              )}
+            </FighterImageFrame>
           </div>
           <div className="flex flex-col gap-3">
             <CardTitle className="text-3xl">{fighter.name}</CardTitle>

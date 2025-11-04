@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
+import FighterImageFrame from "@/components/FighterImageFrame";
 import { cn, resolveImageUrl } from "@/lib/utils";
 
 type Props = {
@@ -29,8 +30,12 @@ export default function FighterCard({ fighter }: Props) {
   const imageSrc = resolveImageUrl(fighter.image_url);
   const [imageError, setImageError] = useState(false);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
-  const imageFrameClass =
-    "relative flex aspect-[3/4] w-40 items-center justify-center overflow-hidden rounded-2xl border border-border/60";
+  /**
+   * Placeholder styling mirrors the rounded interior of the FighterImageFrame so that
+   * initials render with identical geometry to fetched portraits.
+   */
+  const placeholderClass =
+    "flex h-full w-full items-center justify-center rounded-[1.18rem] text-white";
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -102,23 +107,23 @@ export default function FighterCard({ fighter }: Props) {
 
         <CardContent className="flex flex-1 flex-col space-y-4">
           <div className="flex justify-center">
-            {shouldShowImage ? (
-              <div className={cn(imageFrameClass, "bg-muted/40")}>
+            <FighterImageFrame>
+              {shouldShowImage ? (
                 <img
                   src={imageSrc ?? ""}
                   alt={fighter.name}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:scale-105 group-hover/fighter-frame:rotate-[0.8deg]"
                   loading="lazy"
                   onError={() => setImageError(true)}
                 />
-              </div>
-            ) : (
-              <FighterImagePlaceholder
-                name={fighter.name}
-                division={fighter.division}
-                className={imageFrameClass}
-              />
-            )}
+              ) : (
+                <FighterImagePlaceholder
+                  name={fighter.name}
+                  division={fighter.division}
+                  className={placeholderClass}
+                />
+              )}
+            </FighterImageFrame>
           </div>
 
           <dl className="grid grid-cols-2 gap-3 text-sm">
