@@ -288,7 +288,7 @@ function normalizeMetricsRecord(
         typeof rawValue === "string" ||
         typeof rawValue === "number" ||
         rawValue === null ||
-        typeof rawValue === "undefined"
+        rawValue === undefined
       ) {
         accumulator[rawKey] = rawValue ?? null;
         return accumulator;
