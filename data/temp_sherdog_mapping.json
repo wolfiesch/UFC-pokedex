@@ -1,0 +1,38 @@
+{
+  "d1053e55f00e53fe": {
+    "sherdog_id": 228033,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-Cunningham-228033",
+    "confidence": 100.0,
+    "auto_approved": true
+  },
+  "009c4420727149ea": {
+    "sherdog_id": 119943,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-Dobson-119943",
+    "confidence": 100.0,
+    "auto_approved": true
+  },
+  "725b1abc9a39d873": {
+    "sherdog_id": 284309,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-Fletcher-284309",
+    "confidence": 100.0,
+    "auto_approved": true
+  },
+  "0adf1aacda5e26ac": {
+    "sherdog_id": 13780,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-Fonseca-13780",
+    "confidence": 100.0,
+    "auto_approved": true
+  },
+  "18e4f61f16f458c6": {
+    "sherdog_id": 21922,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-Matthews-21922",
+    "confidence": 100.0,
+    "auto_approved": true
+  },
+  "f3ec0214794a699e": {
+    "sherdog_id": 194637,
+    "sherdog_url": "https://www.sherdog.com/fighter/AJ-McKee-194637",
+    "confidence": 100.0,
+    "auto_approved": true
+  }
+}
