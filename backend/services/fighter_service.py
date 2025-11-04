@@ -324,6 +324,10 @@ class FighterService:
         normalized_stance = (stance or "").strip()
         normalized_division = (division or "").strip()
 
+        query_param = normalized_query or None
+        stance_param = normalized_stance or None
+        division_param = normalized_division or None
+
         use_cache = self._cache is not None and (normalized_query or normalized_stance or normalized_division)
         cache_key = (
             search_key(
@@ -347,17 +351,17 @@ class FighterService:
 
         if hasattr(self._repository, "search_fighters"):
             fighters, total = await self._repository.search_fighters(
-                query=query,
-                stance=stance,
-                division=division,
+                query=query_param,
+                stance=stance_param,
+                division=division_param,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
         else:
             fighters_iterable = await self._repository.list_fighters()
-            query_lower = normalized_query.lower() if normalized_query else None
-            stance_lower = normalized_stance.lower() if normalized_stance else None
-            division_lower = normalized_division.lower() if normalized_division else None
+            query_lower = query_param.lower() if query_param else None
+            stance_lower = stance_param.lower() if stance_param else None
+            division_lower = division_param.lower() if division_param else None
             filtered: list[FighterListItem] = []
             for fighter in fighters_iterable:
                 name_match = True

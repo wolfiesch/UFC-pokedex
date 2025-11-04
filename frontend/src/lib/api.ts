@@ -214,6 +214,7 @@ function normalizeFighterListItemPayload(item: unknown): FighterListItem | null 
     reach: typeof item.reach === "string" ? item.reach : null,
     stance: typeof item.stance === "string" ? item.stance : null,
     dob: typeof item.dob === "string" ? item.dob : null,
+    image_url: typeof item.image_url === "string" ? item.image_url : null,
   };
 }
 

@@ -1,31 +1,23 @@
-"use client";
+import { notFound } from "next/navigation";
 
-import { useParams } from "next/navigation";
+import FighterDetailPageClient from "@/components/Pokedex/FighterDetailPageClient";
 
-import FighterComparisonPanel from "@/components/Pokedex/FighterComparisonPanel";
-import FighterDetailCard from "@/components/Pokedex/FighterDetailCard";
-import { useFighter } from "@/hooks/useFighter";
+type FighterDetailPageProps = {
+  params: {
+    id?: string;
+  };
+};
 
-export default function FighterDetailPage() {
-  const params = useParams<{ id: string }>();
-  const fighterId = params?.id ?? "";
-  const { fighter, isLoading, error, retry } = useFighter(fighterId);
+export default function FighterDetailPage({ params }: FighterDetailPageProps) {
+  const fighterId = params?.id?.trim();
+
+  if (!fighterId) {
+    notFound();
+  }
 
   return (
     <section className="container max-w-5xl space-y-10 py-12">
-      <FighterDetailCard
-        fighterId={fighterId}
-        fighter={fighter}
-        isLoading={isLoading}
-        error={error}
-        onRetry={retry}
-      />
-      {fighter ? (
-        <FighterComparisonPanel
-          primaryFighterId={fighterId}
-          primaryFighterName={fighter.name}
-        />
-      ) : null}
+      <FighterDetailPageClient fighterId={fighterId} />
     </section>
   );
 }

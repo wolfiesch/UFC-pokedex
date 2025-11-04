@@ -22,10 +22,18 @@ export function useFighters(initialLimit = 20) {
 
   // Store last request params for retry
   const lastRequestRef = useRef<{ offset: number; append: boolean } | null>(null);
+  const requestVersionRef = useRef(0);
 
   const loadFighters = useCallback(async (newOffset: number, append = false) => {
     // Store request params for potential retry
     lastRequestRef.current = { offset: newOffset, append };
+
+    const requestVersion = append
+      ? requestVersionRef.current
+      : requestVersionRef.current + 1;
+    if (!append) {
+      requestVersionRef.current = requestVersion;
+    }
 
     if (append) {
       setIsLoadingMore(true);
@@ -45,6 +53,10 @@ export function useFighters(initialLimit = 20) {
         data = await getFighters(pageSize, newOffset);
       }
 
+      if (requestVersion !== requestVersionRef.current) {
+        return;
+      }
+
       if (append) {
         setFighters((prev) => [...prev, ...data.fighters]);
       } else {
@@ -54,6 +66,10 @@ export function useFighters(initialLimit = 20) {
       setHasMore(data.has_more);
       setOffset(data.offset);
     } catch (err) {
+      if (requestVersion !== requestVersionRef.current) {
+        return;
+      }
+
       const apiError = err instanceof ApiError
         ? err
         : new ApiError(
@@ -67,6 +83,10 @@ export function useFighters(initialLimit = 20) {
         setFighters([]);
       }
     } finally {
+      if (requestVersion !== requestVersionRef.current) {
+        return;
+      }
+
       if (append) {
         setIsLoadingMore(false);
       } else {
@@ -76,9 +96,9 @@ export function useFighters(initialLimit = 20) {
   }, [searchTerm, stance, division, pageSize]);
 
   const loadMore = useCallback(() => {
-    if (!hasMore || isLoadingMore) return;
+    if (!hasMore || isLoadingMore || isLoading) return;
     void loadFighters(offset + pageSize, true);
-  }, [hasMore, isLoadingMore, offset, pageSize, loadFighters]);
+  }, [hasMore, isLoadingMore, isLoading, offset, pageSize, loadFighters]);
 
   /**
    * Retry the last failed request

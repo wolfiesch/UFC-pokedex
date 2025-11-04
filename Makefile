@@ -1,9 +1,31 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local stop api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local stop api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+ensure-docker: ## Ensure Docker services (PostgreSQL, Redis) are running
+	@if ! docker compose ps | grep -q "redis.*Up"; then \
+		echo "🐳 Starting Docker services (PostgreSQL + Redis)..."; \
+		docker compose up -d; \
+		echo "⏳ Waiting for services to be ready..."; \
+		sleep 3; \
+		echo "✅ Docker services started"; \
+	else \
+		echo "✅ Docker services already running"; \
+	fi
+
+docker-up: ## Start Docker services (PostgreSQL + Redis)
+	docker compose up -d
+	@echo "✅ Docker services started"
+
+docker-down: ## Stop Docker services
+	docker compose down
+	@echo "✅ Docker services stopped"
+
+docker-status: ## Show status of Docker services
+	docker compose ps
 
 bootstrap: ## Install Python and Node dependencies
 	uv sync --all-extras
@@ -27,7 +49,8 @@ test: ## Run unit tests across the repo
 scrape-sample: ## Run sample scrape to populate data/samples
 	python -m scripts.scrape_sample
 
-dev: ## Start backend, frontend, and Cloudflare tunnels with auto-config
+dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-config
+	@echo ""
 	@echo "🔄 Stopping existing processes..."
 	@pkill cloudflared 2>/dev/null || true
 	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
@@ -65,7 +88,8 @@ dev: ## Start backend, frontend, and Cloudflare tunnels with auto-config
 	echo "Press Ctrl+C to stop all services"; \
 	tail -f /tmp/backend.log /tmp/frontend.log
 
-api: ## Start only the FastAPI backend (kills existing process on port 8000)
+api: ensure-docker ## Start only the FastAPI backend (kills existing process on port 8000)
+	@echo ""
 	@echo "Stopping any existing process on port 8000..."
 	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
 	@sleep 1
@@ -144,7 +168,8 @@ sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
 	@$(MAKE) update-fighter-images
 	@echo "\n✓ Sherdog sample workflow complete!"
 
-dev-local: ## Start backend + frontend with localhost URLs (no tunnels, no env changes)
+dev-local: ensure-docker ## Start backend + frontend with localhost URLs (no tunnels, no env changes)
+	@echo ""
 	@echo "🔄 Stopping existing processes..."
 	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
 	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
@@ -183,6 +208,8 @@ stop: ## Stop all running services (backend, frontend, tunnels)
 	@pkill cloudflared 2>/dev/null && echo "  ✓ Tunnels stopped" || echo "  - No tunnels running"
 	@echo ""
 	@echo "✅ All services stopped"
+	@echo "💡 Note: Docker services (PostgreSQL, Redis) are still running"
+	@echo "   To stop them: make docker-down"
 
 frontend: ## Start only the Next.js frontend (kills existing process on port 3000)
 	@echo "Stopping any existing process on port 3000..."
