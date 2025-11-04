@@ -37,10 +37,10 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
         return None
 
     async def scan_iter(self, match: str | None = None):  # type: ignore[override]
-        if False:
-            yield match
+        # This method is intentionally an async generator that yields nothing,
+        # to satisfy interface requirements for test stubs.
         return
-
+        yield  # unreachable, but marks this as an async generator
     async def aclose(self) -> None:
         return None
 
