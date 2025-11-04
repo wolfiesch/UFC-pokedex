@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Iterable, Sequence
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Literal
 
 from fastapi import Depends
@@ -24,7 +25,11 @@ from backend.schemas.fighter import (
     FighterListItem,
     PaginatedFightersResponse,
 )
-from backend.schemas.fight_graph import FightGraphResponse
+from backend.schemas.fight_graph import (
+    FightGraphLink,
+    FightGraphNode,
+    FightGraphResponse,
+)
 from backend.schemas.stats import (
     LeaderboardDefinition,
     LeaderboardsResponse,
@@ -201,6 +206,128 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
     ) -> FightGraphResponse:
         return FightGraphResponse()
 
+
+def _calculate_network_density(node_count: int, link_count: int) -> float:
+    """Return the density of an undirected fight graph."""
+
+    if node_count <= 1:
+        return 0.0
+    max_edges = (node_count * (node_count - 1)) / 2
+    if max_edges <= 0:
+        return 0.0
+    # Bound the ratio to avoid subtle floating point drift.
+    return round(min(1.0, max(0.0, link_count / max_edges)), 4)
+
+
+def _derive_division_breakdown(nodes: list[FightGraphNode]) -> list[dict[str, Any]]:
+    """Aggregate fighters per division for quick client legends."""
+
+    counter: Counter[str] = Counter()
+    for node in nodes:
+        division = (node.division or "Unknown").strip() or "Unknown"
+        counter[division] += 1
+
+    total = sum(counter.values()) or 1
+    breakdown: list[dict[str, Any]] = []
+    for division, count in counter.most_common():
+        breakdown.append(
+            {
+                "division": division,
+                "count": count,
+                "percentage": round((count / total) * 100, 1),
+            }
+        )
+    return breakdown
+
+
+def _derive_degree_map(links: list[FightGraphLink]) -> dict[str, int]:
+    """Return a mapping of fighter IDs to their degree within the graph."""
+
+    degree_map: dict[str, int] = {}
+    for link in links:
+        degree_map[link.source] = degree_map.get(link.source, 0) + 1
+        degree_map[link.target] = degree_map.get(link.target, 0) + 1
+    return degree_map
+
+
+def _top_rivalries(
+    links: list[FightGraphLink],
+    nodes_by_id: dict[str, FightGraphNode],
+    *,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Identify the busiest rivalries present in the fight graph."""
+
+    if not links:
+        return []
+
+    sorted_links = sorted(links, key=lambda link: link.fights, reverse=True)
+    rivalries: list[dict[str, Any]] = []
+    for link in sorted_links[:limit]:
+        source = nodes_by_id.get(link.source)
+        target = nodes_by_id.get(link.target)
+        rivalries.append(
+            {
+                "source": link.source,
+                "target": link.target,
+                "fights": link.fights,
+                "source_name": source.name if source else None,
+                "target_name": target.name if target else None,
+                "last_event_name": link.last_event_name,
+                "last_event_date": link.last_event_date,
+            }
+        )
+    return rivalries
+
+
+def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphResponse:
+    """Attach derived insights to a fight graph response before caching."""
+
+    if not graph.nodes:
+        metadata = dict(graph.metadata)
+        metadata.setdefault("insights", {})
+        metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
+        return FightGraphResponse(
+            nodes=graph.nodes, links=graph.links, metadata=metadata
+        )
+
+    nodes_by_id: dict[str, FightGraphNode] = {
+        node.fighter_id: node for node in graph.nodes
+    }
+    total_fights = sum(node.total_fights for node in graph.nodes)
+    average_fights = round(total_fights / max(1, len(graph.nodes)), 2)
+    density = _calculate_network_density(len(graph.nodes), len(graph.links))
+    degree_map = _derive_degree_map(graph.links)
+
+    top_hubs = sorted(
+        (
+            {
+                "fighter_id": node.fighter_id,
+                "name": node.name,
+                "division": node.division,
+                "total_fights": node.total_fights,
+                "degree": degree_map.get(node.fighter_id, 0),
+            }
+            for node in graph.nodes
+        ),
+        key=lambda entry: (entry["total_fights"], entry["degree"]),
+        reverse=True,
+    )[:5]
+
+    metadata = dict(graph.metadata)
+    insights: dict[str, Any] = {
+        "average_fights_per_fighter": average_fights,
+        "network_density": density,
+        "division_breakdown": _derive_division_breakdown(graph.nodes),
+        "top_fighters": top_hubs,
+        "busiest_rivalries": _top_rivalries(graph.links, nodes_by_id),
+    }
+
+    metadata["insights"] = insights
+    metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
+
+    return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
+
     async def search_fighters(
         self,
         query: str | None = None,
@@ -352,7 +479,9 @@ class FighterService:
         stance_param = normalized_stance or None
         division_param = normalized_division or None
 
-        use_cache = self._cache is not None and (normalized_query or normalized_stance or normalized_division)
+        use_cache = self._cache is not None and (
+            normalized_query or normalized_stance or normalized_division
+        )
         cache_key = (
             search_key(
                 normalized_query,
@@ -402,7 +531,9 @@ class FighterService:
                     stance_match = fighter_stance == stance_lower
                 division_match = True
                 if division_lower:
-                    fighter_division = (getattr(fighter, "division", None) or "").lower()
+                    fighter_division = (
+                        getattr(fighter, "division", None) or ""
+                    ).lower()
                     division_match = fighter_division == division_lower
                 if name_match and stance_match and division_match:
                     filtered.append(fighter)
@@ -505,13 +636,15 @@ class FighterService:
         if repository_method is None:
             return FightGraphResponse()
 
-        graph: FightGraphResponse = await repository_method(
+        raw_graph: FightGraphResponse = await repository_method(
             division=division,
             start_year=start_year,
             end_year=end_year,
             limit=limit,
             include_upcoming=include_upcoming,
         )
+
+        graph = _augment_fight_graph_metadata(raw_graph)
 
         if cache_key is not None and graph.nodes:
             await self._cache_set(
