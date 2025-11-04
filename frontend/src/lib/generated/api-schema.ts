@@ -161,6 +161,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Events
+         * @description Search and filter events with advanced options.
+         */
+        get: operations["search_events_events_search__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/filters/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Filter Options
+         * @description Get available filter options (unique years, locations, event types).
+         */
+        get: operations["get_filter_options_events_filters_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{event_id}": {
         parameters: {
             query?: never;
@@ -301,6 +341,8 @@ export interface components {
             venue?: string | null;
             /** Broadcast */
             broadcast?: string | null;
+            /** Event Type */
+            event_type?: string | null;
             /**
              * Promotion
              * @default UFC
@@ -345,6 +387,18 @@ export interface components {
             time?: string | null;
         };
         /**
+         * EventFilterOptions
+         * @description Available filter options for events.
+         */
+        EventFilterOptions: {
+            /** Years */
+            years: number[];
+            /** Locations */
+            locations: string[];
+            /** Event Types */
+            event_types: string[];
+        };
+        /**
          * EventListItem
          * @description Event summary for list views
          */
@@ -366,6 +420,8 @@ export interface components {
             venue?: string | null;
             /** Broadcast */
             broadcast?: string | null;
+            /** Event Type */
+            event_type?: string | null;
         };
         /** FightGraphLink */
         FightGraphLink: {
@@ -919,6 +975,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_events_events_search__get: {
+        parameters: {
+            query?: {
+                /** @description Search query for event name or location */
+                q?: string | null;
+                /** @description Filter by year */
+                year?: number | null;
+                /** @description Filter by location */
+                location?: string | null;
+                /** @description Filter by event type (ppv, fight_night, etc.) */
+                event_type?: string | null;
+                /** @description Filter by status (upcoming, completed) */
+                status?: string | null;
+                /** @description Number of events to return */
+                limit?: number;
+                /** @description Number of events to skip */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEventsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_filter_options_events_filters_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFilterOptions"];
                 };
             };
         };
