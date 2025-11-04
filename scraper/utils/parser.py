@@ -53,7 +53,8 @@ def parse_date(value: str | None) -> str | None:
         return None
     # Remove periods after month abbreviations (e.g., "Nov. 16, 2024" -> "Nov 16, 2024")
     text_normalized = text.replace(".", "")
-    for fmt in ("%b %d, %Y", "%Y-%m-%d"):
+    # Try multiple date formats
+    for fmt in ("%B %d, %Y", "%b %d, %Y", "%Y-%m-%d"):  # %B = full month name, %b = abbreviated
         try:
             return datetime.strptime(text_normalized, fmt).date().isoformat()
         except ValueError:
@@ -455,22 +456,25 @@ def parse_events_list_row(row: Selector) -> dict[str, Any] | None:
         logger.warning(f"Failed to extract ID from URL '{detail_url}': {e}")
         return None
 
-    # Event name
-    event_name = clean_text(row.css("td:nth-child(1) a span::text").get())
-    if not event_name:
-        # Try alternative selectors
-        event_name = clean_text(row.css("td:nth-child(1) a::text").get())
+    # Event name (link text in column 1)
+    event_name = clean_text(row.css("td:nth-child(1) a::text").get())
 
-    # Event date (column 2)
-    date_text = clean_text(row.css("td:nth-child(2) span::text").get())
-    if not date_text:
-        date_text = clean_text(row.css("td:nth-child(2)::text").get())
+    # Event date (second element in column 1, after the link)
+    # The date is in a span/div after the link
+    date_text = None
+    # Try to get all text from first column and find the date
+    all_text_col1 = row.css("td:nth-child(1) ::text").getall()
+    for text in all_text_col1:
+        cleaned = clean_text(text)
+        if cleaned and cleaned != event_name:
+            # This should be the date
+            date_text = cleaned
+            break
+
     event_date = parse_date(date_text) if date_text else None
 
-    # Location (column 3)
-    location = clean_text(row.css("td:nth-child(3) span::text").get())
-    if not location:
-        location = clean_text(row.css("td:nth-child(3)::text").get())
+    # Location (column 2)
+    location = clean_text(row.css("td:nth-child(2)::text").get())
 
     # Determine status based on context (caller should pass this)
     # For now, we'll determine it based on the date
