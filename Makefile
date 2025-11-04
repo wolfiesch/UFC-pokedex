@@ -273,6 +273,8 @@ tunnel-frontend: ## Start Cloudflare tunnel for frontend (port 3000)
 tunnel-api: ## Start Cloudflare tunnel for API (port 8000)
 	cloudflared tunnel --url http://localhost:8000
 
+api-tunnel: tunnel-api ## Alias for tunnel-api
+
 tunnel-stop: ## Stop all Cloudflare tunnels
 	@echo "Stopping all Cloudflare tunnels..."
 	@pkill cloudflared 2>/dev/null && echo "✓ Tunnels stopped" || echo "No tunnels running"

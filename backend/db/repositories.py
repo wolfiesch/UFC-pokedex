@@ -134,6 +134,12 @@ def _calculate_age(*, dob: date | None, reference_date: date) -> int | None:
         # beyond the erroneous future birthday.
         return 0
 
+    # Calculate years difference
+    years_elapsed = reference_date.year - dob.year
+
+    # Check if birthday has occurred this year
+    has_had_birthday = (reference_date.month, reference_date.day) >= (dob.month, dob.day)
+
     return years_elapsed - (not has_had_birthday)
 
 
