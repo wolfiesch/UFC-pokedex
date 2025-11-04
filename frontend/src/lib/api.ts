@@ -124,8 +124,22 @@ async function fetchWithRetry(
       logger.logResponse(method, url, response.status, duration);
 
       if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        error.retryCount = attempt;
+        let error = await parseErrorResponse(response);
+
+        // Create new error with retry count (readonly property)
+        if (attempt > 0) {
+          error = new ApiError(error.message, {
+            errorType: error.errorType,
+            statusCode: error.statusCode,
+            detail: error.detail,
+            timestamp: error.timestamp,
+            requestId: error.requestId,
+            path: error.path,
+            retryAfter: error.retryAfter,
+            validationErrors: error.validationErrors,
+            retryCount: attempt,
+          });
+        }
 
         // Don't retry if error is not retryable
         if (!error.isRetryable || attempt === maxRetries) {

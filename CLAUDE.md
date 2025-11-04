@@ -28,11 +28,15 @@ make db-upgrade                         # Run database migrations
 
 ### Running Services
 ```bash
+make dev-local      # Start backend + frontend with localhost (recommended for local dev)
 make dev            # Start backend + frontend + Cloudflare tunnels together
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
+make stop           # Stop all running services (backend, frontend, tunnels)
 make scraper        # Run Scrapy spider (fighters_list)
 ```
+
+**Recommended for local development:** Use `make dev-local` - it starts both services without modifying environment files or starting tunnels.
 
 ### Cloudflare Tunnel (Public Access)
 
@@ -335,7 +339,7 @@ make scraper       # Uses .venv/bin/scrapy internally
 - **Frontend**: No fighter images (UFCStats doesn't provide them)
 - **Frontend**: No pagination for large fighter lists
 - **Database**: `fighter_stats` table is created but not populated by scraper
-- **Cache**: Redis is configured in docker-compose but not integrated into backend
+- **Cache**: Redis is integrated for caching but optional (backend gracefully degrades if Redis is unavailable)
 
 ## Environment Variables
 
@@ -343,6 +347,7 @@ Required in `.env`:
 ```
 DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+REDIS_URL=redis://localhost:6379/0
 ```
 
 Optional (with defaults):
@@ -355,6 +360,12 @@ API_HOST=0.0.0.0
 API_PORT=8000
 CORS_ALLOW_ORIGINS=http://localhost:3000
 ```
+
+**Note on Redis:**
+- Redis is used for caching API responses to improve performance
+- If Redis connection fails, the backend will log a warning and continue without caching
+- For local development: `REDIS_URL=redis://localhost:6379/0`
+- For Docker-based backend: `REDIS_URL=redis://redis:6379/0`
 
 **Cloudflare Tunnel URLs** (auto-configured by `make dev`):
 ```

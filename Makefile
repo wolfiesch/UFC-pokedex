@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local stop api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -144,6 +144,46 @@ sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
 	@$(MAKE) update-fighter-images
 	@echo "\n✓ Sherdog sample workflow complete!"
 
+dev-local: ## Start backend + frontend with localhost URLs (no tunnels, no env changes)
+	@echo "🔄 Stopping existing processes..."
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@echo ""
+	@echo "🚀 Starting services with localhost configuration..."
+	@echo ""
+	@echo "Starting backend..."
+	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 &
+	@sleep 2
+	@echo "Starting frontend..."
+	@cd frontend && pnpm dev > /tmp/frontend.log 2>&1 &
+	@sleep 3
+	@echo ""
+	@echo "✅ All services started!"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "📍 URLs:"
+	@echo "   Frontend: http://localhost:3000"
+	@echo "   Backend:  http://localhost:8000"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "📝 Logs:"
+	@echo "   Backend:  tail -f /tmp/backend.log"
+	@echo "   Frontend: tail -f /tmp/frontend.log"
+	@echo ""
+	@echo "Press Ctrl+C to view logs (services will keep running in background)"
+	@echo ""
+	@trap 'echo ""; echo "Services are still running. To stop them, run: make stop"' INT; \
+	tail -f /tmp/backend.log /tmp/frontend.log
+
+stop: ## Stop all running services (backend, frontend, tunnels)
+	@echo "🛑 Stopping all services..."
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null && echo "  ✓ Frontend stopped" || echo "  - No frontend running"
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null && echo "  ✓ Backend stopped" || echo "  - No backend running"
+	@pkill cloudflared 2>/dev/null && echo "  ✓ Tunnels stopped" || echo "  - No tunnels running"
+	@echo ""
+	@echo "✅ All services stopped"
+
 frontend: ## Start only the Next.js frontend (kills existing process on port 3000)
 	@echo "Stopping any existing process on port 3000..."
 	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
@@ -227,3 +267,18 @@ deploy: ## Deploy to cPanel subdomain (builds and uploads via SSH)
 		exit 1; \
 	fi
 	@bash scripts/deploy.sh
+
+deploy-ftp: ## Deploy to cPanel subdomain via FTP (recommended if SSH fails)
+	@if [ ! -f .deployment/config.env ]; then \
+		echo "❌ Error: .deployment/config.env not found"; \
+		echo "Run: make deploy-config"; \
+		exit 1; \
+	fi
+	@bash scripts/deploy_ftp.sh
+
+deploy-ssh: ## Deploy to cPanel via SSH (faster and more reliable)
+	@bash scripts/deploy_ssh.sh
+
+deploy-ssh-test: ## Test SSH connection to cPanel
+	@echo "Testing SSH connection..."
+	@SSHPASS='EuroBender2024!' sshpass -e ssh -p 21098 -o StrictHostKeyChecking=no wolfdgpl@162.254.39.96 'echo "✓ SSH connection successful!"; pwd; ls -la'

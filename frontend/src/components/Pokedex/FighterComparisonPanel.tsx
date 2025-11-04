@@ -75,7 +75,7 @@ export default function FighterComparisonPanel({
     setIsSearching(true);
     const timer = window.setTimeout(async () => {
       try {
-        const results = await searchFighters(trimmed, null, 10, 0);
+        const results = await searchFighters(trimmed, null, null, 10, 0);
         if (!cancelled) {
           setOptions(
             results.fighters

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from hashlib import sha256
 from typing import Any, Sequence
 
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_TTL_SECONDS = 600
 _DETAIL_PREFIX = "fighters:detail"
@@ -54,43 +58,71 @@ def comparison_key(fighter_ids: Sequence[str]) -> str:
     return f"{_COMPARISON_PREFIX}:{digest}:{signature}"
 
 
-async def get_redis() -> Redis:
+async def get_redis() -> Redis | None:
+    """Get Redis client, returning None if connection fails."""
     global _redis_client
     if _redis_client is None:
         async with _client_lock:
             if _redis_client is None:
-                _redis_client = Redis.from_url(
-                    _redis_url(), decode_responses=True, encoding="utf-8"
-                )
+                try:
+                    _redis_client = Redis.from_url(
+                        _redis_url(), decode_responses=True, encoding="utf-8"
+                    )
+                    # Test connection
+                    await _redis_client.ping()
+                    logger.info("Redis connection established successfully")
+                except (RedisConnectionError, Exception) as e:
+                    logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
+                    _redis_client = None
     return _redis_client
 
 
 class CacheClient:
-    def __init__(self, redis: Redis) -> None:
+    def __init__(self, redis: Redis | None) -> None:
         self._redis = redis
 
     async def get_json(self, key: str) -> Any:
-        payload = await self._redis.get(key)
-        if payload is None:
+        if self._redis is None:
             return None
         try:
-            return json.loads(payload)
-        except json.JSONDecodeError:
+            payload = await self._redis.get(key)
+            if payload is None:
+                return None
+            try:
+                return json.loads(payload)
+            except json.JSONDecodeError:
+                return None
+        except (RedisConnectionError, Exception) as e:
+            logger.debug(f"Redis get failed for key {key}: {e}")
             return None
 
     async def set_json(self, key: str, value: Any, ttl: int | None = None) -> None:
-        encoded = json.dumps(value, default=str)
-        if ttl is None:
-            ttl = _DEFAULT_TTL_SECONDS
-        await self._redis.set(key, encoded, ex=ttl)
+        if self._redis is None:
+            return
+        try:
+            encoded = json.dumps(value, default=str)
+            if ttl is None:
+                ttl = _DEFAULT_TTL_SECONDS
+            await self._redis.set(key, encoded, ex=ttl)
+        except (RedisConnectionError, Exception) as e:
+            logger.debug(f"Redis set failed for key {key}: {e}")
 
     async def delete(self, *keys: str) -> None:
-        if keys:
+        if self._redis is None or not keys:
+            return
+        try:
             await self._redis.delete(*keys)
+        except (RedisConnectionError, Exception) as e:
+            logger.debug(f"Redis delete failed: {e}")
 
     async def delete_pattern(self, pattern: str) -> None:
-        async for key in self._redis.scan_iter(match=pattern):
-            await self._redis.delete(key)
+        if self._redis is None:
+            return
+        try:
+            async for key in self._redis.scan_iter(match=pattern):
+                await self._redis.delete(key)
+        except (RedisConnectionError, Exception) as e:
+            logger.debug(f"Redis delete_pattern failed for {pattern}: {e}")
 
 
 async def get_cache_client() -> CacheClient:

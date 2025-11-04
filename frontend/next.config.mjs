@@ -1,16 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use 'export' for static HTML generation (for cPanel deployment)
-  // Use 'standalone' for Node.js server deployment (for Cloudflare tunnel)
-  output: process.env.BUILD_MODE === 'static' ? 'export' : 'standalone',
+  // Standalone output for Node.js deployment
+  output: 'standalone',
 
-  // Disable image optimization for static export (cPanel doesn't support it)
+  // Disable image optimization for cPanel compatibility
   images: {
-    unoptimized: process.env.BUILD_MODE === 'static',
+    unoptimized: true,
   },
 
-  // Optional: Add base path if deploying to subdirectory
-  // basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  // Base path for subdirectory deployment (e.g., /ufc)
+  basePath: process.env.BASEPATH || '',
 };
 
 export default nextConfig;
