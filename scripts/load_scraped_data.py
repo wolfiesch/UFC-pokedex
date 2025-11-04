@@ -664,6 +664,11 @@ async def load_fighter_detail(
                 time=fight_data.get("time"),
                 fight_card_url=fight_data.get("fight_card_url"),
                 stats=fight_data.get("stats") or {},
+                # The scraped JSON includes an optional textual weight class label
+                # that we mirror directly into persistent storage so downstream
+                # services (event detail views, fighter timelines, etc.) can render
+                # the division context without re-scraping the event artifact.
+                weight_class=fight_data.get("weight_class"),
             )
             await session.merge(fight)
 

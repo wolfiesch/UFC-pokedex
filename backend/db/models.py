@@ -86,6 +86,11 @@ class Fight(Base):
     time: Mapped[str | None]
     fight_card_url: Mapped[str | None]
     stats: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    weight_class: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        doc="Recorded weight class label for the bout (e.g., Lightweight).",
+    )
 
     fighter: Mapped[Fighter] = relationship("Fighter", back_populates="fights")
     event: Mapped["Event | None"] = relationship("Event", back_populates="fights")
