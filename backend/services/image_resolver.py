@@ -48,8 +48,8 @@ def resolve_fighter_image(fighter_id: str, stored_path: str | None) -> str | Non
     The function first honors explicitly stored paths. When those are absent—
     which is common after seeding the lightweight SQLite database—it searches
     the local ``data/images/fighters`` directory for a matching file. Results
-    are cached via :func:`functools.lru_cache` to avoid redundant disk checks
-    across large list responses.
+    The fallback filesystem lookup is cached via :func:`functools.lru_cache`
+    to avoid redundant disk checks across large list responses.
     """
 
     if stored_path:
