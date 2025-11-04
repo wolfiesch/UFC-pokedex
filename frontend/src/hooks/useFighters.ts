@@ -37,6 +37,7 @@ export function useFighters(
   const searchTerm = useFavoritesStore((state) => state.searchTerm);
   const stance = useFavoritesStore((state) => state.stanceFilter);
   const division = useFavoritesStore((state) => state.divisionFilter);
+  const championStatusFilters = useFavoritesStore((state) => state.championStatusFilters);
 
   // Support both old API (number) and new API (initialData object)
   const initialData =
@@ -45,7 +46,9 @@ export function useFighters(
     typeof initialDataOrLimit === "number" ? initialDataOrLimit : 20;
 
   const normalizedSearch = (searchTerm ?? "").trim();
-  const isFiltering = Boolean(normalizedSearch || stance || division);
+  const isFiltering = Boolean(
+    normalizedSearch || stance || division || championStatusFilters.length > 0
+  );
 
   const queryKey = useMemo(
     () => [
@@ -54,10 +57,11 @@ export function useFighters(
         search: normalizedSearch,
         stance: stance ?? null,
         division: division ?? null,
+        championStatusFilters: championStatusFilters.length > 0 ? championStatusFilters : null,
         limit: pageSize,
       },
     ],
-    [normalizedSearch, stance, division, pageSize]
+    [normalizedSearch, stance, division, championStatusFilters, pageSize]
   );
 
   const {
@@ -86,7 +90,14 @@ export function useFighters(
     queryFn: async ({ pageParam }): Promise<FightersPage> => {
       const offset = typeof pageParam === "number" ? pageParam : 0;
       if (isFiltering) {
-        return searchFighters(normalizedSearch, stance, division, pageSize, offset);
+        return searchFighters(
+          normalizedSearch,
+          stance,
+          division,
+          championStatusFilters,
+          pageSize,
+          offset
+        );
       }
       return getFighters(pageSize, offset);
     },

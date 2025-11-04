@@ -1,0 +1,89 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  test:
+    name: Tests (${{ matrix.db }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgresql, sqlite]
+
+    services:
+      postgres:
+        # Only create PostgreSQL service for PostgreSQL matrix job
+        image: ${{ matrix.db == 'postgresql' && 'postgres:15' || '' }}
+        env:
+          POSTGRES_USER: ufc_pokedex
+          POSTGRES_PASSWORD: ufc_pokedex
+          POSTGRES_DB: ufc_pokedex
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Configure PostgreSQL database
+        if: matrix.db == 'postgresql'
+        env:
+          DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+          echo "🗄️ PostgreSQL mode - running migrations"
+          uv run python -m alembic upgrade head
+
+      - name: Configure SQLite database
+        if: matrix.db == 'sqlite'
+        run: |
+          echo "USE_SQLITE=1" >> $GITHUB_ENV
+          echo "🗄️ SQLite mode - tables will auto-create"
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=backend --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: ${{ matrix.db }}
+          name: coverage-${{ matrix.db }}
+        continue-on-error: true
+
+      - name: Verify database mode
+        run: |
+          if [ "${{ matrix.db }}" = "sqlite" ]; then
+            echo "✓ SQLite tests completed"
+            echo "✓ Tables auto-created via create_all()"
+            echo "✓ Migrations skipped (expected)"
+          else
+            echo "✓ PostgreSQL tests completed"
+            echo "✓ Migrations applied successfully"
+          fi

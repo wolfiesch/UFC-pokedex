@@ -36,6 +36,15 @@ export default function FilterPanel({
     onDivisionChange(value === "all" ? null : value);
   };
 
+  const hasActiveFilters = selectedStance || selectedDivision || championStatusFilters.length > 0;
+
+  const handleClearFilters = () => {
+    onStanceChange(null);
+    onDivisionChange(null);
+    // Clear all champion status filters
+    championStatusFilters.forEach((status) => onToggleChampionStatus(status));
+  };
+
   return (
     <div className="flex flex-col gap-3 rounded-3xl border border-border bg-card/60 p-4 shadow-subtle sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -75,15 +84,16 @@ export default function FilterPanel({
             ))}
           </select>
         </div>
+        <ChampionStatusFilter
+          selectedStatuses={championStatusFilters}
+          onToggleStatus={onToggleChampionStatus}
+        />
       </div>
-      {(selectedStance || selectedDivision) ? (
+      {hasActiveFilters ? (
         <Button
           variant="ghost"
           className="w-full justify-center sm:w-auto"
-          onClick={() => {
-            onStanceChange(null);
-            onDivisionChange(null);
-          }}
+          onClick={handleClearFilters}
         >
           Clear filters
         </Button>

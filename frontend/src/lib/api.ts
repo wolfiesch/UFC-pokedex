@@ -714,6 +714,7 @@ export async function searchFighters(
   query: string,
   stance: string | null = null,
   division: string | null = null,
+  championStatusFilters: string[] = [],
   limit = 20,
   offset = 0
 ): Promise<PaginatedFightersResponse> {
@@ -729,6 +730,12 @@ export async function searchFighters(
   if (division && division.length > 0) {
     params.set("division", division);
   }
+  // Add champion status filters (supports multiple values)
+  championStatusFilters.forEach((status) => {
+    if (status && status.length > 0) {
+      params.append("champion_statuses", status);
+    }
+  });
   params.set("limit", String(limit));
   params.set("offset", String(offset));
 

@@ -39,28 +39,60 @@ logger = logging.getLogger(__name__)
 request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 
 
+def _sanitize_database_url(url: str) -> str:
+    """Sanitize database URL to hide password in logs."""
+    if "://" not in url:
+        return url
+
+    # Split into scheme and rest
+    scheme, rest = url.split("://", 1)
+
+    # Check if there's authentication
+    if "@" in rest:
+        # Format: scheme://user:password@host/db
+        auth, host_db = rest.split("@", 1)
+        if ":" in auth:
+            user, _ = auth.split(":", 1)
+            return f"{scheme}://{user}:***@{host_db}"
+        return f"{scheme}://{auth}@{host_db}"
+
+    # No authentication to hide
+    return url
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup: Initialize database tables for SQLite
-    from backend.db.connection import get_database_type, get_engine
+    from backend.db.connection import get_database_type, get_database_url, get_engine
     from backend.db.models import Base
 
     db_type = get_database_type()
-    logger.info(f"Starting UFC Pokedex API with {db_type.upper()} database")
+    db_url = get_database_url()
+    sanitized_url = _sanitize_database_url(db_url)
+
+    # Preflight logging
+    logger.info("=" * 60)
+    logger.info("UFC Pokedex API - Database Preflight Check")
+    logger.info("=" * 60)
+    logger.info(f"Database Type: {db_type.upper()}")
+    logger.info(f"Database URL: {sanitized_url}")
 
     if db_type == "sqlite":
+        logger.info("Mode: DEVELOPMENT (SQLite is not recommended for production)")
+        logger.info("SQLite mode - tables will be auto-created via create_all()")
+
         # For SQLite, create tables automatically (bypass Alembic)
-        logger.info("SQLite detected - creating tables if not exist")
         engine = get_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("✓ SQLite tables initialized")
+        logger.info("✓ SQLite tables initialized successfully")
     else:
-        # For PostgreSQL, remind to run migrations
-        logger.info(
-            "PostgreSQL detected - ensure migrations are up to date (run: make db-upgrade)"
-        )
+        logger.info("Mode: PRODUCTION")
+        logger.info("PostgreSQL mode - using Alembic migrations")
+        logger.info("Ensure migrations are up to date (run: make db-upgrade)")
+
+    logger.info("=" * 60)
 
     yield
 

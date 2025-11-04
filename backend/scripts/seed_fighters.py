@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -32,6 +33,73 @@ def parse_date(value: str | None) -> date | None:
         return date.fromisoformat(value.strip())
     except (ValueError, AttributeError):
         return None
+
+
+def is_production_seed_data(jsonl_path: Path) -> bool:
+    """Determine if the data source is production (scraped) data.
+
+    Production data sources:
+    - data/processed/fighters_list.jsonl (10K+ fighters)
+    - data/processed/fighters/*.json (individual fighter details)
+
+    Sample/fixture data sources:
+    - data/fixtures/fighters.jsonl (8 sample fighters)
+    """
+    path_str = str(jsonl_path.resolve())
+    return "data/processed/" in path_str or "fighters_list.jsonl" in path_str
+
+
+def check_sqlite_production_seed_safety(db_type: str, jsonl_path: Path) -> bool:
+    """Check if production seed on SQLite is allowed.
+
+    Returns:
+        True if seeding should proceed, False if blocked
+
+    Raises:
+        SystemExit if blocked (prints error and exits)
+    """
+    # Allow all seeds on PostgreSQL
+    if db_type != "sqlite":
+        return True
+
+    # Allow sample/fixture data on SQLite
+    if not is_production_seed_data(jsonl_path):
+        return True
+
+    # Check for override environment variable
+    allow_override = os.getenv("ALLOW_SQLITE_PROD_SEED", "").strip() == "1"
+
+    if allow_override:
+        print("⚠️  WARNING: Production seed on SQLite with ALLOW_SQLITE_PROD_SEED=1")
+        print("⚠️  SQLite is NOT recommended for production data!")
+        print()
+        return True
+
+    # Block production seed on SQLite
+    print("=" * 70)
+    print("❌ ERROR: Production seed blocked on SQLite")
+    print("=" * 70)
+    print()
+    print(f"You are attempting to seed production data into SQLite:")
+    print(f"  Source: {jsonl_path}")
+    print()
+    print("SQLite is designed for development/testing with small datasets only.")
+    print("Production data (10K+ fighters) should use PostgreSQL.")
+    print()
+    print("Options:")
+    print("  1. Use sample data instead:")
+    print("     make api:seed")
+    print()
+    print("  2. Switch to PostgreSQL:")
+    print("     docker-compose up -d")
+    print("     make db-upgrade")
+    print("     make load-data")
+    print()
+    print("  3. Force SQLite (NOT RECOMMENDED):")
+    print("     ALLOW_SQLITE_PROD_SEED=1 make api:seed-full")
+    print()
+    print("=" * 70)
+    sys.exit(1)
 
 
 async def ensure_tables() -> None:
@@ -179,6 +247,9 @@ async def main() -> int:
     if args.dry_run:
         print("🔍 Dry run mode (no changes will be made)")
     print()
+
+    # Production seed safety check (blocks if SQLite + production data without override)
+    check_sqlite_production_seed_safety(db_type, args.jsonl_path)
 
     # Run seeding
     loaded, skipped = await seed_fighters(

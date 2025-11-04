@@ -89,6 +89,15 @@ USE_SQLITE=1
 - SQLite database file: `app.db` (in project root)
 - Alembic migrations **only** apply to PostgreSQL (SQLite uses `create_all()`)
 
+**Production seed safety:**
+- `make api:seed` (8 sample fighters) - ✅ Always allowed on SQLite
+- `make api:seed-full` (10K+ fighters) - ❌ Blocked on SQLite by default
+- To override the safety check (NOT RECOMMENDED):
+  ```bash
+  ALLOW_SQLITE_PROD_SEED=1 make api:seed-full
+  ```
+- This safety check prevents accidentally seeding large datasets into SQLite, which is not designed for production workloads
+
 ### Cloudflare Tunnel (Public Access)
 
 The project is configured to use Cloudflare Tunnel for public access to your local development environment.
@@ -475,6 +484,11 @@ DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pok
 
 # Force SQLite mode (optional)
 USE_SQLITE=1
+
+# Allow production data seeding on SQLite (NOT RECOMMENDED - optional)
+# By default, seeding production data (10K+ fighters) on SQLite is blocked
+# Set to "1" to override this safety check
+ALLOW_SQLITE_PROD_SEED=1
 
 # Redis cache (optional - gracefully degrades if unavailable)
 REDIS_URL=redis://localhost:6379/0
