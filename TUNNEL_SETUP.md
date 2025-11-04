@@ -38,13 +38,32 @@ This will automatically:
 
 ### 3. Access Your Application
 
-**Local URLs** (always available):
+**Local URLs** (default configuration):
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8000
 
-**Public URLs** (via Cloudflare Tunnel):
+**Public URLs** (via Cloudflare Tunnel - requires DNS propagation):
 - Frontend: https://ufc.wolfgangschoenberger.com
 - Backend: https://api.ufc.wolfgangschoenberger.com
+
+### 4. Switch to Tunnel URLs (when DNS propagates)
+
+**Check if DNS is ready:**
+```bash
+bash scripts/check_dns_propagation.sh
+```
+
+**When DNS shows "✓ DNS Fully Propagated", switch frontend to tunnel:**
+```bash
+cp frontend/.env.tunnel frontend/.env.local
+make frontend
+```
+
+**To switch back to localhost:**
+```bash
+echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000" > frontend/.env.local
+make frontend
+```
 
 ## Manual Tunnel Commands
 
