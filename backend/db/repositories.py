@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from copy import deepcopy
 from datetime import date
 from typing import Any
 
@@ -100,6 +101,72 @@ def _empty_breakdown() -> dict[str, int]:
     }
 
 
+def _clone_stats_mapping(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a deep-copied, string-keyed mapping for fight stats payloads."""
+
+    return {str(key): deepcopy(value) for key, value in payload.items()}
+
+
+def _resolve_stats_payload(fight: Fight, fighter_id: str) -> dict[str, Any]:
+    """Extract stats for ``fighter_id`` from a fight row's payload.
+
+    The scraper persists fight metrics in a flexible JSON column that may be
+    shaped in a few different ways (flat dictionaries keyed by fighter ID,
+    nested blocks under ``"fighters"``, or explicit ``"fighter"``/``"opponent``
+    keys). This helper normalises those representations so the repository always
+    emits a simple dictionary for the FastAPI schema.
+    """
+
+    payload = fight.stats_payload
+    if payload is None:
+        return {}
+
+    if isinstance(payload, Mapping):
+        direct = payload.get(fighter_id)
+        if isinstance(direct, Mapping):
+            return _clone_stats_mapping(direct)
+
+        fighters_block = payload.get("fighters")
+        if isinstance(fighters_block, Mapping):
+            scoped = fighters_block.get(fighter_id)
+            if isinstance(scoped, Mapping):
+                return _clone_stats_mapping(scoped)
+
+        key_candidates: list[str] = []
+        if fight.fighter_id == fighter_id:
+            key_candidates.extend(["fighter", "primary", "self"])
+        if fight.opponent_id == fighter_id:
+            key_candidates.extend(["opponent", "secondary", "rival"])
+
+        for key in key_candidates:
+            scoped = payload.get(key)
+            if isinstance(scoped, Mapping):
+                return _clone_stats_mapping(scoped)
+
+        for scoped in payload.values():
+            if isinstance(scoped, Mapping):
+                candidate_id = scoped.get("fighter_id") or scoped.get("id")
+                if candidate_id == fighter_id:
+                    return _clone_stats_mapping(scoped)
+            elif isinstance(scoped, Sequence) and not isinstance(scoped, (str, bytes)):
+                for inner in scoped:
+                    if not isinstance(inner, Mapping):
+                        continue
+                    candidate_id = inner.get("fighter_id") or inner.get("id")
+                    if candidate_id == fighter_id:
+                        return _clone_stats_mapping(inner)
+
+    elif isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
+        for scoped in payload:
+            if not isinstance(scoped, Mapping):
+                continue
+            candidate_id = scoped.get("fighter_id") or scoped.get("id")
+            if candidate_id == fighter_id:
+                return _clone_stats_mapping(scoped)
+
+    return {}
+
+
 class PostgreSQLFighterRepository:
     """Repository for fighter data using PostgreSQL database."""
 
@@ -172,9 +239,24 @@ class PostgreSQLFighterRepository:
         fights_result = await self._session.execute(fights_query)
         all_fights = fights_result.scalars().all()
 
+        opponent_ids = {
+            fight.fighter_id
+            for fight in all_fights
+            if fight.fighter_id != fighter_id and fight.fighter_id is not None
+        }
+        opponent_map: dict[str, Fighter] = {}
+        if opponent_ids:
+            opponents_result = await self._session.execute(
+                select(Fighter).where(Fighter.id.in_(opponent_ids))
+            )
+            opponent_map = {
+                opponent.id: opponent for opponent in opponents_result.scalars()
+            }
+
         # Build fight history, inverting perspective when needed
         fight_history: list[FightHistoryEntry] = []
         for fight in all_fights:
+            stats_payload = _resolve_stats_payload(fight, fighter_id)
             if fight.fighter_id == fighter_id:
                 # Fight is from this fighter's perspective - use as-is
                 fight_history.append(
@@ -189,19 +271,18 @@ class PostgreSQLFighterRepository:
                         round=fight.round,
                         time=fight.time,
                         fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
+                        stats=stats_payload,
                     )
                 )
             else:
                 # Fight is from opponent's perspective - need to invert
-                # Get the actual opponent's name (the fighter who has this fight record)
-                opponent_query = select(Fighter).where(Fighter.id == fight.fighter_id)
-                opponent_result = await self._session.execute(opponent_query)
-                opponent_fighter = opponent_result.scalar_one_or_none()
+                opponent_fighter = opponent_map.get(fight.fighter_id)
+                opponent_name = (
+                    opponent_fighter.name
+                    if opponent_fighter is not None
+                    else fight.opponent_name or "Unknown"
+                )
 
-                opponent_name = opponent_fighter.name if opponent_fighter else "Unknown"
-
-                # Invert the result
                 inverted_result = _invert_fight_result(fight.result)
 
                 fight_history.append(
@@ -216,7 +297,7 @@ class PostgreSQLFighterRepository:
                         round=fight.round,
                         time=fight.time,
                         fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
+                        stats=stats_payload,
                     )
                 )
 

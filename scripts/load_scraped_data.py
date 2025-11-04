@@ -412,9 +412,7 @@ def calculate_fighter_stats(
         )
 
     if takedown_totals["count"] > 0:
-        landed_avg = _average(
-            takedown_totals["landed"], takedown_totals["count"]
-        )
+        landed_avg = _average(takedown_totals["landed"], takedown_totals["count"])
         if landed_avg is not None:
             _store_stat(
                 results,
@@ -653,6 +651,12 @@ async def load_fighter_detail(
             if not fight_id:
                 continue
 
+            # ``stats`` historically held the page owner's figures, while the new
+            # ``stats_payload`` structure contains both competitors. Persist
+            # whichever format is available so API consumers receive the most
+            # complete snapshot possible.
+            stats_payload = fight_data.get("stats_payload") or fight_data.get("stats")
+
             fight = Fight(
                 id=fight_id,
                 fighter_id=fighter_id,
@@ -665,6 +669,7 @@ async def load_fighter_detail(
                 round=fight_data.get("round"),
                 time=fight_data.get("time"),
                 fight_card_url=fight_data.get("fight_card_url"),
+                stats_payload=stats_payload,
             )
             await session.merge(fight)
 
@@ -679,7 +684,9 @@ async def load_fighter_detail(
                 "career",
             )
         }
-        summary_payload = {key: value for key, value in summary_payload.items() if value}
+        summary_payload = {
+            key: value for key, value in summary_payload.items() if value
+        }
 
         aggregated_stats = calculate_fighter_stats(
             fight_history,

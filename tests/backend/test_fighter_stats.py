@@ -282,6 +282,88 @@ async def test_get_fighter_returns_aggregated_stats(session: AsyncSession) -> No
 
 
 @pytest.mark.asyncio
+async def test_get_fighter_includes_stats_for_direct_and_inverted_perspectives(
+    session: AsyncSession,
+) -> None:
+    """Ensure per-fight stats surface for both owned and inverted bouts."""
+
+    primary = Fighter(id="fighter-primary", name="Primary Fighter")
+    rival = Fighter(id="fighter-rival", name="Rival Fighter")
+    teammate = Fighter(id="fighter-teammate", name="Teammate Fighter")
+    session.add_all([primary, rival, teammate])
+    await session.flush()
+
+    direct_stats_payload: dict[str, dict[str, str]] = {
+        "fighter": {
+            "knockdowns": "2",
+            "total_strikes": "55",
+            "takedowns": "3",
+            "submissions": "1",
+        },
+        "opponent": {
+            "knockdowns": "0",
+            "total_strikes": "21",
+            "takedowns": "0",
+            "submissions": "0",
+        },
+    }
+    inverted_stats_payload: dict[str, dict[str, str]] = {
+        "fighter": {
+            "knockdowns": "1",
+            "total_strikes": "40",
+            "takedowns": "2",
+            "submissions": "0",
+        },
+        "opponent": {
+            "knockdowns": "3",
+            "total_strikes": "65",
+            "takedowns": "4",
+            "submissions": "2",
+        },
+    }
+
+    direct_fight = Fight(
+        id="fight-direct",
+        fighter_id=primary.id,
+        opponent_id=rival.id,
+        opponent_name=rival.name,
+        event_name="Direct Event",
+        event_date=date(2024, 5, 1),
+        result="W",
+        method="KO",
+        round=2,
+        time="03:10",
+        fight_card_url="https://example.com/direct",
+        stats_payload=direct_stats_payload,
+    )
+    inverted_fight = Fight(
+        id="fight-inverted",
+        fighter_id=teammate.id,
+        opponent_id=primary.id,
+        opponent_name=primary.name,
+        event_name="Inverted Event",
+        event_date=date(2023, 12, 1),
+        result="L",
+        method="Decision",
+        round=3,
+        time="05:00",
+        fight_card_url="https://example.com/inverted",
+        stats_payload=inverted_stats_payload,
+    )
+    session.add_all([direct_fight, inverted_fight])
+    await session.commit()
+
+    repo = PostgreSQLFighterRepository(session)
+    detail = await repo.get_fighter(primary.id)
+
+    assert detail is not None
+
+    fights_by_id = {entry.fight_id: entry for entry in detail.fight_history}
+    assert fights_by_id["fight-direct"].stats == direct_stats_payload["fighter"]
+    assert fights_by_id["fight-inverted"].stats == inverted_stats_payload["opponent"]
+
+
+@pytest.mark.asyncio
 async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> None:
     """Ensure upcoming bouts precede past fights sorted by recency."""
 

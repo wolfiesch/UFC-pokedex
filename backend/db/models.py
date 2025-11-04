@@ -1,6 +1,17 @@
 from datetime import date, datetime
+from typing import Any
 
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Table
+from sqlalchemy import (
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Table,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -15,7 +26,9 @@ class Event(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     location: Mapped[str | None]
-    status: Mapped[str] = mapped_column(String, nullable=False, index=True)  # 'upcoming' or 'completed'
+    status: Mapped[str] = mapped_column(
+        String, nullable=False, index=True
+    )  # 'upcoming' or 'completed'
 
     # Enhanced metadata (from Tapology or other sources)
     venue: Mapped[str | None]
@@ -57,16 +70,21 @@ class Fight(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     fighter_id: Mapped[str] = mapped_column(ForeignKey("fighters.id"), nullable=False)
-    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), nullable=True, index=True)
+    event_id: Mapped[str | None] = mapped_column(
+        ForeignKey("events.id"), nullable=True, index=True
+    )
     opponent_id: Mapped[str | None] = mapped_column(String, nullable=True)
     opponent_name: Mapped[str] = mapped_column(String, nullable=False)
-    event_name: Mapped[str] = mapped_column(String, nullable=False)  # Keep for backward compatibility
+    event_name: Mapped[str] = mapped_column(
+        String, nullable=False
+    )  # Keep for backward compatibility
     event_date: Mapped[date | None]  # Keep for backward compatibility
     result: Mapped[str] = mapped_column(String, nullable=False)
     method: Mapped[str | None]
     round: Mapped[int | None]
     time: Mapped[str | None]
     fight_card_url: Mapped[str | None]
+    stats_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     fighter: Mapped[Fighter] = relationship("Fighter", back_populates="fights")
     event: Mapped["Event | None"] = relationship("Event", back_populates="fights")
