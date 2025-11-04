@@ -12,12 +12,11 @@ import type { ApiError } from "@/lib/errors";
  * Shared shape returned by the fighters listing API as well as the search endpoint.
  * Including the offset allows us to compute the next pagination cursor.
  */
-interface FightersPage extends PaginatedFightersResponse {}
 
 /**
  * Flatten all fighters across the paginated response pages.
  */
-function flattenPages(pages: FightersPage[] | undefined): FighterListItem[] {
+function flattenPages(pages: PaginatedFightersResponse[] | undefined): FighterListItem[] {
   if (!pages?.length) {
     return [];
   }
