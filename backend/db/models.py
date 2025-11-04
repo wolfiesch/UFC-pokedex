@@ -79,6 +79,9 @@ class Fighter(Base):
     is_former_champion: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
+    was_interim: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
     championship_history: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, nullable=True
     )

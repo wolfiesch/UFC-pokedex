@@ -462,11 +462,12 @@ class FighterService:
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        champion_statuses: list[str] | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> PaginatedFightersResponse:
-        """Search fighters by name, stance, or division with pagination."""
+        """Search fighters by name, stance, division, or champion status with pagination."""
 
         resolved_limit = limit if limit is not None and limit > 0 else 20
         resolved_offset = offset if offset is not None and offset >= 0 else 0
@@ -474,19 +475,22 @@ class FighterService:
         normalized_query = (query or "").strip()
         normalized_stance = (stance or "").strip()
         normalized_division = (division or "").strip()
+        normalized_champion_statuses = champion_statuses if champion_statuses else None
 
         query_param = normalized_query or None
         stance_param = normalized_stance or None
         division_param = normalized_division or None
+        champion_statuses_param = normalized_champion_statuses
 
         use_cache = self._cache is not None and (
-            normalized_query or normalized_stance or normalized_division
+            normalized_query or normalized_stance or normalized_division or normalized_champion_statuses
         )
         cache_key = (
             search_key(
                 normalized_query,
                 normalized_stance if normalized_stance else None,
                 normalized_division if normalized_division else None,
+                ",".join(sorted(normalized_champion_statuses)) if normalized_champion_statuses else None,
                 resolved_limit,
                 resolved_offset,
             )
@@ -507,6 +511,7 @@ class FighterService:
                 query=query_param,
                 stance=stance_param,
                 division=division_param,
+                champion_statuses=champion_statuses_param,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )

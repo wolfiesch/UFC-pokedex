@@ -182,6 +182,7 @@ class PostgreSQLFighterRepository:
                 image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
+                was_interim=fighter.was_interim,
             )
             for fighter in fighters
         ]
@@ -370,6 +371,7 @@ class PostgreSQLFighterRepository:
             fight_history=fight_history,
             is_current_champion=fighter.is_current_champion,
             is_former_champion=fighter.is_former_champion,
+            was_interim=fighter.was_interim,
             championship_history=fighter.championship_history or {},
         )
 
@@ -686,11 +688,12 @@ class PostgreSQLFighterRepository:
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        champion_statuses: list[str] | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
-        """Search fighters by name, stance, or division with pagination support."""
+        """Search fighters by name, stance, division, or champion status with pagination support."""
 
         filters = []
         if query:
@@ -705,6 +708,18 @@ class PostgreSQLFighterRepository:
             filters.append(Fighter.stance == stance)
         if division:
             filters.append(Fighter.division == division)
+        if champion_statuses:
+            # Build OR conditions for multiple champion statuses
+            champion_conditions = []
+            for status in champion_statuses:
+                if status == "current":
+                    champion_conditions.append(Fighter.is_current_champion == True)
+                elif status == "former":
+                    champion_conditions.append(Fighter.is_former_champion == True)
+            if champion_conditions:
+                # Use OR to combine conditions (show fighters matching ANY status)
+                from sqlalchemy import or_
+                filters.append(or_(*champion_conditions))
 
         stmt = select(Fighter).order_by(Fighter.name)
         count_stmt = select(func.count()).select_from(Fighter)
@@ -741,6 +756,7 @@ class PostgreSQLFighterRepository:
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
+                    was_interim=fighter.was_interim,
                 )
                 for fighter in fighters
             ],
@@ -808,6 +824,9 @@ class PostgreSQLFighterRepository:
                     significant_strikes=stats_map.get("significant_strikes", {}),
                     takedown_stats=stats_map.get("takedown_stats", {}),
                     career=stats_map.get("career", {}),
+                    is_current_champion=fighter.is_current_champion,
+                    is_former_champion=fighter.is_former_champion,
+                    was_interim=fighter.was_interim,
                 )
             )
 

@@ -15,6 +15,7 @@ class SearchService:
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        champion_statuses: list[str] | None = None,
         *,
         limit: int | None = None,
         offset: int | None = None,
@@ -25,6 +26,7 @@ class SearchService:
             query=query,
             stance=stance,
             division=division,
+            champion_statuses=champion_statuses,
             limit=limit,
             offset=offset,
         )

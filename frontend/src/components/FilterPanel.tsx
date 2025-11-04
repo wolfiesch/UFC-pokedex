@@ -3,6 +3,7 @@
 import type { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import ChampionStatusFilter from "@/components/filters/ChampionStatusFilter";
 
 type FilterPanelProps = {
   stances: string[];
@@ -11,6 +12,8 @@ type FilterPanelProps = {
   divisions: string[];
   selectedDivision: string | null;
   onDivisionChange: (division: string | null) => void;
+  championStatusFilters: string[];
+  onToggleChampionStatus: (status: string) => void;
 };
 
 export default function FilterPanel({
@@ -19,7 +22,9 @@ export default function FilterPanel({
   onStanceChange,
   divisions,
   selectedDivision,
-  onDivisionChange
+  onDivisionChange,
+  championStatusFilters,
+  onToggleChampionStatus,
 }: FilterPanelProps) {
   const handleStanceChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;

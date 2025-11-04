@@ -13,6 +13,7 @@ export type FighterListItem = {
   image_url?: string | null;
   is_current_champion?: boolean;
   is_former_champion?: boolean;
+  was_interim?: boolean;
 };
 
 export type FightHistoryEntry = {
@@ -215,6 +216,7 @@ export interface FighterComparisonEntry {
   career: Record<string, string | number | null | undefined>;
   is_current_champion?: boolean;
   is_former_champion?: boolean;
+  was_interim?: boolean;
 }
 
 export interface FighterComparisonResponse {

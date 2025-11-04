@@ -10,10 +10,12 @@ type FavoritesState = {
   searchTerm: string;
   stanceFilter: string | null;
   divisionFilter: string | null;
+  championStatusFilters: string[];
   toggleFavorite: (fighter: FighterListItem) => void;
   setSearchTerm: (term: string) => void;
   setStanceFilter: (stance: string | null) => void;
   setDivisionFilter: (division: string | null) => void;
+  toggleChampionStatusFilter: (status: string) => void;
 };
 
 export const useFavoritesStore = create<FavoritesState>()(
@@ -23,6 +25,7 @@ export const useFavoritesStore = create<FavoritesState>()(
       searchTerm: "",
       stanceFilter: null,
       divisionFilter: null,
+      championStatusFilters: [],
       toggleFavorite: (fighter) => {
         const favorites = get().favorites;
         const exists = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
@@ -35,6 +38,15 @@ export const useFavoritesStore = create<FavoritesState>()(
       setSearchTerm: (term) => set({ searchTerm: term }),
       setStanceFilter: (stance) => set({ stanceFilter: stance }),
       setDivisionFilter: (division) => set({ divisionFilter: division }),
+      toggleChampionStatusFilter: (status) => {
+        const filters = get().championStatusFilters;
+        const exists = filters.includes(status);
+        set({
+          championStatusFilters: exists
+            ? filters.filter((f) => f !== status)
+            : [...filters, status],
+        });
+      },
     }),
     {
       name: "ufc-pokedex-favorites",
@@ -43,6 +55,7 @@ export const useFavoritesStore = create<FavoritesState>()(
         searchTerm: state.searchTerm,
         stanceFilter: state.stanceFilter,
         divisionFilter: state.divisionFilter,
+        championStatusFilters: state.championStatusFilters,
       }),
     },
   ),

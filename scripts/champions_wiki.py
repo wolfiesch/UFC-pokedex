@@ -463,7 +463,8 @@ async def update_database(matches: list[dict[str, Any]]) -> None:
         await session.execute(
             update(Fighter).values(
                 is_current_champion=False,
-                is_former_champion=False
+                is_former_champion=False,
+                was_interim=False
             )
         )
 
@@ -485,6 +486,7 @@ async def update_database(matches: list[dict[str, Any]]) -> None:
                     .values(
                         is_current_champion=match['is_champion'],
                         is_former_champion=match['is_former_champion'],
+                        was_interim=match['championship_history']['was_interim'],
                         championship_history=match['championship_history']
                     )
                 )

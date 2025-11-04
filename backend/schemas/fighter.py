@@ -35,6 +35,7 @@ class FighterListItem(BaseModel):
     image_url: str | None = None
     is_current_champion: bool = False
     is_former_champion: bool = False
+    was_interim: bool = False
 
 
 class FighterDetail(FighterListItem):
@@ -69,6 +70,7 @@ class FighterComparisonEntry(BaseModel):
     career: dict[str, Any] = Field(default_factory=dict)
     is_current_champion: bool = False
     is_former_champion: bool = False
+    was_interim: bool = False
 
 
 class FighterComparisonResponse(BaseModel):
