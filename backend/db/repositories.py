@@ -972,11 +972,10 @@ class PostgreSQLFighterRepository:
             key = (row.division, bucket_start)
             entry = buckets.setdefault(key, {"label": bucket_label, "durations": []})
             durations = entry["durations"]
-            if not isinstance(durations, list):
-                raise TypeError(
-                    "Expected the aggregated duration payload to be a list for key "
-                    f"{key}, received {type(durations)!r} instead."
-                )
+            assert isinstance(durations, list), (
+                f"Expected the aggregated duration payload to be a list for key {key}, "
+                f"received {type(durations)!r} instead."
+            )
             durations.append(duration)
 
         averaged: list[AverageFightDuration] = []
