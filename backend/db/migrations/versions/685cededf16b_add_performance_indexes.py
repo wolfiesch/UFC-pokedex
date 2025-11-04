@@ -14,7 +14,6 @@ from alembic import op
 # revision identifiers, used by Alembic.
 revision: str = "685cededf16b"
 down_revision: Union[str, None] = "ce39f523263a"
-branch_labels: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
