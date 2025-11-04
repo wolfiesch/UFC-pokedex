@@ -9,9 +9,9 @@ import { getFighters, searchFighters } from "@/lib/api";
 import type { ApiError } from "@/lib/errors";
 
 /**
- * Shared shape returned by the fighters listing API as well as the search endpoint.
- * Including the offset allows us to compute the next pagination cursor.
+ * Type alias for better readability in TanStack Query generics.
  */
+type FightersPage = PaginatedFightersResponse;
 
 /**
  * Flatten all fighters across the paginated response pages.

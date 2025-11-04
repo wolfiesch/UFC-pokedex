@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { CommandPaletteProvider } from "@/components/providers/CommandPaletteProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 export const metadata: Metadata = {
   title: "UFC Fighter Pokedex",
@@ -25,22 +26,24 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <ErrorBoundary>
-          <ToastProvider>
-            <CommandPaletteProvider>
-              <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <SiteHeader />
-                <main className="flex-1 pb-16">{children}</main>
-                <footer className="border-t border-border/80 py-6">
-                  <div className="container flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                    <p>© {new Date().getFullYear()} UFC Fighter Pokedex</p>
-                    <p className="text-xs uppercase tracking-[0.3em]">
-                      Built for fight data enthusiasts
-                    </p>
-                  </div>
-                </footer>
-              </div>
-            </CommandPaletteProvider>
-          </ToastProvider>
+          <QueryProvider>
+            <ToastProvider>
+              <CommandPaletteProvider>
+                <div className="flex min-h-screen flex-col bg-background text-foreground">
+                  <SiteHeader />
+                  <main className="flex-1 pb-16">{children}</main>
+                  <footer className="border-t border-border/80 py-6">
+                    <div className="container flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                      <p>© {new Date().getFullYear()} UFC Fighter Pokedex</p>
+                      <p className="text-xs uppercase tracking-[0.3em]">
+                          Built for fight data enthusiasts
+                      </p>
+                    </div>
+                  </footer>
+                </div>
+              </CommandPaletteProvider>
+            </ToastProvider>
+          </QueryProvider>
         </ErrorBoundary>
       </body>
     </html>

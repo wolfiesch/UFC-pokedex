@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { FightGraphQueryParams } from "@/lib/types";
 
@@ -20,6 +20,19 @@ type FightWebFiltersProps = {
   isLoading?: boolean;
 };
 
+function filtersEqual(
+  a: FightGraphQueryParams,
+  b: FightGraphQueryParams,
+): boolean {
+  return (
+    (a.division ?? null) === (b.division ?? null) &&
+    (a.startYear ?? null) === (b.startYear ?? null) &&
+    (a.endYear ?? null) === (b.endYear ?? null) &&
+    clampLimit(a.limit ?? null) === clampLimit(b.limit ?? null) &&
+    Boolean(a.includeUpcoming) === Boolean(b.includeUpcoming)
+  );
+}
+
 export function FightWebFilters({
   filters,
   onApply,
@@ -31,10 +44,36 @@ export function FightWebFilters({
   const [draft, setDraft] = useState<FightGraphQueryParams>(
     normalizeFilters(filters)
   );
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     setDraft(normalizeFilters(filters));
+    isInitialMount.current = true;
   }, [filters]);
+
+  // Auto-apply filters with debouncing
+  useEffect(() => {
+    // Skip auto-apply on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Skip if draft hasn't changed from current filters
+    const normalizedDraft = normalizeFilters(draft);
+    if (filtersEqual(normalizedDraft, filters)) {
+      return;
+    }
+
+    // Debounce the apply call
+    const timeoutId = setTimeout(() => {
+      void onApply(normalizedDraft);
+    }, 400);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [draft, filters, onApply]);
 
   const sortedDivisions = useMemo(() => {
     return [...availableDivisions].sort((a, b) => a.localeCompare(b));
@@ -67,7 +106,7 @@ export function FightWebFilters({
         </h2>
         <p className="text-sm text-muted-foreground">
           Refine the network by narrowing the weight class, year range, or node
-          count. Apply changes to refresh the graph.
+          count. Filters apply automatically as you adjust them.
         </p>
       </header>
 
@@ -184,14 +223,7 @@ export function FightWebFilters({
           />
         </label>
 
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:bg-foreground/60"
-          >
-            {isLoading ? "Updating…" : "Apply filters"}
-          </button>
+        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
           <button
             type="button"
             onClick={handleResetClick}

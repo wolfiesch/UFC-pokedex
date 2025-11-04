@@ -72,9 +72,9 @@ export function computeForceLayout(
 
   const iterations =
     options.iterations ?? Math.min(280, Math.max(120, nodes.length * 4));
-  const repulsionStrength = options.repulsionStrength ?? 1400;
-  const linkDistance = options.linkDistance ?? 140;
-  const springStrength = options.springStrength ?? 0.08;
+  const repulsionStrength = options.repulsionStrength ?? 2000;  // Increased from 1400
+  const linkDistance = options.linkDistance ?? 180;  // Increased from 140 (more spacing)
+  const springStrength = options.springStrength ?? 0.06;  // Reduced from 0.08 (softer springs)
   const damping = options.damping ?? 0.6;
   const centerStrength = options.centerStrength ?? 0.005;
   const timeStep = options.timeStep ?? 0.4;

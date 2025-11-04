@@ -18,6 +18,7 @@ type FightGraphCanvasProps = {
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
   palette?: Map<string, string> | null;
+  minFightsThreshold?: number; // Add this prop
 };
 
 type TooltipState = {
@@ -46,6 +47,7 @@ export function FightGraphCanvas({
   selectedNodeId = null,
   onSelectNode,
   palette: paletteProp = null,
+  minFightsThreshold = 2, // Default: show edges with 2+ fights
 }: FightGraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -112,6 +114,8 @@ export function FightGraphCanvas({
     return createDivisionColorScale(data.nodes);
   }, [data, paletteProp]);
 
+  const focusNodeId = hoveredNodeId ?? selectedNodeId ?? null;
+
   const renderGraph = useMemo(() => {
     if (!layout) {
       return null;
@@ -142,6 +146,14 @@ export function FightGraphCanvas({
     }
 
     const edges: RenderEdge[] = layout.edges
+      .filter((edge) => {
+        // Always show edges connected to focused node
+        if (focusNodeId && (edge.source === focusNodeId || edge.target === focusNodeId)) {
+          return true;
+        }
+        // Filter by minimum fight threshold
+        return edge.fights >= minFightsThreshold;
+      })
       .map((edge) => {
         const source = nodeMap.get(edge.source);
         const target = nodeMap.get(edge.target);
@@ -159,7 +171,7 @@ export function FightGraphCanvas({
       .filter((edge): edge is RenderEdge => edge !== null);
 
     return { nodes, edges, nodeMap };
-  }, [layout, size.height, size.width]);
+  }, [layout, size.height, size.width, focusNodeId, minFightsThreshold]); // Add minFightsThreshold
 
   const nodeMap = useMemo(() => {
     if (!renderGraph) {
@@ -167,8 +179,6 @@ export function FightGraphCanvas({
     }
     return renderGraph.nodeMap;
   }, [renderGraph]);
-
-  const focusNodeId = hoveredNodeId ?? selectedNodeId ?? null;
   const focusNeighbors = useMemo(() => {
     if (!focusNodeId || nodeMap.size === 0) {
       return new Set<string>();
@@ -293,9 +303,9 @@ export function FightGraphCanvas({
 
   const nodeRadius = useCallback((node: RenderNode) => {
     const fights = Math.max(1, node.total_fights ?? 1);
-    const fightContribution = Math.min(14, Math.sqrt(fights));
-    const degreeContribution = Math.min(10, Math.sqrt(node.degree + 1) * 1.5);
-    return 6 + Math.max(fightContribution, degreeContribution);
+    const fightContribution = Math.min(5, Math.sqrt(fights) * 0.5);
+    const degreeContribution = Math.min(4, Math.sqrt(node.degree + 1) * 0.6);
+    return 3 + Math.max(fightContribution, degreeContribution);
   }, []);
 
   if (!data || !renderGraph) {
@@ -358,24 +368,41 @@ export function FightGraphCanvas({
               const isConnected =
                 focusNodeId !== null &&
                 (edge.source === focusNodeId || edge.target === focusNodeId);
-              const strokeOpacity = focusNodeId
-                ? isConnected
-                  ? 0.9
-                  : 0.12
-                : 0.25;
-              const strokeWidth = Math.min(6, 1.2 + Math.log(edge.fights + 1));
+              
+              // Much lower base opacity to reduce visual noise
+              const baseOpacity = focusNodeId
+                ? isConnected ? 0.9 : 0.08  // Very dim when not connected
+                : 0.2;  // Lower default opacity (was 0.45)
+              
+              // Thinner edges for weaker connections
+              const strokeWidth = focusNodeId && isConnected
+                ? Math.min(6, 1.5 + Math.log(edge.fights + 1) * 1.2)  // Thicker when focused
+                : Math.min(2, 0.8 + Math.log(edge.fights + 1) * 0.4);  // Thinner by default
+              
+              // Calculate control point for curve (perpendicular midpoint)
+              const dx = edge.targetX - edge.sourceX;
+              const dy = edge.targetY - edge.sourceY;
+              const midX = (edge.sourceX + edge.targetX) / 2;
+              const midY = (edge.sourceY + edge.targetY) / 2;
+              const curveOffset = 20; // Curve strength
+              const controlX = midX + (-dy * curveOffset) / Math.sqrt(dx * dx + dy * dy);
+              const controlY = midY + (dx * curveOffset) / Math.sqrt(dx * dx + dy * dy);
+              
+              const pathData = `M ${edge.sourceX} ${edge.sourceY} Q ${controlX} ${controlY} ${edge.targetX} ${edge.targetY}`;
+              
               return (
-                <line
+                <path
                   key={`${edge.source}-${edge.target}`}
-                  x1={edge.sourceX}
-                  y1={edge.sourceY}
-                  x2={edge.targetX}
-                  y2={edge.targetY}
-                  stroke="var(--border)"
+                  d={pathData}
+                  fill="none"
+                  stroke="hsl(var(--foreground) / 0.4)"  // Lighter color
                   strokeWidth={strokeWidth}
-                  strokeOpacity={strokeOpacity}
+                  strokeOpacity={baseOpacity}
                   strokeLinecap="round"
                   pointerEvents="none"
+                  style={{
+                    transition: focusNodeId ? "opacity 0.2s ease, stroke-width 0.2s ease" : "none",
+                  }}
                 />
               );
             })}
