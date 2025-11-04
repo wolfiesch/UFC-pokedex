@@ -134,12 +134,7 @@ def _calculate_age(*, dob: date | None, reference_date: date) -> int | None:
         # beyond the erroneous future birthday.
         return 0
 
-    years_elapsed: int = reference_date.year - dob.year
-    has_had_birthday: bool = (reference_date.month, reference_date.day) >= (
-        dob.month,
-        dob.day,
-    )
-    return years_elapsed if has_had_birthday else years_elapsed - 1
+    return years_elapsed - (not has_had_birthday)
 
 
 class PostgreSQLFighterRepository:
