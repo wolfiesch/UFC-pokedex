@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -70,6 +70,9 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \
 	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
 	sleep 2; \
+	echo "🔧 Generating TypeScript types from OpenAPI..."; \
+	mkdir -p frontend/src/lib/generated && cd frontend && pnpm generate:types > /dev/null 2>&1 || echo "⚠️  Type generation failed (continuing anyway)"; \
+	cd ..;  \
 	cd frontend && pnpm dev > /tmp/frontend.log 2>&1 & \
 	sleep 3; \
 	echo ""; \
@@ -202,6 +205,8 @@ dev-local: ensure-docker ## Start backend + frontend with localhost URLs (no tun
 	@echo "Starting backend..."
 	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 &
 	@sleep 2
+	@echo "🔧 Generating TypeScript types from OpenAPI..."
+	@mkdir -p frontend/src/lib/generated && cd frontend && pnpm generate:types > /dev/null 2>&1 || echo "⚠️  Type generation failed (continuing anyway)"
 	@echo "Starting frontend..."
 	@cd frontend && pnpm dev > /tmp/frontend.log 2>&1 &
 	@sleep 3
@@ -251,6 +256,17 @@ frontend: ## Start only the Next.js frontend (kills existing process on port 300
 	@echo "Starting frontend..."
 	@cd frontend && pnpm dev
 
+types-generate: ## Generate TypeScript types from OpenAPI schema (requires backend running)
+	@echo "🔧 Generating TypeScript types from OpenAPI..."
+	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+		echo "❌ Backend is not running on http://localhost:8000"; \
+		echo "   Please start the backend first with: make api or make api-dev"; \
+		exit 1; \
+	fi
+	@mkdir -p frontend/src/lib/generated
+	@cd frontend && pnpm generate:types || npm run generate:types
+	@echo "✅ Types generated at frontend/src/lib/generated/api-schema.ts"
+
 tunnel-frontend: ## Start Cloudflare tunnel for frontend (port 3000)
 	cloudflared tunnel --url http://localhost:3000
 
@@ -294,6 +310,39 @@ reload-data: ## Reload fighters list and detail data into database
 
 update-records: ## Fast update of fighter records only (~1.5 min for all fighters)
 	.venv/bin/python -m scripts.update_fighter_records
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# EVENT DATA OPERATIONS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+scraper-events: ## Scrape UFC events list (upcoming + completed)
+	.venv/bin/scrapy crawl events_list
+
+scraper-events-details: ## Scrape detailed fight cards for all events
+	@echo "Starting event detail scraper for all events..."
+	@echo "This will take ~5-10 minutes (using cache where available)"
+	.venv/bin/scrapy crawl event_detail -a input_file="data/processed/events_list.jsonl"
+
+scraper-events-details-sample: ## Scrape fight cards for first 5 events (testing)
+	.venv/bin/scrapy crawl event_detail -a input_file="data/processed/events_list.jsonl" -a limit=5
+
+load-events: ## Load scraped event data into database
+	PYTHONPATH=. .venv/bin/python scripts/load_events.py
+
+load-events-sample: ## Load sample event data (first 10 events)
+	PYTHONPATH=. .venv/bin/python scripts/load_events.py --limit 10
+
+load-events-dry-run: ## Validate event data without inserting into database
+	PYTHONPATH=. .venv/bin/python scripts/load_events.py --dry-run
+
+load-events-details: ## Load event details (fight cards) into database
+	PYTHONPATH=. .venv/bin/python scripts/load_event_details.py
+
+load-events-details-sample: ## Load sample event details (first 10 events)
+	PYTHONPATH=. .venv/bin/python scripts/load_event_details.py --limit 10
+
+load-events-details-dry-run: ## Validate event details without inserting
+	PYTHONPATH=. .venv/bin/python scripts/load_event_details.py --dry-run
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DEPLOYMENT (cPanel via SSH)

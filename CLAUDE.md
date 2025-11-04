@@ -159,6 +159,75 @@ Playwright MCP is configured for browser automation and E2E testing. Available c
 
 Screenshots are saved to `.playwright-mcp/` directory.
 
+### Schema Generation & Type Safety
+
+The project uses **OpenAPI → TypeScript code generation** to maintain a single source of truth for API contracts. Backend Pydantic schemas are automatically converted to TypeScript types.
+
+**Commands:**
+```bash
+make types-generate     # Generate TypeScript types from OpenAPI (requires backend running)
+```
+
+**Automatic Generation:**
+- Types are **auto-generated** when you run `make dev` or `make dev-local`
+- No manual action needed during normal development
+
+**Architecture:**
+```
+Backend Pydantic Models (backend/schemas/)
+    ↓
+FastAPI Auto-generates OpenAPI Schema (/openapi.json)
+    ↓
+openapi-typescript Generator (npm package)
+    ↓
+TypeScript Types (frontend/src/lib/generated/api-schema.ts)
+    ↓
+Type-Safe API Client (frontend/src/lib/api-client.ts)
+```
+
+**Usage:**
+```ts
+// Import the type-safe client
+import client from '@/lib/api-client';
+
+// All endpoints, parameters, and responses are fully typed!
+const { data, error } = await client.GET('/fighters/', {
+  params: {
+    query: { limit: 20, offset: 0 }
+  }
+});
+
+if (error) {
+  // Handle error (typed!)
+  console.error(error);
+  return;
+}
+
+// data.fighters is fully typed - autocomplete works!
+console.log(data.fighters);
+```
+
+**Benefits:**
+- ✅ Single source of truth (Backend Pydantic schemas)
+- ✅ Zero manual type duplication
+- ✅ Compile-time validation of API calls
+- ✅ Full IDE autocomplete for all endpoints
+- ✅ Catches API contract violations before runtime
+
+**Migration:**
+See `frontend/MIGRATION_GUIDE.md` for examples of migrating from old `api.ts` to the new type-safe client.
+
+**Troubleshooting:**
+- **Types are stale**: Run `make types-generate` to regenerate
+- **Backend not running**: Start with `make api-dev` first
+- **Generated file location**: `frontend/src/lib/generated/api-schema.ts` (gitignored)
+
+**Key Files:**
+- `frontend/src/lib/api-client.ts` - Type-safe API client wrapper
+- `frontend/src/lib/generated/api-schema.ts` - Auto-generated types (DO NOT EDIT)
+- `backend/schemas/*.py` - Source of truth for API contracts
+- `frontend/MIGRATION_GUIDE.md` - Migration examples and patterns
+
 ### Database Operations
 ```bash
 make db-upgrade     # Apply pending migrations

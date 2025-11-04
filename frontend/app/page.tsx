@@ -22,7 +22,7 @@ export default function HomePage() {
     loadMore,
     retry,
   } = useFighters();
-  const { stanceFilter, setStanceFilter, divisionFilter, setDivisionFilter } = useSearch();
+  const { searchTerm, setSearchTerm, stanceFilter, setStanceFilter, divisionFilter, setDivisionFilter } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
   const divisions = [
     "Bantamweight",
@@ -87,6 +87,14 @@ export default function HomePage() {
         hasMore={hasMore}
         onLoadMore={loadMore}
         onRetry={retry}
+        searchTerm={searchTerm}
+        stanceFilter={stanceFilter}
+        divisionFilter={divisionFilter}
+        onClearFilters={() => {
+          setSearchTerm("");
+          setStanceFilter(null);
+          setDivisionFilter(null);
+        }}
       />
     </section>
   );

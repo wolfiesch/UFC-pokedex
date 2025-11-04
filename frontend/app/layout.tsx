@@ -5,11 +5,19 @@ import { ReactNode } from "react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/providers/ToastProvider";
-import { QueryProvider } from "@/components/providers/QueryProvider";
+import { CommandPaletteProvider } from "@/components/providers/CommandPaletteProvider";
 
 export const metadata: Metadata = {
   title: "UFC Fighter Pokedex",
   description: "Explore UFC fighters with a Pokedex-inspired interface.",
+  icons: {
+    icon: [
+      {
+        url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥊</text></svg>",
+        type: "image/svg+xml",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -17,9 +25,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <ErrorBoundary>
-          <QueryProvider>
-            {/* ToastProvider lives inside the query provider so toast callbacks can react to mutation states. */}
-            <ToastProvider>
+          <ToastProvider>
+            <CommandPaletteProvider>
               <div className="flex min-h-screen flex-col bg-background text-foreground">
                 <SiteHeader />
                 <main className="flex-1 pb-16">{children}</main>
@@ -32,8 +39,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </div>
                 </footer>
               </div>
-            </ToastProvider>
-          </QueryProvider>
+            </CommandPaletteProvider>
+          </ToastProvider>
         </ErrorBoundary>
       </body>
     </html>

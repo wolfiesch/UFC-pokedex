@@ -28,6 +28,7 @@ class EventListItem(BaseModel):
     status: str  # 'upcoming' or 'completed'
     venue: str | None = None
     broadcast: str | None = None
+    event_type: str | None = None  # 'ppv', 'fight_night', etc.
 
 
 class EventDetail(EventListItem):

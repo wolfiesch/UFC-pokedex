@@ -55,7 +55,7 @@ export default function FighterCard({ fighter }: Props) {
     <Link href={`/fighters/${fighter.fighter_id}`} className="group block h-full">
       <Card className="flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl">
         <CardHeader className="p-6 pb-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 min-h-24">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-2xl group-hover:text-foreground/80">
@@ -68,7 +68,7 @@ export default function FighterCard({ fighter }: Props) {
                 ) : null}
               </div>
               {fighter.nickname ? (
-                <CardDescription className="text-sm tracking-tight">
+                <CardDescription className="text-sm tracking-tight line-clamp-1">
                   &ldquo;{fighter.nickname}&rdquo;
                 </CardDescription>
               ) : null}
