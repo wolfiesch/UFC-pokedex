@@ -1161,7 +1161,9 @@ class PostgreSQLEventRepository:
                     fighter_1_name=fighter_1_name,
                     fighter_2_id=fighter_2_id,
                     fighter_2_name=fighter_2_name,
-                    weight_class=None,  # TODO: Extract from fight data
+                    # Propagate the stored weight class so consumers can surface
+                    # the division context (e.g., "Lightweight") without extra joins.
+                    weight_class=fight.weight_class,
                     result=fight.result,
                     method=fight.method,
                     round=fight.round,
