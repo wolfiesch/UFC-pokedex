@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -18,6 +20,7 @@ from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (
     calculate_fighter_stats,
     calculate_longest_win_streak,
+    load_fighter_detail,
 )
 
 
@@ -356,6 +359,80 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
 
     # The repository should report upcoming fights first and sort past results in reverse chronological order.
     assert ordered_results == expected_order
+
+
+@pytest.mark.asyncio
+async def test_load_fighter_detail_persists_fight_stats(
+    session: AsyncSession, tmp_path: Path
+) -> None:
+    """Verify fight stats dictionaries are saved when present in the source payload."""
+
+    fight_stats_payload: dict[str, str] = {
+        "knockdowns": "1",
+        "total_strikes": "85",
+        "takedowns": "2",
+        "submissions": "0",
+    }
+    fighter_payload: dict[str, Any] = {
+        "fighter_id": "loader-fighter",
+        "name": "Loader Fighter",
+        "fight_history": [
+            {
+                "fight_id": "loader-fight-1",
+                "event_name": "Loader Event",
+                "event_date": "2024-01-01",
+                "opponent": "Test Opponent",
+                "result": "W",
+                "method": "Decision",
+                "round": 3,
+                "time": "05:00",
+                "fight_card_url": "https://example.com/fight",
+                "stats": fight_stats_payload,
+            }
+        ],
+    }
+    detail_path: Path = tmp_path / "loader_fighter.json"
+    detail_path.write_text(json.dumps(fighter_payload), encoding="utf-8")
+
+    assert await load_fighter_detail(session, detail_path) is True
+
+    stored_fight: Fight | None = await session.get(Fight, "loader-fight-1")
+    assert stored_fight is not None
+    assert stored_fight.stats == fight_stats_payload
+
+
+@pytest.mark.asyncio
+async def test_load_fighter_detail_defaults_missing_stats(
+    session: AsyncSession, tmp_path: Path
+) -> None:
+    """Ensure fights without stats payloads are stored with empty dictionaries."""
+
+    fighter_payload: dict[str, Any] = {
+        "fighter_id": "loader-fighter-no-stats",
+        "name": "Loader Fighter No Stats",
+        "fight_history": [
+            {
+                "fight_id": "loader-fight-2",
+                "event_name": "Loader Event",
+                "event_date": "2024-02-02",
+                "opponent": "Opponent",
+                "result": "L",
+                "method": "KO",
+                "round": 1,
+                "time": "01:30",
+                "fight_card_url": None,
+                # No explicit stats dictionary ensures we exercise the defaulting branch.
+            }
+        ],
+    }
+    detail_path: Path = tmp_path / "loader_fighter_missing_stats.json"
+    detail_path.write_text(json.dumps(fighter_payload), encoding="utf-8")
+
+    assert await load_fighter_detail(session, detail_path) is True
+
+    stored_fight: Fight | None = await session.get(Fight, "loader-fight-2")
+    assert stored_fight is not None
+    assert stored_fight.stats == {}
 
 
 @pytest.mark.asyncio

@@ -189,7 +189,7 @@ class PostgreSQLFighterRepository:
                         round=fight.round,
                         time=fight.time,
                         fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
+                        stats=fight.stats or {},
                     )
                 )
             else:
@@ -216,7 +216,7 @@ class PostgreSQLFighterRepository:
                         round=fight.round,
                         time=fight.time,
                         fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
+                        stats=fight.stats or {},
                     )
                 )
 
