@@ -230,7 +230,7 @@ export function extractFightWebInsights(
         lastEventDate:
           typeof item.last_event_date === "string"
             ? item.last_event_date
-            : (item.last_event_date as string | null | undefined),
+            : null,
       }))
       .filter((entry) => entry.source.length > 0 && entry.target.length > 0)
       .sort((a, b) => b.fights - a.fights)
