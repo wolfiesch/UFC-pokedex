@@ -138,7 +138,10 @@ def _calculate_age(*, dob: date | None, reference_date: date) -> int | None:
     years_elapsed = reference_date.year - dob.year
 
     # Check if birthday has occurred this year
-    has_had_birthday = (reference_date.month, reference_date.day) >= (dob.month, dob.day)
+    has_had_birthday = (reference_date.month, reference_date.day) >= (
+        dob.month,
+        dob.day,
+    )
 
     return years_elapsed - (not has_had_birthday)
 
@@ -224,7 +227,10 @@ class PostgreSQLFighterRepository:
         fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
 
         def create_fight_key(
-            event_name: str, event_date: date | None, opponent_id: str | None, opponent_name: str
+            event_name: str,
+            event_date: date | None,
+            opponent_id: str | None,
+            opponent_name: str,
         ) -> tuple[str, str | None, str]:
             """Create a unique key for deduplication based on fight metadata."""
             date_str = event_date.isoformat() if event_date else None
@@ -243,7 +249,10 @@ class PostgreSQLFighterRepository:
         for fight in all_fights:
             if fight.fighter_id == fighter_id:
                 fight_key = create_fight_key(
-                    fight.event_name, fight.event_date, fight.opponent_id, fight.opponent_name
+                    fight.event_name,
+                    fight.event_date,
+                    fight.opponent_id,
+                    fight.opponent_name,
                 )
 
                 new_entry = FightHistoryEntry(
@@ -266,14 +275,26 @@ class PostgreSQLFighterRepository:
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
+        # Collect unique opponent identifiers to collapse the legacy N+1 pattern
+        # into a single batched lookup against the fighters table.
+        opponent_ids: set[str] = {
+            fight.fighter_id
+            for fight in all_fights
+            if fight.fighter_id and fight.fighter_id != fighter_id
+        }
+        opponent_lookup: dict[str, Fighter] = {}
+        if opponent_ids:
+            opponent_rows = await self._session.execute(
+                select(Fighter).where(Fighter.id.in_(opponent_ids))
+            )
+            opponent_lookup = {
+                opponent.id: opponent for opponent in opponent_rows.scalars()
+            }
+
         # Second pass: Process fights from opponent's perspective (only if not already seen)
         for fight in all_fights:
             if fight.fighter_id != fighter_id:
-                # Fight is from opponent's perspective - need to invert
-                # Get the actual opponent's name (the fighter who has this fight record)
-                opponent_query = select(Fighter).where(Fighter.id == fight.fighter_id)
-                opponent_result = await self._session.execute(opponent_query)
-                opponent_fighter = opponent_result.scalar_one_or_none()
+                opponent_fighter = opponent_lookup.get(fight.fighter_id)
 
                 opponent_name = opponent_fighter.name if opponent_fighter else "Unknown"
                 opponent_id = fight.fighter_id
@@ -301,7 +322,9 @@ class PostgreSQLFighterRepository:
 
                 if fight_key not in fight_dict:
                     fight_dict[fight_key] = new_entry
-                elif should_replace_fight(fight_dict[fight_key].result, inverted_result):
+                elif should_replace_fight(
+                    fight_dict[fight_key].result, inverted_result
+                ):
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
@@ -1234,24 +1257,38 @@ class PostgreSQLEventRepository:
 
         # Build fight card from fights linked to this event
         fight_card: list[EventFight] = []
+
+        # Aggregate all fighter identifiers across the card so we can resolve
+        # roster metadata in a single round-trip instead of the previous
+        # per-fight N+1 query pattern.
+        fighter_ids: set[str] = {
+            fight.fighter_id for fight in event.fights if fight.fighter_id
+        }
+        fighter_ids.update(
+            opponent_id
+            for opponent_id in (fight.opponent_id for fight in event.fights)
+            if opponent_id
+        )
+        fighter_lookup: dict[str, Fighter] = {}
+        if fighter_ids:
+            fighter_rows = await self._session.execute(
+                select(Fighter).where(Fighter.id.in_(fighter_ids))
+            )
+            fighter_lookup = {
+                fetched_fighter.id: fetched_fighter
+                for fetched_fighter in fighter_rows.scalars()
+            }
+
         for fight in event.fights:
-            # Determine fighter names and IDs
-            # Each fight has fighter_id and opponent_id
             fighter_1_id = fight.fighter_id
             fighter_2_id = fight.opponent_id
 
-            # Get fighter names
-            fighter_1_query = select(Fighter).where(Fighter.id == fighter_1_id)
-            fighter_1_result = await self._session.execute(fighter_1_query)
-            fighter_1 = fighter_1_result.scalar_one_or_none()
-
+            fighter_1 = fighter_lookup.get(fighter_1_id)
             fighter_1_name = fighter_1.name if fighter_1 else "Unknown"
 
             fighter_2_name = fight.opponent_name
             if fighter_2_id:
-                fighter_2_query = select(Fighter).where(Fighter.id == fighter_2_id)
-                fighter_2_result = await self._session.execute(fighter_2_query)
-                fighter_2 = fighter_2_result.scalar_one_or_none()
+                fighter_2 = fighter_lookup.get(fighter_2_id)
                 if fighter_2:
                     fighter_2_name = fighter_2.name
 
