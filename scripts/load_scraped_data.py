@@ -412,9 +412,7 @@ def calculate_fighter_stats(
         )
 
     if takedown_totals["count"] > 0:
-        landed_avg = _average(
-            takedown_totals["landed"], takedown_totals["count"]
-        )
+        landed_avg = _average(takedown_totals["landed"], takedown_totals["count"])
         if landed_avg is not None:
             _store_stat(
                 results,
@@ -665,6 +663,7 @@ async def load_fighter_detail(
                 round=fight_data.get("round"),
                 time=fight_data.get("time"),
                 fight_card_url=fight_data.get("fight_card_url"),
+                stats=fight_data.get("stats") or {},
             )
             await session.merge(fight)
 
@@ -679,7 +678,9 @@ async def load_fighter_detail(
                 "career",
             )
         }
-        summary_payload = {key: value for key, value in summary_payload.items() if value}
+        summary_payload = {
+            key: value for key, value in summary_payload.items() if value
+        }
 
         aggregated_stats = calculate_fighter_stats(
             fight_history,
