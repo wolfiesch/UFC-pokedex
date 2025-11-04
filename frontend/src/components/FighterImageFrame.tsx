@@ -37,8 +37,7 @@ export default function FighterImageFrame({
       className={cn(
         "group/fighter-frame relative isolate flex aspect-[3/4] items-center justify-center overflow-visible rounded-[1.45rem] p-[3px]",
         "bg-gradient-to-br from-rose-500/70 via-amber-400/55 to-emerald-400/70 bg-[length:260%_260%] animate-border-glow",
-        "shadow-subtle transition-all duration-700 ease-out hover:shadow-[0_22px_60px_-28px_rgba(15,23,42,0.75)]",
-        "group-hover:shadow-[0_24px_66px_-30px_rgba(15,23,42,0.78)]",
+        "shadow-subtle transition-all duration-700 ease-out hover:shadow-[0_24px_66px_-30px_rgba(15,23,42,0.78)]",
         widthClass,
         className
       )}
