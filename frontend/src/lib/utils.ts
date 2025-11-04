@@ -9,6 +9,62 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Derives readable initials from a fighter name.
+ */
+export function getInitials(name: string) {
+  if (!name) {
+    return "";
+  }
+
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "";
+  }
+
+  if (parts.length === 1) {
+    return parts[0]!.slice(0, 2).toUpperCase();
+  }
+
+  const first = parts[0]![0] ?? "";
+  const last = parts[parts.length - 1]![0] ?? "";
+
+  return `${first}${last}`.toUpperCase();
+}
+
+/**
+ * Maps a string to a deterministic Tailwind background + border combo.
+ */
+export function getColorFromString(str: string) {
+  const colorClasses = [
+    "bg-blue-500/90 border-blue-500/50",
+    "bg-purple-500/90 border-purple-500/50",
+    "bg-amber-500/90 border-amber-500/50",
+    "bg-emerald-500/90 border-emerald-500/50",
+    "bg-rose-500/90 border-rose-500/50",
+    "bg-sky-500/90 border-sky-500/50",
+    "bg-indigo-500/90 border-indigo-500/50",
+    "bg-orange-500/90 border-orange-500/50",
+  ] as const;
+
+  if (!str) {
+    return colorClasses[0];
+  }
+
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+
+  const colorIndex = Math.abs(hash) % colorClasses.length;
+  return colorClasses[colorIndex];
+}
+
+/**
  * Builds an absolute image URL that works whether the API returned an absolute
  * path or a relative asset reference.
  */

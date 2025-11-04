@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     "Explore aggregated UFC fighter insights including KPIs, leaderboards, and historical trends.",
 };
 
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic';
+
 function formatSummaryMetrics(summary: StatsSummaryResponse | null) {
   if (!summary || summary.metrics.length === 0) {
     return null;

@@ -3,6 +3,7 @@ export type FighterListItem = {
   detail_url: string;
   name: string;
   nickname?: string | null;
+  record?: string | null;
   division?: string | null;
   height?: string | null;
   weight?: string | null;

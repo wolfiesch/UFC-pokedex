@@ -54,6 +54,7 @@ class PostgreSQLFighterRepository:
                 detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
                 name=fighter.name,
                 nickname=fighter.nickname,
+                record=fighter.record,
                 division=fighter.division,
                 height=fighter.height,
                 weight=fighter.weight,
@@ -289,12 +290,14 @@ class PostgreSQLFighterRepository:
                     detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
                     name=fighter.name,
                     nickname=fighter.nickname,
+                    record=fighter.record,
+                    division=fighter.division,
                     height=fighter.height,
                     weight=fighter.weight,
                     reach=fighter.reach,
                     stance=fighter.stance,
                     dob=fighter.dob,
-                    division=fighter.division,
+                    image_url=fighter.image_url,
                 )
                 for fighter in fighters
             ],

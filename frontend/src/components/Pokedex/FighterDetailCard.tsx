@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import StatsDisplay from "@/components/StatsDisplay";
 import type { FighterDetail } from "@/lib/types";
 import type { ApiError } from "@/lib/errors";
@@ -12,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
 import { resolveImageUrl } from "@/lib/utils";
 import {
   Table,
@@ -31,6 +34,9 @@ type Props = {
 };
 
 export default function FighterDetailCard({ fighterId, fighter, isLoading, error, onRetry }: Props) {
+  // Hooks must be called at the top level, before any conditional returns
+  const [imageError, setImageError] = useState(false);
+
   if (isLoading) {
     return (
       <Card className="rounded-3xl border-border bg-card/80 p-6 text-sm text-muted-foreground">
@@ -142,26 +148,33 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
 
   const fightHistory = fighter.fight_history.filter((fight) => fight.event_name !== null);
   const imageSrc = resolveImageUrl(fighter.image_url);
+  const shouldShowImage = Boolean(imageSrc) && !imageError;
+  const imageFrameClass =
+    "relative flex aspect-[3/4] w-48 max-w-[240px] items-center justify-center overflow-hidden rounded-2xl border border-border/70 md:w-full";
 
   return (
     <Card className="space-y-8 rounded-3xl border-border bg-card/80">
       <CardHeader className="space-y-6 pb-0">
         <div className="grid gap-6 md:grid-cols-[220px_1fr] md:items-start">
-          {imageSrc ? (
-            <div className="flex items-start justify-center">
-              <div className="relative aspect-[3/4] w-44 max-w-[220px] overflow-hidden rounded-2xl border border-border/70 bg-muted p-3 md:w-full">
+          <div className="flex items-start justify-center">
+            {shouldShowImage ? (
+              <div className={`${imageFrameClass} bg-muted/50`}>
                 <img
-                  src={imageSrc}
+                  src={imageSrc ?? ""}
                   alt={fighter.name}
                   className="h-full w-full object-contain"
                   loading="lazy"
-                  onError={(event) => {
-                    (event.target as HTMLImageElement).style.display = "none";
-                  }}
+                  onError={() => setImageError(true)}
                 />
               </div>
-            </div>
-          ) : null}
+            ) : (
+              <FighterImagePlaceholder
+                name={fighter.name}
+                division={fighter.division}
+                className={imageFrameClass}
+              />
+            )}
+          </div>
           <div className="flex flex-col gap-3">
             <CardTitle className="text-3xl">{fighter.name}</CardTitle>
             {fighter.nickname ? (

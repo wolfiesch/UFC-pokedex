@@ -25,6 +25,7 @@ class FighterListItem(BaseModel):
     detail_url: HttpUrl
     name: str
     nickname: str | None = None
+    record: str | None = None
     division: str | None = None
     height: str | None = None
     weight: str | None = None
@@ -35,7 +36,6 @@ class FighterListItem(BaseModel):
 
 
 class FighterDetail(FighterListItem):
-    record: str | None = None
     leg_reach: str | None = None
     age: int | None = None
     striking: dict[str, Any] = Field(default_factory=dict)

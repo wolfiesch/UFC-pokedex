@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import type { FighterListItem } from "@/lib/types";
@@ -14,7 +15,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { resolveImageUrl } from "@/lib/utils";
+import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
+import { cn, resolveImageUrl } from "@/lib/utils";
 
 type Props = {
   fighter: FighterListItem;
@@ -24,6 +26,10 @@ export default function FighterCard({ fighter }: Props) {
   const { favorites, toggleFavorite } = useFavorites();
   const isFavorite = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
+  const [imageError, setImageError] = useState(false);
+  const shouldShowImage = Boolean(imageSrc) && !imageError;
+  const imageFrameClass =
+    "relative flex aspect-[3/4] w-40 items-center justify-center overflow-hidden rounded-2xl border border-border/60";
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,13 +39,20 @@ export default function FighterCard({ fighter }: Props) {
 
   return (
     <Link href={`/fighters/${fighter.fighter_id}`} className="group block h-full">
-      <Card className="h-full overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl">
+      <Card className="flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl">
         <CardHeader className="p-6 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <CardTitle className="text-2xl group-hover:text-foreground/80">
-                {fighter.name}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl group-hover:text-foreground/80">
+                  {fighter.name}
+                </CardTitle>
+                {fighter.record ? (
+                  <Badge variant="secondary" className="text-xs font-mono">
+                    {fighter.record}
+                  </Badge>
+                ) : null}
+              </div>
               {fighter.nickname ? (
                 <CardDescription className="text-sm tracking-tight">
                   &ldquo;{fighter.nickname}&rdquo;
@@ -56,22 +69,26 @@ export default function FighterCard({ fighter }: Props) {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          {imageSrc ? (
-            <div className="flex justify-center">
-              <div className="relative aspect-[3/4] w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted p-2">
+        <CardContent className="flex flex-1 flex-col space-y-4">
+          <div className="flex justify-center">
+            {shouldShowImage ? (
+              <div className={cn(imageFrameClass, "bg-muted/40")}>
                 <img
-                  src={imageSrc}
+                  src={imageSrc ?? ""}
                   alt={fighter.name}
-                  className="h-full w-full object-contain transition duration-500"
+                  className="h-full w-full object-contain"
                   loading="lazy"
-                  onError={(event) => {
-                    (event.target as HTMLImageElement).style.display = "none";
-                  }}
+                  onError={() => setImageError(true)}
                 />
               </div>
-            </div>
-          ) : null}
+            ) : (
+              <FighterImagePlaceholder
+                name={fighter.name}
+                division={fighter.division}
+                className={imageFrameClass}
+              />
+            )}
+          </div>
 
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
