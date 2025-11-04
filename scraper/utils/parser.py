@@ -135,7 +135,8 @@ def parse_stat_section(section: Selector) -> dict[str, Any]:
     """
 
     stats: dict[str, Any] = {}
-    rows = section.css("li, .b-list__box-list-item")
+    # Stats are nested inside <ul class="b-list__box-list"> within the section
+    rows = section.css("ul.b-list__box-list li, .b-list__box-list-item")
 
     for row in rows:
         label_candidates = row.css(
@@ -273,15 +274,31 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         takedowns_cell = row.css("td:nth-child(5)")
         submissions_cell = row.css("td:nth-child(6)")
 
+        opponent_name = _extract_opponent_name(fighter_cell)
+        event_name = clean_text(event_cell.css("a::text").get()) or clean_text(
+            event_cell.css("p:nth-child(1)::text").get()
+        )
+        result = _extract_result(row.css("td:nth-child(1)"))
+        event_date = _extract_event_date(event_cell)
+
+        # Skip placeholder fights: rows where ALL key fields are None/Unknown
+        # These are empty table rows that UFCStats includes for formatting
+        if (
+            (opponent_name in (None, "Unknown"))
+            and event_name is None
+            and result is None
+            and event_date is None
+        ):
+            continue
+
         fights.append(
             {
                 "fight_id": fight_id,
-                "opponent": _extract_opponent_name(fighter_cell),
+                "opponent": opponent_name,
                 "opponent_id": _extract_opponent_id(fighter_cell),
-                "event_name": clean_text(event_cell.css("a::text").get())
-                or clean_text(event_cell.css("p:nth-child(1)::text").get()),
-                "event_date": _extract_event_date(event_cell),
-                "result": _extract_result(row.css("td:nth-child(1)")),
+                "event_name": event_name,
+                "event_date": event_date,
+                "result": result,
                 "method": " ".join(
                     [
                         clean_text(t)
@@ -320,23 +337,21 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
     selector = response if hasattr(response, "css") else Selector(text=response)
     fighter_id = _extract_uuid(getattr(response, "url", None))
 
-    hero = selector.css(".b-content__banner") or selector.css(".b-content__title")
-
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (
-        hero.css("span.b-content__title-highlight::text").getall()
-        or selector.css(
-            "h2.b-content__title span.b-content__title-highlight::text"
-        ).getall()
+        selector.css("h2.b-content__title span.b-content__title-highlight::text").getall()
         or selector.css(".b-content__title-highlight::text").getall()
-        or hero.css("h2::text").getall()
+        or selector.css(".b-content__banner h2::text").getall()
+        or selector.css(".b-content__title h2::text").getall()
     )
     # Join all text parts and clean
     full_name = " ".join(filter(None, (clean_text(n) for n in name_candidates if n)))
     name = full_name.strip() if full_name else fighter_id
 
-    nickname = clean_text(hero.css("span.b-content__Nickname::text").get())
-    record_text = clean_text(hero.css("span.b-content__title-record::text").get())
+    # Nickname is a <p> tag at the root level, not nested in hero section
+    nickname = clean_text(selector.css("p.b-content__Nickname::text").get())
+    # Record is in the title heading
+    record_text = clean_text(selector.css("span.b-content__title-record::text").get())
     record = (
         record_text.split(":")[-1].strip()
         if record_text and ":" in record_text
@@ -408,18 +423,19 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         "striking": (
             stat_sections.get("striking", {})
             or stat_sections.get("strikes", {})
-            or stat_sections.get("career_statistics", {}).get("striking", {})
+            or stat_sections.get("career_statistics", {})
             or {}
         ),
         "grappling": (
             stat_sections.get("grappling", {})
             or stat_sections.get("grappling_totals", {})
-            or stat_sections.get("career_statistics", {}).get("grappling", {})
+            or stat_sections.get("career_statistics", {})
             or {}
         ),
-        "significant_strikes": stat_sections.get("significant_strikes", {}),
+        "significant_strikes": stat_sections.get("significant_strikes", {}) or stat_sections.get("career_statistics", {}),
         "takedown_stats": stat_sections.get("takedowns", {})
-        or stat_sections.get("grappling", {}),
+        or stat_sections.get("grappling", {})
+        or stat_sections.get("career_statistics", {}),
         "fight_history": fight_history,
     }
     return detail

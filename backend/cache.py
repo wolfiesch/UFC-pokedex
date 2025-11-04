@@ -98,6 +98,14 @@ async def get_cache_client() -> CacheClient:
     return CacheClient(redis)
 
 
+async def close_redis() -> None:
+    """Close the global Redis connection gracefully."""
+    global _redis_client
+    if _redis_client is not None:
+        await _redis_client.aclose()
+        _redis_client = None
+
+
 async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
     await cache.delete(detail_key(fighter_id))
     await cache.delete_pattern(f"{_COMPARISON_PREFIX}:*{fighter_id}*")
@@ -110,6 +118,7 @@ async def invalidate_collections(cache: CacheClient) -> None:
 
 __all__ = [
     "CacheClient",
+    "close_redis",
     "comparison_key",
     "detail_key",
     "get_cache_client",

@@ -97,7 +97,8 @@ export function useFighters(initialLimit = 20) {
     setOffset(0);
     setFighters([]);
     void loadFighters(0, false);
-  }, [loadFighters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, stance, division]);
 
   return {
     fighters,

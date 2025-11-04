@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import (
     CacheClient,
+    close_redis,
     get_cache_client,
     invalidate_collections,
     invalidate_fighter,
@@ -772,6 +773,8 @@ async def main(args: argparse.Namespace) -> None:
 
     if cache_client is not None and not args.dry_run:
         await invalidate_collections(cache_client)
+        # Close Redis connection gracefully
+        await close_redis()
 
     console.print("\n[bold green]Data loading complete![/bold green]")
 

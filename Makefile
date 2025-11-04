@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -75,8 +75,14 @@ api: ## Start only the FastAPI backend (kills existing process on port 8000)
 scraper: ## Run full scraper crawl (fighters list)
 	.venv/bin/scrapy crawl fighters_list
 
-scraper-details: ## Run scraper for fighter details
+scraper-details: ## Run scraper for fighter details (all fighters)
 	.venv/bin/scrapy crawl fighter_detail -a input_file="data/processed/fighters_list.jsonl"
+
+scraper-details-missing: ## Run scraper for missing fighter details only
+	.venv/bin/python scripts/filter_missing_fighters.py
+	@if [ -f data/processed/fighters_missing.jsonl ] && [ -s data/processed/fighters_missing.jsonl ]; then \
+		.venv/bin/scrapy crawl fighter_detail -a input_file="data/processed/fighters_missing.jsonl"; \
+	fi
 
 export-active-fighters: ## Export active UFC fighters to JSON for Sherdog matching
 	.venv/bin/python -m scripts.export_active_fighters
@@ -188,3 +194,36 @@ reload-data: ## Reload fighters list and detail data into database
 
 update-records: ## Fast update of fighter records only (~1.5 min for all fighters)
 	.venv/bin/python -m scripts.update_fighter_records
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DEPLOYMENT (cPanel via SSH)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+deploy-config: ## Create deployment configuration from template
+	@if [ ! -f .deployment/config.env ]; then \
+		cp .deployment/config.env.example .deployment/config.env; \
+		echo "✓ Created .deployment/config.env"; \
+		echo "⚠️  Please edit .deployment/config.env with your SSH credentials"; \
+	else \
+		echo "⚠️  .deployment/config.env already exists"; \
+	fi
+
+deploy-check: ## Test SSH connection to cPanel server
+	@bash scripts/test_ssh.sh
+
+deploy-build: ## Build frontend for production (static export)
+	@echo "Building Next.js for production..."
+	@cd frontend && BUILD_MODE=static npm run build:static
+	@echo "✓ Build complete: frontend/out/"
+
+deploy-test: deploy-build ## Build and test deployment locally
+	@echo "Starting local server to preview build..."
+	@cd frontend/out && python3 -m http.server 8080
+
+deploy: ## Deploy to cPanel subdomain (builds and uploads via SSH)
+	@if [ ! -f .deployment/config.env ]; then \
+		echo "❌ Error: .deployment/config.env not found"; \
+		echo "Run: make deploy-config"; \
+		exit 1; \
+	fi
+	@bash scripts/deploy.sh

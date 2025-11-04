@@ -28,11 +28,47 @@ make db-upgrade                         # Run database migrations
 
 ### Running Services
 ```bash
-make dev            # Start backend + frontend together
+make dev            # Start backend + frontend + Cloudflare tunnels together
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
 make scraper        # Run Scrapy spider (fighters_list)
 ```
+
+### Cloudflare Tunnel (Public Access)
+
+The project is configured to use Cloudflare Tunnel for public access to your local development environment.
+
+**Public URLs:**
+- Frontend: `https://ufc.wolfgangschoenberger.com`
+- Backend API: `https://api.ufc.wolfgangschoenberger.com`
+
+**One-time setup** (run this once):
+```bash
+bash scripts/setup_tunnel.sh
+```
+
+This will:
+1. Authenticate with Cloudflare (opens browser)
+2. Create a tunnel named `ufc-pokedex`
+3. Set up DNS routes for your subdomains
+4. Generate config file at `~/.cloudflared/config.yml`
+
+**Starting tunnels:**
+The tunnel automatically starts when you run `make dev`. No separate command needed!
+
+**Manual tunnel commands** (if needed):
+```bash
+cloudflared tunnel run ufc-pokedex     # Start tunnel manually
+make tunnel-stop                        # Stop all tunnels
+cloudflared tunnel list                 # List all tunnels
+cloudflared tunnel info ufc-pokedex     # Get tunnel details
+```
+
+**Troubleshooting:**
+- Check tunnel logs: `tail -f /tmp/tunnel.log`
+- Verify DNS: `nslookup ufc.wolfgangschoenberger.com`
+- Test connectivity: `curl https://api.ufc.wolfgangschoenberger.com/health`
+- Re-run setup if DNS routes are missing: `bash scripts/setup_tunnel.sh`
 
 ### Testing & Quality
 ```bash
@@ -105,7 +141,29 @@ PostgreSQL Database
 FastAPI Service Layer
     ↓ (REST API)
 Next.js Frontend
+    ↓ (Cloudflare Tunnel - optional)
+Public Internet (ufc.wolfgangschoenberger.com)
 ```
+
+### Cloudflare Tunnel Architecture
+
+When running `make dev`, the application is exposed via Cloudflare Tunnel:
+
+```
+Internet
+    ↓ (HTTPS)
+Cloudflare Global Network
+    ↓ (Cloudflare Tunnel)
+Local Machine (localhost)
+    ├─ Port 3000 → ufc.wolfgangschoenberger.com (Frontend)
+    └─ Port 8000 → api.ufc.wolfgangschoenberger.com (Backend)
+```
+
+**Key files:**
+- `scripts/setup_tunnel.sh` - One-time tunnel setup script
+- `scripts/start_tunnels.sh` - Tunnel startup script (called by `make dev`)
+- `~/.cloudflared/config.yml` - Tunnel configuration (created by setup script)
+- `.cloudflared/config.template.yml` - Template for reference
 
 ### Backend Structure
 
@@ -295,9 +353,20 @@ SCRAPER_CONCURRENT_REQUESTS=4
 LOG_LEVEL=INFO
 API_HOST=0.0.0.0
 API_PORT=8000
+CORS_ALLOW_ORIGINS=http://localhost:3000
+```
+
+**Cloudflare Tunnel URLs** (auto-configured by `make dev`):
+```
+# Frontend (automatically set in frontend/.env.local by make dev)
+NEXT_PUBLIC_API_BASE_URL=https://api.ufc.wolfgangschoenberger.com
+
+# Backend (automatically set in .env by make dev)
+CORS_ALLOW_ORIGINS=https://ufc.wolfgangschoenberger.com
 ```
 
 **Note:**
 - Use `@localhost` for local development when running backend on host machine
 - Use `@db` when running backend in Docker container
 - Copy `.env.example` to `.env` to get started
+- `make dev` automatically configures tunnel URLs in `.env` and `frontend/.env.local`

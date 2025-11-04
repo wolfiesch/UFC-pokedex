@@ -74,19 +74,19 @@ export default function FighterGrid({
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="mb-1 font-semibold text-destructive-foreground">
+            <h3 className="mb-1 font-semibold text-foreground">
               Unable to load fighters
             </h3>
-            <p className="mb-2 text-sm text-destructive-foreground/90">
+            <p className="mb-2 text-sm text-foreground/80">
               {error.getUserMessage()}
             </p>
 
             {/* Technical details */}
-            <details className="mb-4 text-xs text-destructive-foreground/75">
-              <summary className="cursor-pointer hover:text-destructive-foreground">
+            <details className="mb-4 text-xs text-foreground/70">
+              <summary className="cursor-pointer hover:text-foreground">
                 Technical Details
               </summary>
-              <div className="mt-2 space-y-1 rounded-lg border border-destructive/20 bg-background/50 p-3 font-mono">
+              <div className="mt-2 space-y-1 rounded-lg border border-destructive/20 bg-background/50 p-3 font-mono text-foreground/90">
                 <p>
                   <span className="font-semibold">Error Type:</span> {error.errorType}
                 </p>
@@ -121,13 +121,13 @@ export default function FighterGrid({
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
+                  className="rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-destructive/90"
                 >
                   Retry
                 </button>
               )}
               {error.isRetryable && (
-                <span className="flex items-center gap-1 rounded-full border border-destructive/20 bg-background/50 px-3 py-2 text-xs text-destructive-foreground/75">
+                <span className="flex items-center gap-1 rounded-full border border-destructive/20 bg-background/50 px-3 py-2 text-xs text-foreground/70">
                   <svg
                     className="h-3 w-3"
                     fill="none"
