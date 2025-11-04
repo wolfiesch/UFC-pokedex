@@ -77,7 +77,7 @@ export function useFighterDetails(
   return {
     details: data ?? null,
     isLoading,
-    error: (error as Error | null) ?? null,
+    error,
     refetch,
   };
 }
