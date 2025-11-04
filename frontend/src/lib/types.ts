@@ -180,6 +180,8 @@ export interface FightGraphLink {
   source: string;
   target: string;
   fights: number;
+  first_event_name?: string | null;
+  first_event_date?: string | null;
   last_event_name?: string | null;
   last_event_date?: string | null;
   result_breakdown: FightGraphResultBreakdown;

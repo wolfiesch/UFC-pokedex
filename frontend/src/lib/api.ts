@@ -505,6 +505,12 @@ function normalizeFightGraphLink(link: unknown): FightGraphLink | null {
   }
 
   const fights = toFiniteNumber(link.fights, 0);
+  const firstEventDate =
+    typeof link.first_event_date === "string"
+      ? link.first_event_date
+      : link.first_event_date instanceof Date
+        ? link.first_event_date.toISOString()
+        : null;
   const lastEventDate =
     typeof link.last_event_date === "string"
       ? link.last_event_date
@@ -516,6 +522,9 @@ function normalizeFightGraphLink(link: unknown): FightGraphLink | null {
     source: link.source,
     target: link.target,
     fights: Number.isFinite(fights) ? fights : 0,
+    first_event_name:
+      typeof link.first_event_name === "string" ? link.first_event_name : null,
+    first_event_date: firstEventDate,
     last_event_name: typeof link.last_event_name === "string" ? link.last_event_name : null,
     last_event_date: lastEventDate,
     result_breakdown: normalizeFightGraphResultBreakdown(link.result_breakdown),

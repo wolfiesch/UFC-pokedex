@@ -363,6 +363,8 @@ class PostgreSQLFighterRepository:
         fights = edges_result.scalars().all()
 
         link_accumulator: dict[tuple[str, str], dict[str, Any]] = {}
+        earliest_event: date | None = None
+        latest_event: date | None = None
         for fight in fights:
             opponent_id = fight.opponent_id
             if opponent_id is None:
@@ -376,6 +378,8 @@ class PostgreSQLFighterRepository:
                 pair,
                 {
                     "fights": 0,
+                    "first_event_name": None,
+                    "first_event_date": None,
                     "last_event_name": None,
                     "last_event_date": None,
                     "result_breakdown": {
@@ -401,18 +405,31 @@ class PostgreSQLFighterRepository:
                 result_map[other_id] = _empty_breakdown()
 
             if fight.event_date is not None:
+                if earliest_event is None or fight.event_date < earliest_event:
+                    earliest_event = fight.event_date
+                if latest_event is None or fight.event_date > latest_event:
+                    latest_event = fight.event_date
+
                 last_date = entry["last_event_date"]
                 if last_date is None or fight.event_date > last_date:
                     entry["last_event_date"] = fight.event_date
                     entry["last_event_name"] = fight.event_name
+                first_date = entry["first_event_date"]
+                if first_date is None or fight.event_date < first_date:
+                    entry["first_event_date"] = fight.event_date
+                    entry["first_event_name"] = fight.event_name
             elif entry["last_event_name"] is None:
                 entry["last_event_name"] = fight.event_name
+                if entry["first_event_name"] is None:
+                    entry["first_event_name"] = fight.event_name
 
         links = [
             FightGraphLink(
                 source=pair[0],
                 target=pair[1],
                 fights=data["fights"],
+                first_event_name=data["first_event_name"],
+                first_event_date=data["first_event_date"],
                 last_event_name=data["last_event_name"],
                 last_event_date=data["last_event_date"],
                 result_breakdown=data["result_breakdown"],
@@ -432,6 +449,12 @@ class PostgreSQLFighterRepository:
             "link_count": len(links),
             "limit": limit,
         }
+
+        if earliest_event is not None or latest_event is not None:
+            metadata["event_window"] = {
+                "start": earliest_event,
+                "end": latest_event,
+            }
 
         return FightGraphResponse(nodes=nodes, links=links, metadata=metadata)
 

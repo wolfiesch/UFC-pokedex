@@ -20,6 +20,8 @@ class FightGraphLink(BaseModel):
     source: str
     target: str
     fights: int
+    first_event_name: str | None = None
+    first_event_date: date | None = None
     last_event_name: str | None = None
     last_event_date: date | None = None
     result_breakdown: dict[str, dict[str, int]] = Field(default_factory=dict)
