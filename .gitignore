@@ -47,3 +47,12 @@ tests/e2e/screenshots/
 /tmp/tunnel-*.log
 /tmp/backend.log
 /tmp/frontend.log
+
+# Deployment (SSH keys and credentials)
+.deployment/
+!.deployment/.gitkeep
+.deployment/*.env
+.deployment/id_rsa*
+.deployment/*.pem
+.deployment/*.key
+/.scrapy/data/cache
