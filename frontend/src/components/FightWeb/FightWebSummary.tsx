@@ -97,7 +97,7 @@ export function FightWebSummary({
             {formatDensity(insights.networkDensity)}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Normalised connectivity score showing how tightly packed the graph
+            Normalized connectivity score showing how tightly packed the graph
             is.
           </p>
         </CardContent>

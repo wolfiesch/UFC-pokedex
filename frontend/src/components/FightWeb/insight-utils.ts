@@ -196,7 +196,7 @@ export function extractFightWebInsights(
         division:
           typeof item.division === "string"
             ? item.division
-            : (item.division as string | null),
+            : null,
         totalFights:
           typeof item.total_fights === "number" ? item.total_fights : 0,
         degree: typeof item.degree === "number" ? item.degree : 0,
@@ -217,11 +217,11 @@ export function extractFightWebInsights(
         sourceName:
           typeof item.source_name === "string"
             ? item.source_name
-            : (item.source_name as string | null),
+            : null,
         targetName:
           typeof item.target_name === "string"
             ? item.target_name
-            : (item.target_name as string | null),
+            : null,
         fights: typeof item.fights === "number" ? item.fights : 0,
         lastEventName:
           typeof item.last_event_name === "string"
@@ -230,7 +230,7 @@ export function extractFightWebInsights(
         lastEventDate:
           typeof item.last_event_date === "string"
             ? item.last_event_date
-            : (item.last_event_date as string | null | undefined),
+            : null,
       }))
       .filter((entry) => entry.source.length > 0 && entry.target.length > 0)
       .sort((a, b) => b.fights - a.fights)
