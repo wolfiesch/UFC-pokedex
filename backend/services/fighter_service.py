@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.cache import (
     CacheClient,
     comparison_key,
+    graph_key,
     detail_key,
     get_cache_client,
     list_key,
@@ -23,6 +24,7 @@ from backend.schemas.fighter import (
     FighterListItem,
     PaginatedFightersResponse,
 )
+from backend.schemas.fight_graph import FightGraphResponse
 from backend.schemas.stats import (
     LeaderboardDefinition,
     LeaderboardsResponse,
@@ -68,6 +70,17 @@ class FighterRepositoryProtocol:
         self, fighter_ids: Sequence[str]
     ) -> list[FighterComparisonEntry]:
         """Return stat snapshots for the provided fighter identifiers."""
+
+    async def get_fight_graph(
+        self,
+        *,
+        division: str | None = None,
+        start_year: int | None = None,
+        end_year: int | None = None,
+        limit: int = 200,
+        include_upcoming: bool = False,
+    ) -> FightGraphResponse:
+        """Assemble a graph-friendly view of fighters and fight relationships."""
 
 
 class InMemoryFighterRepository(FighterRepositoryProtocol):
@@ -176,6 +189,17 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
                 )
             )
         return fighters
+
+    async def get_fight_graph(
+        self,
+        *,
+        division: str | None = None,
+        start_year: int | None = None,
+        end_year: int | None = None,
+        limit: int = 200,
+        include_upcoming: bool = False,
+    ) -> FightGraphResponse:
+        return FightGraphResponse()
 
     async def search_fighters(
         self,
@@ -449,6 +473,54 @@ class FighterService:
             )
 
         return fighters
+
+    async def get_fight_graph(
+        self,
+        *,
+        division: str | None = None,
+        start_year: int | None = None,
+        end_year: int | None = None,
+        limit: int = 200,
+        include_upcoming: bool = False,
+    ) -> FightGraphResponse:
+        """Expose fight graph aggregation with lightweight caching."""
+
+        cache_key: str | None = None
+        if self._cache is not None:
+            cache_key = graph_key(
+                division=division,
+                start_year=start_year,
+                end_year=end_year,
+                limit=limit,
+                include_upcoming=include_upcoming,
+            )
+            cached = await self._cache_get(cache_key)
+            if isinstance(cached, dict):
+                try:
+                    return FightGraphResponse.model_validate(cached)
+                except Exception:  # pragma: no cover - defensive fallback
+                    pass
+
+        repository_method = getattr(self._repository, "get_fight_graph", None)
+        if repository_method is None:
+            return FightGraphResponse()
+
+        graph: FightGraphResponse = await repository_method(
+            division=division,
+            start_year=start_year,
+            end_year=end_year,
+            limit=limit,
+            include_upcoming=include_upcoming,
+        )
+
+        if cache_key is not None and graph.nodes:
+            await self._cache_set(
+                cache_key,
+                graph.model_dump(mode="json"),
+                ttl=300,
+            )
+
+        return graph
 
     async def get_leaderboards(
         self,

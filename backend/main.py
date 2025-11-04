@@ -25,7 +25,7 @@ from sqlalchemy.exc import (
     TimeoutError as SQLAlchemyTimeoutError,
 )
 
-from .api import events, fighters, search, stats
+from .api import events, fighters, fightweb, search, stats
 from .schemas.error import ErrorResponse, ErrorType, ValidationErrorDetail, ValidationErrorResponse
 
 # Configure logging
@@ -321,3 +321,4 @@ app.include_router(fighters.router, prefix="/fighters", tags=["fighters"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
+app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])

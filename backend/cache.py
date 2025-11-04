@@ -17,6 +17,7 @@ _DETAIL_PREFIX = "fighters:detail"
 _LIST_PREFIX = "fighters:list"
 _SEARCH_PREFIX = "fighters:search"
 _COMPARISON_PREFIX = "fighters:compare"
+_GRAPH_PREFIX = "fighters:graph"
 
 _redis_client: Redis | None = None
 _client_lock = asyncio.Lock()
@@ -56,6 +57,25 @@ def comparison_key(fighter_ids: Sequence[str]) -> str:
     signature = "|".join(fighter_ids)
     digest = sha256(signature.encode("utf-8")).hexdigest()
     return f"{_COMPARISON_PREFIX}:{digest}:{signature}"
+
+
+def graph_key(
+    *,
+    division: str | None,
+    start_year: int | None,
+    end_year: int | None,
+    limit: int | None,
+    include_upcoming: bool,
+) -> str:
+    parts = [
+        (division or "").strip().lower(),
+        str(start_year) if start_year is not None else "",
+        str(end_year) if end_year is not None else "",
+        str(limit) if limit is not None else "",
+        "1" if include_upcoming else "0",
+    ]
+    digest = sha256("|".join(parts).encode("utf-8")).hexdigest()
+    return f"{_GRAPH_PREFIX}:{digest}"
 
 
 async def get_redis() -> Redis | None:
@@ -152,6 +172,7 @@ __all__ = [
     "CacheClient",
     "close_redis",
     "comparison_key",
+    "graph_key",
     "detail_key",
     "get_cache_client",
     "invalidate_collections",

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/stats", label: "Stats Hub" },
+  { href: "/fightweb", label: "FightWeb" },
   { href: "/favorites", label: "Favorites" },
 ];
 

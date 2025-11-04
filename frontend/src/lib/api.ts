@@ -1,10 +1,14 @@
 import type {
+  FightGraphLink,
+  FightGraphNode,
+  FightGraphQueryParams,
+  FightGraphResponse,
   FighterComparisonEntry,
   FighterComparisonResponse,
   FighterListItem,
-  PaginatedFightersResponse,
   LeaderboardDefinition,
   LeaderboardEntry,
+  PaginatedFightersResponse,
   StatsLeaderboardsResponse,
   StatsSummaryMetric,
   StatsSummaryResponse,
@@ -191,6 +195,17 @@ function buildRequestInit(init?: RequestInit): RequestInit {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : fallback;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  return fallback;
 }
 
 function normalizeFighterListItemPayload(item: unknown): FighterListItem | null {
@@ -429,6 +444,104 @@ function normalizeComparisonEntry(entry: unknown): FighterComparisonEntry | null
   };
 }
 
+function normalizeFightGraphResultBreakdown(
+  value: unknown
+): FightGraphLink["result_breakdown"] {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce<FightGraphLink["result_breakdown"]>(
+    (accumulator, [fighterId, breakdown]) => {
+      if (!isRecord(breakdown)) {
+        return accumulator;
+      }
+
+      const normalized: Record<string, number> = {};
+      for (const [category, count] of Object.entries(breakdown)) {
+        const parsed = toFiniteNumber(count, Number.NaN);
+        if (Number.isFinite(parsed)) {
+          normalized[category] = parsed;
+        }
+      }
+
+      if (Object.keys(normalized).length > 0) {
+        accumulator[fighterId] = normalized;
+      }
+
+      return accumulator;
+    },
+    {}
+  );
+}
+
+function normalizeFightGraphNode(node: unknown): FightGraphNode | null {
+  if (!isRecord(node) || typeof node.fighter_id !== "string" || typeof node.name !== "string") {
+    return null;
+  }
+
+  const totalFights = toFiniteNumber(node.total_fights, 0);
+  const latestEventDate =
+    typeof node.latest_event_date === "string"
+      ? node.latest_event_date
+      : node.latest_event_date instanceof Date
+        ? node.latest_event_date.toISOString()
+        : null;
+
+  return {
+    fighter_id: node.fighter_id,
+    name: node.name,
+    division: typeof node.division === "string" ? node.division : null,
+    record: typeof node.record === "string" ? node.record : null,
+    image_url: typeof node.image_url === "string" ? node.image_url : null,
+    total_fights: Number.isFinite(totalFights) ? totalFights : 0,
+    latest_event_date: latestEventDate,
+  };
+}
+
+function normalizeFightGraphLink(link: unknown): FightGraphLink | null {
+  if (!isRecord(link) || typeof link.source !== "string" || typeof link.target !== "string") {
+    return null;
+  }
+
+  const fights = toFiniteNumber(link.fights, 0);
+  const lastEventDate =
+    typeof link.last_event_date === "string"
+      ? link.last_event_date
+      : link.last_event_date instanceof Date
+        ? link.last_event_date.toISOString()
+        : null;
+
+  return {
+    source: link.source,
+    target: link.target,
+    fights: Number.isFinite(fights) ? fights : 0,
+    last_event_name: typeof link.last_event_name === "string" ? link.last_event_name : null,
+    last_event_date: lastEventDate,
+    result_breakdown: normalizeFightGraphResultBreakdown(link.result_breakdown),
+  };
+}
+
+function normalizeFightGraphResponse(payload: unknown): FightGraphResponse {
+  if (!isRecord(payload)) {
+    return { nodes: [], links: [], metadata: {} };
+  }
+
+  const nodesSource = Array.isArray(payload.nodes) ? payload.nodes : [];
+  const nodes = nodesSource
+    .map((node) => normalizeFightGraphNode(node))
+    .filter((node): node is FightGraphNode => node !== null);
+
+  const linksSource = Array.isArray(payload.links) ? payload.links : [];
+  const links = linksSource
+    .map((link) => normalizeFightGraphLink(link))
+    .filter((link): link is FightGraphLink => link !== null);
+
+  const metadata = isRecord(payload.metadata) ? { ...payload.metadata } : {};
+
+  return { nodes, links, metadata };
+}
+
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 }
@@ -585,6 +698,49 @@ export async function getStatsTrends(init?: RequestInit): Promise<StatsTrendsRes
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function getFightGraph(
+  params: FightGraphQueryParams = {},
+  init?: RequestInit
+): Promise<FightGraphResponse> {
+  const apiUrl = getApiBaseUrl();
+  const searchParams = new URLSearchParams();
+
+  if (params.division && params.division.trim().length > 0) {
+    searchParams.set("division", params.division);
+  }
+  if (typeof params.startYear === "number") {
+    searchParams.set("start_year", String(params.startYear));
+  }
+  if (typeof params.endYear === "number") {
+    searchParams.set("end_year", String(params.endYear));
+  }
+  if (typeof params.limit === "number") {
+    searchParams.set("limit", String(params.limit));
+  }
+  if (typeof params.includeUpcoming === "boolean") {
+    searchParams.set("include_upcoming", params.includeUpcoming ? "true" : "false");
+  }
+
+  const query = searchParams.toString();
+  const endpoint = query.length > 0 ? `${apiUrl}/fightweb/graph?${query}` : `${apiUrl}/fightweb/graph`;
+
+  try {
+    const response = await fetchWithRetry(endpoint, buildRequestInit(init));
+    const payload = await response.json();
+    return normalizeFightGraphResponse(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
     }
     throw ApiError.fromNetworkError(
       error instanceof Error ? error : new Error(String(error))

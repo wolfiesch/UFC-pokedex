@@ -153,6 +153,52 @@ export interface StatsTrendsResponse {
   generated_at?: string;
 }
 
+export interface FightGraphNode {
+  fighter_id: string;
+  name: string;
+  division?: string | null;
+  record?: string | null;
+  image_url?: string | null;
+  total_fights: number;
+  latest_event_date?: string | null;
+}
+
+export type FightGraphResultBreakdown = Record<
+  string,
+  {
+    win?: number;
+    loss?: number;
+    draw?: number;
+    nc?: number;
+    upcoming?: number;
+    other?: number;
+    [key: string]: number | undefined;
+  }
+>;
+
+export interface FightGraphLink {
+  source: string;
+  target: string;
+  fights: number;
+  last_event_name?: string | null;
+  last_event_date?: string | null;
+  result_breakdown: FightGraphResultBreakdown;
+}
+
+export interface FightGraphResponse {
+  nodes: FightGraphNode[];
+  links: FightGraphLink[];
+  metadata: Record<string, unknown>;
+}
+
+export interface FightGraphQueryParams {
+  division?: string | null;
+  startYear?: number | null;
+  endYear?: number | null;
+  limit?: number | null;
+  includeUpcoming?: boolean;
+}
+
 export interface FighterComparisonEntry {
   fighter_id: string;
   name: string;
