@@ -4,19 +4,23 @@ from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any
 
-from sqlalchemy import Float, case, cast, desc, func, select
+from sqlalchemy import Float, cast, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.db.models import Event, Fight, Fighter, fighter_stats
 from backend.schemas.event import EventDetail, EventFight, EventListItem
+from backend.schemas.fight_graph import (
+    FightGraphLink,
+    FightGraphNode,
+    FightGraphResponse,
+)
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
     FighterListItem,
     FightHistoryEntry,
 )
-from backend.schemas.fight_graph import FightGraphLink, FightGraphNode, FightGraphResponse
 from backend.schemas.stats import (
     AverageFightDuration,
     LeaderboardDefinition,
@@ -29,6 +33,7 @@ from backend.schemas.stats import (
     TrendsResponse,
     WinStreakSummary,
 )
+from backend.services.image_resolver import resolve_fighter_image
 
 
 def _invert_fight_result(result: str | None) -> str:
@@ -68,16 +73,16 @@ def _normalize_result_category(result: str | None) -> str:
     if result is None:
         return "other"
 
-    token = result.strip().lower()
-    if token in {"win", "w"}:
+    normalized_result = result.strip().lower()
+    if normalized_result in {"win", "w"}:
         return "win"
-    if token in {"loss", "l"}:
+    if normalized_result in {"loss", "l"}:
         return "loss"
-    if token.startswith("draw"):
+    if normalized_result.startswith("draw"):
         return "draw"
-    if token in {"nc", "no contest"}:
+    if normalized_result in {"nc", "no contest"}:
         return "nc"
-    if token == "next":
+    if normalized_result == "next":
         return "upcoming"
     return "other"
 
@@ -128,7 +133,7 @@ class PostgreSQLFighterRepository:
                 reach=fighter.reach,
                 stance=fighter.stance,
                 dob=fighter.dob,
-                image_url=fighter.image_url,
+                image_url=resolve_fighter_image(fighter.id, fighter.image_url),
             )
             for fighter in fighters
         ]
@@ -235,7 +240,7 @@ class PostgreSQLFighterRepository:
             reach=fighter.reach,
             stance=fighter.stance,
             dob=fighter.dob,
-            image_url=fighter.image_url,
+            image_url=resolve_fighter_image(fighter.id, fighter.image_url),
             record=fighter.record,
             leg_reach=fighter.leg_reach,
             division=fighter.division,
@@ -273,10 +278,9 @@ class PostgreSQLFighterRepository:
         fight_count_expr = func.count().label("fight_count")
         latest_event_expr = func.max(Fight.event_date).label("latest_event_date")
 
-        fight_counts_query = (
-            select(Fight.fighter_id, fight_count_expr, latest_event_expr)
-            .join(Fighter, Fighter.id == Fight.fighter_id)
-        )
+        fight_counts_query = select(
+            Fight.fighter_id, fight_count_expr, latest_event_expr
+        ).join(Fighter, Fighter.id == Fight.fighter_id)
         if fight_filters:
             fight_counts_query = fight_counts_query.where(*fight_filters)
         if division:
@@ -307,7 +311,7 @@ class PostgreSQLFighterRepository:
                     name=fighter.name,
                     division=fighter.division,
                     record=fighter.record,
-                    image_url=fighter.image_url,
+                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     total_fights=0,
                     latest_event_date=None,
                 )
@@ -342,7 +346,7 @@ class PostgreSQLFighterRepository:
                     name=fighter.name,
                     division=fighter.division,
                     record=fighter.record,
-                    image_url=fighter.image_url,
+                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     total_fights=count_map.get(fighter.id, 0),
                     latest_event_date=latest_map.get(fighter.id),
                 )
@@ -614,7 +618,7 @@ class PostgreSQLFighterRepository:
                     reach=fighter.reach,
                     stance=fighter.stance,
                     dob=fighter.dob,
-                    image_url=fighter.image_url,
+                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                 )
                 for fighter in fighters
             ],
@@ -664,6 +668,12 @@ class PostgreSQLFighterRepository:
             fighter = fighter_map.get(fighter_id)
             if fighter is None:
                 continue
+            # Resolve and cache the fighter's image path even though the
+            # comparison payload does not surface the value. The cache keeps
+            # subsequent list/detail calls within the same request cycle from
+            # repeatedly hitting the filesystem when we are running on SQLite
+            # with sparse ``image_url`` columns.
+            resolve_fighter_image(fighter_id, fighter.image_url)
             stats_map = stats_by_fighter.get(fighter_id, {})
             comparison.append(
                 FighterComparisonEntry(
@@ -962,7 +972,11 @@ class PostgreSQLFighterRepository:
             key = (row.division, bucket_start)
             entry = buckets.setdefault(key, {"label": bucket_label, "durations": []})
             durations = entry["durations"]
-            assert isinstance(durations, list)
+            if not isinstance(durations, list):
+                raise TypeError(
+                    "Expected the aggregated duration payload to be a list for key "
+                    f"{key}, received {type(durations)!r} instead."
+                )
             durations.append(duration)
 
         averaged: list[AverageFightDuration] = []
@@ -1059,7 +1073,7 @@ class PostgreSQLFighterRepository:
             reach=fighter.reach,
             stance=fighter.stance,
             dob=fighter.dob,
-            image_url=fighter.image_url,
+            image_url=resolve_fighter_image(fighter.id, fighter.image_url),
         )
 
 
@@ -1107,7 +1121,11 @@ class PostgreSQLEventRepository:
     async def get_event(self, event_id: str) -> EventDetail | None:
         """Get detailed event information by ID, including fight card."""
         # Query event with fights relationship loaded
-        query = select(Event).where(Event.id == event_id).options(selectinload(Event.fights))
+        query = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(selectinload(Event.fights))
+        )
         result = await self._session.execute(query)
         event = result.scalar_one_or_none()
 
