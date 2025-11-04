@@ -288,7 +288,7 @@ class PostgreSQLFighterRepository:
                     round=fight.round,
                     time=fight.time,
                     fight_card_url=fight.fight_card_url,
-                    stats=fight.stats or {},
+                    stats=fight.stats,
                 )
 
                 if fight_key not in fight_dict:
