@@ -1,124 +1,126 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
-import type { FighterListItem } from "@/lib/types";
+import type { FighterListItem, PaginatedFightersResponse } from "@/lib/types";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { getFighters, searchFighters } from "@/lib/api";
-import { ApiError } from "@/lib/errors";
+import type { ApiError } from "@/lib/errors";
 
+/**
+ * Shared shape returned by the fighters listing API as well as the search endpoint.
+ * Including the offset allows us to compute the next pagination cursor.
+ */
+interface FightersPage extends PaginatedFightersResponse {}
+
+/**
+ * Flatten all fighters across the paginated response pages.
+ */
+function flattenPages(pages: FightersPage[] | undefined): FighterListItem[] {
+  if (!pages?.length) {
+    return [];
+  }
+  return pages.flatMap((page) => page.fighters);
+}
+
+/**
+ * React hook that exposes fighter roster data with pagination, filtering, and
+ * infinite-scroll support. The hook is backed by TanStack Query so data is
+ * cached between navigations and shared across components that request the same
+ * filters.
+ */
 export function useFighters(initialLimit = 20) {
   const searchTerm = useFavoritesStore((state) => state.searchTerm);
   const stance = useFavoritesStore((state) => state.stanceFilter);
   const division = useFavoritesStore((state) => state.divisionFilter);
-  const [fighters, setFighters] = useState<FighterListItem[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
   const pageSize = initialLimit;
 
-  // Store last request params for retry
-  const lastRequestRef = useRef<{ offset: number; append: boolean } | null>(null);
-  const requestVersionRef = useRef(0);
+  const normalizedSearch = (searchTerm ?? "").trim();
+  const isFiltering = Boolean(normalizedSearch || stance || division);
 
-  const loadFighters = useCallback(async (newOffset: number, append = false) => {
-    // Store request params for potential retry
-    lastRequestRef.current = { offset: newOffset, append };
+  const queryKey = useMemo(
+    () => [
+      "fighters",
+      {
+        search: normalizedSearch,
+        stance: stance ?? null,
+        division: division ?? null,
+        limit: pageSize,
+      },
+    ],
+    [normalizedSearch, stance, division, pageSize]
+  );
 
-    const requestVersion = append
-      ? requestVersionRef.current
-      : requestVersionRef.current + 1;
-    if (!append) {
-      requestVersionRef.current = requestVersion;
-    }
-
-    if (append) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
-
-    try {
-      const trimmedSearch = (searchTerm ?? "").trim();
-      const isFiltering = Boolean(trimmedSearch || stance || division);
-
-      let data;
+  const {
+    data,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch,
+    status,
+    error: queryError,
+  } = useInfiniteQuery<FightersPage, ApiError>({
+    queryKey,
+    initialPageParam: 0,
+    /**
+     * The query function decides between the search endpoint and the general
+     * roster endpoint. TanStack Query hands us the offset for the current page.
+     */
+    queryFn: async ({ pageParam }): Promise<FightersPage> => {
+      const offset = typeof pageParam === "number" ? pageParam : 0;
       if (isFiltering) {
-        data = await searchFighters(trimmedSearch, stance, division, pageSize, newOffset);
-      } else {
-        data = await getFighters(pageSize, newOffset);
+        return searchFighters(normalizedSearch, stance, division, pageSize, offset);
       }
+      return getFighters(pageSize, offset);
+    },
+    getNextPageParam: (lastPage: FightersPage) => {
+      return lastPage.has_more ? lastPage.offset + lastPage.limit : undefined;
+    },
+    retry: 2,
+  });
 
-      if (requestVersion !== requestVersionRef.current) {
-        return;
-      }
+  const fighters = useMemo(() => flattenPages(data?.pages), [data]);
 
-      if (append) {
-        setFighters((prev) => [...prev, ...data.fighters]);
-      } else {
-        setFighters(data.fighters);
-      }
-      setTotal(data.total);
-      setHasMore(data.has_more);
-      setOffset(data.offset);
-    } catch (err) {
-      if (requestVersion !== requestVersionRef.current) {
-        return;
-      }
-
-      const apiError = err instanceof ApiError
-        ? err
-        : new ApiError(
-            err instanceof Error ? err.message : "Unknown error occurred",
-            { statusCode: 0 }
-          );
-
-      setError(apiError);
-
-      if (!append) {
-        setFighters([]);
-      }
-    } finally {
-      if (requestVersion !== requestVersionRef.current) {
-        return;
-      }
-
-      if (append) {
-        setIsLoadingMore(false);
-      } else {
-        setIsLoading(false);
-      }
+  const total = useMemo(() => {
+    if (!data?.pages?.length) {
+      return 0;
     }
-  }, [searchTerm, stance, division, pageSize]);
+    return data.pages[0]?.total ?? 0;
+  }, [data]);
 
-  const loadMore = useCallback(() => {
-    if (!hasMore || isLoadingMore || isLoading) return;
-    void loadFighters(offset + pageSize, true);
-  }, [hasMore, isLoadingMore, isLoading, offset, pageSize, loadFighters]);
+  const latestPage = data?.pages?.[data.pages.length - 1];
+  const offset = latestPage?.offset ?? 0;
+  const hasMore = Boolean(hasNextPage);
 
   /**
-   * Retry the last failed request
+   * Trigger the next page load when the intersection observer fires. We guard
+   * against duplicate requests by checking if a fetch is already in progress
+   * or if the backend has no more data to return.
+   */
+  const loadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  /**
+   * Allow the UI to retry the most recent request. TanStack Query will reuse
+   * cached data and only re-request pages that previously failed.
    */
   const retry = useCallback(() => {
-    if (lastRequestRef.current) {
-      const { offset: retryOffset, append } = lastRequestRef.current;
-      void loadFighters(retryOffset, append);
-    } else {
-      // No previous request, start fresh
-      void loadFighters(0, false);
-    }
-  }, [loadFighters]);
+    void refetch();
+  }, [refetch]);
 
-  useEffect(() => {
-    setOffset(0);
-    setFighters([]);
-    void loadFighters(0, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, stance, division]);
+  /**
+   * During the initial load we show the skeleton grid. Subsequent background
+   * refetches keep the list visible while a lightweight loading more indicator
+   * handles pagination fetches.
+   */
+  const isLoading = status === "pending";
+  const isLoadingMore = isFetchingNextPage;
+  const error = queryError ?? null;
 
   return {
     fighters,

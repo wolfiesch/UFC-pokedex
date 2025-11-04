@@ -5,7 +5,9 @@ import type {
   FightGraphResponse,
   FighterComparisonEntry,
   FighterComparisonResponse,
+  FighterDetail,
   FighterListItem,
+  FightHistoryEntry,
   LeaderboardDefinition,
   LeaderboardEntry,
   PaginatedFightersResponse,
@@ -16,7 +18,7 @@ import type {
   TrendPoint,
   TrendSeries,
 } from "./types";
-import { ApiError, ErrorResponseData } from "./errors";
+import { ApiError, ErrorResponseData, NotFoundError } from "./errors";
 import { logger } from "./logger";
 
 const REQUEST_OPTIONS: RequestInit = { cache: "no-store" };
@@ -267,6 +269,134 @@ function normalizePaginatedFightersResponse(
     limit,
     offset,
     has_more: hasMore,
+  };
+}
+
+function normalizeMetricsRecord(
+  source: unknown
+): Record<string, string | number | null | undefined> {
+  if (!isRecord(source)) {
+    return {};
+  }
+
+  return Object.entries(source).reduce<Record<string, string | number | null | undefined>>(
+    (accumulator, [rawKey, rawValue]) => {
+      if (typeof rawKey !== "string" || rawKey.length === 0) {
+        return accumulator;
+      }
+      if (
+        typeof rawValue === "string" ||
+        typeof rawValue === "number" ||
+        rawValue === null ||
+        typeof rawValue === "undefined"
+      ) {
+        accumulator[rawKey] = rawValue ?? null;
+        return accumulator;
+      }
+
+      if (typeof rawValue === "boolean") {
+        accumulator[rawKey] = rawValue ? 1 : 0;
+        return accumulator;
+      }
+
+      accumulator[rawKey] = null;
+      return accumulator;
+    },
+    {}
+  );
+}
+
+function normalizeFightHistoryEntryPayload(
+  entry: unknown
+): FightHistoryEntry | null {
+  if (!isRecord(entry)) {
+    return null;
+  }
+
+  const fightId = typeof entry.fight_id === "string" ? entry.fight_id : null;
+  const eventName = typeof entry.event_name === "string" ? entry.event_name : null;
+  const opponent = typeof entry.opponent === "string" ? entry.opponent : null;
+  const result = typeof entry.result === "string" ? entry.result : null;
+  const method = typeof entry.method === "string" ? entry.method : null;
+
+  if (!fightId || !eventName || !opponent || !result || !method) {
+    return null;
+  }
+
+  const round = typeof entry.round === "number" ? entry.round : null;
+  const time = typeof entry.time === "string" ? entry.time : null;
+  const eventDate = typeof entry.event_date === "string" ? entry.event_date : null;
+  const opponentId = typeof entry.opponent_id === "string" ? entry.opponent_id : null;
+  const fightCardUrl = typeof entry.fight_card_url === "string" ? entry.fight_card_url : null;
+  const stats = normalizeMetricsRecord(entry.stats);
+
+  return {
+    fight_id: fightId,
+    event_name: eventName,
+    event_date: eventDate,
+    opponent,
+    opponent_id: opponentId,
+    result,
+    method,
+    round,
+    time,
+    fight_card_url: fightCardUrl,
+    stats,
+  };
+}
+
+function normalizeFighterDetailPayload(payload: unknown): FighterDetail {
+  const base = normalizeFighterListItemPayload(payload);
+
+  if (!base) {
+    throw new ApiError("Invalid fighter detail payload", {
+      detail: "Missing fighter identifier or name",
+    });
+  }
+
+  const record = typeof (payload as Record<string, unknown>).record === "string"
+    ? (payload as Record<string, unknown>).record
+    : null;
+  const legReach = typeof (payload as Record<string, unknown>).leg_reach === "string"
+    ? (payload as Record<string, unknown>).leg_reach
+    : null;
+  const ageRaw = (payload as Record<string, unknown>).age;
+  const age = typeof ageRaw === "number" && Number.isFinite(ageRaw) ? ageRaw : null;
+
+  const striking = normalizeMetricsRecord(
+    (payload as Record<string, unknown>).striking
+  );
+  const grappling = normalizeMetricsRecord(
+    (payload as Record<string, unknown>).grappling
+  );
+  const significantStrikes = normalizeMetricsRecord(
+    (payload as Record<string, unknown>).significant_strikes
+  );
+  const takedownStats = normalizeMetricsRecord(
+    (payload as Record<string, unknown>).takedown_stats
+  );
+  const career = normalizeMetricsRecord(
+    (payload as Record<string, unknown>).career
+  );
+
+  const historySource = Array.isArray((payload as Record<string, unknown>).fight_history)
+    ? ((payload as Record<string, unknown>).fight_history as unknown[])
+    : [];
+  const fightHistory = historySource
+    .map((entry) => normalizeFightHistoryEntryPayload(entry))
+    .filter((entry): entry is FightHistoryEntry => entry !== null);
+
+  return {
+    ...base,
+    record,
+    leg_reach: legReach,
+    age,
+    striking,
+    grappling,
+    significant_strikes: significantStrikes,
+    takedown_stats: takedownStats,
+    career,
+    fight_history: fightHistory,
   };
 }
 
@@ -634,6 +764,37 @@ export async function getRandomFighter(): Promise<FighterListItem> {
     if (error instanceof ApiError) {
       throw error;
     }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function getFighter(fighterId: string): Promise<FighterDetail> {
+  const apiUrl = getApiBaseUrl();
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/fighters/${fighterId}`,
+      buildRequestInit()
+    );
+
+    const payload = await response.json();
+    return normalizeFighterDetailPayload(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.statusCode === 404) {
+        throw new NotFoundError(
+          "Fighter",
+          `Fighter with ID "${fighterId}" not found`
+        );
+      }
+      throw error;
+    }
+
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+
     throw ApiError.fromNetworkError(
       error instanceof Error ? error : new Error(String(error))
     );
