@@ -8,12 +8,39 @@ from sqlalchemy.orm import sessionmaker
 
 
 def get_database_url() -> str:
+    """Get database URL from environment or fallback to SQLite.
+
+    Returns:
+        Database URL string. Falls back to SQLite if DATABASE_URL is not set
+        or if USE_SQLITE=1 is set in environment.
+    """
+    # Force SQLite mode if USE_SQLITE=1 is set
+    use_sqlite = os.getenv("USE_SQLITE", "").strip() == "1"
+
+    if use_sqlite:
+        return "sqlite+aiosqlite:///./app.db"
+
     url = os.getenv("DATABASE_URL")
     if not url:
-        raise RuntimeError("DATABASE_URL environment variable not set")
+        # Fallback to SQLite when DATABASE_URL is not set
+        return "sqlite+aiosqlite:///./app.db"
+
+    # Validate PostgreSQL URL format
     if not url.startswith("postgresql+psycopg"):
         raise RuntimeError("Expected asynchronous psycopg URL, got %s" % url)
     return url
+
+
+def get_database_type() -> str:
+    """Detect database type from URL.
+
+    Returns:
+        "sqlite" or "postgresql"
+    """
+    url = get_database_url()
+    if url.startswith("sqlite"):
+        return "sqlite"
+    return "postgresql"
 
 
 def create_engine() -> AsyncEngine:

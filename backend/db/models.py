@@ -8,6 +8,29 @@ class Base(DeclarativeBase):
     pass
 
 
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    location: Mapped[str | None]
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)  # 'upcoming' or 'completed'
+
+    # Enhanced metadata (from Tapology or other sources)
+    venue: Mapped[str | None]
+    broadcast: Mapped[str | None]
+    promotion: Mapped[str] = mapped_column(String, nullable=False, default="UFC")
+
+    # Cross-reference URLs
+    ufcstats_url: Mapped[str] = mapped_column(String, nullable=False)
+    tapology_url: Mapped[str | None]
+    sherdog_url: Mapped[str | None]
+
+    # Relationships
+    fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="event")
+
+
 class Fighter(Base):
     __tablename__ = "fighters"
 
@@ -34,10 +57,11 @@ class Fight(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     fighter_id: Mapped[str] = mapped_column(ForeignKey("fighters.id"), nullable=False)
+    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), nullable=True, index=True)
     opponent_id: Mapped[str | None] = mapped_column(String, nullable=True)
     opponent_name: Mapped[str] = mapped_column(String, nullable=False)
-    event_name: Mapped[str] = mapped_column(String, nullable=False)
-    event_date: Mapped[date | None]
+    event_name: Mapped[str] = mapped_column(String, nullable=False)  # Keep for backward compatibility
+    event_date: Mapped[date | None]  # Keep for backward compatibility
     result: Mapped[str] = mapped_column(String, nullable=False)
     method: Mapped[str | None]
     round: Mapped[int | None]
@@ -45,6 +69,7 @@ class Fight(Base):
     fight_card_url: Mapped[str | None]
 
     fighter: Mapped[Fighter] = relationship("Fighter", back_populates="fights")
+    event: Mapped["Event | None"] = relationship("Event", back_populates="fights")
 
 
 fighter_stats = Table(

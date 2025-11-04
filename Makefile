@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local stop api backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api:dev api:sqlite api:seed api:seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -95,6 +95,28 @@ api: ensure-docker ## Start only the FastAPI backend (kills existing process on 
 	@sleep 1
 	@echo "Starting backend..."
 	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000}
+
+api:dev ## Start backend with auto-reload (without Docker - uses SQLite if DATABASE_URL unset)
+	@echo ""
+	@echo "🚀 Starting backend in development mode (SQLite if DATABASE_URL not set)..."
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+api:sqlite ## Start backend with SQLite (forced, no Docker required)
+	@echo ""
+	@echo "🗄️  Starting backend with SQLite (forced mode)..."
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@USE_SQLITE=1 uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+api:seed ## Seed database with sample fighters from fixtures
+	@echo "🌱 Seeding database with sample fighters..."
+	@uv run python -m backend.scripts.seed_fighters ./data/fixtures/fighters.jsonl
+
+api:seed-full ## Seed database with all fighters from scraped data
+	@echo "🌱 Seeding database with all fighters (this may take a while)..."
+	@uv run python -m backend.scripts.seed_fighters ./data/processed/fighters_list.jsonl
 
 scraper: ## Run full scraper crawl (fighters list)
 	.venv/bin/scrapy crawl fighters_list
@@ -210,6 +232,17 @@ stop: ## Stop all running services (backend, frontend, tunnels)
 	@echo "✅ All services stopped"
 	@echo "💡 Note: Docker services (PostgreSQL, Redis) are still running"
 	@echo "   To stop them: make docker-down"
+
+dev-clean: ## Clean frontend caches and restart dev servers (fixes webpack cache issues)
+	@echo "🧹 Cleaning frontend build caches and restarting..."
+	@echo ""
+	@$(MAKE) stop
+	@echo ""
+	@echo "🗑️  Removing .next, .turbo, and node_modules/.cache..."
+	@rm -rf frontend/.next frontend/.turbo frontend/node_modules/.cache
+	@echo "  ✓ Caches cleaned"
+	@echo ""
+	@$(MAKE) dev-local
 
 frontend: ## Start only the Next.js frontend (kills existing process on port 3000)
 	@echo "Stopping any existing process on port 3000..."

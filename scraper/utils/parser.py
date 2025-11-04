@@ -439,3 +439,247 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         "fight_history": fight_history,
     }
     return detail
+
+
+def parse_events_list_row(row: Selector) -> dict[str, Any] | None:
+    """Parse a single row from the UFCStats events list table."""
+    # Event detail URL is in first column
+    detail_url = clean_text(row.css("td:nth-child(1) a::attr(href)").get())
+
+    if not detail_url:
+        return None
+
+    try:
+        event_id = _extract_uuid(detail_url)
+    except ValueError as e:
+        logger.warning(f"Failed to extract ID from URL '{detail_url}': {e}")
+        return None
+
+    # Event name
+    event_name = clean_text(row.css("td:nth-child(1) a span::text").get())
+    if not event_name:
+        # Try alternative selectors
+        event_name = clean_text(row.css("td:nth-child(1) a::text").get())
+
+    # Event date (column 2)
+    date_text = clean_text(row.css("td:nth-child(2) span::text").get())
+    if not date_text:
+        date_text = clean_text(row.css("td:nth-child(2)::text").get())
+    event_date = parse_date(date_text) if date_text else None
+
+    # Location (column 3)
+    location = clean_text(row.css("td:nth-child(3) span::text").get())
+    if not location:
+        location = clean_text(row.css("td:nth-child(3)::text").get())
+
+    # Determine status based on context (caller should pass this)
+    # For now, we'll determine it based on the date
+    from datetime import datetime, date as date_type
+    status = "upcoming"
+    if event_date:
+        try:
+            parsed_date = datetime.fromisoformat(event_date).date()
+            if parsed_date <= datetime.now().date():
+                status = "completed"
+        except (ValueError, AttributeError):
+            pass
+
+    return {
+        "item_type": "event_list",
+        "event_id": event_id,
+        "detail_url": detail_url,
+        "name": event_name,
+        "date": event_date,
+        "location": location,
+        "status": status,
+    }
+
+
+def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    """Parse an event detail page from UFCStats."""
+    selector = response if hasattr(response, "css") else Selector(text=response)
+    event_url = getattr(response, "url", None)
+
+    try:
+        event_id = _extract_uuid(event_url)
+    except ValueError:
+        logger.error(f"Could not extract event ID from URL: {event_url}")
+        raise
+
+    # Event name from header
+    event_name = clean_text(
+        selector.css("h2.b-content__title span.b-content__title-highlight::text").get()
+    )
+
+    # Event metadata from list items
+    metadata_map: dict[str, str | None] = {}
+    for row in selector.css("ul.b-list__box-list li"):
+        label = clean_text(row.css("i::text").get())
+        if not label:
+            continue
+        label = label.replace(":", "").upper()
+
+        # Get all text and filter out the label itself
+        all_text = row.css("::text").getall()
+        value = next(
+            (
+                clean_text(t)
+                for t in all_text
+                if clean_text(t) and clean_text(t) != f"{label}:"
+            ),
+            None,
+        )
+        metadata_map[label] = value
+
+    # Parse date and location
+    event_date = parse_date(metadata_map.get("DATE"))
+    location = metadata_map.get("LOCATION")
+
+    # Determine status
+    from datetime import datetime
+    status = "upcoming"
+    if event_date:
+        try:
+            parsed_date = datetime.fromisoformat(event_date).date()
+            if parsed_date <= datetime.now().date():
+                status = "completed"
+        except (ValueError, AttributeError):
+            pass
+
+    # Parse fight card table
+    fight_card = []
+    fight_table = selector.css("table.b-fight-details__table")
+
+    if fight_table:
+        rows = fight_table.css("tbody tr")
+        for index, row in enumerate(rows, start=1):
+            # Skip empty rows
+            if row.css("td.b-fight-details__table-col_type_clear"):
+                continue
+
+            # Fight URL (column 1)
+            fight_url = clean_text(row.css("td:nth-child(1)::attr(onclick)").get())
+            if fight_url:
+                # Extract URL from onclick="doNav('url')"
+                import re
+                match = re.search(r"doNav\('([^']+)'\)", fight_url)
+                if match:
+                    fight_url = match.group(1)
+
+            fight_id = None
+            if fight_url:
+                try:
+                    fight_id = _extract_uuid(fight_url)
+                except ValueError:
+                    pass
+
+            # Fighter names (column 2) - contains two links
+            fighter_links = row.css("td:nth-child(2) p a")
+            fighter_1_name = clean_text(fighter_links[0].css("::text").get()) if len(fighter_links) > 0 else None
+            fighter_2_name = clean_text(fighter_links[1].css("::text").get()) if len(fighter_links) > 1 else None
+
+            # Fighter IDs
+            fighter_urls = row.css("td:nth-child(2) p a::attr(href)").getall()
+            fighter_1_id = None
+            fighter_2_id = None
+            if len(fighter_urls) > 0:
+                try:
+                    fighter_1_id = _extract_uuid(fighter_urls[0])
+                except ValueError:
+                    pass
+            if len(fighter_urls) > 1:
+                try:
+                    fighter_2_id = _extract_uuid(fighter_urls[1])
+                except ValueError:
+                    pass
+
+            # Weight class (column 6 in the table - the 7th column because of how they count)
+            weight_class = clean_text(row.css("td:nth-child(7) p::text").get())
+
+            # Result fields (for completed events)
+            # Column 8: Method, Column 9: Round, Column 10: Time
+            method = " ".join([
+                clean_text(t) for t in row.css("td:nth-child(8) p::text").getall()
+                if clean_text(t)
+            ]) or None
+            round_num = _parse_int(row.css("td:nth-child(9) p::text").get())
+            time = clean_text(row.css("td:nth-child(10) p::text").get())
+
+            # Stats (columns 3-6): Kd, Str, Td, Sub
+            stats = {
+                "knockdowns": clean_text(row.css("td:nth-child(3) p::text").get()),
+                "strikes": clean_text(row.css("td:nth-child(4) p::text").get()),
+                "takedowns": clean_text(row.css("td:nth-child(5) p::text").get()),
+                "submissions": clean_text(row.css("td:nth-child(6) p::text").get()),
+            }
+
+            # Skip if we don't have at least fighter names
+            if not fighter_1_name or not fighter_2_name:
+                continue
+
+            fight_card.append({
+                "fight_id": fight_id or f"{event_id}-fight-{index}",
+                "fighter_1_id": fighter_1_id,
+                "fighter_1_name": fighter_1_name,
+                "fighter_2_id": fighter_2_id,
+                "fighter_2_name": fighter_2_name,
+                "weight_class": weight_class,
+                "result": None,  # Need to determine from fight detail page
+                "method": method,
+                "round": round_num,
+                "time": time,
+                "fight_url": fight_url,
+                "stats": stats,
+            })
+
+    return {
+        "item_type": "event_detail",
+        "event_id": event_id,
+        "detail_url": event_url,
+        "name": event_name,
+        "date": event_date,
+        "location": location,
+        "status": status,
+        "venue": None,  # Not available on UFCStats
+        "promotion": "UFC",
+        "fight_card": fight_card,
+    }
+
+
+def parse_tapology_event(response, ufcstats_event_id: str) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    """Parse Tapology event page for enrichment data."""
+    selector = response if hasattr(response, "css") else Selector(text=response)
+    tapology_url = getattr(response, "url", None)
+
+    # Venue information
+    venue = clean_text(selector.css(".eventPageHeaderTitles .subtitle::text").get())
+
+    # Broadcast information (look for ESPN+, PPV, etc.)
+    broadcast = clean_text(selector.css(".billing::text").get())
+
+    # Cross-references
+    sherdog_url = None
+    for link in selector.css("a[href*='sherdog.com']::attr(href)").getall():
+        sherdog_url = clean_text(link)
+        break
+
+    # Fighter rankings (from fight card)
+    fighter_rankings: dict[str, str] = {}
+    for bout in selector.css(".fightCard li.boutCard"):
+        # Extract fighter names and rankings
+        for fighter in bout.css(".fighterName"):
+            name = clean_text(fighter.css("a::text").get())
+            ranking = clean_text(fighter.css(".ranking::text").get())
+            if name and ranking:
+                # We'll need to match this to fighter IDs later in the spider
+                fighter_rankings[name] = ranking
+
+    return {
+        "item_type": "tapology_enrichment",
+        "event_id": ufcstats_event_id,
+        "tapology_url": tapology_url,
+        "sherdog_url": sherdog_url,
+        "venue": venue,
+        "broadcast": broadcast,
+        "fighter_rankings": fighter_rankings,
+    }

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 UFC Fighter Pokedex is a full-stack application that scrapes UFC fighter data from UFCStats.com and presents it in a Pokedex-style interface. The project follows a three-tier architecture with a clear data pipeline: Scraper → Database → API → Frontend.
 
 **Tech Stack:**
-- Backend: FastAPI + SQLAlchemy (async) + PostgreSQL
+- Backend: FastAPI + SQLAlchemy (async) + PostgreSQL (or SQLite for development)
 - Scraper: Scrapy + BeautifulSoup4
 - Frontend: Next.js 14 + React + Tailwind CSS + Zustand
 - Package Manager: `uv` (not pip)
@@ -33,10 +33,61 @@ make dev            # Start backend + frontend + Cloudflare tunnels together
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
 make stop           # Stop all running services (backend, frontend, tunnels)
+make dev-clean      # Clean frontend caches and restart (fixes webpack cache issues)
 make scraper        # Run Scrapy spider (fighters_list)
 ```
 
 **Recommended for local development:** Use `make dev-local` - it starts both services without modifying environment files or starting tunnels.
+
+**Troubleshooting dev build crashes:** If you encounter webpack cache issues, MODULE_NOT_FOUND errors, or chunk 404s, run `make dev-clean` to clear all frontend build caches and restart cleanly.
+
+### SQLite Development Mode (Docker-Free)
+
+The backend can run without Docker using SQLite as a lightweight alternative to PostgreSQL. This is ideal for quick local development, testing, or when Docker isn't available.
+
+**Quickstart (no Docker required):**
+```bash
+# 1. Install dependencies
+make bootstrap
+
+# 2. Seed database with sample fighters
+make api:seed          # 8 sample fighters from fixtures
+
+# 3. Start backend (auto-creates SQLite database)
+make api:dev           # Uses SQLite if DATABASE_URL is not set
+
+# 4. Start frontend (separate terminal)
+make frontend
+```
+
+**Available SQLite commands:**
+```bash
+make api:dev           # Start backend with SQLite fallback (if DATABASE_URL unset)
+make api:sqlite        # Force SQLite mode (USE_SQLITE=1, ignores DATABASE_URL)
+make api:seed          # Seed with sample fighters (data/fixtures/fighters.jsonl)
+make api:seed-full     # Seed with all scraped fighters (data/processed/fighters_list.jsonl)
+```
+
+**How it works:**
+- **No DATABASE_URL set**: Automatically uses `sqlite+aiosqlite:///./app.db`
+- **USE_SQLITE=1 env var**: Forces SQLite even if DATABASE_URL is set
+- **Tables auto-created**: On startup, SQLite mode automatically creates all tables (no Alembic needed)
+- **Seeding is idempotent**: Running `make api:seed` multiple times won't create duplicates (uses upsert)
+
+**Environment variables for SQLite:**
+```bash
+# Optional - force SQLite mode
+USE_SQLITE=1
+
+# Optional - if unset, falls back to SQLite automatically
+# DATABASE_URL=sqlite+aiosqlite:///./app.db
+```
+
+**Important notes:**
+- SQLite is for **development only** (single-writer, not for production)
+- When switching back to PostgreSQL, just set DATABASE_URL and run `make db-upgrade`
+- SQLite database file: `app.db` (in project root)
+- Alembic migrations **only** apply to PostgreSQL (SQLite uses `create_all()`)
 
 ### Cloudflare Tunnel (Public Access)
 
@@ -343,22 +394,32 @@ make scraper       # Uses .venv/bin/scrapy internally
 
 ## Environment Variables
 
-Required in `.env`:
+**Frontend (required):**
 ```
-DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-REDIS_URL=redis://localhost:6379/0
 ```
 
-Optional (with defaults):
+**Backend (all optional with fallbacks):**
 ```
-SCRAPER_USER_AGENT=UFC-Pokedex-Scraper/0.1 (+https://github.com/example/ufc-pokedex)
-SCRAPER_DELAY_SECONDS=1.5
-SCRAPER_CONCURRENT_REQUESTS=4
-LOG_LEVEL=INFO
+# Database (optional - falls back to SQLite if unset)
+DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+
+# Force SQLite mode (optional)
+USE_SQLITE=1
+
+# Redis cache (optional - gracefully degrades if unavailable)
+REDIS_URL=redis://localhost:6379/0
+
+# API server (optional - has defaults)
 API_HOST=0.0.0.0
 API_PORT=8000
 CORS_ALLOW_ORIGINS=http://localhost:3000
+LOG_LEVEL=INFO
+
+# Scraper (optional - has defaults)
+SCRAPER_USER_AGENT=UFC-Pokedex-Scraper/0.1 (+https://github.com/example/ufc-pokedex)
+SCRAPER_DELAY_SECONDS=1.5
+SCRAPER_CONCURRENT_REQUESTS=4
 ```
 
 **Note on Redis:**

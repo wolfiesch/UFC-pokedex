@@ -7,13 +7,15 @@ from sqlalchemy import Float, case, cast, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.db.models import Fight, Fighter, fighter_stats
+from backend.db.models import Event, Fight, Fighter, fighter_stats
+from backend.schemas.event import EventDetail, EventFight, EventListItem
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
     FighterListItem,
     FightHistoryEntry,
 )
+from backend.schemas.fight_graph import FightGraphLink, FightGraphNode, FightGraphResponse
 from backend.schemas.stats import (
     AverageFightDuration,
     LeaderboardDefinition,
@@ -26,6 +28,70 @@ from backend.schemas.stats import (
     TrendsResponse,
     WinStreakSummary,
 )
+
+
+def _invert_fight_result(result: str | None) -> str:
+    """Invert a fight result from one fighter's perspective to the opponent's.
+
+    Examples:
+        'win' -> 'loss'
+        'loss' -> 'win'
+        'W' -> 'L'
+        'draw' -> 'draw'
+        'NC' -> 'NC'
+    """
+    if not result:
+        return "Unknown"
+
+    result_lower = result.lower().strip()
+
+    # Handle common result formats
+    if result_lower in ("w", "win"):
+        return "loss"
+    elif result_lower in ("l", "loss"):
+        return "win"
+    elif result_lower in ("d", "draw", "draw-majority", "draw-split"):
+        return result  # Draws stay the same
+    elif result_lower in ("nc", "no contest"):
+        return result  # No contests stay the same
+    elif result_lower == "next":
+        return result  # Upcoming fights stay the same
+    else:
+        # Unknown result format, return as-is
+        return result
+
+
+def _normalize_result_category(result: str | None) -> str:
+    """Normalize varying result strings into shared categories for analytics."""
+
+    if result is None:
+        return "other"
+
+    token = result.strip().lower()
+    if token in {"win", "w"}:
+        return "win"
+    if token in {"loss", "l"}:
+        return "loss"
+    if token.startswith("draw"):
+        return "draw"
+    if token in {"nc", "no contest"}:
+        return "nc"
+    if token == "next":
+        return "upcoming"
+    return "other"
+
+
+def _empty_breakdown() -> dict[str, int]:
+    """Return a pre-seeded result breakdown dictionary."""
+
+    return {
+        "win": 0,
+        "loss": 0,
+        "draw": 0,
+        "nc": 0,
+        "upcoming": 0,
+        "other": 0,
+    }
 
 
 class PostgreSQLFighterRepository:
@@ -68,17 +134,15 @@ class PostgreSQLFighterRepository:
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Get detailed fighter information by ID."""
-        query = (
-            select(Fighter)
-            .where(Fighter.id == fighter_id)
-            .options(selectinload(Fighter.fights))
-        )
-        result = await self._session.execute(query)
-        fighter = result.scalar_one_or_none()
+        # Query fighter details
+        fighter_query = select(Fighter).where(Fighter.id == fighter_id)
+        fighter_result = await self._session.execute(fighter_query)
+        fighter = fighter_result.scalar_one_or_none()
 
         if fighter is None:
             return None
 
+        # Query fighter stats
         stats_result = await self._session.execute(
             select(
                 fighter_stats.c.category,
@@ -93,23 +157,62 @@ class PostgreSQLFighterRepository:
             category_stats = stats_map.setdefault(category, {})
             category_stats[metric] = value
 
-        # Convert fights to FightHistoryEntry
-        fight_history = [
-            FightHistoryEntry(
-                fight_id=fight.id,
-                event_name=fight.event_name,
-                event_date=fight.event_date,
-                opponent=fight.opponent_name,
-                opponent_id=fight.opponent_id,
-                result=fight.result,
-                method=fight.method or "",
-                round=fight.round,
-                time=fight.time,
-                fight_card_url=fight.fight_card_url,
-                stats={},  # TODO: Add fight stats if available
-            )
-            for fight in fighter.fights
-        ]
+        # Query fights from BOTH perspectives:
+        # 1. Fights where this fighter is fighter_id
+        # 2. Fights where this fighter is opponent_id
+        fights_query = select(Fight).where(
+            (Fight.fighter_id == fighter_id) | (Fight.opponent_id == fighter_id)
+        )
+        fights_result = await self._session.execute(fights_query)
+        all_fights = fights_result.scalars().all()
+
+        # Build fight history, inverting perspective when needed
+        fight_history: list[FightHistoryEntry] = []
+        for fight in all_fights:
+            if fight.fighter_id == fighter_id:
+                # Fight is from this fighter's perspective - use as-is
+                fight_history.append(
+                    FightHistoryEntry(
+                        fight_id=fight.id,
+                        event_name=fight.event_name,
+                        event_date=fight.event_date,
+                        opponent=fight.opponent_name,
+                        opponent_id=fight.opponent_id,
+                        result=fight.result,
+                        method=fight.method or "",
+                        round=fight.round,
+                        time=fight.time,
+                        fight_card_url=fight.fight_card_url,
+                        stats={},  # TODO: Add fight stats if available
+                    )
+                )
+            else:
+                # Fight is from opponent's perspective - need to invert
+                # Get the actual opponent's name (the fighter who has this fight record)
+                opponent_query = select(Fighter).where(Fighter.id == fight.fighter_id)
+                opponent_result = await self._session.execute(opponent_query)
+                opponent_fighter = opponent_result.scalar_one_or_none()
+
+                opponent_name = opponent_fighter.name if opponent_fighter else "Unknown"
+
+                # Invert the result
+                inverted_result = _invert_fight_result(fight.result)
+
+                fight_history.append(
+                    FightHistoryEntry(
+                        fight_id=fight.id,
+                        event_name=fight.event_name,
+                        event_date=fight.event_date,
+                        opponent=opponent_name,
+                        opponent_id=fight.fighter_id,  # The original fighter_id is now the opponent
+                        result=inverted_result,
+                        method=fight.method or "",
+                        round=fight.round,
+                        time=fight.time,
+                        fight_card_url=fight.fight_card_url,
+                        stats={},  # TODO: Add fight stats if available
+                    )
+                )
 
         # Sort fight history: upcoming fights first, then past fights by most recent
         fight_history.sort(
@@ -256,9 +359,12 @@ class PostgreSQLFighterRepository:
 
         filters = []
         if query:
-            pattern = f"%{query}%"
+            # Use func.lower().like() for database-agnostic case-insensitive search
+            # Works with both PostgreSQL and SQLite
+            pattern = f"%{query.lower()}%"
             filters.append(
-                (Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern))
+                (func.lower(Fighter.name).like(pattern))
+                | (func.lower(Fighter.nickname).like(pattern))
             )
         if stance:
             filters.append(Fighter.stance == stance)
@@ -744,3 +850,127 @@ class PostgreSQLFighterRepository:
             dob=fighter.dob,
             image_url=fighter.image_url,
         )
+
+
+class PostgreSQLEventRepository:
+    """Repository for event data using PostgreSQL database."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def list_events(
+        self,
+        *,
+        status: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> Iterable[EventListItem]:
+        """List all events with optional filtering and pagination."""
+        query = select(Event).order_by(desc(Event.date), Event.id)
+
+        # Filter by status if provided
+        if status:
+            query = query.where(Event.status == status)
+
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+
+        result = await self._session.execute(query)
+        events = result.scalars().all()
+
+        return [
+            EventListItem(
+                event_id=event.id,
+                name=event.name,
+                date=event.date,
+                location=event.location,
+                status=event.status,
+                venue=event.venue,
+                broadcast=event.broadcast,
+            )
+            for event in events
+        ]
+
+    async def get_event(self, event_id: str) -> EventDetail | None:
+        """Get detailed event information by ID, including fight card."""
+        # Query event with fights relationship loaded
+        query = select(Event).where(Event.id == event_id).options(selectinload(Event.fights))
+        result = await self._session.execute(query)
+        event = result.scalar_one_or_none()
+
+        if event is None:
+            return None
+
+        # Build fight card from fights linked to this event
+        fight_card: list[EventFight] = []
+        for fight in event.fights:
+            # Determine fighter names and IDs
+            # Each fight has fighter_id and opponent_id
+            fighter_1_id = fight.fighter_id
+            fighter_2_id = fight.opponent_id
+
+            # Get fighter names
+            fighter_1_query = select(Fighter).where(Fighter.id == fighter_1_id)
+            fighter_1_result = await self._session.execute(fighter_1_query)
+            fighter_1 = fighter_1_result.scalar_one_or_none()
+
+            fighter_1_name = fighter_1.name if fighter_1 else "Unknown"
+
+            fighter_2_name = fight.opponent_name
+            if fighter_2_id:
+                fighter_2_query = select(Fighter).where(Fighter.id == fighter_2_id)
+                fighter_2_result = await self._session.execute(fighter_2_query)
+                fighter_2 = fighter_2_result.scalar_one_or_none()
+                if fighter_2:
+                    fighter_2_name = fighter_2.name
+
+            fight_card.append(
+                EventFight(
+                    fight_id=fight.id,
+                    fighter_1_id=fighter_1_id,
+                    fighter_1_name=fighter_1_name,
+                    fighter_2_id=fighter_2_id,
+                    fighter_2_name=fighter_2_name,
+                    weight_class=None,  # TODO: Extract from fight data
+                    result=fight.result,
+                    method=fight.method,
+                    round=fight.round,
+                    time=fight.time,
+                )
+            )
+
+        return EventDetail(
+            event_id=event.id,
+            name=event.name,
+            date=event.date,
+            location=event.location,
+            status=event.status,
+            venue=event.venue,
+            broadcast=event.broadcast,
+            promotion=event.promotion,
+            ufcstats_url=event.ufcstats_url,
+            tapology_url=event.tapology_url,
+            sherdog_url=event.sherdog_url,
+            fight_card=fight_card,
+        )
+
+    async def list_upcoming_events(self) -> Iterable[EventListItem]:
+        """List only upcoming events."""
+        return await self.list_events(status="upcoming")
+
+    async def list_completed_events(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> Iterable[EventListItem]:
+        """List only completed events with pagination."""
+        return await self.list_events(status="completed", limit=limit, offset=offset)
+
+    async def count_events(self, *, status: str | None = None) -> int:
+        """Count total number of events, optionally filtered by status."""
+        query = select(func.count()).select_from(Event)
+        if status:
+            query = query.where(Event.status == status)
+
+        result = await self._session.execute(query)
+        return result.scalar_one()

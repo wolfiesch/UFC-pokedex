@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import datetime
 
@@ -24,7 +25,7 @@ from sqlalchemy.exc import (
     TimeoutError as SQLAlchemyTimeoutError,
 )
 
-from .api import fighters, search, stats
+from .api import events, fighters, search, stats
 from .schemas.error import ErrorResponse, ErrorType, ValidationErrorDetail, ValidationErrorResponse
 
 # Configure logging
@@ -37,10 +38,41 @@ logger = logging.getLogger(__name__)
 # Context variable for request ID tracking
 request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    # Startup: Initialize database tables for SQLite
+    from backend.db.connection import get_database_type, get_engine
+    from backend.db.models import Base
+
+    db_type = get_database_type()
+    logger.info(f"Starting UFC Pokedex API with {db_type.upper()} database")
+
+    if db_type == "sqlite":
+        # For SQLite, create tables automatically (bypass Alembic)
+        logger.info("SQLite detected - creating tables if not exist")
+        engine = get_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✓ SQLite tables initialized")
+    else:
+        # For PostgreSQL, remind to run migrations
+        logger.info(
+            "PostgreSQL detected - ensure migrations are up to date (run: make db-upgrade)"
+        )
+
+    yield
+
+    # Shutdown: Clean up resources
+    logger.info("Shutting down UFC Pokedex API")
+
+
 app = FastAPI(
     title="UFC Pokedex API",
     version="0.1.0",
     description="REST API serving UFC fighter data scraped from UFCStats.",
+    lifespan=lifespan,
 )
 
 def _default_origins() -> list[str]:
@@ -286,5 +318,6 @@ async def healthcheck() -> dict[str, str]:
 
 
 app.include_router(fighters.router, prefix="/fighters", tags=["fighters"])
+app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
