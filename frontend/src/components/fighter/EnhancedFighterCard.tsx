@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ interface EnhancedFighterCardProps {
  * - Smooth animations
  * - Better visual hierarchy
  */
-export function EnhancedFighterCard({ fighter }: EnhancedFighterCardProps) {
+function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -403,3 +403,33 @@ export function EnhancedFighterCard({ fighter }: EnhancedFighterCardProps) {
     </motion.div>
   );
 }
+
+const fighterEqualityKeys: Array<keyof FighterListItem> = [
+  "fighter_id",
+  "name",
+  "nickname",
+  "record",
+  "division",
+  "image_url",
+  "is_current_champion",
+  "is_former_champion",
+];
+
+const areFighterCardPropsEqual = (
+  previousProps: Readonly<EnhancedFighterCardProps>,
+  nextProps: Readonly<EnhancedFighterCardProps>
+): boolean => {
+  const previousFighter = previousProps.fighter;
+  const nextFighter = nextProps.fighter;
+
+  // Ensure shallow equality across the curated key set so the card only
+  // re-renders when user-facing details actually change.
+  return fighterEqualityKeys.every(
+    (key) => previousFighter[key] === nextFighter[key]
+  );
+};
+
+export const EnhancedFighterCard = memo(
+  EnhancedFighterCardComponent,
+  areFighterCardPropsEqual
+);

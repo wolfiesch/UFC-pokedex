@@ -50,8 +50,16 @@ class Fighter(Base):
     __tablename__ = "fighters"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    nickname: Mapped[str | None]
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    nickname: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        index=True,
+        doc=(
+            "Index ensures quick nickname lookups for fighter search "
+            "and autocomplete queries."
+        ),
+    )
     division: Mapped[str | None]
     height: Mapped[str | None]
     weight: Mapped[str | None]
@@ -65,9 +73,15 @@ class Fighter(Base):
     image_scraped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Champion status fields
-    is_current_champion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
-    is_former_champion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
-    championship_history: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    is_current_champion: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    is_former_champion: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    championship_history: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True
+    )
 
     fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="fighter")
 
@@ -76,11 +90,24 @@ class Fight(Base):
     __tablename__ = "fights"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    fighter_id: Mapped[str] = mapped_column(ForeignKey("fighters.id"), nullable=False)
+    fighter_id: Mapped[str] = mapped_column(
+        ForeignKey("fighters.id"),
+        nullable=False,
+        index=True,
+        doc="Index optimizes fighter fight history retrieval and aggregation queries.",
+    )
     event_id: Mapped[str | None] = mapped_column(
         ForeignKey("events.id"), nullable=True, index=True
     )
-    opponent_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    opponent_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        index=True,
+        doc=(
+            "Optional index accelerates opponent-based lookups during event "
+            "and rivalry analysis pipelines."
+        ),
+    )
     opponent_name: Mapped[str] = mapped_column(String, nullable=False)
     event_name: Mapped[str] = mapped_column(
         String, nullable=False

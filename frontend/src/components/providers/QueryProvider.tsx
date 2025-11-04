@@ -3,6 +3,8 @@
 import { ReactNode, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { registerQueryClient } from "@/lib/query-client-registry";
+
 /**
  * QueryProvider wraps the application with a TanStack Query client instance so every
  * component can leverage declarative data fetching, caching, and background updates.
@@ -17,8 +19,8 @@ export function QueryProvider({ children }: { children: ReactNode }) {
    * reduces redundant calls when returning to the roster screen.
    */
   const [client] = useState(
-    () =>
-      new QueryClient({
+    () => {
+      const queryClient = new QueryClient({
         defaultOptions: {
           queries: {
             /**
@@ -41,7 +43,12 @@ export function QueryProvider({ children }: { children: ReactNode }) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      });
+
+      registerQueryClient(queryClient);
+
+      return queryClient;
+    }
   );
 
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
