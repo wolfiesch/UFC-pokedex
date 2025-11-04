@@ -217,11 +217,11 @@ export function extractFightWebInsights(
         sourceName:
           typeof item.source_name === "string"
             ? item.source_name
-            : (item.source_name as string | null),
+            : null,
         targetName:
           typeof item.target_name === "string"
             ? item.target_name
-            : (item.target_name as string | null),
+            : null,
         fights: typeof item.fights === "number" ? item.fights : 0,
         lastEventName:
           typeof item.last_event_name === "string"
