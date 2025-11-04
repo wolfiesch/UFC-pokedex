@@ -77,7 +77,7 @@ export function useFighterDetails(
   return {
     details: data ?? null,
     isLoading,
-    error: (error as Error | null) ?? null,
+    error,
     refetch,
   };
 }
@@ -88,6 +88,10 @@ export function useFighterDetails(
 export function clearDetailsCache(): void {
   const client = getRegisteredQueryClient();
   if (!client) {
+    console.warn(
+      "[clearDetailsCache] No QueryClient registered. Cache was not cleared. " +
+      "This may indicate that QueryProvider is not mounted or this is a server-side context."
+    );
     return;
   }
 
@@ -100,6 +104,10 @@ export function clearDetailsCache(): void {
 export async function preloadFighterDetails(fighterId: string): Promise<void> {
   const client = getRegisteredQueryClient();
   if (!client) {
+    console.warn(
+      "[preloadFighterDetails] No QueryClient registered. Preload was not performed. " +
+      "This may indicate that QueryProvider is not mounted or this is a server-side context."
+    );
     return;
   }
 
