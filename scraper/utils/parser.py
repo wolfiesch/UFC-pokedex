@@ -518,18 +518,21 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
     # Event metadata from list items
     metadata_map: dict[str, str | None] = {}
     for row in selector.css("ul.b-list__box-list li"):
-        label = clean_text(row.css("i::text").get())
-        if not label:
+        label_text = clean_text(row.css("i::text").get())
+        if not label_text:
             continue
-        label = label.replace(":", "").upper()
 
-        # Get all text and filter out the label itself
+        # Store label for comparison (before modification)
+        original_label = label_text
+        label = label_text.replace(":", "").upper()
+
+        # Get all text and filter out the label itself (case-insensitive)
         all_text = row.css("::text").getall()
         value = next(
             (
                 clean_text(t)
                 for t in all_text
-                if clean_text(t) and clean_text(t) != f"{label}:"
+                if clean_text(t) and clean_text(t).upper() != f"{label}:" and clean_text(t) != original_label
             ),
             None,
         )

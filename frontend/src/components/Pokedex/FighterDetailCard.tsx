@@ -25,6 +25,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { StatsRadarChart } from "@/components/visualizations/StatsRadarChart";
+import { RecordBreakdownChart } from "@/components/visualizations/RecordBreakdownChart";
+import { PerformanceBarCharts } from "@/components/visualizations/PerformanceBarCharts";
+import { FightHistoryTimeline } from "@/components/visualizations/FightHistoryTimeline";
 
 type Props = {
   fighterId: string;
@@ -206,6 +210,24 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           </dl>
         </section>
 
+        {/* Performance Visualizations */}
+        <RecordBreakdownChart
+          record={fighter.record}
+          fightHistory={fightHistory}
+        />
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <StatsRadarChart
+            striking={fighter.striking}
+            grappling={fighter.grappling}
+          />
+          <PerformanceBarCharts
+            striking={fighter.striking}
+            grappling={fighter.grappling}
+          />
+        </div>
+
+        {/* Detailed Stats (collapsible sections) */}
         {Object.keys(fighter.striking).length > 0 ? (
           <StatsDisplay title="Striking" stats={fighter.striking} />
         ) : null}
@@ -222,9 +244,17 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           <StatsDisplay title="Career" stats={fighter.career} />
         ) : null}
 
+        {/* Fight History Timeline */}
+        {fightHistory.length > 0 ? (
+          <FightHistoryTimeline
+            fightHistory={fightHistory}
+            fighterName={fighter.name}
+          />
+        ) : null}
+
         {fightHistory.length > 0 ? (
           <section className="space-y-4">
-            <h3 className="text-xl font-semibold">Fight History</h3>
+            <h3 className="text-xl font-semibold">Fight History (Table View)</h3>
 
             {/* Desktop table view */}
             <div className="hidden md:block overflow-x-auto">

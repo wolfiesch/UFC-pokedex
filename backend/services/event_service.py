@@ -127,6 +127,56 @@ class EventService:
         """Count total number of events."""
         return await self._repository.count_events(status=status)
 
+    async def search_events(
+        self,
+        *,
+        q: str | None = None,
+        year: int | None = None,
+        location: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> PaginatedEventsResponse:
+        """Search and filter events with advanced options."""
+        events = await self._repository.search_events(
+            q=q,
+            year=year,
+            location=location,
+            event_type=event_type,
+            status=status,
+            limit=limit,
+            offset=offset,
+        )
+        event_list = list(events)
+
+        # Get total count with same filters (but no pagination)
+        all_matching = await self._repository.search_events(
+            q=q,
+            year=year,
+            location=location,
+            event_type=event_type,
+            status=status,
+            limit=None,
+            offset=None,
+        )
+        total = len(list(all_matching))
+        has_more = (offset + limit) < total
+
+        return PaginatedEventsResponse(
+            events=event_list,
+            total=total,
+            limit=limit,
+            offset=offset,
+            has_more=has_more,
+        )
+
+    async def get_filter_options(self) -> tuple[list[int], list[str]]:
+        """Get available filter options (years and locations)."""
+        years = await self._repository.get_unique_years()
+        locations = await self._repository.get_unique_locations()
+        return years, locations
+
 
 async def get_event_service(
     session: AsyncSession = Depends(get_db),

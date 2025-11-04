@@ -10,6 +10,11 @@ const nextConfig = {
 
   // Base path for subdirectory deployment (e.g., /ufc)
   basePath: process.env.BASEPATH || '',
+
+  // Fix date-fns barrel optimization issue
+  experimental: {
+    optimizePackageImports: ['date-fns'],
+  },
 };
 
 export default nextConfig;

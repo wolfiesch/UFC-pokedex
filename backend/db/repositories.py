@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from sqlalchemy import Float, cast, desc, func, select
@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from backend.db.models import Event, Fight, Fighter, fighter_stats
 from backend.schemas.event import EventDetail, EventFight, EventListItem
+from backend.utils.event_utils import detect_event_type
 from backend.schemas.fight_graph import (
     FightGraphLink,
     FightGraphNode,
@@ -100,6 +101,33 @@ def _empty_breakdown() -> dict[str, int]:
     }
 
 
+def _calculate_age(dob: date | None, *, as_of: date | None = None) -> int | None:
+    """Calculate an integer age in years from a date of birth.
+
+    Args:
+        dob: The date of birth. If None, returns None.
+        as_of: Optional reference date for the calculation. Defaults to today's
+            date in UTC if not provided.
+
+    Returns:
+        The computed age in whole years, or None if dob is not available.
+    """
+
+    if dob is None:
+        return None
+
+    # Use UTC to avoid timezone-related off-by-one errors around midnight
+    today = as_of or datetime.now(timezone.utc).date()
+
+    years = today.year - dob.year
+    # Subtract one year if birthday has not occurred yet this year
+    if (today.month, today.day) < (dob.month, dob.day):
+        years -= 1
+
+    # Guard against negative ages if future dates somehow slip in
+    return max(years, 0)
+
+
 class PostgreSQLFighterRepository:
     """Repository for fighter data using PostgreSQL database."""
 
@@ -172,27 +200,58 @@ class PostgreSQLFighterRepository:
         fights_result = await self._session.execute(fights_query)
         all_fights = fights_result.scalars().all()
 
-        # Build fight history, inverting perspective when needed
-        fight_history: list[FightHistoryEntry] = []
+        # Build fight history, deduplicating by fight metadata (not database ID)
+        # This prevents duplicate entries when both fighters have Fight records for the same bout
+        # Prioritize fights where fighter_id matches (fighter's own perspective)
+        # Also prioritize fights with actual results (win/loss/draw) over "N/A"
+        fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
+
+        def create_fight_key(
+            event_name: str, event_date: date | None, opponent_id: str | None, opponent_name: str
+        ) -> tuple[str, str | None, str]:
+            """Create a unique key for deduplication based on fight metadata."""
+            date_str = event_date.isoformat() if event_date else None
+            # Use opponent_id if available, otherwise use opponent_name (normalized)
+            opponent_key = opponent_id if opponent_id else opponent_name.lower().strip()
+            return (event_name, date_str, opponent_key)
+
+        def should_replace_fight(existing_result: str, new_result: str) -> bool:
+            """Determine if new fight should replace existing based on result quality."""
+            # Prefer actual results (win/loss/draw) over "N/A"
+            if existing_result == "N/A" and new_result != "N/A":
+                return True
+            return False
+
+        # First pass: Process fights where this fighter is the primary fighter_id
         for fight in all_fights:
             if fight.fighter_id == fighter_id:
-                # Fight is from this fighter's perspective - use as-is
-                fight_history.append(
-                    FightHistoryEntry(
-                        fight_id=fight.id,
-                        event_name=fight.event_name,
-                        event_date=fight.event_date,
-                        opponent=fight.opponent_name,
-                        opponent_id=fight.opponent_id,
-                        result=fight.result,
-                        method=fight.method or "",
-                        round=fight.round,
-                        time=fight.time,
-                        fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
-                    )
+                fight_key = create_fight_key(
+                    fight.event_name, fight.event_date, fight.opponent_id, fight.opponent_name
                 )
-            else:
+
+                new_entry = FightHistoryEntry(
+                    fight_id=fight.id,
+                    event_name=fight.event_name,
+                    event_date=fight.event_date,
+                    opponent=fight.opponent_name,
+                    opponent_id=fight.opponent_id,
+                    result=fight.result,
+                    method=fight.method or "",
+                    round=fight.round,
+                    time=fight.time,
+                    fight_card_url=fight.fight_card_url,
+                    stats={},  # TODO: Add fight stats if available
+                )
+
+                if fight_key not in fight_dict:
+                    fight_dict[fight_key] = new_entry
+                elif should_replace_fight(fight_dict[fight_key].result, fight.result):
+                    # Replace with better result
+                    fight_dict[fight_key] = new_entry
+
+        # Second pass: Process fights from opponent's perspective (only if not already seen)
+        for fight in all_fights:
+            if fight.fighter_id != fighter_id:
                 # Fight is from opponent's perspective - need to invert
                 # Get the actual opponent's name (the fighter who has this fight record)
                 opponent_query = select(Fighter).where(Fighter.id == fight.fighter_id)
@@ -200,25 +259,37 @@ class PostgreSQLFighterRepository:
                 opponent_fighter = opponent_result.scalar_one_or_none()
 
                 opponent_name = opponent_fighter.name if opponent_fighter else "Unknown"
+                opponent_id = fight.fighter_id
+
+                fight_key = create_fight_key(
+                    fight.event_name, fight.event_date, opponent_id, opponent_name
+                )
 
                 # Invert the result
                 inverted_result = _invert_fight_result(fight.result)
 
-                fight_history.append(
-                    FightHistoryEntry(
-                        fight_id=fight.id,
-                        event_name=fight.event_name,
-                        event_date=fight.event_date,
-                        opponent=opponent_name,
-                        opponent_id=fight.fighter_id,  # The original fighter_id is now the opponent
-                        result=inverted_result,
-                        method=fight.method or "",
-                        round=fight.round,
-                        time=fight.time,
-                        fight_card_url=fight.fight_card_url,
-                        stats={},  # TODO: Add fight stats if available
-                    )
+                new_entry = FightHistoryEntry(
+                    fight_id=fight.id,
+                    event_name=fight.event_name,
+                    event_date=fight.event_date,
+                    opponent=opponent_name,
+                    opponent_id=opponent_id,  # The original fighter_id is now the opponent
+                    result=inverted_result,
+                    method=fight.method or "",
+                    round=fight.round,
+                    time=fight.time,
+                    fight_card_url=fight.fight_card_url,
+                    stats={},  # TODO: Add fight stats if available
                 )
+
+                if fight_key not in fight_dict:
+                    fight_dict[fight_key] = new_entry
+                elif should_replace_fight(fight_dict[fight_key].result, inverted_result):
+                    # Replace with better result
+                    fight_dict[fight_key] = new_entry
+
+        # Convert dict to list
+        fight_history: list[FightHistoryEntry] = list(fight_dict.values())
 
         # Sort fight history: upcoming fights first, then past fights by most recent
         fight_history.sort(
@@ -244,7 +315,7 @@ class PostgreSQLFighterRepository:
             record=fighter.record,
             leg_reach=fighter.leg_reach,
             division=fighter.division,
-            age=None,  # TODO: Calculate age from dob
+            age=_calculate_age(fighter.dob),
             striking=stats_map.get("striking", {}),
             grappling=stats_map.get("grappling", {}),
             significant_strikes=stats_map.get("significant_strikes", {}),
@@ -838,6 +909,7 @@ class PostgreSQLFighterRepository:
         stmt = (
             stmt.where(value_column.is_not(None))
             .order_by(value_column.desc())
+            .distinct(fighter_stats.c.fighter_id)
             .limit(limit)
         )
 
@@ -1113,6 +1185,7 @@ class PostgreSQLEventRepository:
                 status=event.status,
                 venue=event.venue,
                 broadcast=event.broadcast,
+                event_type=detect_event_type(event.name).value,
             )
             for event in events
         ]
@@ -1177,6 +1250,7 @@ class PostgreSQLEventRepository:
             status=event.status,
             venue=event.venue,
             broadcast=event.broadcast,
+            event_type=detect_event_type(event.name).value,
             promotion=event.promotion,
             ufcstats_url=event.ufcstats_url,
             tapology_url=event.tapology_url,
@@ -1202,3 +1276,100 @@ class PostgreSQLEventRepository:
 
         result = await self._session.execute(query)
         return result.scalar_one()
+
+    async def search_events(
+        self,
+        *,
+        q: str | None = None,
+        year: int | None = None,
+        location: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> Iterable[EventListItem]:
+        """
+        Search and filter events.
+
+        Args:
+            q: Search query (searches in event name, location)
+            year: Filter by year
+            location: Filter by location (case-insensitive partial match)
+            event_type: Filter by event type (ppv, fight_night, etc.)
+            status: Filter by status (upcoming, completed)
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of matching events
+        """
+        query = select(Event).order_by(desc(Event.date), Event.id)
+
+        # Text search in name and location
+        if q:
+            search_pattern = f"%{q}%"
+            query = query.where(
+                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
+            )
+
+        # Year filter
+        if year:
+            query = query.where(func.extract("year", Event.date) == year)
+
+        # Location filter
+        if location:
+            query = query.where(Event.location.ilike(f"%{location}%"))
+
+        # Status filter
+        if status:
+            query = query.where(Event.status == status)
+
+        # Pagination
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+
+        result = await self._session.execute(query)
+        events = result.scalars().all()
+
+        # Build event list with event type detection
+        event_list = [
+            EventListItem(
+                event_id=event.id,
+                name=event.name,
+                date=event.date,
+                location=event.location,
+                status=event.status,
+                venue=event.venue,
+                broadcast=event.broadcast,
+                event_type=detect_event_type(event.name).value,
+            )
+            for event in events
+        ]
+
+        # Filter by event_type after detection (since it's not in DB)
+        if event_type:
+            event_list = [e for e in event_list if e.event_type == event_type]
+
+        return event_list
+
+    async def get_unique_years(self) -> list[int]:
+        """Get list of unique years from all events."""
+        query = select(func.extract("year", Event.date).distinct()).order_by(
+            desc(func.extract("year", Event.date))
+        )
+        result = await self._session.execute(query)
+        years = result.scalars().all()
+        return [int(year) for year in years if year is not None]
+
+    async def get_unique_locations(self) -> list[str]:
+        """Get list of unique locations from all events."""
+        query = (
+            select(Event.location.distinct())
+            .where(Event.location.isnot(None))
+            .order_by(Event.location)
+        )
+        result = await self._session.execute(query)
+        locations = result.scalars().all()
+        return list(locations)

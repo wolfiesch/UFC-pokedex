@@ -17,3 +17,4 @@ Write commit subjects in imperative mood (`Add fighter detail endpoint`) and kee
 
 ## Environment & Data Notes
 Copy `.env.example` for both root and `frontend/` environments; avoid committing secrets. Use `make load-data` to hydrate the database after scraping. Cache artifacts in `data/` only—never store raw scrapes elsewhere.
+When running in SQLite mode, use `make api:seed-full` instead of `make api:seed`.
