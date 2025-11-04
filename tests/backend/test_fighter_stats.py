@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
+import json
+from datetime import UTC, date, datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -18,6 +20,7 @@ from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (
     calculate_fighter_stats,
     calculate_longest_win_streak,
+    load_fighter_detail,
 )
 
 
@@ -356,6 +359,142 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
 
     # The repository should report upcoming fights first and sort past results in reverse chronological order.
     assert ordered_results == expected_order
+
+
+@pytest.mark.asyncio
+async def test_get_fighter_populates_age_from_dob(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Repository should calculate age in years using a timezone-aware 'today'."""
+
+    class FixedDateTime(datetime):
+        """Custom datetime shim that consistently returns the reference date in UTC."""
+
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> datetime:  # type: ignore[override]
+            reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
+            return reference_moment if tz is None else reference_moment.astimezone(tz)
+
+    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+
+    fighter: Fighter = Fighter(
+        id="fighter-with-dob",
+        name="Age Checked",
+        dob=date(1990, 6, 15),
+    )
+    session.add(fighter)
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    detail: FighterDetail | None = await repository.get_fighter(fighter.id)
+
+    assert detail is not None
+    assert detail.age == 34
+
+
+@pytest.mark.asyncio
+async def test_get_fighter_returns_none_age_when_dob_missing(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Missing DOB entries should propagate a ``None`` age without raising errors."""
+
+    class FixedDateTime(datetime):
+        """Mirror the deterministic UTC reference used in the sibling age test."""
+
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> datetime:  # type: ignore[override]
+            reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
+            return reference_moment if tz is None else reference_moment.astimezone(tz)
+
+    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+
+    fighter: Fighter = Fighter(
+        id="fighter-without-dob",
+        name="No DOB",
+        dob=None,
+    )
+    session.add(fighter)
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    detail: FighterDetail | None = await repository.get_fighter(fighter.id)
+
+    assert detail is not None
+    assert detail.age is None
+
+
+@pytest.mark.asyncio
+async def test_load_fighter_detail_persists_fight_stats(
+    session: AsyncSession, tmp_path: Path
+) -> None:
+    """Verify fight stats dictionaries are saved when present in the source payload."""
+
+    fight_stats_payload: dict[str, str] = {
+        "knockdowns": "1",
+        "total_strikes": "85",
+        "takedowns": "2",
+        "submissions": "0",
+    }
+    fighter_payload: dict[str, Any] = {
+        "fighter_id": "loader-fighter",
+        "name": "Loader Fighter",
+        "fight_history": [
+            {
+                "fight_id": "loader-fight-1",
+                "event_name": "Loader Event",
+                "event_date": "2024-01-01",
+                "opponent": "Test Opponent",
+                "result": "W",
+                "method": "Decision",
+                "round": 3,
+                "time": "05:00",
+                "fight_card_url": "https://example.com/fight",
+                "stats": fight_stats_payload,
+            }
+        ],
+    }
+    detail_path: Path = tmp_path / "loader_fighter.json"
+    detail_path.write_text(json.dumps(fighter_payload), encoding="utf-8")
+
+    assert await load_fighter_detail(session, detail_path) is True
+
+    stored_fight: Fight | None = await session.get(Fight, "loader-fight-1")
+    assert stored_fight is not None
+    assert stored_fight.stats == fight_stats_payload
+
+
+@pytest.mark.asyncio
+async def test_load_fighter_detail_defaults_missing_stats(
+    session: AsyncSession, tmp_path: Path
+) -> None:
+    """Ensure fights without stats payloads are stored with empty dictionaries."""
+
+    fighter_payload: dict[str, Any] = {
+        "fighter_id": "loader-fighter-no-stats",
+        "name": "Loader Fighter No Stats",
+        "fight_history": [
+            {
+                "fight_id": "loader-fight-2",
+                "event_name": "Loader Event",
+                "event_date": "2024-02-02",
+                "opponent": "Opponent",
+                "result": "L",
+                "method": "KO",
+                "round": 1,
+                "time": "01:30",
+                "fight_card_url": None,
+                # No explicit stats dictionary ensures we exercise the defaulting branch.
+            }
+        ],
+    }
+    detail_path: Path = tmp_path / "loader_fighter_missing_stats.json"
+    detail_path.write_text(json.dumps(fighter_payload), encoding="utf-8")
+
+    assert await load_fighter_detail(session, detail_path) is True
+
+    stored_fight: Fight | None = await session.get(Fight, "loader-fight-2")
+    assert stored_fight is not None
+    assert stored_fight.stats == {}
 
 
 @pytest.mark.asyncio
