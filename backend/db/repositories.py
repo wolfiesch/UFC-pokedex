@@ -719,6 +719,7 @@ class PostgreSQLFighterRepository:
             if champion_conditions:
                 # Use OR to combine conditions (show fighters matching ANY status)
                 from sqlalchemy import or_
+
                 filters.append(or_(*champion_conditions))
 
         stmt = select(Fighter).order_by(Fighter.name)
@@ -1410,11 +1411,19 @@ class PostgreSQLEventRepository:
         if status:
             query = query.where(Event.status == status)
 
+        apply_manual_pagination = event_type is not None
+
+        # ``detect_event_type`` performs in-memory classification.  When a
+        # caller supplies an ``event_type`` filter we must load every matching
+        # row first, otherwise the database-level LIMIT/OFFSET could trim
+        # relevant events before the post-processing step runs.
+
         # Pagination
-        if offset is not None:
-            query = query.offset(offset)
-        if limit is not None:
-            query = query.limit(limit)
+        if not apply_manual_pagination:
+            if offset is not None:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
 
         result = await self._session.execute(query)
         events = result.scalars().all()
@@ -1436,9 +1445,18 @@ class PostgreSQLEventRepository:
 
         # Filter by event_type after detection (since it's not in DB)
         if event_type:
-            event_list = [e for e in event_list if e.event_type == event_type]
+            event_list = [
+                event for event in event_list if event.event_type == event_type
+            ]
 
-        return event_list
+        if not apply_manual_pagination:
+            return event_list
+
+        start_index: int = 0 if offset is None else offset
+        # ``end_index`` remains ``None`` when no limit is supplied so Python's
+        # slice semantics naturally return the full remainder of the sequence.
+        end_index: int | None = None if limit is None else start_index + limit
+        return event_list[start_index:end_index]
 
     async def get_unique_years(self) -> list[int]:
         """Get list of unique years from all events."""

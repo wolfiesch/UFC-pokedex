@@ -4,10 +4,62 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date
 import asyncio
+import sys
+import types
 
 import pytest
 
 pytest.importorskip("sqlalchemy")
+pytest.importorskip("aiosqlite")
+
+
+class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
+    """Minimal asyncio-compatible Redis stand-in for service import paths."""
+
+    @classmethod
+    def from_url(cls, *args: object, **kwargs: object) -> "_FakeRedis":
+        """Return a new stub client regardless of configuration inputs."""
+
+        return cls()
+
+    async def ping(self) -> None:
+        return None
+
+    async def get(self, key: str) -> None:  # noqa: D401 - intentionally returns None
+        """Always behave like an empty cache."""
+
+        return None
+
+    async def set(self, key: str, value: str, ex: int | None = None) -> None:
+        return None
+
+    async def delete(self, *keys: str) -> None:
+        return None
+
+    async def scan_iter(self, match: str | None = None):  # type: ignore[override]
+        # This method is intentionally an async generator that yields nothing,
+        # to satisfy interface requirements for test stubs.
+        return
+        yield  # unreachable, but marks this as an async generator
+    async def aclose(self) -> None:
+        return None
+
+
+_redis_module = types.ModuleType("redis")
+_redis_asyncio_module = types.ModuleType("redis.asyncio")
+_redis_asyncio_module.Redis = _FakeRedis
+_redis_exceptions_module = types.ModuleType("redis.exceptions")
+
+
+class _FakeConnectionError(Exception):
+    """Stub exception mirroring ``redis.exceptions.ConnectionError``."""
+
+
+_redis_exceptions_module.ConnectionError = _FakeConnectionError
+
+sys.modules.setdefault("redis", _redis_module)
+sys.modules["redis.asyncio"] = _redis_asyncio_module
+sys.modules["redis.exceptions"] = _redis_exceptions_module
 
 from sqlalchemy.ext.asyncio import (  # type: ignore[attr-defined]
     AsyncSession,
@@ -17,6 +69,8 @@ from sqlalchemy.ext.asyncio import (  # type: ignore[attr-defined]
 
 from backend.db.models import Base, Event, Fight, Fighter
 from backend.db.repositories import PostgreSQLEventRepository
+from backend.schemas.event import PaginatedEventsResponse
+from backend.services.event_service import EventService
 
 
 @asynccontextmanager
@@ -130,5 +184,77 @@ def test_get_event_with_missing_weight_class() -> None:
             assert detail is not None
             assert detail.fight_card, "Expected at least one fight in the fight card"
             assert detail.fight_card[0].weight_class is None
+
+    asyncio.run(runner())
+
+
+def test_search_events_filters_event_type_with_manual_pagination() -> None:
+    """Ensure event-type filtering paginates after in-memory classification."""
+
+    async def runner() -> None:
+        async with session_ctx() as session:
+            events: list[Event] = [
+                Event(
+                    id="evt-a",
+                    name="UFC Fight Night: Alpha",
+                    date=date(2024, 3, 1),
+                    location="Test City",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-b",
+                    name="UFC Fight Night: Beta",
+                    date=date(2024, 4, 1),
+                    location="Test City",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-c",
+                    name="UFC Fight Night: Gamma",
+                    date=date(2024, 5, 1),
+                    location="Test City",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-d",
+                    name="UFC 300: Example",
+                    date=date(2024, 6, 1),
+                    location="Another City",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-e",
+                    name="Dana White's Contender Series 50",
+                    date=date(2024, 7, 1),
+                    location="Another City",
+                    status="completed",
+                ),
+            ]
+
+            session.add_all(events)
+            await session.flush()
+
+            repository = PostgreSQLEventRepository(session)
+            service = EventService(repository)
+
+            # Page one should contain the two most recent fight night cards.
+            first_page: PaginatedEventsResponse = await service.search_events(
+                event_type="fight_night",
+                limit=2,
+                offset=0,
+            )
+            assert [event.event_id for event in first_page.events] == ["evt-c", "evt-b"]
+            assert len(first_page.events) == 2
+            assert first_page.has_more is True
+
+            # Page two should surface the remaining fight night entry with no more pages.
+            second_page: PaginatedEventsResponse = await service.search_events(
+                event_type="fight_night",
+                limit=2,
+                offset=2,
+            )
+            assert [event.event_id for event in second_page.events] == ["evt-a"]
+            assert len(second_page.events) == 1
+            assert second_page.has_more is False
 
     asyncio.run(runner())
