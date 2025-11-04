@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, timezone
 from typing import Any
 
 import pytest
@@ -356,6 +356,68 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
 
     # The repository should report upcoming fights first and sort past results in reverse chronological order.
     assert ordered_results == expected_order
+
+
+@pytest.mark.asyncio
+async def test_get_fighter_populates_age_from_dob(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Repository should calculate age in years using a timezone-aware 'today'."""
+
+    class FixedDateTime(datetime):
+        """Custom datetime shim that consistently returns the reference date in UTC."""
+
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> datetime:  # type: ignore[override]
+            reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
+            return reference_moment if tz is None else reference_moment.astimezone(tz)
+
+    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+
+    fighter: Fighter = Fighter(
+        id="fighter-with-dob",
+        name="Age Checked",
+        dob=date(1990, 6, 15),
+    )
+    session.add(fighter)
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    detail: FighterDetail | None = await repository.get_fighter(fighter.id)
+
+    assert detail is not None
+    assert detail.age == 34
+
+
+@pytest.mark.asyncio
+async def test_get_fighter_returns_none_age_when_dob_missing(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Missing DOB entries should propagate a ``None`` age without raising errors."""
+
+    class FixedDateTime(datetime):
+        """Mirror the deterministic UTC reference used in the sibling age test."""
+
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> datetime:  # type: ignore[override]
+            reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
+            return reference_moment if tz is None else reference_moment.astimezone(tz)
+
+    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+
+    fighter: Fighter = Fighter(
+        id="fighter-without-dob",
+        name="No DOB",
+        dob=None,
+    )
+    session.add(fighter)
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    detail: FighterDetail | None = await repository.get_fighter(fighter.id)
+
+    assert detail is not None
+    assert detail.age is None
 
 
 @pytest.mark.asyncio
