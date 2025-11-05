@@ -1,17 +1,8 @@
-"""Backward compatibility facade for refactored repository layer.
+"""Backward compatibility facade for fighter-related repositories.
 
-This module maintains the original PostgreSQLFighterRepository and
-PostgreSQLEventRepository interfaces while delegating to specialized
-repositories internally. This ensures zero breaking changes for existing code.
-
-The monolithic repository has been split into:
-- FighterRepository: Fighter CRUD operations
-- FightGraphRepository: Fight relationship graphs
-- StatsRepository: Analytics and aggregations
-- FightRepository: Fight CRUD operations
-- PostgreSQLEventRepository: Event operations (unchanged)
-
-All existing code continues to work without modification.
+This module preserves the original ``PostgreSQLFighterRepository`` interface
+by delegating to the new, focused repository implementations. Existing code
+continues to work without modification.
 """
 
 from __future__ import annotations
@@ -23,7 +14,6 @@ from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Fight, Fighter
-from backend.db.repositories.event_repository import PostgreSQLEventRepository
 from backend.db.repositories.fight_graph_repository import FightGraphRepository
 from backend.db.repositories.fight_repository import FightRepository
 from backend.db.repositories.fighter_repository import FighterRepository
@@ -42,16 +32,10 @@ from backend.schemas.stats import (
 
 
 class PostgreSQLFighterRepository:
-    """Backward compatibility facade delegating to specialized repositories.
-
-    This class maintains the original monolithic interface while internally
-    delegating to focused, domain-specific repositories. This ensures existing
-    code continues to work without any modifications.
-    """
+    """Facade delegating to specialized repositories for fighter operations."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
-        # Initialize specialized repositories
         self._fighter_repo = FighterRepository(session)
         self._fight_graph_repo = FightGraphRepository(session)
         self._stats_repo = StatsRepository(session)
@@ -188,3 +172,4 @@ class PostgreSQLFighterRepository:
     async def create_fight(self, fight: Fight) -> Fight:
         """Create a new fight record."""
         return await self._fight_repo.create_fight(fight)
+

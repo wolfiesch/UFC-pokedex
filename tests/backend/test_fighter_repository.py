@@ -74,7 +74,9 @@ def freeze_utc_today(
             )
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
-    monkeypatch.setattr("backend.db.repositories.datetime", FrozenDateTime)
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter_repository.datetime", FrozenDateTime
+    )
 
 
 @pytest.mark.asyncio
