@@ -19,6 +19,8 @@ function getApiBaseUrl(): string {
   return process.env.NEXT_SSR_API_BASE_URL ?? "http://localhost:8000";
 }
 
+const FETCH_TIMEOUT_MS = 4000;
+
 /**
  * Fetch paginated fighters list for SSG
  * Used by home page static generation
@@ -85,24 +87,46 @@ export async function getAllFighterIdsSSR(
   let hasMore = true;
 
   while (hasMore) {
-    const response = await fetch(
-      `${apiUrl}/fighters/?limit=${batchSize}&offset=${offset}`,
-      {
-        next: { revalidate: false }, // Static at build time
-      }
-    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+    try {
+      const response = await fetch(
+        `${apiUrl}/fighters/?limit=${batchSize}&offset=${offset}`,
+        {
+          next: { revalidate: false }, // Static at build time
+          signal: controller.signal,
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data: PaginatedFightersResponse = await response.json();
+      allFighters.push(...data.fighters);
+
+      hasMore = data.has_more;
+      offset += batchSize;
+    } catch (error) {
+      const isAbortError =
+        error instanceof Error && error.name === "AbortError";
+
+      const message = isAbortError
+        ? `Timed out fetching fighters batch at offset ${offset}`
+        : `Failed to fetch fighters batch at offset ${offset}: ${error}`;
+      console.warn(message);
+
+      if (allFighters.length === 0) {
+        throw error instanceof Error ? error : new Error(String(error));
+      }
+
+      break;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data: PaginatedFightersResponse = await response.json();
-    allFighters.push(...data.fighters);
-
-    hasMore = data.has_more;
-    offset += batchSize;
 
     // Safety limit: don't fetch more than 10,000 fighters
     if (offset >= 10000) {

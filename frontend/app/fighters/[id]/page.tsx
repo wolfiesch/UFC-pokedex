@@ -9,6 +9,10 @@ export const revalidate = 86400;
 // Enable blocking fallback for fighters not pre-rendered
 export const dynamicParams = true;
 
+const PREFETCH_LIMIT = 500;
+const SHOULD_PREFETCH_IN_DEV =
+  process.env.NEXT_PREFETCH_FIGHTERS === "true";
+
 type FighterDetailPageProps = {
   params: {
     id?: string;
@@ -20,9 +24,17 @@ type FighterDetailPageProps = {
  * Others will be generated on-demand with ISR
  */
 export async function generateStaticParams() {
+  if (process.env.NODE_ENV === "development" && !SHOULD_PREFETCH_IN_DEV) {
+    // Skip expensive prefetching while running turbopack locally unless opt-in
+    return [];
+  }
+
   try {
-    const fighters = await getAllFighterIdsSSR(500);
-    return fighters;
+    const fighters = await getAllFighterIdsSSR(PREFETCH_LIMIT);
+    return fighters
+      .map(({ id }) => id?.trim())
+      .filter((id): id is string => Boolean(id))
+      .map((id) => ({ id }));
   } catch (error) {
     console.error("Failed to generate static params:", error);
     // Return empty array to continue build without pre-rendering
