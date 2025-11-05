@@ -33,10 +33,9 @@ if (isVitestEnvironment) {
   };
 
   void register().catch((error: unknown) => {
-    // eslint-disable-next-line no-console -- surfaced during CLI execution for visibility.
-    console.warn(
-      "Playwright smoke suite could not be registered; ensure devDependencies include @playwright/test.",
-      error,
+    throw new Error(
+      "Playwright smoke suite could not be registered; ensure devDependencies include @playwright/test.\n" +
+      String(error)
     );
   });
 }
