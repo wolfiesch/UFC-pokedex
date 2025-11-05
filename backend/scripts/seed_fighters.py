@@ -20,7 +20,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
