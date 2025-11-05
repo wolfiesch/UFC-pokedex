@@ -944,7 +944,7 @@ class PostgreSQLFighterRepository:
         # Count total fighters
         count_query = select(func.count(Fighter.id))
         result = await self._session.execute(count_query)
-        total_fighters = result.scalar() or 0
+        total_fighters = result.scalar_one_or_none() or 0
 
         metrics: list[StatsSummaryMetric] = [
             StatsSummaryMetric(
@@ -1151,7 +1151,7 @@ class PostgreSQLFighterRepository:
                 fighters = filtered_fighters[start_index:start_index + slice_limit]
         else:
             count_result = await self._session.execute(count_stmt)
-            total = count_result.scalar_one()
+            total = count_result.scalar_one_or_none() or 0
 
         return (
             [
@@ -1280,7 +1280,8 @@ class PostgreSQLFighterRepository:
         """Get the total count of fighters in the database."""
         query = select(func.count()).select_from(Fighter)
         result = await self._session.execute(query)
-        return result.scalar_one()
+        count = result.scalar_one_or_none()
+        return count if count is not None else 0
 
     async def get_leaderboards(
         self,
@@ -1808,7 +1809,8 @@ class PostgreSQLEventRepository:
             query = query.where(Event.status == status)
 
         result = await self._session.execute(query)
-        return result.scalar_one()
+        count = result.scalar_one_or_none()
+        return count if count is not None else 0
 
     async def search_events(
         self,
