@@ -9,7 +9,7 @@ import json
 import re
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -459,12 +459,80 @@ def calculate_fighter_stats(
     return results
 
 
+def build_fight_history_stat_rows(
+    fighter_id: str,
+    fight_history: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Transform per-fight stat payloads into ``fighter_stats`` rows.
+
+    Each fight is represented as a JSON document stored in the ``value`` column.
+    The document mirrors the API contract expected by :class:`FightHistoryEntry`
+    while also capturing the raw metrics scraped for the bout. Persisting the
+    payload in ``fighter_stats`` allows downstream aggregations to hydrate fight
+    history without performing additional joins against the ``fights`` table.
+    """
+
+    rows: list[dict[str, Any]] = []
+    for fight in fight_history:
+        fight_id: str | None = fight.get("fight_id")
+        if not fight_id:
+            continue
+
+        stats_payload: dict[str, Any] = {}
+        raw_stats = fight.get("stats") or {}
+        if isinstance(raw_stats, dict):
+            # Serialise stat values as strings to preserve presentation fidelity
+            # (percentages, fractional values, etc.) while filtering out blanks.
+            stats_payload = {
+                str(metric): str(value)
+                for metric, value in raw_stats.items()
+                if value not in (None, "", "--")
+            }
+
+        event_date = fight.get("event_date")
+        if isinstance(event_date, date):
+            event_date_text: str | None = event_date.isoformat()
+        elif isinstance(event_date, str):
+            event_date_text = event_date.strip() or None
+        else:
+            event_date_text = None
+
+        serialized_payload: dict[str, Any] = {
+            "fight_id": fight_id,
+            "event_name": fight.get("event_name"),
+            "event_date": event_date_text,
+            "opponent": fight.get("opponent"),
+            "opponent_id": fight.get("opponent_id"),
+            "result": fight.get("result"),
+            "method": fight.get("method"),
+            "round": fight.get("round"),
+            "time": fight.get("time"),
+            "fight_card_url": fight.get("fight_card_url"),
+            "weight_class": fight.get("weight_class"),
+            "stats": stats_payload,
+        }
+
+        rows.append(
+            {
+                "fighter_id": fighter_id,
+                "category": "fight_history",
+                "metric": fight_id,
+                "value": json.dumps(serialized_payload, sort_keys=True),
+            }
+        )
+
+    return rows
+
+
 async def upsert_fighter_stats(
     session: AsyncSession,
     fighter_id: str,
     aggregated_stats: dict[str, dict[str, str]],
+    *,
+    fight_history_rows: Sequence[dict[str, Any]] | None = None,
 ) -> None:
-    """Replace fighter_stats rows for a fighter with fresh aggregates."""
+    """Replace ``fighter_stats`` rows for the fighter with aggregated values."""
+
     await session.execute(
         delete(fighter_stats).where(fighter_stats.c.fighter_id == fighter_id)
     )
@@ -482,6 +550,9 @@ async def upsert_fighter_stats(
                     "value": str(raw_value),
                 }
             )
+
+    if fight_history_rows:
+        rows.extend(fight_history_rows)
 
     if rows:
         await session.execute(insert(fighter_stats), rows)
@@ -691,7 +762,13 @@ async def load_fighter_detail(
             fight_history,
             summary_stats=summary_payload,
         )
-        await upsert_fighter_stats(session, fighter_id, aggregated_stats)
+        fight_history_rows = build_fight_history_stat_rows(fighter_id, fight_history)
+        await upsert_fighter_stats(
+            session,
+            fighter_id,
+            aggregated_stats,
+            fight_history_rows=fight_history_rows,
+        )
 
         await session.commit()
         if cache is not None and not dry_run:
