@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import ChampionStatusFilter from "@/components/filters/ChampionStatusFilter";
+import { StreakFilter } from "@/components/filters/StreakFilter";
 
 type FilterPanelProps = {
   stances: string[];
@@ -14,6 +15,10 @@ type FilterPanelProps = {
   onDivisionChange: (division: string | null) => void;
   championStatusFilters: string[];
   onToggleChampionStatus: (status: string) => void;
+  winStreakCount: number | null;
+  lossStreakCount: number | null;
+  onWinStreakChange: (count: number | null) => void;
+  onLossStreakChange: (count: number | null) => void;
 };
 
 export default function FilterPanel({
@@ -25,6 +30,10 @@ export default function FilterPanel({
   onDivisionChange,
   championStatusFilters,
   onToggleChampionStatus,
+  winStreakCount,
+  lossStreakCount,
+  onWinStreakChange,
+  onLossStreakChange,
 }: FilterPanelProps) {
   const handleStanceChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
@@ -36,13 +45,21 @@ export default function FilterPanel({
     onDivisionChange(value === "all" ? null : value);
   };
 
-  const hasActiveFilters = selectedStance || selectedDivision || championStatusFilters.length > 0;
+  const hasActiveFilters =
+    selectedStance ||
+    selectedDivision ||
+    championStatusFilters.length > 0 ||
+    winStreakCount !== null ||
+    lossStreakCount !== null;
 
   const handleClearFilters = () => {
     onStanceChange(null);
     onDivisionChange(null);
     // Clear all champion status filters
     championStatusFilters.forEach((status) => onToggleChampionStatus(status));
+    // Clear streak filters
+    onWinStreakChange(null);
+    onLossStreakChange(null);
   };
 
   return (
@@ -87,6 +104,12 @@ export default function FilterPanel({
         <ChampionStatusFilter
           selectedStatuses={championStatusFilters}
           onToggleStatus={onToggleChampionStatus}
+        />
+        <StreakFilter
+          winStreakCount={winStreakCount}
+          lossStreakCount={lossStreakCount}
+          onWinStreakChange={onWinStreakChange}
+          onLossStreakChange={onLossStreakChange}
         />
       </div>
       {hasActiveFilters ? (

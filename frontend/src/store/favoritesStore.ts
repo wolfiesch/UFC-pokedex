@@ -33,6 +33,8 @@ type FavoritesState = {
   stanceFilter: string | null;
   divisionFilter: string | null;
   championStatusFilters: string[];
+  winStreakCount: number | null;
+  lossStreakCount: number | null;
 
   // Actions
   initialize: () => Promise<void>;
@@ -45,6 +47,9 @@ type FavoritesState = {
   setStanceFilter: (stance: string | null) => void;
   setDivisionFilter: (division: string | null) => void;
   toggleChampionStatusFilter: (status: string) => void;
+  setWinStreakCount: (count: number | null) => void;
+  setLossStreakCount: (count: number | null) => void;
+  clearStreakFilters: () => void;
 
   // Internal helpers
   _ensureDefaultCollection: () => Promise<number>;
@@ -61,6 +66,8 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   stanceFilter: null,
   divisionFilter: null,
   championStatusFilters: [],
+  winStreakCount: null,
+  lossStreakCount: null,
 
   // Initialize the store by loading collections from backend
   initialize: async () => {
@@ -269,6 +276,12 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         : [...filters, status],
     });
   },
+  setWinStreakCount: (count) =>
+    set({ winStreakCount: count, lossStreakCount: null }),
+  setLossStreakCount: (count) =>
+    set({ lossStreakCount: count, winStreakCount: null }),
+  clearStreakFilters: () =>
+    set({ winStreakCount: null, lossStreakCount: null }),
 }));
 
 // Helper hook with auto-initialization

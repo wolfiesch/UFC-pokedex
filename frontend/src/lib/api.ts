@@ -944,6 +944,8 @@ export async function searchFighters(
   stance: string | null = null,
   division: string | null = null,
   championStatusFilters: string[] = [],
+  streakType: "win" | "loss" | null = null,
+  minStreakCount: number | null = null,
   limit = 20,
   offset = 0
 ): Promise<PaginatedFightersResponse> {
@@ -965,6 +967,11 @@ export async function searchFighters(
       params.append("champion_statuses", status);
     }
   });
+  // Add streak filters if both type and count are provided
+  if (streakType && minStreakCount !== null && minStreakCount > 0) {
+    params.set("streak_type", streakType);
+    params.set("min_streak_count", String(minStreakCount));
+  }
   params.set("limit", String(limit));
   params.set("offset", String(offset));
 

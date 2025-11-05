@@ -1606,6 +1606,10 @@ export interface operations {
                 division?: string | null;
                 /** @description Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic). */
                 champion_statuses?: string[] | null;
+                /** @description Filter by streak type. Options: 'win', 'loss'. */
+                streak_type?: ("win" | "loss") | null;
+                /** @description Minimum streak count (only used when streak_type is specified). */
+                min_streak_count?: number | null;
                 /** @description Number of results to return. */
                 limit?: number;
                 /** @description Number of matches to skip. */

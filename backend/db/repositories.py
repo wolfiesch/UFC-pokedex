@@ -927,11 +927,14 @@ class PostgreSQLFighterRepository:
         stance: str | None = None,
         division: str | None = None,
         champion_statuses: list[str] | None = None,
+        streak_type: str | None = None,
+        min_streak_count: int | None = None,
+        include_streak: bool = False,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
-        """Search fighters by name, stance, division, or champion status with pagination support."""
+        """Search fighters by name, stance, division, champion status, or streak with pagination support."""
 
         filters = []
         if query:
@@ -987,8 +990,31 @@ class PostgreSQLFighterRepository:
         # age even if the request straddles midnight in UTC.
         today_utc: date = datetime.now(tz=UTC).date()
 
-        count_result = await self._session.execute(count_stmt)
-        total = count_result.scalar_one()
+        # Calculate streaks if needed (either for filtering or for including in response)
+        fighter_streaks = {}
+        if include_streak or (streak_type and min_streak_count):
+            for fighter in fighters:
+                streak_info = await self._compute_current_streak(fighter.id, window=6)
+                fighter_streaks[fighter.id] = streak_info
+
+        # Apply streak filtering if requested
+        if streak_type and min_streak_count:
+            filtered_fighters = []
+            for fighter in fighters:
+                streak_info = fighter_streaks.get(fighter.id, {})
+                if (
+                    streak_info.get("current_streak_type") == streak_type
+                    and streak_info.get("current_streak_count", 0) >= min_streak_count
+                ):
+                    filtered_fighters.append(fighter)
+            fighters = filtered_fighters
+
+        # Recalculate total after streak filtering
+        if streak_type and min_streak_count:
+            total = len(fighters)
+        else:
+            count_result = await self._session.execute(count_stmt)
+            total = count_result.scalar_one()
 
         return (
             [
@@ -1012,6 +1038,16 @@ class PostgreSQLFighterRepository:
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
                     was_interim=fighter.was_interim if supports_was_interim else False,
+                    current_streak_type=fighter_streaks.get(fighter.id, {}).get(
+                        "current_streak_type", "none"
+                    )
+                    if include_streak
+                    else "none",
+                    current_streak_count=fighter_streaks.get(fighter.id, {}).get(
+                        "current_streak_count", 0
+                    )
+                    if include_streak
+                    else 0,
                 )
                 for fighter in fighters
             ],

@@ -70,9 +70,21 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \
 	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
 	sleep 2; \
-	echo "🔧 Generating TypeScript types from OpenAPI..."; \
-	mkdir -p frontend/src/lib/generated && cd frontend && pnpm generate:types > /dev/null 2>&1 || echo "⚠️  Type generation failed (continuing anyway)"; \
-	cd ..;  \
+	echo "🔧 Generating TypeScript types from OpenAPI (background)..."; \
+	mkdir -p frontend/src/lib/generated; \
+	( \
+	  for i in 1 2 3 4 5 6 7 8 9 10; do \
+	    if curl -sf http://localhost:8000/health > /dev/null 2>&1; then \
+	      echo "✅ Backend ready for type generation"; \
+	      cd frontend && pnpm generate:types > /tmp/types.log 2>&1 \
+	        && echo "✅ Types generated" \
+	        || echo "⚠️  Type generation failed (see /tmp/types.log)"; \
+	      exit 0; \
+	    fi; \
+	    sleep 0.5; \
+	  done; \
+	  echo "⚠️  Backend not ready after 5s, skipping type generation"; \
+	) & \
 	cd frontend && pnpm dev > /tmp/frontend.log 2>&1 & \
 	sleep 3; \
 	echo ""; \
@@ -284,8 +296,21 @@ dev-local: ensure-docker ## Start backend + frontend with localhost URLs (no tun
 	@echo "Starting backend..."
 	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 &
 	@sleep 2
-	@echo "🔧 Generating TypeScript types from OpenAPI..."
-	@mkdir -p frontend/src/lib/generated && cd frontend && pnpm generate:types > /dev/null 2>&1 || echo "⚠️  Type generation failed (continuing anyway)"
+	@echo "🔧 Generating TypeScript types from OpenAPI (background)..."
+	@mkdir -p frontend/src/lib/generated
+	@( \
+	  for i in 1 2 3 4 5 6 7 8 9 10; do \
+	    if curl -sf http://localhost:8000/health > /dev/null 2>&1; then \
+	      echo "✅ Backend ready for type generation"; \
+	      cd frontend && pnpm generate:types > /tmp/types.log 2>&1 \
+	        && echo "✅ Types generated" \
+	        || echo "⚠️  Type generation failed (see /tmp/types.log)"; \
+	      exit 0; \
+	    fi; \
+	    sleep 0.5; \
+	  done; \
+	  echo "⚠️  Backend not ready after 5s, skipping type generation"; \
+	) &
 	@echo "Starting frontend..."
 	@cd frontend && pnpm dev > /tmp/frontend.log 2>&1 &
 	@sleep 3

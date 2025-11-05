@@ -487,11 +487,14 @@ class FighterService:
         stance: str | None = None,
         division: str | None = None,
         champion_statuses: list[str] | None = None,
+        streak_type: Literal["win", "loss"] | None = None,
+        min_streak_count: int | None = None,
+        include_streak: bool = False,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> PaginatedFightersResponse:
-        """Search fighters by name, stance, division, or champion status with pagination."""
+        """Search fighters by name, stance, division, champion status, or streak with pagination."""
 
         resolved_limit = limit if limit is not None and limit > 0 else 20
         resolved_offset = offset if offset is not None and offset >= 0 else 0
@@ -505,9 +508,11 @@ class FighterService:
         stance_param = normalized_stance or None
         division_param = normalized_division or None
         champion_statuses_param = normalized_champion_statuses
+        streak_type_param = streak_type
+        min_streak_count_param = min_streak_count
 
         use_cache = self._cache is not None and (
-            normalized_query or normalized_stance or normalized_division or normalized_champion_statuses
+            normalized_query or normalized_stance or normalized_division or normalized_champion_statuses or streak_type
         )
         cache_key = (
             search_key(
@@ -517,6 +522,8 @@ class FighterService:
                 champion_statuses=",".join(sorted(normalized_champion_statuses))
                 if normalized_champion_statuses
                 else None,
+                streak_type=streak_type if streak_type else None,
+                min_streak_count=min_streak_count if min_streak_count is not None else None,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
@@ -538,11 +545,16 @@ class FighterService:
                 stance=stance_param,
                 division=division_param,
                 champion_statuses=champion_statuses_param,
+                streak_type=streak_type_param,
+                min_streak_count=min_streak_count_param,
+                include_streak=include_streak,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
         else:
-            fighters_iterable = await self._repository.list_fighters()
+            fighters_iterable = await self._repository.list_fighters(
+                include_streak=include_streak
+            )
             query_lower = query_param.lower() if query_param else None
             stance_lower = stance_param.lower() if stance_param else None
             division_lower = division_param.lower() if division_param else None
@@ -566,7 +578,15 @@ class FighterService:
                         getattr(fighter, "division", None) or ""
                     ).lower()
                     division_match = fighter_division == division_lower
-                if name_match and stance_match and division_match:
+                streak_match = True
+                if streak_type_param and min_streak_count_param:
+                    fighter_streak_type = getattr(fighter, "current_streak_type", None)
+                    fighter_streak_count = getattr(fighter, "current_streak_count", 0) or 0
+                    streak_match = (
+                        fighter_streak_type == streak_type_param
+                        and fighter_streak_count >= min_streak_count_param
+                    )
+                if name_match and stance_match and division_match and streak_match:
                     filtered.append(fighter)
 
             total = len(filtered)

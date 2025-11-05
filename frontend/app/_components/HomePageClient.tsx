@@ -36,6 +36,10 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
     setDivisionFilter,
     championStatusFilters,
     toggleChampionStatusFilter,
+    winStreakCount,
+    lossStreakCount,
+    setWinStreakCount,
+    setLossStreakCount,
   } = useSearch();
   const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
   const divisions = [
@@ -95,6 +99,10 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
         onDivisionChange={setDivisionFilter}
         championStatusFilters={championStatusFilters}
         onToggleChampionStatus={toggleChampionStatusFilter}
+        winStreakCount={winStreakCount}
+        lossStreakCount={lossStreakCount}
+        onWinStreakChange={setWinStreakCount}
+        onLossStreakChange={setLossStreakCount}
       />
       <FighterGrid
         fighters={fighters}

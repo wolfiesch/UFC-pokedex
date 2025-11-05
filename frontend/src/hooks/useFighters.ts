@@ -38,6 +38,8 @@ export function useFighters(
   const stance = useFavoritesStore((state) => state.stanceFilter);
   const division = useFavoritesStore((state) => state.divisionFilter);
   const championStatusFilters = useFavoritesStore((state) => state.championStatusFilters);
+  const winStreakCount = useFavoritesStore((state) => state.winStreakCount);
+  const lossStreakCount = useFavoritesStore((state) => state.lossStreakCount);
 
   // Support both old API (number) and new API (initialData object)
   const initialData =
@@ -46,8 +48,13 @@ export function useFighters(
     typeof initialDataOrLimit === "number" ? initialDataOrLimit : 20;
 
   const normalizedSearch = (searchTerm ?? "").trim();
+
+  // Determine active streak type and count
+  const streakType: "win" | "loss" | null = winStreakCount !== null ? "win" : lossStreakCount !== null ? "loss" : null;
+  const minStreakCount = winStreakCount !== null ? winStreakCount : lossStreakCount;
+
   const isFiltering = Boolean(
-    normalizedSearch || stance || division || championStatusFilters.length > 0
+    normalizedSearch || stance || division || championStatusFilters.length > 0 || streakType
   );
 
   const queryKey = useMemo(
@@ -58,10 +65,12 @@ export function useFighters(
         stance: stance ?? null,
         division: division ?? null,
         championStatusFilters: championStatusFilters.length > 0 ? championStatusFilters : null,
+        streakType: streakType ?? null,
+        minStreakCount: minStreakCount ?? null,
         limit: pageSize,
       },
     ],
-    [normalizedSearch, stance, division, championStatusFilters, pageSize]
+    [normalizedSearch, stance, division, championStatusFilters, streakType, minStreakCount, pageSize]
   );
 
   const {
@@ -95,6 +104,8 @@ export function useFighters(
           stance,
           division,
           championStatusFilters,
+          streakType,
+          minStreakCount,
           pageSize,
           offset
         );

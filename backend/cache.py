@@ -43,6 +43,8 @@ def search_key(
     stance: str | None,
     division: str | None = None,
     champion_statuses: str | None = None,
+    streak_type: str | None = None,
+    min_streak_count: int | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> str:
@@ -51,6 +53,8 @@ def search_key(
         (stance or "").strip().lower(),
         (division or "").strip().lower(),
         (champion_statuses or "").strip().lower(),
+        (streak_type or "").strip().lower(),
+        str(min_streak_count) if min_streak_count is not None else "",
         str(limit) if limit is not None else "",
         str(offset) if offset is not None else "",
     ]
