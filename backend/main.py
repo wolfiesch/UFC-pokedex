@@ -133,10 +133,7 @@ async def lifespan(app: FastAPI):
 
         # For SQLite, create tables automatically (bypass Alembic)
         engine = get_engine()
-        begin_context = engine.begin()
-        if inspect.isawaitable(begin_context):
-            begin_context = await begin_context
-        async with begin_context as conn:
+        async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("✓ SQLite tables initialized successfully")
     else:
