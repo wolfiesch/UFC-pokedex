@@ -31,6 +31,9 @@ import type {
 } from "./types";
 import client from "./api-client";
 import { ApiError, NotFoundError } from "./errors";
+import { resolveApiBaseUrl } from "./resolve-api-base-url";
+
+const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
 
 /**
  * Type guard to check if error response has a status code
@@ -111,12 +114,18 @@ function throwApiErrorWithNotFound(
 }
 
 /**
- * Get the API base URL from environment variables
+ * Get the API base URL from environment variables with proper URL resolution
+ *
+ * Uses resolveApiBaseUrl utility to handle URL parsing, scheme inference,
+ * and validation with helpful error messages.
  *
  * @returns The configured API base URL or default localhost
  */
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  return resolveApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    DEFAULT_CLIENT_API_BASE_URL
+  );
 }
 
 /**
