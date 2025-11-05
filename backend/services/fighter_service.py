@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import secrets
-
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime

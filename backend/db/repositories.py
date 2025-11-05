@@ -226,6 +226,8 @@ class PostgreSQLFighterRepository:
             Fighter.image_url,
             Fighter.is_current_champion,
             Fighter.is_former_champion,
+            Fighter.current_streak_type,  # Phase 2 optimization
+            Fighter.current_streak_count,  # Phase 2 optimization
         ]
 
     async def _batch_compute_streaks(
@@ -1128,7 +1130,10 @@ class PostgreSQLFighterRepository:
 
                 filters.append(or_(*champion_conditions))
 
-        apply_streak_filter = bool(streak_type and min_streak_count)
+        # Streak filtering using pre-computed columns (Phase 2 optimization)
+        if streak_type and min_streak_count:
+            filters.append(Fighter.current_streak_type == streak_type)
+            filters.append(Fighter.current_streak_count >= min_streak_count)
 
         base_columns = self._fighter_summary_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
@@ -1145,12 +1150,17 @@ class PostgreSQLFighterRepository:
             stmt = stmt.where(condition)
             count_stmt = count_stmt.where(condition)
 
-        if not apply_streak_filter:
-            if offset is not None and offset > 0:
-                stmt = stmt.offset(offset)
-            if limit is not None and limit > 0:
-                stmt = stmt.limit(limit)
+        # Apply pagination (now works for ALL filters including streaks!)
+        if offset is not None and offset > 0:
+            stmt = stmt.offset(offset)
+        if limit is not None and limit > 0:
+            stmt = stmt.limit(limit)
 
+        # Get total count
+        count_result = await self._session.execute(count_stmt)
+        total = count_result.scalar_one_or_none() or 0
+
+        # Execute query
         result = await self._session.execute(stmt)
         fighters = result.scalars().all()
 
@@ -1158,40 +1168,8 @@ class PostgreSQLFighterRepository:
         # age even if the request straddles midnight in UTC.
         today_utc: date = datetime.now(tz=UTC).date()
 
-        # Calculate streaks if needed (either for filtering or for including in response)
-        # Use batch computation for better performance (100x speedup)
-        fighter_streaks = {}
-        if include_streak or apply_streak_filter:
-            fighter_ids = [f.id for f in fighters]
-            if apply_streak_filter:
-                threshold = max(2, (min_streak_count or 1) + 1)
-                streak_window = threshold
-            else:
-                streak_window = 6
-            fighter_streaks = await self._batch_compute_streaks(
-                fighter_ids, window=streak_window
-            )
-
-        # Apply streak filtering if requested
-        if apply_streak_filter:
-            filtered_fighters = []
-            for fighter in fighters:
-                streak_info = fighter_streaks.get(fighter.id, {})
-                if (
-                    streak_info.get("current_streak_type") == streak_type
-                    and streak_info.get("current_streak_count", 0) >= min_streak_count
-                ):
-                    filtered_fighters.append(fighter)
-            total = len(filtered_fighters)
-            start_index = offset or 0
-            slice_limit = limit if limit and limit > 0 else None
-            if slice_limit is None:
-                fighters = filtered_fighters[start_index:]
-            else:
-                fighters = filtered_fighters[start_index:start_index + slice_limit]
-        else:
-            count_result = await self._session.execute(count_stmt)
-            total = count_result.scalar_one_or_none() or 0
+        # Phase 2: Streak data now comes from pre-computed database columns
+        # No need to compute streaks - they're already in the Fighter model!
 
         return (
             [
@@ -1215,16 +1193,15 @@ class PostgreSQLFighterRepository:
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
                     was_interim=fighter.was_interim if supports_was_interim else False,
-                    current_streak_type=fighter_streaks.get(fighter.id, {}).get(
-                        "current_streak_type", "none"
-                    )
-                    if include_streak
-                    else "none",
-                    current_streak_count=fighter_streaks.get(fighter.id, {}).get(
-                        "current_streak_count", 0
-                    )
-                    if include_streak
-                    else 0,
+                    # Phase 2: Use pre-computed streak columns from database
+                    current_streak_type=(
+                        fighter.current_streak_type  # type: ignore[arg-type]
+                        if include_streak and fighter.current_streak_type
+                        else "none"
+                    ),
+                    current_streak_count=(
+                        fighter.current_streak_count if include_streak else 0
+                    ),
                 )
                 for fighter in fighters
             ],

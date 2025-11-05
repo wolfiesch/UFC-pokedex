@@ -61,6 +61,7 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
     const wasAdding = !isFavorited;
     toggleFavorite({
       fighter_id: fighter.fighter_id,
+      detail_url: fighter.detail_url,
       name: fighter.name,
       nickname: fighter.nickname,
       division: fighter.division,

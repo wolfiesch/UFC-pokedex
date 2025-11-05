@@ -9,9 +9,6 @@ from datetime import date
 
 import pytest
 
-pytest.importorskip("sqlalchemy")
-pytest.importorskip("aiosqlite")
-
 
 class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
     """Minimal asyncio-compatible Redis stand-in for service import paths."""
@@ -61,11 +58,25 @@ sys.modules.setdefault("redis", _redis_module)
 sys.modules["redis.asyncio"] = _redis_asyncio_module
 sys.modules["redis.exceptions"] = _redis_exceptions_module
 
-from sqlalchemy.ext.asyncio import (  # type: ignore[attr-defined]
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+try:
+    from sqlalchemy.ext.asyncio import (  # type: ignore[attr-defined]
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        f"Optional dependency '{exc.name}' is required for event repository tests.",
+        allow_module_level=True,
+    )
+
+try:
+    import aiosqlite  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        "Optional dependency 'aiosqlite' is required for event repository tests.",
+        allow_module_level=True,
+    )
 
 from backend.db.models import Base, Event, Fight, Fighter
 from backend.db.repositories import PostgreSQLEventRepository

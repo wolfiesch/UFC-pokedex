@@ -579,33 +579,33 @@ function normalizeFighterDetailPayload(payload: unknown): FighterDetail {
     });
   }
 
-  const record = typeof (payload as Record<string, unknown>).record === "string"
-    ? (payload as Record<string, unknown>).record
-    : null;
-  const legReach = typeof (payload as Record<string, unknown>).leg_reach === "string"
-    ? (payload as Record<string, unknown>).leg_reach
-    : null;
-  const ageRaw = (payload as Record<string, unknown>).age;
-  const age = typeof ageRaw === "number" && Number.isFinite(ageRaw) ? ageRaw : null;
+  const payloadRecord = isRecord(payload) ? payload : {};
+  const recordRaw = payloadRecord.record;
+  const record = typeof recordRaw === "string" ? recordRaw : null;
+  const legReachRaw = payloadRecord.leg_reach;
+  const legReach = typeof legReachRaw === "string" ? legReachRaw : null;
+  const ageRaw = payloadRecord.age;
+  const age =
+    typeof ageRaw === "number" && Number.isFinite(ageRaw) ? ageRaw : null;
 
   const striking = normalizeMetricsRecord(
-    (payload as Record<string, unknown>).striking
+    payloadRecord.striking
   );
   const grappling = normalizeMetricsRecord(
-    (payload as Record<string, unknown>).grappling
+    payloadRecord.grappling
   );
   const significantStrikes = normalizeMetricsRecord(
-    (payload as Record<string, unknown>).significant_strikes
+    payloadRecord.significant_strikes
   );
   const takedownStats = normalizeMetricsRecord(
-    (payload as Record<string, unknown>).takedown_stats
+    payloadRecord.takedown_stats
   );
   const career = normalizeMetricsRecord(
-    (payload as Record<string, unknown>).career
+    payloadRecord.career
   );
 
-  const historySource = Array.isArray((payload as Record<string, unknown>).fight_history)
-    ? ((payload as Record<string, unknown>).fight_history as unknown[])
+  const historySource = Array.isArray(payloadRecord.fight_history)
+    ? (payloadRecord.fight_history as unknown[])
     : [];
   const fightHistory = historySource
     .map((entry) => normalizeFightHistoryEntryPayload(entry))

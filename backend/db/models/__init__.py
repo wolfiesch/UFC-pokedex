@@ -94,6 +94,21 @@ class Fighter(Base):
         JSON, nullable=True
     )
 
+    # Pre-computed streak columns for performance (Phase 2 optimization)
+    current_streak_type: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+        index=True,
+        doc="Current streak type: 'win', 'loss', 'draw', or None",
+    )
+    current_streak_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+        index=True,
+        doc="Count of current streak (computed from recent fight history)",
+    )
+
     fights: Mapped[list[Fight]] = relationship("Fight", back_populates="fighter")
 
 

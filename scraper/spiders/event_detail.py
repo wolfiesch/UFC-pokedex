@@ -46,9 +46,11 @@ class EventDetailSpider(scrapy.Spider):
                 urls.extend(self._load_urls_from_file(str(default_file)))
                 unique_urls = list(dict.fromkeys(urls))
             else:
-                self.logger.warning(
-                    "No event URLs provided; pass `-a event_ids=...`, `-a event_urls=...`, or `-a input_file=...`",
+                guidance = (
+                    "No event URLs provided; pass `-a event_ids=...`, "
+                    "`-a event_urls=...`, or `-a input_file=...`"
                 )
+                self.logger.warning(guidance)
         return unique_urls
 
     def _parse_arg_urls(self, arg: str | Iterable[str] | None) -> list[str]:

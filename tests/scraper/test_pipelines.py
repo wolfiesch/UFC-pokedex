@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("itemadapter")
+try:
+    import itemadapter  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        "Optional dependency 'itemadapter' is required for scraper pipeline tests.",
+        allow_module_level=True,
+    )
 
 from scraper.pipelines.validation import ValidationPipeline
 

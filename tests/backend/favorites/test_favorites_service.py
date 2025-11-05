@@ -6,10 +6,14 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-pytest.importorskip("sqlalchemy")
-pytest_asyncio = pytest.importorskip("pytest_asyncio")
-
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+try:
+    import pytest_asyncio
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        f"Optional dependency '{exc.name}' is required for favorites service tests.",
+        allow_module_level=True,
+    )
 
 from backend.cache import favorite_collection_key, favorite_list_key, favorite_stats_key
 from backend.db.models import Base, Fight, Fighter

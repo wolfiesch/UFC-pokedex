@@ -6,16 +6,26 @@ from datetime import datetime as dt_datetime
 
 import pytest
 
-pytest.importorskip("sqlalchemy")
-pytest.importorskip("pytest_asyncio")
-pytest.importorskip("aiosqlite")
+try:
+    import pytest_asyncio
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        f"Optional dependency '{exc.name}' is required for fighter repository tests.",
+        allow_module_level=True,
+    )
 
-pytest_asyncio = pytest.importorskip("pytest_asyncio")
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+try:
+    import aiosqlite  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        "Optional dependency 'aiosqlite' is required for fighter repository tests.",
+        allow_module_level=True,
+    )
 
 from backend.db.models import Base, Fighter
 from backend.db.repositories import PostgreSQLFighterRepository

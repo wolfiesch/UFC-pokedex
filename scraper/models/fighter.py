@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
 class FighterListItem(BaseModel):
@@ -43,8 +43,9 @@ class FighterDetail(FighterListItem):
     takedown_stats: dict[str, Any] = Field(default_factory=dict)
     fight_history: list[FightHistoryEntry] = Field(default_factory=list)
 
-    @validator("age", pre=True)
-    def _empty_string_to_none(cls, value):  # type: ignore[no-untyped-def]
+    @field_validator("age", mode="before")
+    @classmethod
+    def _empty_string_to_none(cls, value: Any) -> Any:
         if isinstance(value, str) and not value.strip():
             return None
         return value

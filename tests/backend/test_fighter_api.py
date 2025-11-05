@@ -56,9 +56,10 @@ sys.modules.setdefault("redis", redis_module)
 sys.modules.setdefault("redis.asyncio", redis_asyncio_module)
 sys.modules.setdefault("redis.exceptions", redis_exceptions_module)
 
-from backend.main import app
-from backend.schemas.fighter import FighterDetail
-from backend.services.fighter_service import get_fighter_service
+# Import backend modules after the Redis stubs are registered to avoid optional dependency errors.
+from backend.main import app  # noqa: E402
+from backend.schemas.fighter import FighterDetail  # noqa: E402
+from backend.services.fighter_service import get_fighter_service  # noqa: E402
 
 
 class StubFighterService:
