@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable, Sequence
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any, Literal
 
 from fastapi import Depends
@@ -361,7 +361,7 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
     if not graph.nodes:
         metadata = dict(graph.metadata)
         metadata.setdefault("insights", {})
-        metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
+        metadata.setdefault("generated_at", datetime.now(UTC).isoformat())
         return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
 
     nodes_by_id: dict[str, FightGraphNode] = {node.fighter_id: node for node in graph.nodes}
@@ -395,7 +395,7 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
     }
 
     metadata["insights"] = insights
-    metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
+    metadata.setdefault("generated_at", datetime.now(UTC).isoformat())
 
     return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
 
@@ -479,7 +479,8 @@ class FighterService:
 
         fighter = await self._repository.get_fighter(fighter_id)
         if fighter:
-            await self._cache_set(cache_key, fighter.model_dump(), ttl=600)
+            # Fighter detail (bio rarely changes) - cache for 30 minutes
+            await self._cache_set(cache_key, fighter.model_dump(), ttl=1800)
         return fighter
 
     async def get_stats_summary(self) -> StatsSummaryResponse:

@@ -65,10 +65,8 @@ def do_run_migrations(connection: Connection) -> None:
         # Drop all tables defined in the target_metadata
         target_metadata.drop_all(connection)
 
-    context.configure(connection=connection, target_metadata=target_metadata)
-
-    with context.begin_transaction():
-        context.run_migrations()
+    context.configure(connection=connection, target_metadata=target_metadata, transactional_ddl=False)
+    context.run_migrations()
 
 
 async def run_async_migrations() -> None:

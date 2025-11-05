@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
-from typing import Any, Literal, cast as typing_cast
+from typing import Any, Literal
+from typing import cast as typing_cast
 
 from sqlalchemy import Float, cast, desc, func, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,6 @@ from sqlalchemy.orm import load_only, selectinload
 
 from backend.db.models import Event, Fight, Fighter, fighter_stats
 from backend.schemas.event import EventDetail, EventFight, EventListItem
-from backend.utils.event_utils import detect_event_type
 from backend.schemas.fight_graph import (
     FightGraphLink,
     FightGraphNode,
@@ -38,6 +38,10 @@ from backend.services.image_resolver import (
     resolve_fighter_image,
     resolve_fighter_image_cropped,
 )
+from backend.utils.event_utils import detect_event_type
+
+
+_WAS_INTERIM_SUPPORTED_CACHE: bool | None = None
 
 
 def _invert_fight_result(result: str | None) -> str:
@@ -157,6 +161,12 @@ class PostgreSQLFighterRepository:
         self._was_interim_supported: bool | None = None
 
     async def _supports_was_interim(self) -> bool:
+        global _WAS_INTERIM_SUPPORTED_CACHE
+
+        if _WAS_INTERIM_SUPPORTED_CACHE is not None:
+            self._was_interim_supported = _WAS_INTERIM_SUPPORTED_CACHE
+            return _WAS_INTERIM_SUPPORTED_CACHE
+
         if self._was_interim_supported is not None:
             return self._was_interim_supported
 
@@ -171,6 +181,7 @@ class PostgreSQLFighterRepository:
         except Exception:
             self._was_interim_supported = False
 
+        _WAS_INTERIM_SUPPORTED_CACHE = self._was_interim_supported
         return self._was_interim_supported
 
     async def _resolve_fighter_columns(
@@ -1060,7 +1071,10 @@ class PostgreSQLFighterRepository:
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
-        """Search fighters by name, stance, division, champion status, or streak with pagination support."""
+        """Search fighters by name, stance, division, champion status, or streak.
+
+        Supports pagination with limit and offset parameters.
+        """
 
         filters = []
         if query:
@@ -1081,9 +1095,9 @@ class PostgreSQLFighterRepository:
             champion_conditions = []
             for status in champion_statuses:
                 if status == "current":
-                    champion_conditions.append(Fighter.is_current_champion == True)
+                    champion_conditions.append(Fighter.is_current_champion.is_(True))
                 elif status == "former":
-                    champion_conditions.append(Fighter.is_former_champion == True)
+                    champion_conditions.append(Fighter.is_former_champion.is_(True))
             if champion_conditions:
                 # Use OR to combine conditions (show fighters matching ANY status)
                 from sqlalchemy import or_

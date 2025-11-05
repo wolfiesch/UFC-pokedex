@@ -5,17 +5,15 @@ Revises: bf57252535f6
 Create Date: 2025-11-05 00:24:01.876371
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = '79abdd457621'
-down_revision: Union[str, None] = 'bf57252535f6'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'bf57252535f6'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -41,14 +39,15 @@ def upgrade() -> None:
 
     # Create GIN indexes for trigram search on name and nickname
     # These dramatically improve ILIKE query performance
+    # Note: Not using CONCURRENTLY to avoid transaction issues in migrations
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_fighters_name_trgm
+        CREATE INDEX IF NOT EXISTS ix_fighters_name_trgm
         ON fighters
         USING gin (name gin_trgm_ops)
     """)
 
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_fighters_nickname_trgm
+        CREATE INDEX IF NOT EXISTS ix_fighters_nickname_trgm
         ON fighters
         USING gin (nickname gin_trgm_ops)
     """)

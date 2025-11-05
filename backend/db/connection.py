@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
+logger = logging.getLogger(__name__)
 
 
 def get_database_url() -> str:
@@ -60,7 +63,7 @@ def create_engine() -> AsyncEngine:
 
     if db_type == "postgresql":
         # PostgreSQL: Optimize connection pooling
-        return create_async_engine(
+        engine = create_async_engine(
             url,
             future=True,
             echo=False,
@@ -68,7 +71,24 @@ def create_engine() -> AsyncEngine:
             max_overflow=20,  # Allow up to 30 total connections
             pool_pre_ping=True,  # Validate connections before use
             pool_recycle=1800,  # Recycle connections every 30 min
+            pool_timeout=30,  # Timeout for getting connection from pool
         )
+
+        # Enable query performance monitoring for PostgreSQL
+        try:
+            from backend.monitoring import setup_query_monitoring
+
+            # Get slow query threshold from environment (default: 100ms)
+            slow_query_threshold = float(os.getenv("SLOW_QUERY_THRESHOLD", "0.1"))
+            setup_query_monitoring(
+                engine,
+                slow_query_threshold=slow_query_threshold,
+                log_pool_stats=False,  # Disable verbose pool logging by default
+            )
+        except Exception as e:
+            logger.warning(f"Failed to enable query monitoring: {e}")
+
+        return engine
 
     # SQLite: No pooling needed
     return create_async_engine(url, future=True, echo=False)
