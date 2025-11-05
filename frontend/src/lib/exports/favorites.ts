@@ -45,8 +45,5 @@ export async function exportFavoritesToCsv(collection: FavoriteCollectionDetail)
  * For now we simply log a message so the UI can surface user feedback.
  */
 export async function exportFavoritesToPdf(collection: FavoriteCollectionDetail): Promise<void> {
-  console.warn(
-    "PDF export is currently a stub. Please implement the backend endpoint and update frontend/src/lib/exports/favorites.ts."
-  );
-  console.info(`Requested PDF export for collection: ${collection.title}`);
+  // Stub: PDF export not yet implemented.
 }
