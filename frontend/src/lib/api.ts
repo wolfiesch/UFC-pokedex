@@ -32,8 +32,10 @@ import type {
 } from "./types";
 import { ApiError, ErrorResponseData, NotFoundError } from "./errors";
 import { logger } from "./logger";
+import { resolveApiBaseUrl } from "./resolve-api-base-url";
 
 const REQUEST_OPTIONS: RequestInit = { cache: "no-store" };
+const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
 const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000; // 1 second base delay
@@ -929,7 +931,10 @@ function normalizeFightGraphResponse(payload: unknown): FightGraphResponse {
 }
 
 export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  return resolveApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    DEFAULT_CLIENT_API_BASE_URL
+  );
 }
 
 export async function getFighters(

@@ -12,11 +12,17 @@ import type {
   FighterListItem,
   PaginatedFightersResponse,
 } from "./types";
+import { resolveApiBaseUrl } from "./resolve-api-base-url";
+
+const DEFAULT_SSR_API_BASE_URL = "http://localhost:8000";
 
 function getApiBaseUrl(): string {
-  // For SSR, always use localhost to avoid SSL issues with tunnels
-  // The NEXT_PUBLIC_API_BASE_URL is only for client-side fetching
-  return process.env.NEXT_SSR_API_BASE_URL ?? "http://localhost:8000";
+  // Default to localhost for local development, but allow environment overrides.
+  // resolveApiBaseUrl normalizes the value (adds scheme, strips trailing slash).
+  return resolveApiBaseUrl(
+    process.env.NEXT_SSR_API_BASE_URL,
+    DEFAULT_SSR_API_BASE_URL
+  );
 }
 
 const FETCH_TIMEOUT_MS = 4000;

@@ -85,7 +85,8 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	  done; \
 	  echo "⚠️  Backend not ready after 5s, skipping type generation"; \
 	) & \
-	cd frontend && pnpm dev > /tmp/frontend.log 2>&1 & \
+	DEV_CMD=$${NEXT_DEV_CMD:-dev}; \
+	cd frontend && pnpm run "$$DEV_CMD" > /tmp/frontend.log 2>&1 & \
 	sleep 3; \
 	echo ""; \
 	echo "✅ All services started!"; \

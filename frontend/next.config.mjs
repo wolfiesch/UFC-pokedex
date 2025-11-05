@@ -1,3 +1,11 @@
+const IGNORED_WATCH_GLOBS = [
+  "../data/**",
+  "../docs/**",
+  "../scripts/**",
+  "../scraper/**",
+  "../tests/**",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Remove standalone output for Vercel (it's not needed)
@@ -18,6 +26,20 @@ const nextConfig = {
 
   // Remove rewrites - use NEXT_PUBLIC_API_BASE_URL directly in your API client
   // async rewrites() { ... }
+
+  webpackDevMiddleware: (config) => {
+    const existingIgnored = config.watchOptions?.ignored ?? [];
+    const normalizedIgnored = Array.isArray(existingIgnored)
+      ? existingIgnored
+      : [existingIgnored].filter(Boolean);
+
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [...normalizedIgnored, ...IGNORED_WATCH_GLOBS],
+    };
+
+    return config;
+  },
 };
 
 export default nextConfig;
