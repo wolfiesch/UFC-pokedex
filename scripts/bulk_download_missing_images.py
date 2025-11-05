@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -128,10 +129,13 @@ def main():
     console.print(f"Loaded Sherdog mapping for {len(sherdog_mapping)} fighters")
 
     # Load list of fighters missing images
-    missing_ids_file = Path("/tmp/missing_image_ids.txt")
+    missing_ids_file = Path(tempfile.gettempdir()) / "missing_image_ids.txt"
     if not missing_ids_file.exists():
         console.print("[red]Error:[/red] Missing IDs file not found")
-        console.print("Run: psql ... -c \"SELECT id FROM fighters WHERE image_url IS NULL;\" > /tmp/missing_image_ids.txt")
+        console.print(
+            "Run: psql ... -c \"SELECT id FROM fighters WHERE image_url IS NULL;\" "
+            f"> {missing_ids_file}"
+        )
         return
 
     with missing_ids_file.open() as f:
@@ -149,8 +153,12 @@ def main():
         else:
             fighters_not_in_mapping.append(fighter_id)
 
-    console.print(f"[green]✓[/green] {len(fighters_to_download)} fighters in Sherdog mapping")
-    console.print(f"[yellow]⚠[/yellow] {len(fighters_not_in_mapping)} fighters NOT in Sherdog mapping")
+    console.print(
+        f"[green]✓[/green] {len(fighters_to_download)} fighters in Sherdog mapping"
+    )
+    console.print(
+        f"[yellow]⚠[/yellow] {len(fighters_not_in_mapping)} fighters NOT in Sherdog mapping"
+    )
     console.print()
 
     if len(fighters_to_download) == 0:
@@ -243,7 +251,10 @@ def main():
     if fighters_not_in_mapping:
         not_in_mapping_file = Path("data/fighters_not_in_sherdog_mapping.txt")
         not_in_mapping_file.write_text("\n".join(fighters_not_in_mapping))
-        console.print(f"\n[yellow]⚠[/yellow] Saved {len(fighters_not_in_mapping)} fighter IDs not in mapping to:")
+        console.print(
+            f"\n[yellow]⚠[/yellow] Saved {len(fighters_not_in_mapping)} "
+            "fighter IDs not in mapping to:"
+        )
         console.print(f"   {not_in_mapping_file}")
 
 

@@ -39,9 +39,11 @@ class FighterDetailSpider(scrapy.Spider):
         urls.extend(self._load_urls_from_file(getattr(self, "input_file", None)))
         unique_urls = list(dict.fromkeys(urls))
         if not unique_urls:
-            self.logger.warning(
-                "No fighter URLs provided; pass `-a fighter_ids=...`, `-a fighter_urls=...`, or `-a input_file=...`",
+            guidance = (
+                "No fighter URLs provided; pass `-a fighter_ids=...`, "
+                "`-a fighter_urls=...`, or `-a input_file=...`"
             )
+            self.logger.warning(guidance)
         return unique_urls
 
     def _parse_arg_urls(self, arg: str | Iterable[str] | None) -> list[str]:

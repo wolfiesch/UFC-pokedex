@@ -260,7 +260,8 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         rows = table.css("tr.b-fight-details__table-row")
 
     for index, row in enumerate(rows, start=1):
-        # Skip empty rows (first row in tbody is often empty with class "b-statistics__table-col_type_clear")
+        # Skip empty rows (first row in tbody often uses
+        # "b-statistics__table-col_type_clear")
         if row.css("td.b-fight-details__table-col_type_clear"):
             continue
 
@@ -273,7 +274,8 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         event_cell = row.css("td:nth-child(7)")
 
         # Actual column mapping from UFCStats.com:
-        # Col 3: Kd (knockdowns), Col 4: Str (strikes), Col 5: Td (takedowns), Col 6: Sub (submissions)
+        # Col 3: Kd (knockdowns), Col 4: Str (strikes),
+        # Col 5: Td (takedowns), Col 6: Sub (submissions)
         knockdowns_cell = row.css("td:nth-child(3)")
         strikes_cell = row.css("td:nth-child(4)")
         takedowns_cell = row.css("td:nth-child(5)")
