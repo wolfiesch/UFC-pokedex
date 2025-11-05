@@ -7,12 +7,15 @@ from typing import Any
 
 import pytest
 
-pytest.importorskip("sqlalchemy")
-pytest.importorskip("pytest_asyncio")
-
-pytest_asyncio = pytest.importorskip("pytest_asyncio")
-from sqlalchemy import insert
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+try:
+    import pytest_asyncio
+    from sqlalchemy import insert
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
+    pytest.skip(
+        f"Optional dependency '{exc.name}' is required for fighter stats tests.",
+        allow_module_level=True,
+    )
 
 from backend.db.models import Base, Fight, Fighter, FighterStats, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository

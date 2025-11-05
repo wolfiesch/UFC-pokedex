@@ -8,6 +8,7 @@ export type FighterListItem = {
   height?: string | null;
   weight?: string | null;
   reach?: string | null;
+  leg_reach?: string | null;
   stance?: string | null;
   dob?: string | null;
   image_url?: string | null;

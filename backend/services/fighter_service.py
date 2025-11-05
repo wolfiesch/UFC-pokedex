@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+import secrets
+
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 
 from fastapi import Depends
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import (
@@ -36,6 +40,8 @@ from backend.schemas.stats import (
     StatsSummaryResponse,
     TrendsResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class FighterRepositoryProtocol:
@@ -448,8 +454,12 @@ class FighterService:
             if isinstance(cached, list):
                 try:
                     return [FighterListItem.model_validate(item) for item in cached]
-                except Exception:  # pragma: no cover - defensive fallback
-                    pass
+                except ValidationError as exc:  # pragma: no cover - defensive fallback
+                    logger.warning(
+                        "Failed to deserialize cached fighter list for key %s: %s",
+                        cache_key,
+                        exc,
+                    )
 
         fighters = await self._repository.list_fighters(
             limit=limit,
@@ -475,8 +485,12 @@ class FighterService:
         if isinstance(cached, dict):
             try:
                 return FighterDetail.model_validate(cached)
-            except Exception:  # pragma: no cover - defensive fallback
-                pass
+            except ValidationError as exc:  # pragma: no cover - defensive fallback
+                logger.warning(
+                    "Failed to deserialize cached fighter detail for key %s: %s",
+                    cache_key,
+                    exc,
+                )
 
         fighter = await self._repository.get_fighter(fighter_id)
         if fighter:
@@ -514,15 +528,12 @@ class FighterService:
         """Get a random fighter."""
         if hasattr(self._repository, "get_random_fighter"):
             return await self._repository.get_random_fighter()
-        else:
-            # Fallback for repositories without random
-            import random
-
-            fighters = await self._repository.list_fighters()
-            fighter_list = list(fighters)
-            if not fighter_list:
-                return None
-            return random.choice(fighter_list)
+        # Fallback for repositories without native random selection
+        fighters = await self._repository.list_fighters()
+        fighter_list = list(fighters)
+        if not fighter_list:
+            return None
+        return secrets.choice(fighter_list)
 
     async def search_fighters(
         self,
@@ -582,8 +593,12 @@ class FighterService:
             if isinstance(cached, dict):
                 try:
                     return PaginatedFightersResponse.model_validate(cached)
-                except Exception:  # pragma: no cover
-                    pass
+                except ValidationError as exc:  # pragma: no cover
+                    logger.warning(
+                        "Failed to deserialize cached fighter search for key %s: %s",
+                        cache_key,
+                        exc,
+                    )
 
         if hasattr(self._repository, "search_fighters"):
             fighters, total = await self._repository.search_fighters(
@@ -662,8 +677,12 @@ class FighterService:
             if isinstance(cached, list):
                 try:
                     return [FighterComparisonEntry.model_validate(item) for item in cached]
-                except Exception:  # pragma: no cover
-                    pass
+                except ValidationError as exc:  # pragma: no cover
+                    logger.warning(
+                        "Failed to deserialize cached fighter comparison for key %s: %s",
+                        cache_key,
+                        exc,
+                    )
 
         if hasattr(self._repository, "get_fighters_for_comparison"):
             fighters = await self._repository.get_fighters_for_comparison(fighter_ids)
@@ -720,8 +739,12 @@ class FighterService:
             if isinstance(cached, dict):
                 try:
                     return FightGraphResponse.model_validate(cached)
-                except Exception:  # pragma: no cover - defensive fallback
-                    pass
+                except ValidationError as exc:  # pragma: no cover - defensive fallback
+                    logger.warning(
+                        "Failed to deserialize cached fight graph for key %s: %s",
+                        cache_key,
+                        exc,
+                    )
 
         repository_method = getattr(self._repository, "get_fight_graph", None)
         if repository_method is None:

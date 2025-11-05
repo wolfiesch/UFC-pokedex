@@ -60,7 +60,8 @@ class FaceDetectionService:
         try:
             # Try to load CNN model if available
             # Note: This requires downloading the model file separately
-            model_path = Path(__file__).parent.parent.parent / "models" / "mmod_human_face_detector.dat"
+            project_root = Path(__file__).parent.parent.parent
+            model_path = project_root / "models" / "mmod_human_face_detector.dat"
 
             if model_path.exists():
                 self.cnn_detector = dlib.cnn_face_detection_model_v1(str(model_path))
@@ -104,8 +105,10 @@ class FaceDetectionService:
             # Convert BGR to RGB (dlib expects RGB)
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        except Exception as e:
-            raise ValueError(f"Error loading image {image_path}: {e}")
+        except Exception as exc:
+            raise ValueError(
+                f"Error loading image {image_path}: {exc}"
+            ) from exc
 
         # Detect faces
         faces = []

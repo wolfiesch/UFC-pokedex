@@ -5,13 +5,11 @@ from typing import Any
 
 import pytest
 
-pytest.importorskip("pytest_asyncio")
-pytest.importorskip("sqlalchemy")
-
-pytest_asyncio = pytest.importorskip("pytest_asyncio")
-
 from backend.schemas.fighter import FighterComparisonEntry
 from backend.services.fighter_service import FighterService
+
+pytest.importorskip("pytest_asyncio")
+pytest.importorskip("sqlalchemy")
 
 
 class FakeCache:
