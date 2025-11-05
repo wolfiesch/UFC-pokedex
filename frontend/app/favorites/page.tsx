@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function FavoritesPage() {
   const userId = DEFAULT_USER_ID;
 
-  let collections: FavoriteCollectionSummary[] = [];
+  let collections: any[] = [];
   let detail: FavoriteCollectionDetail | null = null;
 
   try {
