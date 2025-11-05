@@ -217,7 +217,7 @@ class PostgreSQLFighterRepository:
         self,
         fighter_ids: list[str],
         *,
-        window: int = 6,
+        window: int | None = 6,
     ) -> dict[str, dict[str, int | Literal["win", "loss", "draw", "none"]]]:
         """Compute streaks for multiple fighters in a single database query.
 
@@ -227,7 +227,7 @@ class PostgreSQLFighterRepository:
         if not fighter_ids:
             return {}
 
-        effective_window = max(2, window)
+        effective_window: int | None = None if window is None else max(2, window)
 
         # Single bulk query instead of N queries
         stmt = (
@@ -276,7 +276,7 @@ class PostgreSQLFighterRepository:
     def _compute_streak_from_fights(
         self,
         fight_entries: list[tuple[date | None, str]],
-        window: int,
+        window: int | None,
     ) -> dict[str, int | Literal["win", "loss", "draw", "none"]]:
         """Compute streak from a list of fight entries (date, result pairs).
 
@@ -289,31 +289,32 @@ class PostgreSQLFighterRepository:
         fight_entries.sort(
             key=lambda entry: (entry[0] is None, entry[0] or date.min), reverse=True
         )
-        recent_entries = fight_entries[:window]
 
         # Find the last completed result type
         last_completed: Literal["win", "loss", "draw"] | None = None
-        for _, result_text in recent_entries:
+        completed_seen = 0
+        for _, result_text in fight_entries:
             category = _normalize_result_category(result_text)
             if category in {"win", "loss", "draw"}:
                 last_completed = typing_cast(
                     Literal["win", "loss", "draw"], category
                 )
                 break
-
         if last_completed is None:
             return {"current_streak_type": "none", "current_streak_count": 0}
 
-        # Count consecutive results of the same type
         consecutive = 0
-        for _, result_text in recent_entries:
+        for _, result_text in fight_entries:
             category = _normalize_result_category(result_text)
             if category == last_completed:
                 consecutive += 1
+                completed_seen += 1
             elif category in {"win", "loss", "draw"}:
                 break
             else:
                 continue
+            if window is not None and completed_seen >= window:
+                break
 
         if consecutive < 2:
             return {"current_streak_type": "none", "current_streak_count": 0}
@@ -401,65 +402,12 @@ class PostgreSQLFighterRepository:
         fighters = result.scalars().all()
 
         # Optionally compute current streaks for the returned fighters only
-        streak_by_fighter: dict[str, tuple[str, int]] = {}
+        streak_by_fighter: dict[str, dict[str, int | Literal["win", "loss", "draw", "none"]]] = {}
         if include_streak and fighters:
             fighter_ids = [f.id for f in fighters]
-            fights_stmt = select(Fight).where(
-                (Fight.fighter_id.in_(fighter_ids))
-                | (Fight.opponent_id.in_(fighter_ids))
+            streak_by_fighter = await self._batch_compute_streaks(
+                fighter_ids, window=streak_window
             )
-            fights_result = await self._session.execute(fights_stmt)
-            fights = fights_result.scalars().all()
-
-            # Aggregate fights per fighter perspective
-            fights_for: dict[str, list[tuple[date | None, str]]] = {}
-            for fight in fights:
-                # Perspective: primary fighter
-                if fight.fighter_id in fighter_ids:
-                    fights_for.setdefault(fight.fighter_id, []).append(
-                        (fight.event_date, fight.result or "")
-                    )
-                # Perspective: opponent
-                if fight.opponent_id and fight.opponent_id in fighter_ids:
-                    fights_for.setdefault(fight.opponent_id, []).append(
-                        (fight.event_date, _invert_fight_result(fight.result))
-                    )
-
-            # Compute streak from the most recent fights per fighter
-            for fid, entries in fights_for.items():
-                # Sort newest first. ``None`` dates are pushed last.
-                entries.sort(key=lambda e: (e[0] is None, e[0] or date.min), reverse=True)
-
-                # Consider only the last ``streak_window`` fights
-                recent = entries[: max(2, streak_window)]
-
-                # Identify the last completed result type
-                def _category(text: str) -> str:
-                    return _normalize_result_category(text)
-
-                last_type = None
-                for _, res in recent:
-                    cat = _category(res)
-                    if cat in {"win", "loss", "draw"}:
-                        last_type = cat
-                        break
-                if last_type is None:
-                    continue
-
-                # Count consecutive same-type results from most recent
-                count = 0
-                for _, res in recent:
-                    cat = _category(res)
-                    if cat == last_type:
-                        count += 1
-                    elif cat in {"win", "loss", "draw"}:
-                        break
-                    else:
-                        # Skip non-completed outcomes inside the window
-                        continue
-
-                if count >= 2:
-                    streak_by_fighter[fid] = (last_type, count)
 
         # Cache a single "today" value in UTC so every fighter on the page uses
         # the same reference point for age calculations.
@@ -486,18 +434,16 @@ class PostgreSQLFighterRepository:
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
                 was_interim=fighter.was_interim if supports_was_interim else False,
-                current_streak_type=(
-                    typing_cast(
-                        Literal["win", "loss", "draw", "none"],
-                        (
-                            streak_by_fighter.get(fighter.id, ("none", 0))[0]
-                            if include_streak
-                            else "none"
-                        ),
-                    )
+                current_streak_type=typing_cast(
+                    Literal["win", "loss", "draw", "none"],
+                    (
+                        streak_by_fighter.get(fighter.id, {}).get("current_streak_type", "none")
+                        if include_streak
+                        else "none"
+                    ),
                 ),
                 current_streak_count=(
-                    int(streak_by_fighter.get(fighter.id, ("none", 0))[1])
+                    int(streak_by_fighter.get(fighter.id, {}).get("current_streak_count", 0))
                     if include_streak
                     else 0
                 ),
@@ -1139,7 +1085,13 @@ class PostgreSQLFighterRepository:
         fighter_streaks = {}
         if include_streak or apply_streak_filter:
             fighter_ids = [f.id for f in fighters]
-            fighter_streaks = await self._batch_compute_streaks(fighter_ids, window=6)
+            if apply_streak_filter or min_streak_count is not None:
+                streak_window: int | None = None
+            else:
+                streak_window = 6
+            fighter_streaks = await self._batch_compute_streaks(
+                fighter_ids, window=streak_window
+            )
 
         # Apply streak filtering if requested
         if apply_streak_filter:

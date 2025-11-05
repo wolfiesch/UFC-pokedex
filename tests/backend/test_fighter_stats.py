@@ -562,3 +562,96 @@ async def test_search_fighters_supports_pagination(session: AsyncSession) -> Non
     assert len(page_two) == 1
     assert page_one[0].name.startswith("Alpha")
     assert page_two[0].name.startswith("Albert")
+
+
+@pytest.mark.asyncio
+async def test_search_fighters_filters_by_extended_win_streak(
+    session: AsyncSession,
+) -> None:
+    """Ensure win streak filtering looks beyond the default six-fight window."""
+
+    streaking_fighter = Fighter(id="streaker", name="Seven Streak")
+    challenger = Fighter(id="challenger", name="Challenger Five")
+    session.add_all([streaking_fighter, challenger])
+    await session.flush()
+
+    # Upcoming fight should be ignored when counting wins.
+    session.add(
+        Fight(
+            id="streaker-upcoming",
+            fighter_id="streaker",
+            opponent_id="opponent-upcoming",
+            opponent_name="Future Opponent",
+            event_name="Future Event",
+            event_date=date(2025, 1, 1),
+            result="Next",
+            method=None,
+            round=None,
+            time=None,
+            fight_card_url=None,
+        )
+    )
+
+    for index in range(7):
+        session.add(
+            Fight(
+                id=f"streaker-win-{index}",
+                fighter_id="streaker",
+                opponent_id=f"opponent-{index}",
+                opponent_name=f"Opponent {index}",
+                event_name=f"Event {index}",
+                event_date=date(2024, 1, 1 + index),
+                result="Win",
+                method="Decision",
+                round=3,
+                time="05:00",
+                fight_card_url=None,
+            )
+        )
+
+    for index in range(5):
+        session.add(
+            Fight(
+                id=f"challenger-win-{index}",
+                fighter_id="challenger",
+                opponent_id=f"other-{index}",
+                opponent_name=f"Other {index}",
+                event_name=f"Challenger Event {index}",
+                event_date=date(2024, 2, 1 + index),
+                result="Win",
+                method="Decision",
+                round=3,
+                time="05:00",
+                fight_card_url=None,
+            )
+        )
+
+    session.add(
+        Fight(
+            id="challenger-loss",
+            fighter_id="challenger",
+            opponent_id="other-loss",
+            opponent_name="Loss Opponent",
+            event_name="Loss Event",
+            event_date=date(2024, 7, 1),
+            result="Loss",
+            method="Decision",
+            round=3,
+            time="05:00",
+            fight_card_url=None,
+        )
+    )
+
+    await session.commit()
+
+    repo = PostgreSQLFighterRepository(session)
+    fighters, total = await repo.search_fighters(
+        streak_type="win",
+        min_streak_count=6,
+        include_streak=True,
+    )
+
+    assert total == 1
+    assert [fighter.fighter_id for fighter in fighters] == ["streaker"]
+    assert fighters[0].current_streak_type == "win"
+    assert fighters[0].current_streak_count == 7
