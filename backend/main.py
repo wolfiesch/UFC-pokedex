@@ -25,8 +25,13 @@ from sqlalchemy.exc import (
     TimeoutError as SQLAlchemyTimeoutError,
 )
 
-from .api import events, fighters, fightweb, search, stats
-from .schemas.error import ErrorResponse, ErrorType, ValidationErrorDetail, ValidationErrorResponse
+from .api import events, favorites, fighters, fightweb, search, stats
+from .schemas.error import (
+    ErrorResponse,
+    ErrorType,
+    ValidationErrorDetail,
+    ValidationErrorResponse,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -107,6 +112,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 def _default_origins() -> list[str]:
     ports = list(range(3000, 3011)) + [5173]
     origins = []
@@ -115,6 +121,7 @@ def _default_origins() -> list[str]:
     origins.append("http://localhost")
     origins.append("http://127.0.0.1")
     return origins
+
 
 default_origins = _default_origins()
 extra_origins = [
@@ -240,7 +247,9 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
+async def database_timeout_exception_handler(
+    request: Request, exc: SQLAlchemyTimeoutError
+):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -337,6 +346,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
         content=error_response.model_dump(mode="json"),
     )
 
+
 # Mount static files for fighter images
 images_dir = Path("data/images")
 if images_dir.exists():
@@ -353,4 +363,5 @@ app.include_router(fighters.router, prefix="/fighters", tags=["fighters"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
+app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])

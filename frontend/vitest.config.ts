@@ -17,6 +17,11 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+    include: [
+      "src/**/*.{test,spec}.{ts,tsx}",
+      "src/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+    ],
+    exclude: ["**/*.smoke.spec.ts"],
     coverage: {
       reporter: ["text", "lcov"],
     },

@@ -1,4 +1,16 @@
 import type {
+  FavoriteActivityItem,
+  FavoriteCollectionCreatePayload,
+  FavoriteCollectionDetail,
+  FavoriteCollectionListResponse,
+  FavoriteCollectionStats,
+  FavoriteCollectionSummary,
+  FavoriteCollectionUpdatePayload,
+  FavoriteEntry,
+  FavoriteEntryCreatePayload,
+  FavoriteEntryReorderPayload,
+  FavoriteEntryUpdatePayload,
+  FavoriteUpcomingFight,
   FightGraphLink,
   FightGraphNode,
   FightGraphQueryParams,
@@ -236,6 +248,207 @@ function normalizeFighterListItemPayload(item: unknown): FighterListItem | null 
       typeof item.age === "number" && Number.isFinite(item.age)
         ? item.age
         : null,
+  };
+}
+
+function normalizeFavoriteActivityItem(value: unknown): FavoriteActivityItem | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const entryId = toFiniteNumber(value.entry_id, NaN);
+  const fighterId = typeof value.fighter_id === "string" ? value.fighter_id : "";
+  const action = typeof value.action === "string" ? value.action : "";
+  const occurredAt =
+    typeof value.occurred_at === "string" ? value.occurred_at : new Date(0).toISOString();
+  if (!Number.isFinite(entryId) || !fighterId || !action) {
+    return null;
+  }
+  const metadata = isRecord(value.metadata) ? value.metadata : {};
+  return {
+    entry_id: entryId,
+    fighter_id: fighterId,
+    action,
+    occurred_at: occurredAt,
+    metadata,
+  };
+}
+
+function normalizeFavoriteUpcomingFight(value: unknown): FavoriteUpcomingFight | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const fighterId = typeof value.fighter_id === "string" ? value.fighter_id : "";
+  const opponentName = typeof value.opponent_name === "string" ? value.opponent_name : "";
+  const eventName = typeof value.event_name === "string" ? value.event_name : "";
+  if (!fighterId || !opponentName || !eventName) {
+    return null;
+  }
+  return {
+    fighter_id: fighterId,
+    opponent_name: opponentName,
+    event_name: eventName,
+    event_date: typeof value.event_date === "string" ? value.event_date : null,
+    weight_class: typeof value.weight_class === "string" ? value.weight_class : null,
+  };
+}
+
+function normalizeFavoriteCollectionStats(value: unknown): FavoriteCollectionStats {
+  if (!isRecord(value)) {
+    return {
+      total_fighters: 0,
+      win_rate: 0,
+      result_breakdown: {},
+      divisions: [],
+      upcoming_fights: [],
+    };
+  }
+  const divisions = Array.isArray(value.divisions)
+    ? value.divisions.filter((division): division is string => typeof division === "string")
+    : [];
+  const breakdown = isRecord(value.result_breakdown)
+    ? Object.fromEntries(
+        Object.entries(value.result_breakdown).map(([key, raw]) => [
+          key,
+          toFiniteNumber(raw, 0),
+        ])
+      )
+    : {};
+  const upcomingSource = Array.isArray(value.upcoming_fights)
+    ? value.upcoming_fights
+    : [];
+  const upcoming: FavoriteUpcomingFight[] = upcomingSource
+    .map((entry) => normalizeFavoriteUpcomingFight(entry))
+    .filter((entry): entry is FavoriteUpcomingFight => entry !== null);
+
+  return {
+    total_fighters: toFiniteNumber(value.total_fighters, 0),
+    win_rate: toFiniteNumber(value.win_rate, 0),
+    result_breakdown: breakdown,
+    divisions,
+    upcoming_fights: upcoming,
+  };
+}
+
+function normalizeFavoriteEntry(value: unknown): FavoriteEntry | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const id = toFiniteNumber(value.id, NaN);
+  const fighterId = typeof value.fighter_id === "string" ? value.fighter_id : "";
+  if (!Number.isFinite(id) || !fighterId) {
+    return null;
+  }
+  const position = toFiniteNumber(value.position, 0);
+  const tags = Array.isArray(value.tags)
+    ? value.tags.filter((tag): tag is string => typeof tag === "string")
+    : [];
+  const metadata = isRecord(value.metadata)
+    ? { ...value.metadata }
+    : isRecord(value.metadata_json)
+      ? { ...value.metadata_json }
+      : {};
+  const createdAt =
+    typeof value.created_at === "string" ? value.created_at : new Date(0).toISOString();
+  const updatedAt =
+    typeof value.updated_at === "string" ? value.updated_at : createdAt;
+
+  return {
+    id,
+    fighter_id: fighterId,
+    position,
+    notes:
+      typeof value.notes === "string"
+        ? value.notes
+        : value.notes === null
+          ? null
+          : undefined,
+    tags,
+    metadata,
+    created_at: createdAt,
+    updated_at: updatedAt,
+  };
+}
+
+function normalizeFavoriteCollectionSummary(
+  value: unknown
+): FavoriteCollectionSummary | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const id = toFiniteNumber(value.id, NaN);
+  const userId = typeof value.user_id === "string" ? value.user_id : "";
+  const title = typeof value.title === "string" ? value.title : "";
+  if (!Number.isFinite(id) || !userId || !title) {
+    return null;
+  }
+  const stats = value.stats ? normalizeFavoriteCollectionStats(value.stats) : null;
+  return {
+    id,
+    user_id: userId,
+    title,
+    description:
+      typeof value.description === "string"
+        ? value.description
+        : value.description === null
+          ? null
+          : undefined,
+    is_public: Boolean(value.is_public),
+    slug:
+      typeof value.slug === "string"
+        ? value.slug
+        : value.slug === null
+          ? null
+          : undefined,
+    metadata: isRecord(value.metadata) ? { ...value.metadata } : {},
+    created_at:
+      typeof value.created_at === "string" ? value.created_at : new Date(0).toISOString(),
+    updated_at:
+      typeof value.updated_at === "string" ? value.updated_at : new Date(0).toISOString(),
+    stats,
+  };
+}
+
+function normalizeFavoriteCollectionDetail(
+  value: unknown
+): FavoriteCollectionDetail | null {
+  const summary = normalizeFavoriteCollectionSummary(value);
+  if (!summary) {
+    return null;
+  }
+  const source = isRecord(value) ? value : {};
+  const entriesSource = Array.isArray(source.entries) ? source.entries : [];
+  const activitySource = Array.isArray(source.activity) ? source.activity : [];
+
+  const entries: FavoriteEntry[] = entriesSource
+    .map((entry) => normalizeFavoriteEntry(entry))
+    .filter((entry): entry is FavoriteEntry => entry !== null);
+  const activity: FavoriteActivityItem[] = activitySource
+    .map((item) => normalizeFavoriteActivityItem(item))
+    .filter((item): item is FavoriteActivityItem => item !== null);
+
+  const stats = normalizeFavoriteCollectionStats(source.stats);
+
+  return {
+    ...summary,
+    entries,
+    activity,
+    stats,
+  };
+}
+
+function normalizeFavoriteCollectionList(
+  value: unknown
+): FavoriteCollectionListResponse {
+  if (!isRecord(value)) {
+    return { total: 0, collections: [] };
+  }
+  const collectionsSource = Array.isArray(value.collections) ? value.collections : [];
+  const collections = collectionsSource
+    .map((entry) => normalizeFavoriteCollectionSummary(entry))
+    .filter((entry): entry is FavoriteCollectionSummary => entry !== null);
+  return {
+    total: toFiniteNumber(value.total, collections.length),
+    collections,
   };
 }
 
@@ -880,6 +1093,294 @@ export async function getStatsTrends(init?: RequestInit): Promise<StatsTrendsRes
     );
     const payload = await response.json();
     return normalizeTrends(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function getFavoriteCollections(
+  userId: string,
+  init?: RequestInit
+): Promise<FavoriteCollectionListResponse> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  params.set("user_id", userId);
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/favorites/collections?${params.toString()}`,
+      buildRequestInit(init)
+    );
+    const payload = await response.json();
+    return normalizeFavoriteCollectionList(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function getFavoriteCollectionDetail(
+  collectionId: number,
+  userId?: string,
+  init?: RequestInit
+): Promise<FavoriteCollectionDetail> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (userId && userId.trim().length > 0) {
+    params.set("user_id", userId);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/favorites/collections/${collectionId}${suffix}`,
+      buildRequestInit(init)
+    );
+
+    if (response.status === 404) {
+      throw new NotFoundError(
+        "FavoriteCollection",
+        `Collection ${collectionId} not found`
+      );
+    }
+
+    const payload = await response.json();
+    const detail = normalizeFavoriteCollectionDetail(payload);
+    if (!detail) {
+      throw new ApiError("Malformed favorites collection payload", {
+        statusCode: 500,
+        detail: "Unable to normalise favorites collection response",
+      });
+    }
+    return detail;
+  } catch (error) {
+    if (error instanceof ApiError || error instanceof NotFoundError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function createFavoriteCollection(
+  payload: FavoriteCollectionCreatePayload,
+  init?: RequestInit
+): Promise<FavoriteCollectionDetail> {
+  const apiUrl = getApiBaseUrl();
+  try {
+    const response = await fetchWithRetry(`${apiUrl}/favorites/collections`, {
+      ...buildRequestInit(init),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    const detail = normalizeFavoriteCollectionDetail(data);
+    if (!detail) {
+      throw new ApiError("Malformed favorites collection payload", {
+        statusCode: 500,
+        detail: "Unable to normalise favorites collection response",
+      });
+    }
+    return detail;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function addFavoriteEntry(
+  collectionId: number,
+  payload: FavoriteEntryCreatePayload,
+  userId?: string,
+  init?: RequestInit
+): Promise<FavoriteEntry> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (userId && userId.trim().length > 0) {
+    params.set("user_id", userId);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/favorites/collections/${collectionId}/entries${suffix}`,
+      {
+        ...buildRequestInit(init),
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    const data = await response.json();
+    const entry = normalizeFavoriteEntry(data);
+    if (!entry) {
+      throw new ApiError("Malformed favorites entry payload", {
+        statusCode: 500,
+        detail: "Unable to normalise favorites entry response",
+      });
+    }
+    return entry;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function reorderFavoriteEntries(
+  collectionId: number,
+  payload: FavoriteEntryReorderPayload,
+  userId?: string,
+  init?: RequestInit
+): Promise<FavoriteCollectionDetail> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (userId && userId.trim().length > 0) {
+    params.set("user_id", userId);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/favorites/collections/${collectionId}/entries/reorder${suffix}`,
+      {
+        ...buildRequestInit(init),
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    const data = await response.json();
+    const detail = normalizeFavoriteCollectionDetail(data);
+    if (!detail) {
+      throw new ApiError("Malformed favorites collection payload", {
+        statusCode: 500,
+        detail: "Unable to normalise favorites collection response",
+      });
+    }
+    return detail;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function updateFavoriteEntry(
+  collectionId: number,
+  entryId: number,
+  payload: FavoriteEntryUpdatePayload,
+  userId?: string,
+  init?: RequestInit
+): Promise<FavoriteEntry> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (userId && userId.trim().length > 0) {
+    params.set("user_id", userId);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetchWithRetry(
+      `${apiUrl}/favorites/collections/${collectionId}/entries/${entryId}${suffix}`,
+      {
+        ...buildRequestInit(init),
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    const data = await response.json();
+    const entry = normalizeFavoriteEntry(data);
+    if (!entry) {
+      throw new ApiError("Malformed favorites entry payload", {
+        statusCode: 500,
+        detail: "Unable to normalise favorites entry response",
+      });
+    }
+    return entry;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === "SyntaxError") {
+      throw ApiError.fromParseError(error);
+    }
+    throw ApiError.fromNetworkError(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+}
+
+export async function deleteFavoriteEntry(
+  collectionId: number,
+  entryId: number,
+  userId?: string,
+  init?: RequestInit
+): Promise<void> {
+  const apiUrl = getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (userId && userId.trim().length > 0) {
+    params.set("user_id", userId);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  try {
+    await fetchWithRetry(
+      `${apiUrl}/favorites/collections/${collectionId}/entries/${entryId}${suffix}`,
+      {
+        ...buildRequestInit(init),
+        method: "DELETE",
+        headers: {
+          ...(init?.headers ?? {}),
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;

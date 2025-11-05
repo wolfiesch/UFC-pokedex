@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 
 from typing import Any
@@ -141,3 +143,15 @@ fighter_stats = Table(
     Column("metric", String, nullable=False),
     Column("value", String, nullable=False),
 )
+
+from .favorites import FavoriteCollection, FavoriteEntry
+
+__all__ = [
+    "Base",
+    "Event",
+    "Fight",
+    "Fighter",
+    "FavoriteCollection",
+    "FavoriteEntry",
+    "fighter_stats",
+]
