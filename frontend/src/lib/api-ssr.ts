@@ -120,7 +120,10 @@ export async function getAllFighterIdsSSR(
       console.warn(message);
 
       if (allFighters.length === 0) {
-        throw error instanceof Error ? error : new Error(String(error));
+        console.warn(
+          "Skipping fighter prefetch – API unavailable during build. Falling back to ISR."
+        );
+        break;
       }
 
       break;
