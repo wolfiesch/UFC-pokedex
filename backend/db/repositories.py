@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, timezone
 from typing import Any
@@ -206,8 +207,18 @@ class PostgreSQLFighterRepository:
             ).where(fighter_stats.c.fighter_id == fighter_id)
         )
         stats_map: dict[str, dict[str, str]] = {}
+        fight_breakdowns: dict[str, dict[str, Any]] = {}
         for category, metric, value in stats_result.all():
-            if category is None or metric is None:
+            if category == "fight_history":
+                if metric and value:
+                    try:
+                        decoded = json.loads(value)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(decoded, dict):
+                        fight_breakdowns[metric] = decoded
+                continue
+            if category is None or metric is None or value is None:
                 continue
             category_stats = stats_map.setdefault(category, {})
             category_stats[metric] = value
@@ -246,6 +257,38 @@ class PostgreSQLFighterRepository:
                 return True
             return False
 
+        def merge_fight_stats(fight_id: str, base_stats: Any) -> dict[str, Any]:
+            """Combine inline fight stats with cached fighter_stats payloads."""
+
+            base: dict[str, Any]
+            if isinstance(base_stats, dict):
+                base = dict(base_stats)
+            else:
+                base = {}
+
+            breakdown = fight_breakdowns.get(fight_id)
+            if not breakdown:
+                return base
+
+            extra_stats = breakdown.get("stats")
+            if isinstance(extra_stats, dict) and extra_stats:
+                base.update(extra_stats)
+            return base
+
+        def enrich_field(
+            original: Any, breakdown: dict[str, Any] | None, key: str
+        ) -> Any:
+            """Use cached fight metadata when the ``Fight`` row lacks detail."""
+
+            if original not in (None, "", "Unknown"):
+                return original
+            if breakdown is None:
+                return original
+            candidate = breakdown.get(key)
+            if candidate in (None, "", "--"):
+                return original
+            return candidate
+
         # First pass: Process fights where this fighter is the primary fighter_id
         for fight in all_fights:
             if fight.fighter_id == fighter_id:
@@ -256,18 +299,25 @@ class PostgreSQLFighterRepository:
                     fight.opponent_name,
                 )
 
+                breakdown = fight_breakdowns.get(fight.id)
+                stats_payload = merge_fight_stats(fight.id, fight.stats)
+
                 new_entry = FightHistoryEntry(
                     fight_id=fight.id,
-                    event_name=fight.event_name,
+                    event_name=enrich_field(fight.event_name, breakdown, "event_name"),
                     event_date=fight.event_date,
-                    opponent=fight.opponent_name,
-                    opponent_id=fight.opponent_id,
-                    result=fight.result,
-                    method=fight.method or "",
-                    round=fight.round,
-                    time=fight.time,
-                    fight_card_url=fight.fight_card_url,
-                    stats=fight.stats,
+                    opponent=enrich_field(fight.opponent_name, breakdown, "opponent"),
+                    opponent_id=enrich_field(
+                        fight.opponent_id, breakdown, "opponent_id"
+                    ),
+                    result=enrich_field(fight.result, breakdown, "result"),
+                    method=enrich_field(fight.method or "", breakdown, "method"),
+                    round=enrich_field(fight.round, breakdown, "round"),
+                    time=enrich_field(fight.time, breakdown, "time"),
+                    fight_card_url=enrich_field(
+                        fight.fight_card_url, breakdown, "fight_card_url"
+                    ),
+                    stats=stats_payload,
                 )
 
                 if fight_key not in fight_dict:
@@ -307,18 +357,23 @@ class PostgreSQLFighterRepository:
                 # Invert the result
                 inverted_result = _invert_fight_result(fight.result)
 
+                breakdown = fight_breakdowns.get(fight.id)
+                stats_payload = merge_fight_stats(fight.id, fight.stats)
+
                 new_entry = FightHistoryEntry(
                     fight_id=fight.id,
-                    event_name=fight.event_name,
+                    event_name=enrich_field(fight.event_name, breakdown, "event_name"),
                     event_date=fight.event_date,
                     opponent=opponent_name,
                     opponent_id=opponent_id,  # The original fighter_id is now the opponent
                     result=inverted_result,
-                    method=fight.method or "",
-                    round=fight.round,
-                    time=fight.time,
-                    fight_card_url=fight.fight_card_url,
-                    stats=fight.stats,
+                    method=enrich_field(fight.method or "", breakdown, "method"),
+                    round=enrich_field(fight.round, breakdown, "round"),
+                    time=enrich_field(fight.time, breakdown, "time"),
+                    fight_card_url=enrich_field(
+                        fight.fight_card_url, breakdown, "fight_card_url"
+                    ),
+                    stats=stats_payload,
                 )
 
                 if fight_key not in fight_dict:
@@ -719,6 +774,7 @@ class PostgreSQLFighterRepository:
             if champion_conditions:
                 # Use OR to combine conditions (show fighters matching ANY status)
                 from sqlalchemy import or_
+
                 filters.append(or_(*champion_conditions))
 
         stmt = select(Fighter).order_by(Fighter.name)
@@ -795,6 +851,8 @@ class PostgreSQLFighterRepository:
         stats_result = await self._session.execute(stats_stmt)
         stats_by_fighter: dict[str, dict[str, dict[str, str]]] = {}
         for fighter_id, category, metric, value in stats_result.all():
+            if category == "fight_history":
+                continue
             if fighter_id is None or metric is None or value is None:
                 continue
             category_bucket = stats_by_fighter.setdefault(fighter_id, {})
@@ -971,6 +1029,7 @@ class PostgreSQLFighterRepository:
             )
             .join(Fighter, Fighter.id == fighter_stats.c.fighter_id)
             .where(fighter_stats.c.metric == metric_name)
+            .where(fighter_stats.c.category != "fight_history")
         )
 
         if eligible_fighters is not None:
@@ -1011,6 +1070,7 @@ class PostgreSQLFighterRepository:
         stmt = (
             select(func.avg(value_column))
             .where(fighter_stats.c.metric == metric_name)
+            .where(fighter_stats.c.category != "fight_history")
             .where(value_column.is_not(None))
         )
         result = await self._session.execute(stmt)

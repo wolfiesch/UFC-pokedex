@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import json
 from datetime import UTC, date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,7 @@ pytest.importorskip("sqlalchemy")
 pytest.importorskip("pytest_asyncio")
 
 pytest_asyncio = pytest.importorskip("pytest_asyncio")
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from backend.db.models import Base, Fight, Fighter, FighterStats, fighter_stats
@@ -424,6 +425,72 @@ async def test_get_fighter_returns_none_age_when_dob_missing(
 
 
 @pytest.mark.asyncio
+async def test_get_fighter_merges_cached_fight_breakdowns(
+    session: AsyncSession,
+) -> None:
+    """fighter_stats rows should backfill fight history metrics for the API."""
+
+    fighter = Fighter(id="fighter-breakdown", name="Breakdown Subject")
+    fight = Fight(
+        id="fight-breakdown",
+        fighter_id=fighter.id,
+        opponent_id="opponent-merge",
+        opponent_name="Merge Opponent",
+        event_name="Merge Event",
+        event_date=date(2024, 1, 1),
+        result="W",
+        method=None,
+        round=None,
+        time=None,
+        fight_card_url=None,
+        stats={},
+    )
+
+    session.add_all([fighter, fight])
+    await session.flush()
+
+    cached_payload = {
+        "fight_id": fight.id,
+        "event_name": "Merge Event",
+        "event_date": "2024-01-01",
+        "opponent": "Merge Opponent",
+        "opponent_id": "opponent-merge",
+        "result": "W",
+        "method": "KO/TKO",
+        "round": 2,
+        "time": "01:15",
+        "fight_card_url": "https://example.com/merge",
+        "stats": {"sig_strikes": "88", "takedowns": "3"},
+    }
+
+    await session.execute(
+        insert(fighter_stats),
+        [
+            {
+                "fighter_id": fighter.id,
+                "category": "fight_history",
+                "metric": fight.id,
+                "value": json.dumps(cached_payload, sort_keys=True),
+            }
+        ],
+    )
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    detail = await repository.get_fighter(fighter.id)
+
+    assert detail is not None
+    assert detail.fight_history, "Expected fight history populated from cached payload."
+    entry = detail.fight_history[0]
+    assert entry.stats["sig_strikes"] == "88"
+    assert entry.stats["takedowns"] == "3"
+    assert entry.method == "KO/TKO"
+    assert entry.round == 2
+    assert entry.time == "01:15"
+    assert entry.fight_card_url == "https://example.com/merge"
+
+
+@pytest.mark.asyncio
 async def test_load_fighter_detail_persists_fight_stats(
     session: AsyncSession, tmp_path: Path
 ) -> None:
@@ -461,6 +528,20 @@ async def test_load_fighter_detail_persists_fight_stats(
     stored_fight: Fight | None = await session.get(Fight, "loader-fight-1")
     assert stored_fight is not None
     assert stored_fight.stats == fight_stats_payload
+
+    rows = await session.execute(
+        select(fighter_stats.c.metric, fighter_stats.c.value).where(
+            fighter_stats.c.fighter_id == "loader-fighter",
+            fighter_stats.c.category == "fight_history",
+        )
+    )
+    fight_rows = rows.all()
+    assert len(fight_rows) == 1
+    metric, raw_value = fight_rows[0]
+    assert metric == "loader-fight-1"
+    decoded = json.loads(raw_value)
+    assert decoded["fight_id"] == "loader-fight-1"
+    assert decoded["stats"]["knockdowns"] == "1"
 
 
 @pytest.mark.asyncio
