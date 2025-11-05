@@ -48,7 +48,9 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   // Computed values
   const isFavorited = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
   const isInComparisonList = isInComparison(fighter.fighter_id);
-  const imageSrc = resolveImageUrl(fighter.image_url);
+  const imageSrc = resolveImageUrl(
+    fighter.resolved_image_url ?? fighter.image_url ?? undefined,
+  );
   const shouldShowImage = Boolean(imageSrc) && !imageError;
 
   // Parse record for win percentage

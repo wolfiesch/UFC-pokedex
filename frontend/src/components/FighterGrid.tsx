@@ -1,19 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { EnhancedFighterCard } from "./fighter/EnhancedFighterCard";
 import SkeletonFighterCard from "./SkeletonFighterCard";
 import type { FighterListItem } from "@/lib/types";
 import type { ApiError } from "@/lib/errors";
 
+/**
+ * Props shared by the paginated roster grid. The component stays presentation
+ * focused by accepting pre-computed pagination state (limit, offset, etc.) and
+ * emitting callbacks for navigation actions.
+ */
 type Props = {
   fighters: FighterListItem[];
   isLoading?: boolean;
-  isLoadingMore?: boolean;
+  isFetchingPage?: boolean;
   error?: ApiError | null;
   total?: number;
-  hasMore?: boolean;
-  onLoadMore?: () => void;
+  limit: number;
+  offset: number;
+  canNextPage?: boolean;
+  canPreviousPage?: boolean;
+  onNextPage?: () => void;
+  onPreviousPage?: () => void;
   onRetry?: () => void;
   // For richer empty-states and clear CTA
   searchTerm?: string | null;
@@ -25,35 +33,27 @@ type Props = {
 export default function FighterGrid({
   fighters,
   isLoading = false,
-  isLoadingMore = false,
+  isFetchingPage = false,
   error,
   total = 0,
-  hasMore = false,
-  onLoadMore,
+  limit,
+  offset,
+  canNextPage = false,
+  canPreviousPage = false,
+  onNextPage,
+  onPreviousPage,
   onRetry,
   searchTerm,
   stanceFilter,
   divisionFilter,
   onClearFilters,
 }: Props) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore || isLoadingMore || !onLoadMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          onLoadMore();
-        }
-      },
-      { rootMargin: "200px" } // Trigger 200px before reaching bottom
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, onLoadMore]);
+  const safeLimit = Math.max(1, Number.isFinite(limit) ? Math.trunc(limit) : 1);
+  const safeOffset = Math.max(0, Number.isFinite(offset) ? Math.trunc(offset) : 0);
+  const currentPage = Math.max(1, Math.floor(safeOffset / safeLimit) + 1);
+  const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+  const startIndex = total === 0 ? 0 : safeOffset + 1;
+  const endIndex = total === 0 ? 0 : Math.min(safeOffset + fighters.length, total);
 
   if (isLoading) {
     return (
@@ -208,30 +208,66 @@ export default function FighterGrid({
         ))}
       </div>
 
-      {/* Loading indicator */}
-      {isLoadingMore && (
-        <div className="flex items-center justify-center gap-3 rounded-3xl border border-border bg-card/60 py-6 text-sm text-muted-foreground">
-          <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-foreground" />
-          Loading more fighters…
+      <div className="rounded-3xl border border-border bg-card/60 p-4 shadow-subtle">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            {total === 0 ? (
+              "No fighters to display"
+            ) : (
+              <span>
+                Showing {startIndex.toLocaleString()}-{endIndex.toLocaleString()} of {total.toLocaleString()} fighters
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onPreviousPage}
+              disabled={!canPreviousPage || isFetchingPage}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg
+                className="h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Prev
+            </button>
+            <span className="text-xs font-semibold uppercase tracking-[0.4em] text-muted-foreground">
+              Page {Math.min(currentPage, totalPages)} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={onNextPage}
+              disabled={!canNextPage || isFetchingPage}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Next
+              <svg
+                className="h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            {isFetchingPage ? (
+              <span
+                className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-foreground"
+                aria-label="Loading page"
+              />
+            ) : null}
+          </div>
         </div>
-      )}
-
-      {/* Total count display */}
-      {!isLoadingMore && fighters.length > 0 && (
-        <div className="border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          Showing {fighters.length} of {total} fighters
-        </div>
-      )}
-
-      {/* End of list message */}
-      {!hasMore && fighters.length > 0 && (
-        <div className="text-center text-sm text-muted-foreground">
-          All fighters loaded
-        </div>
-      )}
-
-      {/* Sentinel div for intersection observer */}
-      <div ref={sentinelRef} className="h-4" />
+      </div>
     </div>
   );
 }

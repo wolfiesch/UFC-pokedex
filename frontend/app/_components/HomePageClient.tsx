@@ -20,11 +20,17 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
   const {
     fighters,
     isLoading,
-    isLoadingMore,
+    isFetchingPage,
     error,
     total,
-    hasMore,
-    loadMore,
+    limit,
+    offset,
+    canNextPage,
+    canPreviousPage,
+    goToNextPage,
+    goToPreviousPage,
+    setLimit,
+    resetPagination,
     retry,
   } = useFighters(initialData);
   const {
@@ -83,7 +89,14 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
           🎲 Random Fighter
         </Button>
       </header>
-      <SearchBar />
+      <SearchBar
+        isLoading={isLoading || isFetchingPage}
+        pageSize={limit}
+        onPageSizeChange={setLimit}
+        onSearchChange={() => {
+          resetPagination();
+        }}
+      />
       <FilterPanel
         stances={stances}
         selectedStance={stanceFilter}
@@ -95,11 +108,15 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
       <FighterGrid
         fighters={fighters}
         isLoading={isLoading}
-        isLoadingMore={isLoadingMore}
+        isFetchingPage={isFetchingPage}
         error={error}
         total={total}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
+        limit={limit}
+        offset={offset}
+        canNextPage={canNextPage}
+        canPreviousPage={canPreviousPage}
+        onNextPage={goToNextPage}
+        onPreviousPage={goToPreviousPage}
         onRetry={retry}
         searchTerm={searchTerm}
         stanceFilter={stanceFilter}
@@ -108,6 +125,7 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
           setSearchTerm("");
           setStanceFilter(null);
           setDivisionFilter(null);
+          resetPagination();
         }}
       />
     </section>

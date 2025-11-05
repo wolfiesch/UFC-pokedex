@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,19 @@ import { cn } from "@/lib/utils";
 
 type SearchBarProps = {
   isLoading?: boolean;
+  pageSize?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
+  onSearchChange?: (search: string) => void;
 };
 
-export default function SearchBar({ isLoading = false }: SearchBarProps) {
+export default function SearchBar({
+  isLoading = false,
+  pageSize,
+  pageSizeOptions = [12, 20, 40],
+  onPageSizeChange,
+  onSearchChange,
+}: SearchBarProps) {
   const current = useFavoritesStore((state) => state.searchTerm);
   const setSearchTerm = useFavoritesStore((state) => state.setSearchTerm);
   const [value, setValue] = useState(current ?? "");
@@ -34,15 +44,33 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
     const t = window.setTimeout(() => {
       isUpdatingRef.current = true;
       setSearchTerm(trimmed);
+      onSearchChange?.(trimmed);
     }, 400);
     return () => window.clearTimeout(t);
-  }, [value, current, setSearchTerm]);
+  }, [value, current, setSearchTerm, onSearchChange]);
 
   const handleClear = () => {
     setValue("");
     isUpdatingRef.current = true;
     setSearchTerm("");
+    onSearchChange?.("");
   };
+
+  const handlePageSizeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const next = Number.parseInt(event.target.value, 10);
+    if (Number.isNaN(next)) {
+      return;
+    }
+    onPageSizeChange?.(next);
+  };
+
+  const pageSizeValues = useMemo(() => {
+    const values = new Set(pageSizeOptions);
+    if (pageSize) {
+      values.add(pageSize);
+    }
+    return Array.from(values).sort((a, b) => a - b);
+  }, [pageSize, pageSizeOptions]);
 
   return (
     <div className="flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 shadow-subtle sm:flex-row sm:items-center">
@@ -113,6 +141,28 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
           ) : null}
         </div>
       </div>
+
+      {pageSize ? (
+        <div className="flex items-center gap-2">
+          <label htmlFor="page-size" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Page Size
+          </label>
+          <select
+            id="page-size"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+            className="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground shadow-subtle focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={isLoading}
+            aria-label="Results per page"
+          >
+            {pageSizeValues.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }

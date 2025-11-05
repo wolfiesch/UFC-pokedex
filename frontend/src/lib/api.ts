@@ -232,6 +232,14 @@ function normalizeFighterListItemPayload(item: unknown): FighterListItem | null 
     stance: typeof item.stance === "string" ? item.stance : null,
     dob: typeof item.dob === "string" ? item.dob : null,
     image_url: typeof item.image_url === "string" ? item.image_url : null,
+    resolved_image_url:
+      typeof item.resolved_image_url === "string" ? item.resolved_image_url : null,
+    is_current_champion:
+      typeof item.is_current_champion === "boolean" ? item.is_current_champion : undefined,
+    is_former_champion:
+      typeof item.is_former_champion === "boolean" ? item.is_former_champion : undefined,
+    was_interim:
+      typeof item.was_interim === "boolean" ? item.was_interim : undefined,
   };
 }
 

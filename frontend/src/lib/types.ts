@@ -11,6 +11,11 @@ export type FighterListItem = {
   stance?: string | null;
   dob?: string | null;
   image_url?: string | null;
+  /**
+   * Fully resolved portrait URL returned by the API. This value already applies
+   * CDN/domain transformations, so prefer it over `image_url` when available.
+   */
+  resolved_image_url?: string | null;
   is_current_champion?: boolean;
   is_former_champion?: boolean;
   was_interim?: boolean;

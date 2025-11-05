@@ -44,7 +44,9 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
   const [imageError, setImageError] = useState(false);
   const fightHistory =
     fighter?.fight_history?.filter((fight) => fight.event_name !== null) ?? [];
-  const imageSrc = resolveImageUrl(fighter?.image_url);
+  const imageSrc = resolveImageUrl(
+    fighter?.resolved_image_url ?? fighter?.image_url ?? undefined,
+  );
   const shouldShowImage = Boolean(imageSrc) && !imageError;
 
   if (isLoading) {
