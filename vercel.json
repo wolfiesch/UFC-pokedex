@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "installCommand": "cd frontend && npm install",
+  "devCommand": "cd frontend && npm run dev",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_BASE_URL": "https://your-railway-backend.railway.app"
+  }
+}
