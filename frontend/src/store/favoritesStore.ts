@@ -208,8 +208,11 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         );
       } else {
         // Add to favorites - optimistic update
+        const now = new Date().toISOString();
+        const tempId = Date.now();
         const newEntry: FavoriteEntry = {
-          entry_id: Date.now(), // Temporary ID for optimistic update
+          id: tempId,
+          entry_id: tempId, // Temporary ID for optimistic update
           collection_id: collectionId,
           fighter_id: fighter.fighter_id,
           fighter_name: fighter.name,
@@ -217,8 +220,9 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
           position: (currentCollection?.entries?.length || 0) + 1,
           notes: null,
           tags: [],
-          added_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: now,
+          added_at: now,
+          updated_at: now,
           metadata: {},
         };
 

@@ -132,7 +132,7 @@ def main():
     missing_ids_file = Path(tempfile.gettempdir()) / "missing_image_ids.txt"
     if not missing_ids_file.exists():
         console.print("[red]Error:[/red] Missing IDs file not found")
-        console.print(
+        console.print(  # noqa: S608 - printed for manual execution by operators
             "Run: psql ... -c \"SELECT id FROM fighters WHERE image_url IS NULL;\" "
             f"> {missing_ids_file}"
         )

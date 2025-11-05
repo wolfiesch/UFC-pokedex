@@ -12,6 +12,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=PaginatedFightersResponse)
+@router.get("", response_model=PaginatedFightersResponse, include_in_schema=False)
 async def list_fighters(
     limit: int = Query(20, ge=1, le=100, description="Number of fighters to return"),
     offset: int = Query(0, ge=0, description="Number of fighters to skip"),
