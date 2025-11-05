@@ -2,10 +2,14 @@
 nixPkgs = ["python311", "postgresql"]
 
 [phases.install]
-cmds = ["pip install uv", "uv sync"]
+cmds = [
+  "curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "export PATH=\"$HOME/.cargo/bin:$PATH\"",
+  "uv sync"
+]
 
 [phases.build]
 cmds = []
 
 [start]
-cmd = "uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+cmd = "export PATH=\"$HOME/.cargo/bin:$PATH\" && uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
