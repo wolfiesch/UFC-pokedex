@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from datetime import UTC, date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import Float, cast, desc, func, inspect, select
@@ -252,6 +252,10 @@ class PostgreSQLFighterRepository:
         result = await self._session.execute(query)
         fighters = result.scalars().all()
 
+        # Cache a single "today" value in UTC so every fighter on the page uses
+        # the same reference point for age calculations.
+        today_utc: date = datetime.now(tz=UTC).date()
+
         return [
             FighterListItem(
                 fighter_id=fighter.id,
@@ -266,6 +270,10 @@ class PostgreSQLFighterRepository:
                 stance=fighter.stance,
                 dob=fighter.dob,
                 image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                age=_calculate_age(
+                    dob=fighter.dob,
+                    reference_date=today_utc,
+                ),
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
                 was_interim=fighter.was_interim if supports_was_interim else False,
@@ -877,6 +885,10 @@ class PostgreSQLFighterRepository:
         result = await self._session.execute(stmt)
         fighters = result.scalars().all()
 
+        # Use a single "today" snapshot so every returned card displays the same
+        # age even if the request straddles midnight in UTC.
+        today_utc: date = datetime.now(tz=UTC).date()
+
         count_result = await self._session.execute(count_stmt)
         total = count_result.scalar_one()
 
@@ -895,6 +907,10 @@ class PostgreSQLFighterRepository:
                     stance=fighter.stance,
                     dob=fighter.dob,
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                    age=_calculate_age(
+                        dob=fighter.dob,
+                        reference_date=today_utc,
+                    ),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
                     was_interim=fighter.was_interim if supports_was_interim else False,
@@ -929,6 +945,8 @@ class PostgreSQLFighterRepository:
         fighters_result = await self._session.execute(fighters_stmt)
         fighters = fighters_result.scalars().all()
         fighter_map = {fighter.id: fighter for fighter in fighters}
+
+        today_utc: date = datetime.now(tz=UTC).date()
 
         stats_stmt = (
             select(
@@ -973,6 +991,10 @@ class PostgreSQLFighterRepository:
                     significant_strikes=stats_map.get("significant_strikes", {}),
                     takedown_stats=stats_map.get("takedown_stats", {}),
                     career=stats_map.get("career", {}),
+                    age=_calculate_age(
+                        dob=fighter.dob,
+                        reference_date=today_utc,
+                    ),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
                     was_interim=(

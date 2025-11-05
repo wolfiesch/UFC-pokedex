@@ -11,6 +11,7 @@ export type FighterListItem = {
   stance?: string | null;
   dob?: string | null;
   image_url?: string | null;
+  age?: number | null;
   is_current_champion?: boolean;
   is_former_champion?: boolean;
   was_interim?: boolean;
@@ -209,6 +210,7 @@ export interface FighterComparisonEntry {
   name: string;
   record?: string | null;
   division?: string | null;
+  age?: number | null;
   striking: Record<string, string | number | null | undefined>;
   grappling: Record<string, string | number | null | undefined>;
   significant_strikes: Record<string, string | number | null | undefined>;
