@@ -5,10 +5,22 @@ import json
 import logging
 import os
 from hashlib import sha256
-from typing import Any, Sequence
+from typing import Any, Sequence, TYPE_CHECKING
 
-from redis.asyncio import Redis
-from redis.exceptions import ConnectionError as RedisConnectionError
+try:
+    from redis.asyncio import Redis
+    from redis.exceptions import ConnectionError as RedisConnectionError
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    Redis = None  # type: ignore[assignment]
+
+    class RedisConnectionError(Exception):
+        """Fallback exception class defined when redis package is not installed."""
+
+
+if TYPE_CHECKING:
+    from redis.asyncio import Redis as RedisClient
+else:  # pragma: no cover - runtime fallback for optional dependency
+    RedisClient = Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +34,7 @@ _FAVORITE_LIST_PREFIX = "favorites:list"
 _FAVORITE_COLLECTION_PREFIX = "favorites:collection"
 _FAVORITE_STATS_PREFIX = "favorites:stats"
 
-_redis_client: Redis | None = None
+_redis_client: RedisClient | None = None
 _client_lock = asyncio.Lock()
 
 
@@ -99,9 +111,13 @@ def favorite_stats_key(collection_id: int | str) -> str:
     return f"{_FAVORITE_STATS_PREFIX}:{collection_id}"
 
 
-async def get_redis() -> Redis | None:
+async def get_redis() -> RedisClient | None:
     """Get Redis client, returning None if connection fails."""
     global _redis_client
+    if Redis is None:
+        logger.info("Redis dependency not installed; caching remains disabled.")
+        return None
+
     if _redis_client is None:
         async with _client_lock:
             if _redis_client is None:
@@ -113,13 +129,15 @@ async def get_redis() -> Redis | None:
                     await _redis_client.ping()
                     logger.info("Redis connection established successfully")
                 except (RedisConnectionError, Exception) as e:
-                    logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
+                    logger.warning(
+                        f"Redis connection failed: {e}. Caching will be disabled."
+                    )
                     _redis_client = None
     return _redis_client
 
 
 class CacheClient:
-    def __init__(self, redis: Redis | None) -> None:
+    def __init__(self, redis: RedisClient | None) -> None:
         self._redis = redis
 
     async def get_json(self, key: str) -> Any:

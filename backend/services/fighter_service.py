@@ -216,6 +216,71 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
     ) -> FightGraphResponse:
         return FightGraphResponse()
 
+    async def search_fighters(
+        self,
+        query: str | None = None,
+        stance: str | None = None,
+        division: str | None = None,
+        champion_statuses: list[str] | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[list[FighterListItem], int]:
+        """Filter in-memory fighters using roster-style constraints."""
+
+        fighters = list(self._fighters.values())
+
+        # Normalize all optional filters once so comparisons stay consistent with
+        # the service-layer fallback branch and remain case-insensitive.
+        query_lower = ((query or "").strip().lower()) or None
+        stance_lower = ((stance or "").strip().lower()) or None
+        division_lower = ((division or "").strip().lower()) or None
+        normalized_champion_statuses = (
+            {status.strip().lower() for status in champion_statuses if status and status.strip()}
+            if champion_statuses
+            else None
+        )
+
+        filtered: list[FighterListItem] = []
+        for fighter in fighters:
+            name_match = True
+            if query_lower:
+                name_parts = [fighter.name, fighter.nickname or ""]
+                haystack = " ".join(part for part in name_parts if part).lower()
+                name_match = query_lower in haystack
+
+            stance_match = True
+            if stance_lower:
+                fighter_stance = (fighter.stance or "").lower()
+                stance_match = fighter_stance == stance_lower
+
+            division_match = True
+            if division_lower:
+                fighter_division = (fighter.division or "").lower()
+                division_match = fighter_division == division_lower
+
+            champion_match = True
+            if normalized_champion_statuses:
+                # Explicitly map champion status lookups so fallbacks stay
+                # resilient if new flags appear on the schema.
+                status_flags: dict[str, bool] = {
+                    "current": bool(getattr(fighter, "is_current_champion", False)),
+                    "former": bool(getattr(fighter, "is_former_champion", False)),
+                    "interim": bool(getattr(fighter, "was_interim", False)),
+                }
+                champion_match = any(
+                    status_flags.get(status, False) for status in normalized_champion_statuses
+                )
+
+            if name_match and stance_match and division_match and champion_match:
+                filtered.append(fighter)
+
+        total = len(filtered)
+        start = 0 if offset is None or offset < 0 else offset
+        end = start + limit if limit is not None and limit > 0 else total
+
+        return filtered[start:end], total
+
 
 def _calculate_network_density(node_count: int, link_count: int) -> float:
     """Return the density of an undirected fight graph."""
@@ -297,13 +362,9 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
         metadata = dict(graph.metadata)
         metadata.setdefault("insights", {})
         metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
-        return FightGraphResponse(
-            nodes=graph.nodes, links=graph.links, metadata=metadata
-        )
+        return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
 
-    nodes_by_id: dict[str, FightGraphNode] = {
-        node.fighter_id: node for node in graph.nodes
-    }
+    nodes_by_id: dict[str, FightGraphNode] = {node.fighter_id: node for node in graph.nodes}
     total_fights = sum(node.total_fights for node in graph.nodes)
     average_fights = round(total_fights / max(1, len(graph.nodes)), 2)
     density = _calculate_network_density(len(graph.nodes), len(graph.links))
@@ -337,38 +398,6 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
     metadata.setdefault("generated_at", datetime.now(timezone.utc).isoformat())
 
     return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
-
-    async def search_fighters(
-        self,
-        query: str | None = None,
-        stance: str | None = None,
-        *,
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> tuple[list[FighterListItem], int]:
-        fighters = list(self._fighters.values())
-        query_lower = query.lower() if query else None
-        stance_lower = stance.lower() if stance else None
-        filtered: list[FighterListItem] = []
-        for fighter in fighters:
-            name_match = True
-            if query_lower:
-                name_parts = [fighter.name, fighter.nickname or ""]
-                haystack = " ".join(part for part in name_parts if part).lower()
-                name_match = query_lower in haystack
-            stance_match = True
-            if stance_lower:
-                fighter_stance = (fighter.stance or "").lower()
-                stance_match = fighter_stance == stance_lower
-            if name_match and stance_match:
-                filtered.append(fighter)
-
-        total = len(filtered)
-        start = offset or 0
-        if start < 0:
-            start = 0
-        end = start + limit if limit is not None and limit > 0 else total
-        return filtered[start:end], total
 
 
 class FighterService:
@@ -512,7 +541,10 @@ class FighterService:
         min_streak_count_param = min_streak_count
 
         use_cache = self._cache is not None and (
-            normalized_query or normalized_stance or normalized_division or normalized_champion_statuses or streak_type
+            normalized_query
+            or normalized_stance
+            or normalized_division
+            or normalized_champion_statuses or streak_type
         )
         cache_key = (
             search_key(
@@ -574,9 +606,7 @@ class FighterService:
                     stance_match = fighter_stance == stance_lower
                 division_match = True
                 if division_lower:
-                    fighter_division = (
-                        getattr(fighter, "division", None) or ""
-                    ).lower()
+                    fighter_division = (getattr(fighter, "division", None) or "").lower()
                     division_match = fighter_division == division_lower
                 streak_match = True
                 if streak_type_param and min_streak_count_param:
@@ -607,9 +637,7 @@ class FighterService:
 
         return response
 
-    async def compare_fighters(
-        self, fighter_ids: Sequence[str]
-    ) -> list[FighterComparisonEntry]:
+    async def compare_fighters(self, fighter_ids: Sequence[str]) -> list[FighterComparisonEntry]:
         """Retrieve comparable stat bundles for the requested fighters."""
 
         use_cache = self._cache is not None and len(fighter_ids) >= 2
@@ -619,9 +647,7 @@ class FighterService:
             cached = await self._cache_get(cache_key)
             if isinstance(cached, list):
                 try:
-                    return [
-                        FighterComparisonEntry.model_validate(item) for item in cached
-                    ]
+                    return [FighterComparisonEntry.model_validate(item) for item in cached]
                 except Exception:  # pragma: no cover
                     pass
 
