@@ -379,7 +379,9 @@ async def test_get_fighter_populates_age_from_dob(
             reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
-    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter_repository.datetime", FixedDateTime
+    )
 
     fighter: Fighter = Fighter(
         id="fighter-with-dob",
@@ -410,7 +412,9 @@ async def test_get_fighter_returns_none_age_when_dob_missing(
             reference_moment: datetime = datetime(2024, 6, 16, tzinfo=UTC)
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
-    monkeypatch.setattr("backend.db.repositories.datetime", FixedDateTime)
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter_repository.datetime", FixedDateTime
+    )
 
     fighter: Fighter = Fighter(
         id="fighter-without-dob",

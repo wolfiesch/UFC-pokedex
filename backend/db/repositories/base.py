@@ -18,7 +18,7 @@ from backend.db.models import Fight
 _WAS_INTERIM_SUPPORTED_CACHE: bool | None = None
 
 # Standard columns to load for fight history queries
-
+_FIGHT_HISTORY_LOAD_COLUMNS: list[Any] = []
 
 def _invert_fight_result(result: str | None) -> str:
     """Invert a fight result from one fighter's perspective to the opponent's.

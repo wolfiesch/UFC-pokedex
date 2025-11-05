@@ -1,196 +1,16 @@
-"""Backward compatibility facade for refactored repository layer.
-
-This module maintains the original PostgreSQLFighterRepository and
-PostgreSQLEventRepository interfaces while delegating to specialized
-repositories internally. This ensures zero breaking changes for existing code.
-
-The monolithic repository has been split into:
-- FighterRepository: Fighter CRUD operations
-- FightGraphRepository: Fight relationship graphs
-- StatsRepository: Analytics and aggregations
-- FightRepository: Fight CRUD operations
-- PostgreSQLEventRepository: Event operations (unchanged)
-
-All existing code continues to work without modification.
-"""
+"""Event repository implementation for PostgreSQL-backed storage."""
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
-from datetime import date
-from typing import Literal
+from collections.abc import Iterable
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import selectinload
 
-from backend.db.models import Event, Fight, Fighter
-from backend.db.repositories.fight_graph_repository import FightGraphRepository
-from backend.db.repositories.fight_repository import FightRepository
-from backend.db.repositories.fighter_repository import FighterRepository
-from backend.db.repositories.stats_repository import StatsRepository
+from backend.db.models import Event, Fighter
 from backend.schemas.event import EventDetail, EventFight, EventListItem
-from backend.schemas.fight_graph import FightGraphResponse
-from backend.schemas.fighter import (
-    FighterComparisonEntry,
-    FighterDetail,
-    FighterListItem,
-)
-from backend.schemas.stats import (
-    LeaderboardsResponse,
-    StatsSummaryResponse,
-    TrendsResponse,
-)
 from backend.utils.event_utils import detect_event_type
-
-
-class PostgreSQLFighterRepository:
-    """Backward compatibility facade delegating to specialized repositories.
-
-    This class maintains the original monolithic interface while internally
-    delegating to focused, domain-specific repositories. This ensures existing
-    code continues to work without any modifications.
-    """
-
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        # Initialize specialized repositories
-        self._fighter_repo = FighterRepository(session)
-        self._fight_graph_repo = FightGraphRepository(session)
-        self._stats_repo = StatsRepository(session)
-        self._fight_repo = FightRepository(session)
-
-    # Fighter operations - delegate to FighterRepository
-    async def list_fighters(
-        self,
-        *,
-        limit: int | None = None,
-        offset: int | None = None,
-        include_streak: bool = False,
-        streak_window: int = 6,
-    ) -> Iterable[FighterListItem]:
-        """List all fighters with optional pagination."""
-        return await self._fighter_repo.list_fighters(
-            limit=limit,
-            offset=offset,
-            include_streak=include_streak,
-            streak_window=streak_window,
-        )
-
-    async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
-        """Get detailed fighter information by ID."""
-        return await self._fighter_repo.get_fighter(fighter_id)
-
-    async def search_fighters(
-        self,
-        query: str | None = None,
-        stance: str | None = None,
-        division: str | None = None,
-        champion_statuses: list[str] | None = None,
-        streak_type: str | None = None,
-        min_streak_count: int | None = None,
-        include_streak: bool = False,
-        *,
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> tuple[list[FighterListItem], int]:
-        """Search fighters by various criteria."""
-        return await self._fighter_repo.search_fighters(
-            query=query,
-            stance=stance,
-            division=division,
-            champion_statuses=champion_statuses,
-            streak_type=streak_type,
-            min_streak_count=min_streak_count,
-            include_streak=include_streak,
-            limit=limit,
-            offset=offset,
-        )
-
-    async def get_fighters_for_comparison(
-        self, fighter_ids: Sequence[str]
-    ) -> list[FighterComparisonEntry]:
-        """Return stats snapshots for the requested fighters."""
-        return await self._fighter_repo.get_fighters_for_comparison(fighter_ids)
-
-    async def count_fighters(self) -> int:
-        """Get the total count of fighters."""
-        return await self._fighter_repo.count_fighters()
-
-    async def get_random_fighter(self) -> FighterListItem | None:
-        """Get a random fighter."""
-        return await self._fighter_repo.get_random_fighter()
-
-    async def create_fighter(self, fighter: Fighter) -> Fighter:
-        """Create a new fighter."""
-        return await self._fighter_repo.create_fighter(fighter)
-
-    async def upsert_fighter(self, fighter_data: dict) -> Fighter:
-        """Insert or update a fighter."""
-        return await self._fighter_repo.upsert_fighter(fighter_data)
-
-    # Fight graph operations - delegate to FightGraphRepository
-    async def get_fight_graph(
-        self,
-        *,
-        division: str | None = None,
-        start_year: int | None = None,
-        end_year: int | None = None,
-        limit: int = 200,
-        include_upcoming: bool = False,
-    ) -> FightGraphResponse:
-        """Aggregate fighters and bout links for visualization."""
-        return await self._fight_graph_repo.get_fight_graph(
-            division=division,
-            start_year=start_year,
-            end_year=end_year,
-            limit=limit,
-            include_upcoming=include_upcoming,
-        )
-
-    # Stats operations - delegate to StatsRepository
-    async def stats_summary(self) -> StatsSummaryResponse:
-        """Get aggregate statistics about fighters."""
-        return await self._stats_repo.stats_summary()
-
-    async def get_leaderboards(
-        self,
-        *,
-        limit: int,
-        accuracy_metric: str,
-        submissions_metric: str,
-        start_date: date | None,
-        end_date: date | None,
-    ) -> LeaderboardsResponse:
-        """Compute leaderboard slices."""
-        return await self._stats_repo.get_leaderboards(
-            limit=limit,
-            accuracy_metric=accuracy_metric,
-            submissions_metric=submissions_metric,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-    async def get_trends(
-        self,
-        *,
-        start_date: date | None,
-        end_date: date | None,
-        time_bucket: Literal["month", "quarter", "year"],
-        streak_limit: int,
-    ) -> TrendsResponse:
-        """Aggregate longitudinal trends."""
-        return await self._stats_repo.get_trends(
-            start_date=start_date,
-            end_date=end_date,
-            time_bucket=time_bucket,
-            streak_limit=streak_limit,
-        )
-
-    # Fight operations - delegate to FightRepository
-    async def create_fight(self, fight: Fight) -> Fight:
-        """Create a new fight record."""
-        return await self._fight_repo.create_fight(fight)
 
 
 class PostgreSQLEventRepository:
@@ -252,9 +72,7 @@ class PostgreSQLEventRepository:
         # Build fight card from fights linked to this event
         fight_card: list[EventFight] = []
 
-        # Aggregate all fighter identifiers across the card so we can resolve
-        # roster metadata in a single round-trip instead of the previous
-        # per-fight N+1 query pattern.
+        # Aggregate fighter identifiers to avoid N+1 lookups.
         fighter_ids: set[str] = {
             fight.fighter_id for fight in event.fights if fight.fighter_id
         }
@@ -287,8 +105,7 @@ class PostgreSQLEventRepository:
                     fighter_1_name=fighter_1_name,
                     fighter_2_id=fighter_2_id,
                     fighter_2_name=fighter_2_name,
-                    # Propagate the stored weight class so consumers can surface
-                    # the division context (e.g., "Lightweight") without extra joins.
+                    # Propagate stored weight class for downstream context.
                     weight_class=fight.weight_class,
                     result=fight.result,
                     method=fight.method,
@@ -382,12 +199,9 @@ class PostgreSQLEventRepository:
 
         apply_manual_pagination = event_type is not None
 
-        # ``detect_event_type`` performs in-memory classification.  When a
-        # caller supplies an ``event_type`` filter we must load every matching
-        # row first, otherwise the database-level LIMIT/OFFSET could trim
-        # relevant events before the post-processing step runs.
-
-        # Pagination
+        # ``detect_event_type`` performs in-memory classification. When an
+        # event_type filter is supplied we must load all matching rows prior to
+        # the post-processing step to ensure pagination remains accurate.
         if not apply_manual_pagination:
             if offset is not None:
                 query = query.offset(offset)
@@ -422,8 +236,6 @@ class PostgreSQLEventRepository:
             return event_list
 
         start_index: int = 0 if offset is None else offset
-        # ``end_index`` remains ``None`` when no limit is supplied so Python's
-        # slice semantics naturally return the full remainder of the sequence.
         end_index: int | None = None if limit is None else start_index + limit
         return event_list[start_index:end_index]
 
@@ -446,3 +258,4 @@ class PostgreSQLEventRepository:
         result = await self._session.execute(query)
         locations = result.scalars().all()
         return list(locations)
+

@@ -12,12 +12,20 @@ import type {
   FighterListItem,
   PaginatedFightersResponse,
 } from "./types";
+import { resolveApiBaseUrl } from "./resolve-api-base-url";
+
+const DEFAULT_SSR_API_BASE_URL = "http://localhost:8000";
 
 function getApiBaseUrl(): string {
-  // For SSR, always use localhost to avoid SSL issues with tunnels
-  // The NEXT_PUBLIC_API_BASE_URL is only for client-side fetching
-  return process.env.NEXT_SSR_API_BASE_URL ?? "http://localhost:8000";
+  // Default to localhost for local development, but allow environment overrides.
+  // resolveApiBaseUrl normalizes the value (adds scheme, strips trailing slash).
+  return resolveApiBaseUrl(
+    process.env.NEXT_SSR_API_BASE_URL,
+    DEFAULT_SSR_API_BASE_URL
+  );
 }
+
+const FETCH_TIMEOUT_MS = 4000;
 
 /**
  * Fetch paginated fighters list for SSG
@@ -85,24 +93,49 @@ export async function getAllFighterIdsSSR(
   let hasMore = true;
 
   while (hasMore) {
-    const response = await fetch(
-      `${apiUrl}/fighters/?limit=${batchSize}&offset=${offset}`,
-      {
-        next: { revalidate: false }, // Static at build time
-      }
-    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+    try {
+      const response = await fetch(
+        `${apiUrl}/fighters/?limit=${batchSize}&offset=${offset}`,
+        {
+          next: { revalidate: false }, // Static at build time
+          signal: controller.signal,
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data: PaginatedFightersResponse = await response.json();
+      allFighters.push(...data.fighters);
+
+      hasMore = data.has_more;
+      offset += batchSize;
+    } catch (error) {
+      const isAbortError =
+        error instanceof Error && error.name === "AbortError";
+
+      const message = isAbortError
+        ? `Timed out fetching fighters batch at offset ${offset}`
+        : `Failed to fetch fighters batch at offset ${offset}: ${error}`;
+      console.warn(message);
+
+      if (allFighters.length === 0) {
+        console.warn(
+          "Skipping fighter prefetch – API unavailable during build. Falling back to ISR."
+        );
+        break;
+      }
+
+      break;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data: PaginatedFightersResponse = await response.json();
-    allFighters.push(...data.fighters);
-
-    hasMore = data.has_more;
-    offset += batchSize;
 
     // Safety limit: don't fetch more than 10,000 fighters
     if (offset >= 10000) {
