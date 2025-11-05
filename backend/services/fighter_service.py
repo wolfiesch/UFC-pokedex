@@ -624,7 +624,7 @@ class FighterService:
                 streak_match = True
                 if streak_type_param and min_streak_count_param:
                     fighter_streak_type = getattr(fighter, "current_streak_type", None)
-                    fighter_streak_count = getattr(fighter, "current_streak_count", 0) or 0
+                    fighter_streak_count = getattr(fighter, "current_streak_count", 0)
                     streak_match = (
                         fighter_streak_type == streak_type_param
                         and fighter_streak_count >= min_streak_count_param
