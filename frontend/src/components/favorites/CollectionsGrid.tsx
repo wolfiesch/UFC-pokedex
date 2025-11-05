@@ -155,7 +155,7 @@ export function CollectionsGrid({ entries, onReorder, isReordering = false }: Co
           aria-busy={isReordering}
         >
           {orderedEntries.map((entry) => (
-            <SortableEntry key={entry.id} entry={{ ...entry, position: entry.position }} />
+            <SortableEntry key={entry.id} entry={entry} />
           ))}
         </div>
       </SortableContext>
