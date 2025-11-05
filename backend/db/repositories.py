@@ -1642,8 +1642,8 @@ class PostgreSQLFighterRepository:
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter from the database."""
         base_columns = self._fighter_summary_columns()
-        load_columns, _ = await self._resolve_fighter_columns(
-            base_columns, include_was_interim=False
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(
+            base_columns, include_was_interim=True
         )
         query = (
             select(Fighter)
@@ -1657,11 +1657,15 @@ class PostgreSQLFighterRepository:
         if fighter is None:
             return None
 
+        # Cache a single "today" value in UTC for consistent age calculation
+        today_utc: date = datetime.now(tz=UTC).date()
+
         return FighterListItem(
             fighter_id=fighter.id,
             detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
             name=fighter.name,
             nickname=fighter.nickname,
+            record=fighter.record,
             division=fighter.division,
             height=fighter.height,
             weight=fighter.weight,
@@ -1669,6 +1673,15 @@ class PostgreSQLFighterRepository:
             stance=fighter.stance,
             dob=fighter.dob,
             image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+            age=_calculate_age(
+                dob=fighter.dob,
+                reference_date=today_utc,
+            ),
+            is_current_champion=fighter.is_current_champion,
+            is_former_champion=fighter.is_former_champion,
+            was_interim=fighter.was_interim if supports_was_interim else False,
+            current_streak_type="none",
+            current_streak_count=0,
         )
 
 
