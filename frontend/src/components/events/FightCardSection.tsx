@@ -1,6 +1,14 @@
 "use client";
 
-import { Fight, FightCardSection as FightCardSectionType, isTitleFight, isMainEvent } from "@/lib/fight-utils";
+import { memo, useMemo } from "react";
+
+import {
+  Fight,
+  FightCardSection as FightCardSectionType,
+  isTitleFight,
+  isMainEvent,
+} from "@/lib/fight-utils";
+
 import EnhancedFightCard from "./EnhancedFightCard";
 
 interface FightCardSectionProps {
@@ -12,30 +20,35 @@ interface FightCardSectionProps {
 /**
  * Component for displaying a section of fight card (Main Card, Prelims, Early Prelims)
  */
-export default function FightCardSection({
+function FightCardSectionComponent({
   section,
   eventName,
   allFights,
 }: FightCardSectionProps) {
-  const sectionConfig = {
-    main: {
-      icon: "🔥",
-      bgClass: "bg-gradient-to-r from-red-900/30 to-orange-900/30",
-      borderClass: "border-red-700",
-    },
-    prelims: {
-      icon: "⚡",
-      bgClass: "bg-gradient-to-r from-blue-900/30 to-indigo-900/30",
-      borderClass: "border-blue-700",
-    },
-    early_prelims: {
-      icon: "✨",
-      bgClass: "bg-gradient-to-r from-purple-900/30 to-pink-900/30",
-      borderClass: "border-purple-700",
-    },
-  };
+  const sectionConfig = useMemo(
+    () => ({
+      main: {
+        icon: "🔥",
+        bgClass: "bg-gradient-to-r from-red-900/30 to-orange-900/30",
+        borderClass: "border-red-700",
+      },
+      prelims: {
+        icon: "⚡",
+        bgClass: "bg-gradient-to-r from-blue-900/30 to-indigo-900/30",
+        borderClass: "border-blue-700",
+      },
+      early_prelims: {
+        icon: "✨",
+        bgClass: "bg-gradient-to-r from-purple-900/30 to-pink-900/30",
+        borderClass: "border-purple-700",
+      },
+    }),
+    []
+  );
 
   const config = sectionConfig[section.section];
+
+  const fights = useMemo(() => section.fights, [section.fights]);
 
   return (
     <div className="space-y-4">
@@ -59,7 +72,7 @@ export default function FightCardSection({
 
       {/* Fights */}
       <div className="space-y-3">
-        {section.fights.map((fight) => {
+        {fights.map((fight) => {
           const isTitleBout = isTitleFight(fight, eventName);
           const isMain = isMainEvent(fight, allFights, eventName);
 
@@ -76,3 +89,34 @@ export default function FightCardSection({
     </div>
   );
 }
+
+const areSectionPropsEqual = (
+  previous: Readonly<FightCardSectionProps>,
+  next: Readonly<FightCardSectionProps>
+): boolean => {
+  if (
+    previous.eventName !== next.eventName ||
+    previous.section.section !== next.section.section ||
+    previous.section.label !== next.section.label
+  ) {
+    return false;
+  }
+
+  if (previous.section.fights.length !== next.section.fights.length) {
+    return false;
+  }
+
+  return previous.section.fights.every(
+    (fight, index) => fight.fight_id === next.section.fights[index]?.fight_id
+  );
+};
+
+export const FightCardSection = memo(
+  FightCardSectionComponent,
+  areSectionPropsEqual
+);
+
+/** Exported for unit tests that validate memo guard behaviour. */
+export const fightCardSectionPropsEqual = areSectionPropsEqual;
+
+export default FightCardSection;

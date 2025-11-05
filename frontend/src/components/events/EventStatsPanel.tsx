@@ -1,5 +1,7 @@
 "use client";
 
+import { memo, useMemo } from "react";
+
 import { Fight, calculateEventStats } from "@/lib/fight-utils";
 
 interface EventStatsPanelProps {
@@ -10,51 +12,60 @@ interface EventStatsPanelProps {
 /**
  * Panel displaying key statistics about an event
  */
-export default function EventStatsPanel({ fights, eventName }: EventStatsPanelProps) {
-  const stats = calculateEventStats(fights, eventName);
+function EventStatsPanelComponent({ fights, eventName }: EventStatsPanelProps) {
+  const stats = useMemo(
+    () => calculateEventStats(fights, eventName),
+    [eventName, fights]
+  );
 
-  const statItems = [
-    {
-      label: "Total Fights",
-      value: stats.totalFights,
-      icon: "🥊",
-      color: "text-blue-400",
-    },
-    {
-      label: "Main Card",
-      value: stats.mainCardFights,
-      icon: "🔥",
-      color: "text-red-400",
-    },
-    {
-      label: "Prelims",
-      value: stats.prelimFights,
-      icon: "⚡",
-      color: "text-yellow-400",
-    },
-    {
-      label: "Title Fights",
-      value: stats.titleFights,
-      icon: "👑",
-      color: "text-amber-400",
-    },
-    {
-      label: "Finishes",
-      value: stats.finishes,
-      icon: "💥",
-      color: "text-green-400",
-    },
-    {
-      label: "Decisions",
-      value: stats.decisions,
-      icon: "⚖️",
-      color: "text-purple-400",
-    },
-  ];
+  const statItems = useMemo(
+    () => [
+      {
+        label: "Total Fights",
+        value: stats.totalFights,
+        icon: "🥊",
+        color: "text-blue-400",
+      },
+      {
+        label: "Main Card",
+        value: stats.mainCardFights,
+        icon: "🔥",
+        color: "text-red-400",
+      },
+      {
+        label: "Prelims",
+        value: stats.prelimFights,
+        icon: "⚡",
+        color: "text-yellow-400",
+      },
+      {
+        label: "Title Fights",
+        value: stats.titleFights,
+        icon: "👑",
+        color: "text-amber-400",
+      },
+      {
+        label: "Finishes",
+        value: stats.finishes,
+        icon: "💥",
+        color: "text-green-400",
+      },
+      {
+        label: "Decisions",
+        value: stats.decisions,
+        icon: "⚖️",
+        color: "text-purple-400",
+      },
+    ],
+    [stats.decisions, stats.finishes, stats.mainCardFights, stats.prelimFights, stats.titleFights, stats.totalFights]
+  );
 
-  const finishRate = stats.totalFights > 0
-    ? ((stats.finishes / stats.totalFights) * 100).toFixed(1)
-    : "0.0";
+  const finishRate = useMemo(() => {
+    if (stats.totalFights === 0) {
+      return "0.0";
+    }
+    return ((stats.finishes / stats.totalFights) * 100).toFixed(1);
+  }, [stats.finishes, stats.totalFights]);
 
   return (
     <div className="space-y-4 rounded-lg border border-gray-700 bg-gray-800/50 p-6">
@@ -102,3 +113,28 @@ export default function EventStatsPanel({ fights, eventName }: EventStatsPanelPr
     </div>
   );
 }
+
+const areStatsPropsEqual = (
+  previous: Readonly<EventStatsPanelProps>,
+  next: Readonly<EventStatsPanelProps>
+): boolean => {
+  if (previous.eventName !== next.eventName) {
+    return false;
+  }
+  if (previous.fights.length !== next.fights.length) {
+    return false;
+  }
+  return previous.fights.every(
+    (fight, index) => fight.fight_id === next.fights[index]?.fight_id
+  );
+};
+
+export const EventStatsPanel = memo(
+  EventStatsPanelComponent,
+  areStatsPropsEqual
+);
+
+/** Allow tests to exercise the memo equality logic without re-rendering React. */
+export const eventStatsPanelPropsEqual = areStatsPropsEqual;
+
+export default EventStatsPanel;

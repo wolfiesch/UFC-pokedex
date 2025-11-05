@@ -6,7 +6,13 @@ from typing import Any
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.cache import CacheClient, get_cache_client
+from backend.cache import (
+    CacheClient,
+    event_detail_key,
+    event_list_key,
+    event_search_key,
+    get_cache_client,
+)
 from backend.db.connection import get_db
 from backend.db.repositories import PostgreSQLEventRepository
 from backend.schemas.event import EventDetail, EventListItem, PaginatedEventsResponse
@@ -50,7 +56,7 @@ class EventService:
             and offset >= 0
         )
         cache_key = (
-            f"events:list:status={status or 'all'}:limit={limit}:offset={offset}"
+            event_list_key(status=status, limit=limit, offset=offset)
             if use_cache
             else None
         )
@@ -82,7 +88,7 @@ class EventService:
 
     async def get_event(self, event_id: str) -> EventDetail | None:
         """Get detailed event information by ID."""
-        cache_key = f"events:detail:{event_id}"
+        cache_key = event_detail_key(event_id)
         cached = await self._cache_get(cache_key)
         if isinstance(cached, dict):
             try:
@@ -141,6 +147,35 @@ class EventService:
         offset: int = 0,
     ) -> PaginatedEventsResponse:
         """Search and filter events with advanced options."""
+        use_cache = (
+            self._cache is not None
+            and limit is not None
+            and offset is not None
+            and limit >= 0
+            and offset >= 0
+        )
+        cache_key = (
+            event_search_key(
+                query=q,
+                year=year,
+                location=location,
+                event_type=event_type,
+                status=status,
+                limit=limit,
+                offset=offset,
+            )
+            if use_cache
+            else None
+        )
+
+        if use_cache and cache_key is not None:
+            cached = await self._cache_get(cache_key)
+            if isinstance(cached, dict):
+                try:
+                    return PaginatedEventsResponse.model_validate(cached)
+                except Exception:
+                    pass
+
         events = await self._repository.search_events(
             q=q,
             year=year,
@@ -165,13 +200,18 @@ class EventService:
         total = len(list(all_matching))
         has_more = (offset + limit) < total
 
-        return PaginatedEventsResponse(
+        response = PaginatedEventsResponse(
             events=event_list,
             total=total,
             limit=limit,
             offset=offset,
             has_more=has_more,
         )
+
+        if use_cache and cache_key is not None:
+            await self._cache_set(cache_key, response.model_dump(), ttl=300)
+
+        return response
 
     async def get_filter_options(self) -> tuple[list[int], list[str]]:
         """Get available filter options (years and locations)."""
