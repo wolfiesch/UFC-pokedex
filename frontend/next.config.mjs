@@ -1,12 +1,7 @@
 /** @type {import('next').NextConfig} */
-const API_PROXY_TARGET =
-  process.env.NEXT_SSR_API_BASE_URL || "http://localhost:8000";
-
-const normalizedApiTarget = API_PROXY_TARGET.replace(/\/+$/, "");
-
 const nextConfig = {
-  // Standalone output for Node.js deployment
-  output: 'standalone',
+  // Remove standalone output for Vercel (it's not needed)
+  // output: 'standalone',
 
   // Disable image optimization for cPanel compatibility
   images: {
@@ -21,14 +16,8 @@ const nextConfig = {
     optimizePackageImports: ['date-fns'],
   },
 
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${normalizedApiTarget}/:path*`,
-      },
-    ];
-  },
+  // Remove rewrites - use NEXT_PUBLIC_API_BASE_URL directly in your API client
+  // async rewrites() { ... }
 };
 
 export default nextConfig;
