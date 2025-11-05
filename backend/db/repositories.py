@@ -4,9 +4,9 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, timezone
 from typing import Any
 
-from sqlalchemy import Float, cast, desc, func, select
+from sqlalchemy import Float, cast, desc, func, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import load_only, selectinload
 
 from backend.db.models import Event, Fight, Fighter, fighter_stats
 from backend.schemas.event import EventDetail, EventFight, EventListItem
@@ -151,12 +151,98 @@ class PostgreSQLFighterRepository:
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+        self._was_interim_supported: bool | None = None
+
+    async def _supports_was_interim(self) -> bool:
+        if self._was_interim_supported is not None:
+            return self._was_interim_supported
+
+        def check(sync_session: Any) -> bool:
+            bind = sync_session.get_bind()
+            inspector = inspect(bind)
+            columns = inspector.get_columns(Fighter.__tablename__)
+            return any(column["name"] == "was_interim" for column in columns)
+
+        try:
+            self._was_interim_supported = await self._session.run_sync(check)
+        except Exception:
+            self._was_interim_supported = False
+
+        return self._was_interim_supported
+
+    async def _resolve_fighter_columns(
+        self,
+        base_columns: Sequence[Any],
+        *,
+        include_was_interim: bool = True,
+    ) -> tuple[list[Any], bool]:
+        supports_was_interim = await self._supports_was_interim()
+        columns = list(base_columns)
+        if include_was_interim and supports_was_interim:
+            columns.append(Fighter.was_interim)
+        return columns, supports_was_interim
+
+    def _fighter_summary_columns(self) -> list[Any]:
+        return [
+            Fighter.id,
+            Fighter.name,
+            Fighter.nickname,
+            Fighter.record,
+            Fighter.division,
+            Fighter.height,
+            Fighter.weight,
+            Fighter.reach,
+            Fighter.stance,
+            Fighter.dob,
+            Fighter.image_url,
+            Fighter.is_current_champion,
+            Fighter.is_former_champion,
+        ]
+
+    def _fighter_detail_columns(self) -> list[Any]:
+        return [
+            Fighter.id,
+            Fighter.name,
+            Fighter.nickname,
+            Fighter.height,
+            Fighter.weight,
+            Fighter.reach,
+            Fighter.stance,
+            Fighter.dob,
+            Fighter.image_url,
+            Fighter.record,
+            Fighter.leg_reach,
+            Fighter.division,
+            Fighter.is_current_champion,
+            Fighter.is_former_champion,
+            Fighter.championship_history,
+        ]
+
+    def _fighter_comparison_columns(self) -> list[Any]:
+        return [
+            Fighter.id,
+            Fighter.name,
+            Fighter.record,
+            Fighter.division,
+            Fighter.image_url,
+            Fighter.is_current_champion,
+            Fighter.is_former_champion,
+        ]
 
     async def list_fighters(
         self, *, limit: int | None = None, offset: int | None = None
     ) -> Iterable[FighterListItem]:
         """List all fighters with optional pagination."""
-        query = select(Fighter).order_by(Fighter.name, Fighter.id)
+        base_columns = self._fighter_summary_columns()
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(
+            base_columns
+        )
+
+        query = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .order_by(Fighter.name, Fighter.id)
+        )
 
         if offset is not None:
             query = query.offset(offset)
@@ -182,7 +268,7 @@ class PostgreSQLFighterRepository:
                 image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
-                was_interim=fighter.was_interim,
+                was_interim=fighter.was_interim if supports_was_interim else False,
             )
             for fighter in fighters
         ]
@@ -190,7 +276,15 @@ class PostgreSQLFighterRepository:
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Get detailed fighter information by ID."""
         # Query fighter details
-        fighter_query = select(Fighter).where(Fighter.id == fighter_id)
+        base_columns = self._fighter_detail_columns()
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(
+            base_columns
+        )
+        fighter_query = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .where(Fighter.id == fighter_id)
+        )
         fighter_result = await self._session.execute(fighter_query)
         fighter = fighter_result.scalar_one_or_none()
 
@@ -283,21 +377,17 @@ class PostgreSQLFighterRepository:
             for fight in all_fights
             if fight.fighter_id and fight.fighter_id != fighter_id
         }
-        opponent_lookup: dict[str, Fighter] = {}
+        opponent_lookup: dict[str, str] = {}
         if opponent_ids:
             opponent_rows = await self._session.execute(
-                select(Fighter).where(Fighter.id.in_(opponent_ids))
+                select(Fighter.id, Fighter.name).where(Fighter.id.in_(opponent_ids))
             )
-            opponent_lookup = {
-                opponent.id: opponent for opponent in opponent_rows.scalars()
-            }
+            opponent_lookup = {row.id: row.name for row in opponent_rows.all()}
 
         # Second pass: Process fights from opponent's perspective (only if not already seen)
         for fight in all_fights:
             if fight.fighter_id != fighter_id:
-                opponent_fighter = opponent_lookup.get(fight.fighter_id)
-
-                opponent_name = opponent_fighter.name if opponent_fighter else "Unknown"
+                opponent_name = opponent_lookup.get(fight.fighter_id, "Unknown")
                 opponent_id = fight.fighter_id
 
                 fight_key = create_fight_key(
@@ -371,7 +461,7 @@ class PostgreSQLFighterRepository:
             fight_history=fight_history,
             is_current_champion=fighter.is_current_champion,
             is_former_champion=fighter.is_former_champion,
-            was_interim=fighter.was_interim,
+            was_interim=fighter.was_interim if supports_was_interim else False,
             championship_history=fighter.championship_history or {},
         )
 
@@ -420,24 +510,32 @@ class PostgreSQLFighterRepository:
         latest_map = {row.fighter_id: row.latest_event_date for row in fight_counts}
 
         if not id_order:
-            fallback_query = select(Fighter).order_by(Fighter.name, Fighter.id)
+            fallback_query = (
+                select(
+                    Fighter.id,
+                    Fighter.name,
+                    Fighter.division,
+                    Fighter.record,
+                    Fighter.image_url,
+                ).order_by(Fighter.name, Fighter.id)
+            )
             if division:
                 fallback_query = fallback_query.where(Fighter.division == division)
             if limit is not None:
                 fallback_query = fallback_query.limit(limit)
             fallback_result = await self._session.execute(fallback_query)
-            fallback_fighters = fallback_result.scalars().all()
+            fallback_fighters = fallback_result.all()
             nodes = [
                 FightGraphNode(
-                    fighter_id=fighter.id,
-                    name=fighter.name,
-                    division=fighter.division,
-                    record=fighter.record,
-                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                    fighter_id=row.id,
+                    name=row.name,
+                    division=row.division,
+                    record=row.record,
+                    image_url=resolve_fighter_image(row.id, row.image_url),
                     total_fights=0,
                     latest_event_date=None,
                 )
-                for fighter in fallback_fighters
+                for row in fallback_fighters
             ]
             metadata = {
                 "filters": {
@@ -452,25 +550,33 @@ class PostgreSQLFighterRepository:
             }
             return FightGraphResponse(nodes=nodes, links=[], metadata=metadata)
 
-        fighters_query = select(Fighter).where(Fighter.id.in_(id_order))
+        fighters_query = select(
+            Fighter.id,
+            Fighter.name,
+            Fighter.division,
+            Fighter.record,
+            Fighter.image_url,
+        ).where(Fighter.id.in_(id_order))
         fighters_result = await self._session.execute(fighters_query)
-        fighters = fighters_result.scalars().all()
-        fighter_map = {fighter.id: fighter for fighter in fighters}
+        fighters = fighters_result.all()
+        fighter_map = {row.id: row for row in fighters}
 
         nodes: list[FightGraphNode] = []
         for fighter_id in id_order:
-            fighter = fighter_map.get(fighter_id)
-            if fighter is None:
+            fighter_row = fighter_map.get(fighter_id)
+            if fighter_row is None:
                 continue
             nodes.append(
                 FightGraphNode(
-                    fighter_id=fighter.id,
-                    name=fighter.name,
-                    division=fighter.division,
-                    record=fighter.record,
-                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                    total_fights=count_map.get(fighter.id, 0),
-                    latest_event_date=latest_map.get(fighter.id),
+                    fighter_id=fighter_row.id,
+                    name=fighter_row.name,
+                    division=fighter_row.division,
+                    record=fighter_row.record,
+                    image_url=resolve_fighter_image(
+                        fighter_row.id, fighter_row.image_url
+                    ),
+                    total_fights=count_map.get(fighter_row.id, 0),
+                    latest_event_date=latest_map.get(fighter_row.id),
                 )
             )
 
@@ -659,7 +765,11 @@ class PostgreSQLFighterRepository:
         fighter_id = fighter_data.get("id")
 
         # Check if fighter exists
-        query = select(Fighter).where(Fighter.id == fighter_id)
+        query = (
+            select(Fighter)
+            .options(load_only(Fighter.id))
+            .where(Fighter.id == fighter_id)
+        )
         result = await self._session.execute(query)
         existing_fighter = result.scalar_one_or_none()
 
@@ -722,7 +832,15 @@ class PostgreSQLFighterRepository:
 
                 filters.append(or_(*champion_conditions))
 
-        stmt = select(Fighter).order_by(Fighter.name)
+        base_columns = self._fighter_summary_columns()
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(
+            base_columns
+        )
+        stmt = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .order_by(Fighter.name)
+        )
         count_stmt = select(func.count()).select_from(Fighter)
 
         for condition in filters:
@@ -757,7 +875,7 @@ class PostgreSQLFighterRepository:
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
-                    was_interim=fighter.was_interim,
+                    was_interim=fighter.was_interim if supports_was_interim else False,
                 )
                 for fighter in fighters
             ],
@@ -777,7 +895,15 @@ class PostgreSQLFighterRepository:
             if fighter_id not in ordered_ids:
                 ordered_ids.append(fighter_id)
 
-        fighters_stmt = select(Fighter).where(Fighter.id.in_(ordered_ids))
+        base_columns = self._fighter_comparison_columns()
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(
+            base_columns
+        )
+        fighters_stmt = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .where(Fighter.id.in_(ordered_ids))
+        )
         fighters_result = await self._session.execute(fighters_stmt)
         fighters = fighters_result.scalars().all()
         fighter_map = {fighter.id: fighter for fighter in fighters}
@@ -827,7 +953,9 @@ class PostgreSQLFighterRepository:
                     career=stats_map.get("career", {}),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
-                    was_interim=fighter.was_interim,
+                    was_interim=(
+                        fighter.was_interim if supports_was_interim else False
+                    ),
                 )
             )
 

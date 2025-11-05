@@ -487,12 +487,14 @@ class FighterService:
         )
         cache_key = (
             search_key(
-                normalized_query,
-                normalized_stance if normalized_stance else None,
-                normalized_division if normalized_division else None,
-                ",".join(sorted(normalized_champion_statuses)) if normalized_champion_statuses else None,
-                resolved_limit,
-                resolved_offset,
+                query=normalized_query,
+                stance=normalized_stance if normalized_stance else None,
+                division=normalized_division if normalized_division else None,
+                champion_statuses=",".join(sorted(normalized_champion_statuses))
+                if normalized_champion_statuses
+                else None,
+                limit=resolved_limit,
+                offset=resolved_offset,
             )
             if use_cache
             else None

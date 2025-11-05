@@ -530,6 +530,11 @@ export interface components {
              * @default false
              */
             is_former_champion: boolean;
+            /**
+             * Was Interim
+             * @default false
+             */
+            was_interim: boolean;
         };
         /** FighterComparisonResponse */
         FighterComparisonResponse: {
@@ -575,6 +580,11 @@ export interface components {
              * @default false
              */
             is_former_champion: boolean;
+            /**
+             * Was Interim
+             * @default false
+             */
+            was_interim: boolean;
             /** Leg Reach */
             leg_reach?: string | null;
             /** Age */
@@ -633,6 +643,11 @@ export interface components {
              * @default false
              */
             is_former_champion: boolean;
+            /**
+             * Was Interim
+             * @default false
+             */
+            was_interim: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1115,6 +1130,8 @@ export interface operations {
                 stance?: string | null;
                 /** @description Optional division filter. */
                 division?: string | null;
+                /** @description Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic). */
+                champion_statuses?: string[] | null;
                 /** @description Number of results to return. */
                 limit?: number;
                 /** @description Number of matches to skip. */

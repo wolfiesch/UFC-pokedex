@@ -51,9 +51,19 @@ export default function FighterCard({ fighter }: Props) {
     }
   };
 
+  const isChampion = fighter.is_current_champion || fighter.is_former_champion;
+  const championGlowClass = fighter.is_current_champion
+    ? "ring-2 ring-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+    : fighter.is_former_champion
+    ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+    : "";
+
   return (
     <Link href={`/fighters/${fighter.fighter_id}`} className="group block h-full">
-      <Card className="flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl">
+      <Card className={cn(
+        "flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl",
+        championGlowClass
+      )}>
         <CardHeader className="p-6 pb-4">
           <div className="flex items-start justify-between gap-4 min-h-24">
             <div className="flex-1">
@@ -179,10 +189,21 @@ export default function FighterCard({ fighter }: Props) {
           </dl>
         </CardContent>
 
-        <CardFooter className="items-center justify-between pt-0">
-          <Badge variant="outline" className="uppercase tracking-tight">
-            {fighter.division ?? "Unknown Division"}
-          </Badge>
+        <CardFooter className="flex-wrap items-center justify-between gap-2 pt-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="uppercase tracking-tight">
+              {fighter.division ?? "Unknown Division"}
+            </Badge>
+            {fighter.is_current_champion ? (
+              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-xs font-semibold border-0">
+                {fighter.was_interim ? "Current Champ (I)" : "Current Champ"}
+              </Badge>
+            ) : fighter.is_former_champion ? (
+              <Badge variant="outline" className="text-xs font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
+                {fighter.was_interim ? "Former Champ (I)" : "Former Champ"}
+              </Badge>
+            ) : null}
+          </div>
           <span className="text-xs font-medium uppercase tracking-[0.4em] text-muted-foreground">
             View →
           </span>
