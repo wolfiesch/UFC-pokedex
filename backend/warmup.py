@@ -44,11 +44,7 @@ async def warmup_database() -> None:
 
         engine = resolve_engine()
 
-        begin_context = engine.begin()
-        if inspect.isawaitable(begin_context):
-            begin_context = await begin_context
-
-        async with begin_context as conn:
+        async with engine.begin() as conn:
             # Simple ping query to warm up connection
             await conn.execute(text("SELECT 1"))
 
