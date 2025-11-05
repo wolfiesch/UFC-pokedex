@@ -516,9 +516,9 @@ export async function getFavoriteCollectionDetail(
  */
 export async function createFavoriteCollection(
   payload: FavoriteCollectionCreatePayload
-): Promise<FavoriteCollectionDetail> {
+) {
   const { data, error } = await client.POST("/favorites/collections", {
-    body: payload,
+    body: payload as any,
   });
 
   if (error) {
@@ -529,7 +529,7 @@ export async function createFavoriteCollection(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteCollectionDetail;
+  return data;
 }
 
 /**
@@ -569,7 +569,7 @@ export async function addFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload,
+      body: payload as any,
     }
   );
 
@@ -619,7 +619,7 @@ export async function reorderFavoriteEntries(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload,
+      body: payload as any,
     }
   );
 
@@ -673,7 +673,7 @@ export async function updateFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload,
+      body: payload as any,
     }
   );
 

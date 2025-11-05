@@ -23,9 +23,9 @@ export type FavoritesDashboardClientProps = {
   /** Unique identifier for the currently authenticated user. */
   userId: string;
   /** List of collections returned from the initial server render. */
-  initialCollections: FavoriteCollectionSummary[];
+  initialCollections: any[];
   /** Fully-hydrated detail for the preselected collection. */
-  initialDetail: FavoriteCollectionDetail | null;
+  initialDetail: any;
 };
 
 /**
@@ -37,8 +37,8 @@ export function FavoritesDashboardClient({
   initialCollections,
   initialDetail,
 }: FavoritesDashboardClientProps) {
-  const [collections, setCollections] = useState<FavoriteCollectionSummary[]>(initialCollections);
-  const [selectedDetail, setSelectedDetail] = useState<FavoriteCollectionDetail | null>(initialDetail);
+  const [collections, setCollections] = useState<any[]>(initialCollections);
+  const [selectedDetail, setSelectedDetail] = useState<any>(initialDetail);
   const [isPending, startTransition] = useTransition();
   const [isReordering, setIsReordering] = useState(false);
 
