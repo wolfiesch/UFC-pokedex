@@ -152,7 +152,7 @@ export async function getFighters(
       query: {
         limit,
         offset,
-        include_streak: 1,
+        include_streak: true,
         streak_window: 6,
       },
     },
