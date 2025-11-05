@@ -40,6 +40,8 @@ from backend.schemas.favorites import (
     FavoriteUpcomingFight,
 )
 
+_FAVORITES_TABLES_READY_CACHE: bool | None = None
+
 
 class FavoritesService:
     """Encapsulates persistence, caching, and aggregation for favorites."""
@@ -50,6 +52,12 @@ class FavoritesService:
         self._tables_ready: bool | None = None
 
     async def _favorites_tables_ready(self) -> bool:
+        global _FAVORITES_TABLES_READY_CACHE
+
+        if _FAVORITES_TABLES_READY_CACHE is not None:
+            self._tables_ready = _FAVORITES_TABLES_READY_CACHE
+            return _FAVORITES_TABLES_READY_CACHE
+
         if self._tables_ready is not None:
             return self._tables_ready
 
@@ -64,6 +72,7 @@ class FavoritesService:
         except Exception:
             self._tables_ready = False
 
+        _FAVORITES_TABLES_READY_CACHE = self._tables_ready
         return self._tables_ready
 
     async def list_collections(self, *, user_id: str) -> FavoriteCollectionListResponse:

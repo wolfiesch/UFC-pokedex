@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Literal
 from typing import cast as typing_cast
 
-from sqlalchemy import Float, cast, desc, func, inspect, select
+from sqlalchemy import Float, cast, desc, func, inspect, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
@@ -229,40 +229,78 @@ class PostgreSQLFighterRepository:
 
         effective_window: int | None = None if window is None else max(2, window)
 
-        # Single bulk query instead of N queries
-        stmt = (
-            select(Fight)
-            .options(
-                load_only(
-                    Fight.event_date,
-                    Fight.result,
-                    Fight.fighter_id,
-                    Fight.opponent_id,
-                )
-            )
-            .where(
-                (Fight.fighter_id.in_(fighter_ids)) | (Fight.opponent_id.in_(fighter_ids))
-            )
+        subject_stmt = (
+            select(
+                Fight.fighter_id.label("subject_id"),
+                Fight.event_date.label("event_date"),
+                Fight.result.label("result"),
+                literal(True).label("is_primary"),
+            ).where(Fight.fighter_id.in_(fighter_ids))
         )
+        opponent_stmt = (
+            select(
+                Fight.opponent_id.label("subject_id"),
+                Fight.event_date.label("event_date"),
+                Fight.result.label("result"),
+                literal(False).label("is_primary"),
+            )
+            .where(Fight.opponent_id.in_(fighter_ids))
+            .where(Fight.opponent_id.is_not(None))
+        )
+
+        unified = union_all(subject_stmt, opponent_stmt).subquery("subject_fights")
+
+        order_clause = unified.c.event_date.desc().nulls_last()
+
+        if effective_window is not None:
+            ranked = (
+                select(
+                    unified.c.subject_id,
+                    unified.c.event_date,
+                    unified.c.result,
+                    unified.c.is_primary,
+                    func.row_number()
+                    .over(
+                        partition_by=unified.c.subject_id,
+                        order_by=order_clause,
+                    )
+                    .label("row_number"),
+                )
+            ).subquery("ranked_subject_fights")
+
+            stmt = (
+                select(
+                    ranked.c.subject_id,
+                    ranked.c.event_date,
+                    ranked.c.result,
+                    ranked.c.is_primary,
+                )
+                .where(ranked.c.row_number <= effective_window)
+                .order_by(ranked.c.subject_id, ranked.c.event_date.desc().nulls_last())
+            )
+        else:
+            stmt = select(
+                unified.c.subject_id,
+                unified.c.event_date,
+                unified.c.result,
+                unified.c.is_primary,
+            ).order_by(unified.c.subject_id, order_clause)
+
         result = await self._session.execute(stmt)
-        all_fights = result.scalars().all()
+        all_fights = result.all()
 
         # Group fights by fighter in memory
         fights_by_fighter: dict[str, list[tuple[date | None, str]]] = {
             fid: [] for fid in fighter_ids
         }
 
-        for fight in all_fights:
-            # Add fight from fighter's perspective
-            if fight.fighter_id in fights_by_fighter:
-                fights_by_fighter[fight.fighter_id].append(
-                    (fight.event_date, fight.result or "")
-                )
-            # Add fight from opponent's perspective
-            if fight.opponent_id and fight.opponent_id in fights_by_fighter:
-                fights_by_fighter[fight.opponent_id].append(
-                    (fight.event_date, _invert_fight_result(fight.result))
-                )
+        for subject_id, event_date, result_text, is_primary in all_fights:
+            if subject_id not in fights_by_fighter:
+                continue
+            normalized_result = result_text or ""
+            if not bool(is_primary):
+                normalized_result = _invert_fight_result(normalized_result)
+            fights_by_fighter[subject_id].append((event_date, normalized_result))
 
         # Compute streaks for each fighter
         streaks = {}
@@ -1085,8 +1123,9 @@ class PostgreSQLFighterRepository:
         fighter_streaks = {}
         if include_streak or apply_streak_filter:
             fighter_ids = [f.id for f in fighters]
-            if apply_streak_filter or min_streak_count is not None:
-                streak_window: int | None = None
+            if apply_streak_filter:
+                threshold = max(2, (min_streak_count or 1) + 1)
+                streak_window = threshold
             else:
                 streak_window = 6
             fighter_streaks = await self._batch_compute_streaks(
