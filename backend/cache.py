@@ -14,7 +14,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Redis = None  # type: ignore[assignment]
 
     class RedisConnectionError(Exception):
-        """Fallback error raised when redis is not installed."""
+        """Fallback exception class defined when redis package is not installed."""
 
 
 if TYPE_CHECKING:
