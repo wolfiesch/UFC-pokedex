@@ -462,7 +462,7 @@ export async function getFavoriteCollections(
 export async function getFavoriteCollectionDetail(
   collectionId: number,
   userId?: string
-): Promise<FavoriteCollectionDetail> {
+) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
     queryParams.user_id = userId;
@@ -493,7 +493,7 @@ export async function getFavoriteCollectionDetail(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteCollectionDetail;
+  return data;
 }
 
 /**

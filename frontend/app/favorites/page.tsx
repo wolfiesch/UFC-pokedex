@@ -18,7 +18,7 @@ export default async function FavoritesPage() {
   const userId = DEFAULT_USER_ID;
 
   let collections: any[] = [];
-  let detail: FavoriteCollectionDetail | null = null;
+  let detail: any = null;
 
   try {
     const response = await getFavoriteCollections(userId);
