@@ -7,7 +7,7 @@ specialized repositories to maintain consistency and reduce duplication.
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Literal
+from typing import Any
 
 from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession
