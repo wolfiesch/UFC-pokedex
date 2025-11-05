@@ -18,21 +18,6 @@ from backend.db.models import Fight
 _WAS_INTERIM_SUPPORTED_CACHE: bool | None = None
 
 # Standard columns to load for fight history queries
-_FIGHT_HISTORY_LOAD_COLUMNS = (
-    Fight.id,
-    Fight.fighter_id,
-    Fight.opponent_id,
-    Fight.opponent_name,
-    Fight.event_name,
-    Fight.event_date,
-    Fight.result,
-    Fight.method,
-    Fight.round,
-    Fight.time,
-    Fight.fight_card_url,
-    Fight.stats,
-    Fight.weight_class,
-)
 
 
 def _invert_fight_result(result: str | None) -> str:
