@@ -221,11 +221,12 @@ async def get_collection_stats(
 ) -> FavoriteCollectionStats:
     """Return stats for a collection without fetching entries."""
 
-    collection = await service.get_collection(
-        collection_id=collection_id, user_id=user_id
-    )
-    if collection is None:
-        raise HTTPException(status_code=404, detail="Collection not found")
-    if collection.stats is None:
-        raise HTTPException(status_code=500, detail="Stats unavailable")
-    return collection.stats
+    try:
+        stats = await service.get_collection_stats(
+            collection_id=collection_id, user_id=user_id
+        )
+        return stats
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
