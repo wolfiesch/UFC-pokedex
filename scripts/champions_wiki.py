@@ -140,9 +140,13 @@ def scrape_wikipedia_champions() -> dict[str, Any]:
             break
         except requests.RequestException as e:
             if attempt == max_retries - 1:
-                console.print(f"[red]Failed to fetch Wikipedia after {max_retries} attempts: {e}[/red]")
+                failure_message = (
+                    f"[red]Failed to fetch Wikipedia after {max_retries} attempts: {e}[/red]"
+                )
+                console.print(failure_message)
                 return {'current_champions': [], 'division_history': {}}
-            console.print(f"[yellow]Attempt {attempt + 1} failed, retrying...[/yellow]")
+            retry_message = f"[yellow]Attempt {attempt + 1} failed, retrying...[/yellow]"
+            console.print(retry_message)
             time.sleep(2)
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -221,7 +225,12 @@ def scrape_wikipedia_champions() -> dict[str, Any]:
                         name = re.sub(r'\(\d+\)$', '', name).strip()
 
                         # Remove "promoted to undisputed champion" suffix
-                        name = re.sub(r'promoted to undisputed champion.*$', '', name, flags=re.IGNORECASE).strip()
+                        name = re.sub(
+                            r'promoted to undisputed champion.*$',
+                            '',
+                            name,
+                            flags=re.IGNORECASE,
+                        ).strip()
 
                         # Check for interim flag
                         is_interim = 'interim' in name.lower() or '†' in name

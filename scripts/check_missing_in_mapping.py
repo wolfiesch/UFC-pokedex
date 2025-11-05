@@ -2,6 +2,7 @@
 """Check which missing fighters are in Sherdog mapping."""
 
 import json
+import tempfile
 from pathlib import Path
 
 from rich.console import Console
@@ -9,7 +10,7 @@ from rich.console import Console
 console = Console()
 
 # Load missing fighters
-missing_file = Path("/tmp/fighters_no_images.txt")
+missing_file = Path(tempfile.gettempdir()) / "fighters_no_images.txt"
 missing_ids = {line.strip() for line in missing_file.read_text().splitlines() if line.strip()}
 
 console.print(f"Missing images: {len(missing_ids)} fighters")
@@ -28,7 +29,10 @@ for fighter_id in missing_ids:
         in_mapping.append(fighter_id)
 
 console.print(f"[green]✓[/green] {len(in_mapping)} missing fighters ARE in Sherdog mapping")
-console.print(f"[yellow]⚠[/yellow] {len(missing_ids) - len(in_mapping)} missing fighters NOT in Sherdog mapping\n")
+not_in_mapping_count = len(missing_ids) - len(in_mapping)
+console.print(
+    f"[yellow]⚠[/yellow] {not_in_mapping_count} missing fighters NOT in Sherdog mapping\n"
+)
 
 if in_mapping:
     console.print("Fighters in mapping (sample):")

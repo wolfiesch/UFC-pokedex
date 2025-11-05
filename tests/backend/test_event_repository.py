@@ -78,10 +78,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
         allow_module_level=True,
     )
 
-from backend.db.models import Base, Event, Fight, Fighter
-from backend.db.repositories import PostgreSQLEventRepository
-from backend.schemas.event import PaginatedEventsResponse
-from backend.services.event_service import EventService
+# Import backend modules after dependency stubs are registered to avoid optional import errors.
+from backend.db.models import Base, Event, Fight, Fighter  # noqa: E402
+from backend.db.repositories import PostgreSQLEventRepository  # noqa: E402
+from backend.schemas.event import PaginatedEventsResponse  # noqa: E402
+from backend.services.event_service import EventService  # noqa: E402
 
 
 @asynccontextmanager

@@ -264,18 +264,24 @@ export interface FavoriteCollectionStats {
 /** Individual fighter entry within a favorites collection. */
 export interface FavoriteEntry {
   id: number;
+  entry_id: number;
+  collection_id?: number;
   fighter_id: string;
+  fighter_name?: string;
+  fighter?: FighterListItem | null;
   position: number;
   notes?: string | null;
   tags: string[];
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  added_at?: string;
 }
 
 /** Lightweight collection representation used for listings. */
 export interface FavoriteCollectionSummary {
   id: number;
+  collection_id: number;
   user_id: string;
   title: string;
   description?: string | null;

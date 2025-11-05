@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 """Scrape fighter images from Wikimedia Commons using their official API."""
 
-# IMPORTANT: Load environment variables FIRST before any other imports
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import asyncio
 import json
 import time
@@ -13,12 +8,15 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 console = Console()
+
+load_dotenv()
 
 
 async def get_fighters_without_images(limit: int | None = None) -> list[dict]:
@@ -105,7 +103,7 @@ def search_wikimedia_commons(fighter_name: str, nickname: str | None = None) -> 
 
         # Format results
         images = []
-        for page_id, page in pages.items():
+        for _page_id, page in pages.items():
             if "imageinfo" not in page:
                 continue
 
@@ -176,12 +174,12 @@ def select_best_image(images: list[dict]) -> dict | None:
         return None
 
     # Filter by minimum dimensions
-    MIN_WIDTH = 300
-    MIN_HEIGHT = 300
+    min_width = 300
+    min_height = 300
 
     quality_images = [
         img for img in images
-        if img.get("width", 0) >= MIN_WIDTH and img.get("height", 0) >= MIN_HEIGHT
+        if img.get("width", 0) >= min_width and img.get("height", 0) >= min_height
     ]
 
     if not quality_images:
@@ -323,7 +321,7 @@ async def main(batch_size: int = 50, test_mode: bool = False):
     images_dir.mkdir(parents=True, exist_ok=True)
 
     checkpoint_file = Path("data/checkpoints/wikimedia_scraper.json")
-    checkpoint = load_checkpoint(checkpoint_file)
+    load_checkpoint(checkpoint_file)
 
     # Track progress
     success_count = 0

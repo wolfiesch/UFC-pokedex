@@ -108,7 +108,10 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         error: null,
       });
     } catch (error) {
-      logger.error("Failed to initialize favorites store", error);
+      logger.error(
+        "Failed to initialize favorites store",
+        error instanceof Error ? error : undefined
+      );
       set({
         isLoading: false,
         isInitialized: true,
@@ -136,7 +139,10 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
 
       return newCollection.collection_id;
     } catch (error) {
-      logger.error("Failed to ensure default collection", error);
+      logger.error(
+        "Failed to ensure default collection",
+        error instanceof Error ? error : undefined
+      );
       throw error;
     }
   },
@@ -155,7 +161,10 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       );
       set({ defaultCollection: updatedCollection, error: null });
     } catch (error) {
-      logger.error("Failed to refresh collection", error);
+      logger.error(
+        "Failed to refresh collection",
+        error instanceof Error ? error : undefined
+      );
       set({
         error: error instanceof Error ? error.message : "Failed to refresh favorites",
       });
@@ -233,7 +242,10 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       // Refresh to get correct data from backend
       await get()._refreshCollection();
     } catch (error) {
-      logger.error("Failed to toggle favorite", error);
+      logger.error(
+        "Failed to toggle favorite",
+        error instanceof Error ? error : undefined
+      );
       set({
         error: error instanceof Error ? error.message : "Failed to update favorite",
       });

@@ -356,13 +356,29 @@ function normalizeFavoriteEntry(value: unknown): FavoriteEntry | null {
       ? { ...value.metadata_json }
       : {};
   const createdAt =
-    typeof value.created_at === "string" ? value.created_at : new Date(0).toISOString();
+    typeof value.created_at === "string"
+      ? value.created_at
+      : new Date(0).toISOString();
+  const addedAt =
+    typeof value.added_at === "string" ? value.added_at : createdAt;
   const updatedAt =
-    typeof value.updated_at === "string" ? value.updated_at : createdAt;
+    typeof value.updated_at === "string" ? value.updated_at : addedAt;
+  const collectionIdRaw = value.collection_id ?? (isRecord(value.collection) ? value.collection.id : undefined);
+  const collectionId = toFiniteNumber(collectionIdRaw, NaN);
+  const fighterName =
+    typeof value.fighter_name === "string" ? value.fighter_name : undefined;
+  const fighterPayload = isRecord(value.fighter) ? value.fighter : null;
+  const fighter = fighterPayload
+    ? normalizeFighterListItemPayload(fighterPayload)
+    : null;
 
   return {
     id,
+    entry_id: id,
     fighter_id: fighterId,
+    collection_id: Number.isFinite(collectionId) ? collectionId : undefined,
+    fighter_name: fighterName,
+    fighter,
     position,
     notes:
       typeof value.notes === "string"
@@ -374,6 +390,7 @@ function normalizeFavoriteEntry(value: unknown): FavoriteEntry | null {
     metadata,
     created_at: createdAt,
     updated_at: updatedAt,
+    added_at: addedAt,
   };
 }
 
@@ -392,6 +409,7 @@ function normalizeFavoriteCollectionSummary(
   const stats = value.stats ? normalizeFavoriteCollectionStats(value.stats) : null;
   return {
     id,
+    collection_id: id,
     user_id: userId,
     title,
     description:
