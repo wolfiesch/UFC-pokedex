@@ -518,7 +518,7 @@ export async function createFavoriteCollection(
   payload: FavoriteCollectionCreatePayload
 ): Promise<FavoriteCollectionDetail> {
   const { data, error } = await client.POST("/favorites/collections", {
-    body: payload as never,
+    body: payload,
   });
 
   if (error) {
