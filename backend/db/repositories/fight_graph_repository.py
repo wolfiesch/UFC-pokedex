@@ -13,7 +13,6 @@ from datetime import date
 from typing import Any
 
 from sqlalchemy import desc, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Fight, Fighter
 from backend.db.repositories.base import (
