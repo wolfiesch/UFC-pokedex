@@ -6,6 +6,7 @@ to ensure all connections and caches are hot before serving the first request.
 
 from __future__ import annotations
 
+import inspect
 import logging
 import time
 
@@ -20,14 +21,34 @@ async def warmup_database() -> None:
     Executes a simple query to initialize the connection pool and ORM machinery.
     Gracefully degrades if warmup fails.
     """
-    from backend.db.connection import get_database_type, get_engine
-
-    engine = get_engine()
-    db_type = get_database_type()
-
     try:
+        try:
+            # Prefer the wrappers exposed in ``backend.main`` so test doubles
+            # patched at the API layer are honoured here as well.
+            from backend.main import get_database_type as resolve_db_type
+            from backend.main import get_engine as resolve_engine
+        except ImportError:
+            from backend.db.connection import (  # type: ignore[no-redef]
+                get_database_type as resolve_db_type,
+                get_engine as resolve_engine,
+            )
+
         start = time.time()
-        async with engine.begin() as conn:
+        db_type = resolve_db_type()
+        logger.debug("Database warmup target detected as %s", db_type)
+        if db_type != "sqlite":
+            logger.debug(
+                "Skipping database warmup for non-SQLite backend '%s'", db_type
+            )
+            return
+
+        engine = resolve_engine()
+
+        begin_context = engine.begin()
+        if inspect.isawaitable(begin_context):
+            begin_context = await begin_context
+
+        async with begin_context as conn:
             # Simple ping query to warm up connection
             await conn.execute(text("SELECT 1"))
 
