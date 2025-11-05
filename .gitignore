@@ -22292,3 +22292,7 @@ tests/e2e/screenshots/
 .scrapy/data/cache/scrapy_cache/fighter_detail/ff/ffc704e54f47f2b0461215753344b6b54d42b761/response_body
 .scrapy/data/cache/scrapy_cache/fighter_detail/ff/ffd264183150cde8b86a604b9018d2590396d5f1/response_body
 .scrapy/data/cache/scrapy_cache/fighter_detail/ff/ffee2addc256d3ffcb9a40eb5a795b84412d497b/response_body
+
+# SQLite databases
+*.db
+app.db
