@@ -18,6 +18,10 @@ _LIST_PREFIX = "fighters:list"
 _SEARCH_PREFIX = "fighters:search"
 _COMPARISON_PREFIX = "fighters:compare"
 _GRAPH_PREFIX = "fighters:graph"
+_EVENT_LIST_PREFIX = "events:list"
+_EVENT_DETAIL_PREFIX = "events:detail"
+_EVENT_SEARCH_PREFIX = "events:search"
+_EVENT_RELATED_PREFIX = "events:related"
 
 _redis_client: Redis | None = None
 _client_lock = asyncio.Lock()
@@ -78,6 +82,61 @@ def graph_key(
     return f"{_GRAPH_PREFIX}:{digest}"
 
 
+def event_list_key(*, status: str | None, limit: int | None, offset: int | None) -> str:
+    """Build a cache key for event list queries.
+
+    The ``status`` flag differentiates upcoming versus completed payloads while the
+    pagination arguments ensure distinct cache entries for each page. The function
+    lowercases the status because callers may pass human-entered values.
+    """
+
+    normalized_status = (status or "all").strip().lower()
+    return f"{_EVENT_LIST_PREFIX}:{normalized_status}:{limit}:{offset}"
+
+
+def event_detail_key(event_id: str) -> str:
+    """Produce a stable cache key for an event detail lookup."""
+
+    return f"{_EVENT_DETAIL_PREFIX}:{event_id}"
+
+
+def event_search_key(
+    *,
+    query: str | None,
+    year: int | None,
+    location: str | None,
+    event_type: str | None,
+    status: str | None,
+    limit: int,
+    offset: int,
+) -> str:
+    """Create a hash-based cache key for advanced event search queries.
+
+    We combine all filters into a signature and hash the string to avoid excessively
+    long Redis keys when the ``query`` or ``location`` inputs are verbose.
+    """
+
+    parts = [
+        (query or "").strip().lower(),
+        str(year) if year is not None else "",
+        (location or "").strip().lower(),
+        (event_type or "").strip().lower(),
+        (status or "").strip().lower(),
+        str(limit),
+        str(offset),
+    ]
+    digest = sha256("|".join(parts).encode("utf-8")).hexdigest()
+    return f"{_EVENT_SEARCH_PREFIX}:{digest}"
+
+
+def related_events_key(*, location: str, limit: int) -> str:
+    """Return a cache key for related events lookups scoped by location."""
+
+    normalized_location = location.strip().lower()
+    digest = sha256(normalized_location.encode("utf-8")).hexdigest()
+    return f"{_EVENT_RELATED_PREFIX}:{digest}:{limit}"
+
+
 async def get_redis() -> Redis | None:
     """Get Redis client, returning None if connection fails."""
     global _redis_client
@@ -92,7 +151,9 @@ async def get_redis() -> Redis | None:
                     await _redis_client.ping()
                     logger.info("Redis connection established successfully")
                 except (RedisConnectionError, Exception) as e:
-                    logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
+                    logger.warning(
+                        f"Redis connection failed: {e}. Caching will be disabled."
+                    )
                     _redis_client = None
     return _redis_client
 
@@ -179,4 +240,8 @@ __all__ = [
     "invalidate_fighter",
     "list_key",
     "search_key",
+    "event_list_key",
+    "event_detail_key",
+    "event_search_key",
+    "related_events_key",
 ]

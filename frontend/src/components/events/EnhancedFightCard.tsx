@@ -1,5 +1,7 @@
 "use client";
 
+import { memo, useMemo } from "react";
+
 import { Fight, getFightOutcomeColor, parseRecord } from "@/lib/fight-utils";
 
 interface EnhancedFightCardProps {
@@ -12,14 +14,20 @@ interface EnhancedFightCardProps {
 /**
  * Enhanced fight card component with fighter records and visual styling
  */
-export default function EnhancedFightCard({
+function EnhancedFightCardComponent({
   fight,
   isTitleFight = false,
   isMainEvent = false,
   fighterRecord,
 }: EnhancedFightCardProps) {
-  const outcomeColor = getFightOutcomeColor(fight.result);
-  const parsedRecord = fighterRecord ? parseRecord(fighterRecord) : null;
+  const outcomeColor = useMemo(
+    () => getFightOutcomeColor(fight.result),
+    [fight.result]
+  );
+  const parsedRecord = useMemo(
+    () => (fighterRecord ? parseRecord(fighterRecord) : null),
+    [fighterRecord]
+  );
 
   return (
     <div
@@ -113,3 +121,35 @@ export default function EnhancedFightCard({
     </div>
   );
 }
+
+const equalityKeys: Array<keyof Fight> = [
+  "fight_id",
+  "fighter_1_id",
+  "fighter_1_name",
+  "fighter_2_id",
+  "fighter_2_name",
+  "weight_class",
+  "result",
+  "method",
+  "round",
+  "time",
+];
+
+const arePropsEqual = (
+  previous: Readonly<EnhancedFightCardProps>,
+  next: Readonly<EnhancedFightCardProps>
+): boolean => {
+  return (
+    previous.isMainEvent === next.isMainEvent &&
+    previous.isTitleFight === next.isTitleFight &&
+    previous.fighterRecord === next.fighterRecord &&
+    equalityKeys.every((key) => previous.fight[key] === next.fight[key])
+  );
+};
+
+export const EnhancedFightCard = memo(EnhancedFightCardComponent, arePropsEqual);
+
+/** Exposed for regression tests to verify the memo guard logic. */
+export const enhancedFightCardPropsEqual = arePropsEqual;
+
+export default EnhancedFightCard;

@@ -1,6 +1,8 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import Link from "next/link";
+
 import { detectEventType, getEventTypeConfig } from "@/lib/event-utils";
 
 interface EventListItem {
@@ -21,25 +23,31 @@ interface RelatedEventsWidgetProps {
 /**
  * Widget displaying related events (same location or nearby in time)
  */
-export default function RelatedEventsWidget({
+function RelatedEventsWidgetComponent({
   currentEventId,
   relatedEvents,
   reason = "general",
 }: RelatedEventsWidgetProps) {
-  // Filter out current event and limit to 5
-  const events = relatedEvents
-    .filter((event) => event.event_id !== currentEventId)
-    .slice(0, 5);
+  const events = useMemo(
+    () =>
+      relatedEvents
+        .filter((event) => event.event_id !== currentEventId)
+        .slice(0, 5),
+    [currentEventId, relatedEvents]
+  );
+
+  const reasonLabels = useMemo(
+    () => ({
+      location: "Same Location",
+      timeframe: "Around the Same Time",
+      general: "Related Events",
+    }),
+    []
+  );
 
   if (events.length === 0) {
     return null;
   }
-
-  const reasonLabels = {
-    location: "Same Location",
-    timeframe: "Around the Same Time",
-    general: "Related Events",
-  };
 
   return (
     <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-5">
@@ -119,3 +127,30 @@ export default function RelatedEventsWidget({
     </div>
   );
 }
+
+const areRelatedPropsEqual = (
+  previous: Readonly<RelatedEventsWidgetProps>,
+  next: Readonly<RelatedEventsWidgetProps>
+): boolean => {
+  if (
+    previous.currentEventId !== next.currentEventId ||
+    previous.reason !== next.reason ||
+    previous.relatedEvents.length !== next.relatedEvents.length
+  ) {
+    return false;
+  }
+
+  return previous.relatedEvents.every(
+    (event, index) => event.event_id === next.relatedEvents[index]?.event_id
+  );
+};
+
+export const RelatedEventsWidget = memo(
+  RelatedEventsWidgetComponent,
+  areRelatedPropsEqual
+);
+
+/** Surface the comparator for focused unit tests. */
+export const relatedEventsWidgetPropsEqual = areRelatedPropsEqual;
+
+export default RelatedEventsWidget;

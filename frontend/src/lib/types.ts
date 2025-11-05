@@ -43,6 +43,58 @@ export type FighterDetail = FighterListItem & {
 };
 
 /**
+ * Simplified fight entry embedded within event detail responses. The structure
+ * mirrors the backend schema while remaining small enough for memoisation and
+ * client-side caching.
+ */
+export interface EventFight {
+  fight_id: string;
+  fighter_1_id: string;
+  fighter_1_name: string;
+  fighter_2_id: string | null;
+  fighter_2_name: string;
+  weight_class: string | null;
+  result: string | null;
+  method: string | null;
+  round: number | null;
+  time: string | null;
+}
+
+/**
+ * Event list entries returned by pagination and related-event endpoints.
+ */
+export interface EventListItem {
+  event_id: string;
+  name: string;
+  date: string;
+  location: string | null;
+  status: string;
+  event_type?: string | null;
+}
+
+/**
+ * Detailed event payload including fights and broadcast metadata.
+ */
+export interface EventDetail extends EventListItem {
+  venue?: string | null;
+  broadcast?: string | null;
+  promotion: string;
+  ufcstats_url: string;
+  fight_card: EventFight[];
+}
+
+/**
+ * Response envelope for event pagination endpoints.
+ */
+export interface PaginatedEventsResponse {
+  events: EventListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+/**
  * Paginated subset of fighters returned from index and search endpoints.
  */
 export interface PaginatedFightersResponse {

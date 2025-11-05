@@ -1,112 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
+
+import { useEventDetails } from "@/hooks/useEventDetails";
 import { groupFightsBySection } from "@/lib/fight-utils";
 import { detectEventType, getEventTypeConfig } from "@/lib/event-utils";
-import EventStatsPanel from "@/components/events/EventStatsPanel";
-import FightCardSection from "@/components/events/FightCardSection";
-import RelatedEventsWidget from "@/components/events/RelatedEventsWidget";
 
-interface Fight {
-  fight_id: string;
-  fighter_1_id: string;
-  fighter_1_name: string;
-  fighter_2_id: string | null;
-  fighter_2_name: string;
-  weight_class: string | null;
-  result: string | null;
-  method: string | null;
-  round: number | null;
-  time: string | null;
-}
+const EventStatsPanel = dynamic(() => import("@/components/events/EventStatsPanel"), {
+  ssr: false,
+  suspense: true,
+});
 
-interface EventDetail {
-  event_id: string;
-  name: string;
-  date: string;
-  location: string;
-  status: string;
-  venue?: string | null;
-  broadcast?: string | null;
-  promotion: string;
-  ufcstats_url: string;
-  fight_card: Fight[];
-  event_type?: string | null;
-}
+const FightCardSection = dynamic(() => import("@/components/events/FightCardSection"), {
+  ssr: false,
+  suspense: true,
+});
 
-interface EventListItem {
-  event_id: string;
-  name: string;
-  date: string;
-  location: string | null;
-  status: string;
-  event_type?: string | null;
-}
+const RelatedEventsWidget = dynamic(
+  () => import("@/components/events/RelatedEventsWidget"),
+  {
+    ssr: false,
+    suspense: true,
+  }
+);
+
+const statsFallback = (
+  <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-6 text-gray-400">
+    Loading event metrics…
+  </div>
+);
+
+const cardFallback = (
+  <div className="space-y-4">
+    <div className="h-12 rounded-lg bg-gray-800/40 animate-pulse" />
+    <div className="h-32 rounded-lg bg-gray-800/40 animate-pulse" />
+    <div className="h-32 rounded-lg bg-gray-800/40 animate-pulse" />
+  </div>
+);
+
+const relatedFallback = (
+  <div className="rounded-lg border border-gray-700 bg-gray-800/40 p-5 text-gray-400">
+    Loading nearby events…
+  </div>
+);
 
 export default function EventDetailPage() {
   const params = useParams();
-  const eventId = params?.id as string;
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [relatedEvents, setRelatedEvents] = useState<EventListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const eventId = (params?.id as string | undefined) ?? "";
 
-  useEffect(() => {
-    async function fetchEventDetail() {
-      if (!eventId) return;
+  const { event, relatedEvents, isLoading, error } = useEventDetails(eventId, {
+    relatedLimit: 6,
+  });
 
-      setLoading(true);
-      setError(null);
-
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
-        // Fetch event details
-        const response = await fetch(`${apiUrl}/events/${eventId}`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch event: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        setEvent(data);
-
-        // Fetch related events from same location
-        if (data.location) {
-          try {
-            const relatedResponse = await fetch(
-              `${apiUrl}/events/search/?location=${encodeURIComponent(data.location)}&limit=6`,
-              { cache: "no-store" }
-            );
-            if (relatedResponse.ok) {
-              const relatedData = await relatedResponse.json();
-              setRelatedEvents(relatedData.events || []);
-            }
-          } catch (err) {
-            console.error("Error fetching related events:", err);
-            // Non-critical error, continue anyway
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching event:", err);
-        setError(err instanceof Error ? err.message : "Failed to load event");
-      } finally {
-        setLoading(false);
-      }
+  const eventType = useMemo(() => {
+    if (!event) {
+      return "other";
     }
+    return event.event_type || detectEventType(event.name);
+  }, [event]);
 
-    fetchEventDetail();
-  }, [eventId]);
+  const typeConfig = useMemo(() => getEventTypeConfig(eventType), [eventType]);
+  const isPPV = eventType === "ppv";
 
-  if (loading) {
+  const fightSections = useMemo(() => {
+    if (!event) {
+      return [];
+    }
+    return groupFightsBySection(event.fight_card);
+  }, [event]);
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading event...</div>
+        <div className="text-xl">Loading event…</div>
       </div>
     );
   }
@@ -115,8 +85,8 @@ export default function EventDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-          <p className="text-gray-400">{error || "Event not found"}</p>
+          <h1 className="mb-4 text-2xl font-bold text-red-500">Error</h1>
+          <p className="text-gray-400">{error?.message ?? "Event not found"}</p>
           <Link href="/events" className="mt-4 inline-block text-blue-500 hover:underline">
             ← Back to Events
           </Link>
@@ -124,14 +94,6 @@ export default function EventDetailPage() {
       </div>
     );
   }
-
-  // Detect event type and get config
-  const eventType = event.event_type || detectEventType(event.name);
-  const typeConfig = getEventTypeConfig(eventType);
-  const isPPV = eventType === "ppv";
-
-  // Group fights into sections
-  const fightSections = groupFightsBySection(event.fight_card);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -207,7 +169,9 @@ export default function EventDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Event Statistics Panel */}
           {event.fight_card.length > 0 && (
-            <EventStatsPanel fights={event.fight_card} eventName={event.name} />
+            <Suspense fallback={statsFallback}>
+              <EventStatsPanel fights={event.fight_card} eventName={event.name} />
+            </Suspense>
           )}
 
           {/* Fight Card Sections */}
@@ -222,14 +186,16 @@ export default function EventDetailPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {fightSections.map((section) => (
-                  <FightCardSection
-                    key={section.section}
-                    section={section}
-                    eventName={event.name}
-                    allFights={event.fight_card}
-                  />
-                ))}
+                <Suspense fallback={cardFallback}>
+                  {fightSections.map((section) => (
+                    <FightCardSection
+                      key={section.section}
+                      section={section}
+                      eventName={event.name}
+                      allFights={event.fight_card}
+                    />
+                  ))}
+                </Suspense>
               </div>
             )}
           </div>
@@ -239,11 +205,13 @@ export default function EventDetailPage() {
         <div className="lg:col-span-1">
           <div className="sticky top-8">
             {relatedEvents.length > 0 && (
-              <RelatedEventsWidget
-                currentEventId={event.event_id}
-                relatedEvents={relatedEvents}
-                reason="location"
-              />
+              <Suspense fallback={relatedFallback}>
+                <RelatedEventsWidget
+                  currentEventId={event.event_id}
+                  relatedEvents={relatedEvents}
+                  reason="location"
+                />
+              </Suspense>
             )}
           </div>
         </div>

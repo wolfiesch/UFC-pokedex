@@ -1,14 +1,20 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { FighterDetail } from "@/lib/types";
+
 import client from "@/lib/api-client";
 import { getRegisteredQueryClient } from "@/lib/query-client-registry";
+import type { FighterDetail } from "@/lib/types";
 
 interface UseFighterDetailsResult {
   details: FighterDetail | null;
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
+}
+
+interface UseFighterDetailsOptions {
+  /** Toggle React Suspense support for components that opt-in. */
+  suspense?: boolean;
 }
 
 const FIGHTER_DETAILS_QUERY_KEY = "fighter-details" as const;
@@ -51,8 +57,10 @@ const fetchFighterDetails = async (fighterId: string): Promise<FighterDetail> =>
  */
 export function useFighterDetails(
   fighterId: string,
-  enabled: boolean
+  enabled: boolean,
+  options: UseFighterDetailsOptions = {}
 ): UseFighterDetailsResult {
+  const { suspense = false } = options;
   const queryClient = useQueryClient();
   const queryKey = useMemo(
     () => [FIGHTER_DETAILS_QUERY_KEY, fighterId] as const,
@@ -67,6 +75,7 @@ export function useFighterDetails(
     queryKey,
     queryFn: () => fetchFighterDetails(fighterId),
     enabled: Boolean(fighterId) && enabled,
+    suspense,
     ...fighterDetailQueryOptions,
   });
 
@@ -74,8 +83,10 @@ export function useFighterDetails(
     void queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
 
+  const details = useMemo(() => data ?? null, [data]);
+
   return {
-    details: data ?? null,
+    details,
     isLoading,
     error,
     refetch,
