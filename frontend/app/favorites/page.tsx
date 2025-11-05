@@ -21,7 +21,7 @@ export default async function FavoritesPage() {
     const response = await getFavoriteCollections(userId);
     collections = response.collections;
     if (collections.length) {
-      detail = await getFavoriteCollectionDetail(collections[0]!.id, userId);
+      detail = await getFavoriteCollectionDetail(collections[0]?.id, userId);
     }
   } catch (error) {
     console.error("Failed to load favorites collections", error);
