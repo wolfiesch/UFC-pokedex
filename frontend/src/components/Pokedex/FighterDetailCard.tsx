@@ -45,7 +45,9 @@ type Props = {
 export default function FighterDetailCard({ fighterId, fighter, isLoading, error, onRetry }: Props) {
   // Hooks must be called at the top level, before any conditional returns
   const [imageError, setImageError] = useState(false);
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite } = useFavorites({
+    autoInitialize: true,
+  });
   const isFavorited = fighter ? isFavorite(fighter.fighter_id) : false;
 
   const fightHistory =

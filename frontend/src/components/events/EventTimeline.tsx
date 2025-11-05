@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { groupEventsByMonth, formatMonthYear } from "@/lib/event-utils";
-import { getEventTypeConfig, detectEventType, type EventType } from "@/lib/event-utils";
+import {
+  groupEventsByMonth,
+  formatMonthYear,
+  getEventTypeConfig,
+  detectEventType,
+  normalizeEventType,
+  type EventType,
+} from "@/lib/event-utils";
 
 interface Event {
   event_id: string;
@@ -44,7 +50,9 @@ export default function EventTimeline({ events }: EventTimelineProps) {
           {/* Events for this month */}
           <div className="space-y-3 ml-8">
             {monthEvents.map((event) => {
-              const eventType = event.event_type || detectEventType(event.name);
+              const eventType =
+                normalizeEventType(event.event_type ?? null) ??
+                detectEventType(event.name);
               const typeConfig = getEventTypeConfig(eventType);
               const isUpcoming = event.status === "upcoming";
               const isPPV = eventType === "ppv";

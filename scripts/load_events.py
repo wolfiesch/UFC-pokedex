@@ -56,7 +56,7 @@ async def load_events_from_jsonl(
     ) as progress:
         task = progress.add_task("Loading events from list...", total=None)
 
-        with open(jsonl_path, "r", encoding="utf-8") as f:
+        with open(jsonl_path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 if limit and loaded_count >= limit:
                     break

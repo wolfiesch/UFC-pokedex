@@ -6,11 +6,10 @@ to ensure all connections and caches are hot before serving the first request.
 
 from __future__ import annotations
 
-import inspect
 import logging
 import time
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,8 @@ async def warmup_database() -> None:
         except ImportError:
             from backend.db.connection import (  # type: ignore[no-redef]
                 get_database_type as resolve_db_type,
+            )
+            from backend.db.connection import (
                 get_engine as resolve_engine,
             )
 
@@ -86,10 +87,33 @@ async def warmup_repository_queries() -> None:
     Gracefully degrades if warmup fails.
     """
     from backend.db.connection import get_db
+    from backend.db.models import Fighter
     from backend.db.repositories import PostgreSQLFighterRepository
 
     try:
         start = time.time()
+
+        try:
+            from backend.main import get_database_type as resolve_db_type
+        except ImportError:
+            from backend.db.connection import (  # type: ignore[no-redef]
+                get_database_type as resolve_db_type,
+            )
+
+        db_type = resolve_db_type()
+
+        if db_type != "sqlite":
+            async for session in get_db():
+                await session.execute(select(Fighter.id).limit(1))
+                break
+
+            elapsed = (time.time() - start) * 1000
+            logger.info(
+                "✓ Repository warmup (lightweight) executed (%s, %.0fms)",
+                db_type,
+                elapsed,
+            )
+            return
 
         async for session in get_db():
             repo = PostgreSQLFighterRepository(session)

@@ -2,11 +2,13 @@
 """List recently downloaded images for manual review."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
+
 from rich.console import Console
 from rich.table import Table
 from sqlalchemy import select
@@ -68,12 +70,12 @@ async def list_recent_images(hours: int = 24) -> None:
     console.print(f"\n[bold]Total:[/bold] {len(fighters)} images")
 
     # Print command to open images directory
-    console.print(f"\n[dim]To review images:[/dim]")
+    console.print("\n[dim]To review images:[/dim]")
     console.print(f"  [cyan]open {images_dir}[/cyan]")
-    console.print(f"\n[dim]To remove bad images:[/dim]")
-    console.print(f"  1. Note the Fighter IDs of bad images")
-    console.print(f"  2. Edit [cyan]scripts/remove_bad_images.py[/cyan]")
-    console.print(f"  3. Run: [cyan]PYTHONPATH=. .venv/bin/python scripts/remove_bad_images.py[/cyan]")
+    console.print("\n[dim]To remove bad images:[/dim]")
+    console.print("  1. Note the Fighter IDs of bad images")
+    console.print("  2. Edit [cyan]scripts/remove_bad_images.py[/cyan]")
+    console.print("  3. Run: [cyan]PYTHONPATH=. .venv/bin/python scripts/remove_bad_images.py[/cyan]")
 
 
 async def main():

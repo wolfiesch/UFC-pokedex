@@ -62,9 +62,10 @@ def download_image(session: requests.Session, fighter_id: str, sherdog_url: str,
 
 async def update_database(fighter_ids: list[str], images_dir: Path) -> int:
     """Update database with image URLs."""
+    from sqlalchemy import update
+
     from backend.db.connection import get_session
     from backend.db.models import Fighter
-    from sqlalchemy import update
 
     updated = 0
     async with get_session() as session:
@@ -142,13 +143,13 @@ async def main():
 
     # Update database
     if success:
-        console.print(f"\n[bold]Updating database...[/bold]")
+        console.print("\n[bold]Updating database...[/bold]")
         updated = await update_database(success, images_dir)
         console.print(f"[green]✓[/green] Updated {updated} fighters\n")
 
     # Final stats
     remaining = len(missing_ids) - len(success)
-    console.print(f"[bold]Final Status:[/bold]")
+    console.print("[bold]Final Status:[/bold]")
     console.print(f"  Successfully downloaded: {len(success)}")
     console.print(f"  Still missing: {remaining}")
     console.print(f"  Coverage: {(4447 - remaining) / 4447 * 100:.2f}%")

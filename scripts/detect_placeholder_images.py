@@ -2,18 +2,17 @@
 """Detect Sherdog placeholder images using perceptual hashing."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import argparse
-from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Tuple
 
-from PIL import Image
 import imagehash
+from PIL import Image
 from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 console = Console()
 
@@ -29,7 +28,7 @@ def compute_image_hash(image_path: Path) -> str:
         return None
 
 
-def find_duplicate_images(images_dir: Path) -> Dict[str, Dict[str, str]]:
+def find_duplicate_images(images_dir: Path) -> dict[str, dict[str, str]]:
     """Find duplicate images by perceptual hash."""
     console.print("[bold cyan]Detecting Duplicate/Placeholder Images[/bold cyan]\n")
 
@@ -65,7 +64,7 @@ def find_duplicate_images(images_dir: Path) -> Dict[str, Dict[str, str]]:
     return hash_to_fighters
 
 
-def analyze_duplicates(hash_to_fighters: Dict[str, Dict[str, str]]) -> List[Tuple[str, Dict[str, str]]]:
+def analyze_duplicates(hash_to_fighters: dict[str, dict[str, str]]) -> list[tuple[str, dict[str, str]]]:
     """Analyze and display duplicate images."""
 
     # Find hashes with multiple fighters (duplicates)
@@ -112,7 +111,7 @@ def analyze_duplicates(hash_to_fighters: Dict[str, Dict[str, str]]) -> List[Tupl
         console.print(f"\n[bold yellow]⚠ Most common duplicate ({len(top_fighters)} fighters):[/bold yellow]")
         console.print(f"  Hash: {top_hash}")
         console.print(f"  Sample: {list(top_fighters.values())[0]}")
-        console.print(f"\n[dim]This is likely the Sherdog placeholder image[/dim]")
+        console.print("\n[dim]This is likely the Sherdog placeholder image[/dim]")
 
         # Save fighter IDs to file
         output_file = Path("data/placeholder_fighter_ids.txt")
@@ -125,7 +124,7 @@ def analyze_duplicates(hash_to_fighters: Dict[str, Dict[str, str]]) -> List[Tupl
     return sorted_dupes
 
 
-def display_all_duplicates(sorted_dupes: List[Tuple[str, Dict[str, str]]], limit: int = 10):
+def display_all_duplicates(sorted_dupes: list[tuple[str, dict[str, str]]], limit: int = 10):
     """Display detailed list of all duplicate groups."""
     console.print(f"\n[bold]All Duplicate Groups (showing top {limit}):[/bold]\n")
 
@@ -140,12 +139,13 @@ def display_all_duplicates(sorted_dupes: List[Tuple[str, Dict[str, str]]], limit
             console.print(f"  [dim]... and {len(fighters) - 10} more[/dim]")
 
 
-async def get_fighter_names(fighter_ids: List[str]) -> Dict[str, str]:
+async def get_fighter_names(fighter_ids: list[str]) -> dict[str, str]:
     """Get fighter names from database."""
-    from backend.db.connection import get_session
-    from backend.db.models import Fighter
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from backend.db.connection import get_session
+    from backend.db.models import Fighter
 
     async with get_session() as session:
         session: AsyncSession
@@ -191,11 +191,11 @@ async def main():
     # Show fighter names if requested
     if args.with_names and sorted_dupes:
         top_hash, top_fighters = sorted_dupes[0]
-        console.print(f"\n[bold]Fetching fighter names for placeholder images...[/bold]")
+        console.print("\n[bold]Fetching fighter names for placeholder images...[/bold]")
 
         names = await get_fighter_names(list(top_fighters.keys()))
 
-        console.print(f"\n[yellow]Fighters with placeholder image:[/yellow]")
+        console.print("\n[yellow]Fighters with placeholder image:[/yellow]")
         table = Table()
         table.add_column("Fighter ID", style="dim")
         table.add_column("Fighter Name", style="cyan")

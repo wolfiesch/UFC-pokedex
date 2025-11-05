@@ -7,10 +7,9 @@ any test modules import application code.
 
 from __future__ import annotations
 
-from typing import Any
-
 import asyncio
 import inspect
+from typing import Any
 
 import pytest
 

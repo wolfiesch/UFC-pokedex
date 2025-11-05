@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import UTC, date, datetime as dt_datetime, timezone
+from datetime import UTC, date, timezone
+from datetime import datetime as dt_datetime
 
 import pytest
 

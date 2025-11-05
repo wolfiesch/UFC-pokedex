@@ -25,7 +25,7 @@ type Props = {
 };
 
 export default function FighterCard({ fighter }: Props) {
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite } = useFavorites({ autoInitialize: false });
   const isFavorite = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
   const [imageError, setImageError] = useState(false);

@@ -2,6 +2,7 @@
 """Verify recently replaced placeholder images."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -84,7 +85,7 @@ async def verify_recent_replacements(hours: int = 2):
             invalid_details.append((fighter_id, fighter_name, validation['issues']))
 
     # Summary
-    console.print(f"\n[bold]Verification Results:[/bold]")
+    console.print("\n[bold]Verification Results:[/bold]")
     console.print(f"  ✓ Valid: {valid_count}/{len(recent_fighters)}")
     console.print(f"  ✗ Invalid: {invalid_count}/{len(recent_fighters)}")
 
@@ -93,7 +94,7 @@ async def verify_recent_replacements(hours: int = 2):
         console.print(f"  Success Rate: {success_rate:.1f}%")
 
         # Show invalid images
-        console.print(f"\n[yellow]Invalid Images:[/yellow]\n")
+        console.print("\n[yellow]Invalid Images:[/yellow]\n")
 
         table = Table()
         table.add_column("Fighter Name", style="cyan")
@@ -114,12 +115,12 @@ async def verify_recent_replacements(hours: int = 2):
         console.print(f"\n[dim]Failed IDs saved to: {invalid_file}[/dim]")
 
         # Suggest action
-        console.print(f"\n[bold]Recommended Action:[/bold]")
+        console.print("\n[bold]Recommended Action:[/bold]")
         console.print(f"  1. Review images manually: [cyan]open {images_dir}[/cyan]")
-        console.print(f"  2. Delete bad images: Edit and run [cyan]make remove-bad-images[/cyan]")
-        console.print(f"  3. Re-run replacement: [cyan]make replace-placeholders[/cyan]")
+        console.print("  2. Delete bad images: Edit and run [cyan]make remove-bad-images[/cyan]")
+        console.print("  3. Re-run replacement: [cyan]make replace-placeholders[/cyan]")
     else:
-        console.print(f"\n[green]✓ All recently replaced images passed validation![/green]")
+        console.print("\n[green]✓ All recently replaced images passed validation![/green]")
 
 
 async def verify_all_non_placeholders():
@@ -127,7 +128,6 @@ async def verify_all_non_placeholders():
     from backend.db.connection import get_session
     from backend.db.models import Fighter
     from scripts.validate_fighter_images import validate_image
-    from scripts.detect_placeholder_images import compute_image_hash
 
     console.print("[bold cyan]Verifying All Non-Placeholder Images[/bold cyan]\n")
 
@@ -195,13 +195,13 @@ async def verify_all_non_placeholders():
             invalid_details.append((fighter_id, fighter_name, validation['issues']))
 
     # Summary
-    console.print(f"\n[bold]Verification Results:[/bold]")
+    console.print("\n[bold]Verification Results:[/bold]")
     console.print(f"  ✓ Valid: {valid_count}/{len(fighters_to_check)}")
     console.print(f"  ✗ Invalid: {invalid_count}/{len(fighters_to_check)}")
     console.print(f"  Success Rate: {(valid_count / len(fighters_to_check) * 100):.1f}%")
 
     if invalid_count > 0:
-        console.print(f"\n[yellow]Showing first 20 invalid images:[/yellow]\n")
+        console.print("\n[yellow]Showing first 20 invalid images:[/yellow]\n")
 
         table = Table()
         table.add_column("Fighter Name", style="cyan")

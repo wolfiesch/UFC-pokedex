@@ -3,12 +3,12 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.services.fighter_service import FighterService, get_fighter_service
 from backend.schemas.stats import (
     LeaderboardsResponse,
     StatsSummaryResponse,
     TrendsResponse,
 )
+from backend.services.fighter_service import FighterService, get_fighter_service
 
 router = APIRouter()
 

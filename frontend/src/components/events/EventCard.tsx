@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { getEventTypeConfig, detectEventType, type EventType } from "@/lib/event-utils";
+import {
+  getEventTypeConfig,
+  detectEventType,
+  normalizeEventType,
+  type EventType,
+} from "@/lib/event-utils";
 
 interface EventCardProps {
   event: {
@@ -17,7 +22,8 @@ interface EventCardProps {
 
 export default function EventCard({ event }: EventCardProps) {
   // Use event_type from API or detect from name
-  const eventType = event.event_type || detectEventType(event.name);
+  const eventType =
+    normalizeEventType(event.event_type ?? null) ?? detectEventType(event.name);
   const typeConfig = getEventTypeConfig(eventType);
 
   const isUpcoming = event.status === "upcoming";

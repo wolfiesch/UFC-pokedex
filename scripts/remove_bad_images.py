@@ -2,10 +2,12 @@
 """Remove bad fighter images and reset database entries."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
 from pathlib import Path
+
 from rich.console import Console
 from rich.prompt import Confirm
 from sqlalchemy import update
@@ -50,10 +52,10 @@ async def remove_bad_images(fighter_ids: list[str]) -> None:
 
         await session.commit()
 
-    console.print(f"\n[bold green]✓ Complete![/bold green]")
+    console.print("\n[bold green]✓ Complete![/bold green]")
     console.print(f"  Files removed: {removed_files}")
     console.print(f"  Database entries reset: {updated_db}")
-    console.print(f"\n[dim]You can now re-run the orchestrator to get better images for these fighters.[/dim]")
+    console.print("\n[dim]You can now re-run the orchestrator to get better images for these fighters.[/dim]")
 
 
 async def main():

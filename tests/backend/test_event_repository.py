@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from datetime import date
 import asyncio
 import sys
 import types
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import date
 
 import pytest
 
@@ -17,7 +17,7 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
     """Minimal asyncio-compatible Redis stand-in for service import paths."""
 
     @classmethod
-    def from_url(cls, *args: object, **kwargs: object) -> "_FakeRedis":
+    def from_url(cls, *args: object, **kwargs: object) -> _FakeRedis:
         """Return a new stub client regardless of configuration inputs."""
 
         return cls()

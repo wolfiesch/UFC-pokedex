@@ -30,7 +30,7 @@ def get_database_url() -> str:
 
     # Validate PostgreSQL URL format
     if not url.startswith("postgresql+psycopg"):
-        raise RuntimeError("Expected asynchronous psycopg URL, got %s" % url)
+        raise RuntimeError(f"Expected asynchronous psycopg URL, got {url}")
     return url
 
 

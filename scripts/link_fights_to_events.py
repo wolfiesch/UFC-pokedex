@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import date as date_type
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -124,7 +123,7 @@ async def main(args: argparse.Namespace) -> None:
     async with get_session() as session:
         matched, unmatched = await link_fights_to_events(session, dry_run=args.dry_run)
 
-        console.print(f"\n[bold]Results:[/bold]")
+        console.print("\n[bold]Results:[/bold]")
         console.print(f"  • Matched: [green]{matched}[/green]")
         console.print(f"  • Unmatched: [yellow]{unmatched}[/yellow]")
         console.print(f"  • Success rate: [cyan]{matched / (matched + unmatched) * 100:.1f}%[/cyan]")

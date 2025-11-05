@@ -69,7 +69,7 @@ async def load_event_details_from_json(
                 break
 
             try:
-                with open(json_file, "r", encoding="utf-8") as f:
+                with open(json_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 event_id = data.get("event_id")

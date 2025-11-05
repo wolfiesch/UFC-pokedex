@@ -37,7 +37,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   const [imageError, setImageError] = useState(false);
 
   // Hooks
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite } = useFavorites({ autoInitialize: false });
   const { addToComparison, isInComparison } = useComparison();
   const { details, isLoading: isLoadingDetails } = useFighterDetails(
     fighter.fighter_id,

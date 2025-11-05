@@ -1,7 +1,8 @@
 """Fuzzy matching utilities for matching UFC fighters to Sherdog profiles."""
 
-from rapidfuzz import fuzz
 from typing import Any
+
+from rapidfuzz import fuzz
 
 
 def normalize_name(name: str) -> str:

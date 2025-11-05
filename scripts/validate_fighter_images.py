@@ -3,17 +3,16 @@
 
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from PIL import Image
 from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 console = Console()
 
 
-def validate_image(image_path: Path) -> Dict[str, any]:
+def validate_image(image_path: Path) -> dict[str, any]:
     """
     Validate a fighter image using basic checks.
 
@@ -126,9 +125,9 @@ def validate_image(image_path: Path) -> Dict[str, any]:
 
 def validate_all_images(
     images_dir: Path,
-    fighter_ids: List[str] = None,
+    fighter_ids: list[str] = None,
     show_all: bool = False,
-) -> Tuple[List[str], List[Tuple[str, List[str]]]]:
+) -> tuple[list[str], list[tuple[str, list[str]]]]:
     """
     Validate all fighter images or specific ones.
 
@@ -178,7 +177,7 @@ def validate_all_images(
             progress.advance(task)
 
     # Display results
-    console.print(f"\n[bold]Validation Results:[/bold]")
+    console.print("\n[bold]Validation Results:[/bold]")
     console.print(f"  ✓ Valid: {len(valid_ids)}")
     console.print(f"  ✗ Invalid: {len(invalid_ids)}")
 
@@ -255,7 +254,7 @@ def main():
 
     # Show statistics
     if invalid_ids:
-        console.print(f"\n[bold]Common Issues:[/bold]")
+        console.print("\n[bold]Common Issues:[/bold]")
 
         issue_counts = {}
         for _, issues, _ in invalid_ids:

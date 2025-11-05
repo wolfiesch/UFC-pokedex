@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { detectEventType, getEventTypeConfig } from "@/lib/event-utils";
+import {
+  detectEventType,
+  getEventTypeConfig,
+  normalizeEventType,
+  type EventType,
+} from "@/lib/event-utils";
 
 interface EventListItem {
   event_id: string;
@@ -9,7 +14,7 @@ interface EventListItem {
   date: string;
   location: string | null;
   status: string;
-  event_type?: string | null;
+  event_type?: EventType | string | null;
 }
 
 interface RelatedEventsWidgetProps {
@@ -52,7 +57,9 @@ export default function RelatedEventsWidget({
 
       <div className="space-y-2">
         {events.map((event) => {
-          const eventType = event.event_type || detectEventType(event.name);
+          const eventType =
+            normalizeEventType(event.event_type ?? null) ??
+            detectEventType(event.name);
           const typeConfig = getEventTypeConfig(eventType);
           const eventDate = new Date(event.date);
           const formattedDate = eventDate.toLocaleDateString("en-US", {

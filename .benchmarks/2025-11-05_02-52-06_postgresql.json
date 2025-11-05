@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-11-05T02:52:06Z",
+  "backend": "postgresql",
+  "git_commit": "5009c41c",
+  "fighter_count": 4447,
+  "endpoints": [
+    {
+      "name": "fighter_list",
+      "url": "/fighters/?limit=20&offset=0",
+      "time_ms": 52.3,
+      "status_code": 200,
+      "baseline_target_ms": 100,
+      "passed": true
+    },
+    {
+      "name": "search_division",
+      "url": "/search/?q=&division=Welterweight",
+      "time_ms": 10.6,
+      "status_code": 200,
+      "baseline_target_ms": 100,
+      "passed": true
+    },
+    {
+      "name": "search_stance",
+      "url": "/search/?q=&stance=Orthodox",
+      "time_ms": 24.0,
+      "status_code": 200,
+      "baseline_target_ms": 100,
+      "passed": true
+    },
+    {
+      "name": "search_win_streak",
+      "url": "/search/?q=&streak_type=win&min_streak_count=3",
+      "time_ms": 2414.0,
+      "status_code": 200,
+      "baseline_target_ms": null,
+      "passed": false
+    },
+    {
+      "name": "fighter_detail",
+      "url": "/fighters/d1053e55f00e53fe",
+      "time_ms": 15.9,
+      "status_code": 200,
+      "baseline_target_ms": 50,
+      "passed": true
+    }
+  ],
+  "summary": {
+    "endpoints_tested": 5,
+    "endpoints_passed": 4,
+    "endpoints_failed": 1,
+    "average_time_ms": 503.4,
+    "critical_issues": [
+      "Search with Win Streak: 2414ms (2.4 seconds) - CRITICAL performance issue"
+    ]
+  }
+}

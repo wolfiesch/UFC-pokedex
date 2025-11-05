@@ -1,10 +1,23 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { useEffect, useRef } from "react";
-import { EnhancedFighterCard } from "./fighter/EnhancedFighterCard";
+import dynamic from "next/dynamic";
+
 import SkeletonFighterCard from "./SkeletonFighterCard";
 import type { FighterListItem } from "@/lib/types";
 import type { ApiError } from "@/lib/errors";
+
+const EnhancedFighterCard = dynamic<ComponentType<{ fighter: FighterListItem }>>(
+  () =>
+    import("./fighter/EnhancedFighterCard").then((mod) => ({
+      default: mod.EnhancedFighterCard,
+    })),
+  {
+    loading: () => <SkeletonFighterCard />,
+    ssr: false,
+  }
+);
 
 type Props = {
   fighters: FighterListItem[];

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import inspect
 import json
 import os
 import sys
@@ -24,7 +23,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
+)
+from backend.db.connection import (
     get_engine as _connection_get_engine,
+)
+from backend.db.connection import (
     get_session,
 )
 from backend.db.models import Fighter
@@ -97,7 +100,7 @@ def check_sqlite_production_seed_safety(db_type: str, jsonl_path: Path) -> bool:
     print("❌ ERROR: Production seed blocked on SQLite")
     print("=" * 70)
     print()
-    print(f"You are attempting to seed production data into SQLite:")
+    print("You are attempting to seed production data into SQLite:")
     print(f"  Source: {jsonl_path}")
     print()
     print("SQLite is designed for development/testing with small datasets only.")

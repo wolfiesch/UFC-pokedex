@@ -15,7 +15,10 @@ async def search_fighters(
     division: str | None = Query(None, description="Optional division filter."),
     champion_statuses: list[str] | None = Query(
         None,
-        description="Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic)."
+        description=(
+            "Filter by champion status. Options: 'current', 'former'. "
+            "Multiple values allowed (OR logic)."
+        ),
     ),
     streak_type: Literal["win", "loss"] | None = Query(
         None,

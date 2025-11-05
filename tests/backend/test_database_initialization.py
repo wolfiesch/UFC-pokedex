@@ -1,9 +1,6 @@
 """Tests for database initialization, preflight checks, and seed safety."""
 from __future__ import annotations
 
-import os
-import sys
-from io import StringIO
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -187,8 +184,9 @@ class TestDatabaseInitialization:
         mock_get_engine.return_value = mock_engine
 
         # Import and run lifespan
-        from backend.main import lifespan
         from fastapi import FastAPI
+
+        from backend.main import lifespan
 
         app = FastAPI()
 
@@ -206,8 +204,9 @@ class TestDatabaseInitialization:
         mock_get_type.return_value = "postgresql"
 
         # Import and run lifespan
-        from backend.main import lifespan
         from fastapi import FastAPI
+
+        from backend.main import lifespan
 
         app = FastAPI()
 

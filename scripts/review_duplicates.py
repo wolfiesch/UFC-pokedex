@@ -2,6 +2,7 @@
 """Interactive review of duplicate photos with CLI image previews."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -10,11 +11,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 console = Console()
@@ -36,7 +35,7 @@ def display_image_iterm2(image_path: Path, width: int = 40):
 
         console.print(escape_sequence)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -142,12 +141,13 @@ def display_image(image_path: Path, method: str = 'auto', width: int = 40) -> bo
     return False
 
 
-async def get_fighter_info(fighter_ids: List[str]) -> dict:
+async def get_fighter_info(fighter_ids: list[str]) -> dict:
     """Get fighter information from database."""
-    from backend.db.connection import get_session
-    from backend.db.models import Fighter
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from backend.db.connection import get_session
+    from backend.db.models import Fighter
 
     async with get_session() as session:
         session: AsyncSession
@@ -244,7 +244,7 @@ async def review_exact_duplicates(duplicates_file: Path, images_dir: Path, displ
 
         # Prompt for action
         console.print("\n[bold]What would you like to do?[/bold]")
-        console.print("  1-{}: Keep this fighter's image (delete others)".format(len(group)))
+        console.print(f"  1-{len(group)}: Keep this fighter's image (delete others)")
         console.print("  a: Keep all (skip this group)")
         console.print("  d: Delete all images (will need to re-scrape)")
         console.print("  o: Open all images in system viewer")

@@ -3,11 +3,10 @@
 
 import argparse
 from pathlib import Path
-from typing import Tuple
 
 from PIL import Image
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm
 
 console = Console()
@@ -16,7 +15,7 @@ console = Console()
 def normalize_image(
     input_path: Path,
     output_path: Path,
-    target_size: Tuple[int, int] = (300, 300),
+    target_size: tuple[int, int] = (300, 300),
     quality: int = 85,
     dry_run: bool = False,
 ) -> dict:
@@ -92,7 +91,7 @@ def normalize_image(
 
 def normalize_all_images(
     images_dir: Path,
-    target_size: Tuple[int, int] = (300, 300),
+    target_size: tuple[int, int] = (300, 300),
     quality: int = 85,
     dry_run: bool = False,
     backup: bool = True,
@@ -196,7 +195,7 @@ def normalize_all_images(
         size_after_mb = stats['total_size_after'] / (1024 * 1024)
         reduction = ((stats['total_size_before'] - stats['total_size_after']) / stats['total_size_before']) * 100
 
-        console.print(f"\n[bold]Storage:[/bold]")
+        console.print("\n[bold]Storage:[/bold]")
         console.print(f"  Before: {size_before_mb:.2f} MB")
         console.print(f"  After: {size_after_mb:.2f} MB")
         console.print(f"  Saved: {reduction:.1f}%")

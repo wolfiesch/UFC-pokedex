@@ -40,7 +40,7 @@ def main():
     if missing_count == 0:
         print("✅ All fighters already scraped!")
     else:
-        print(f"\nTo scrape missing fighters, run:")
+        print("\nTo scrape missing fighters, run:")
         print(f'  .venv/bin/scrapy crawl fighter_detail -a input_file="{output_file}"')
 
 

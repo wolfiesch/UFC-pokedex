@@ -2,19 +2,19 @@
 """Detect duplicate or very similar photos assigned to different fighters."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import asyncio
 import argparse
+import asyncio
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import imagehash
 from PIL import Image
 from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 console = Console()
 
@@ -25,7 +25,7 @@ def compute_image_hash(image_path: Path) -> str:
         img = Image.open(image_path)
         # Use average hash for good balance of speed and accuracy
         return str(imagehash.average_hash(img, hash_size=8))
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -38,12 +38,13 @@ def compute_phash(image_path: Path) -> str:
         return None
 
 
-async def get_fighter_names(fighter_ids: List[str]) -> Dict[str, str]:
+async def get_fighter_names(fighter_ids: list[str]) -> dict[str, str]:
     """Get fighter names from database."""
-    from backend.db.connection import get_session
-    from backend.db.models import Fighter
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from backend.db.connection import get_session
+    from backend.db.models import Fighter
 
     async with get_session() as session:
         session: AsyncSession
@@ -58,7 +59,7 @@ async def find_duplicate_photos(
     images_dir: Path,
     exclude_placeholders: bool = True,
     similarity_threshold: int = 5,
-) -> Tuple[List[Tuple], List[Tuple]]:
+) -> tuple[list[tuple], list[tuple]]:
     """
     Find duplicate and similar photos across different fighters.
 
@@ -146,8 +147,8 @@ async def find_duplicate_photos(
 
 
 async def display_duplicate_results(
-    exact_duplicates: List[Tuple],
-    near_duplicates: List[Tuple],
+    exact_duplicates: list[tuple],
+    near_duplicates: list[tuple],
     show_all: bool = False,
 ):
     """Display duplicate detection results."""
@@ -263,15 +264,15 @@ async def display_duplicate_results(
         console.print("[green]✓ No similar photos found![/green]\n")
 
     # Summary
-    console.print(f"\n[bold]Summary:[/bold]")
+    console.print("\n[bold]Summary:[/bold]")
     console.print(f"  Exact duplicates: {len(exact_duplicates)} groups")
     console.print(f"  Near-duplicates: {len(near_duplicates)} pairs")
 
     if exact_duplicates or near_duplicates:
-        console.print(f"\n[bold]Recommended Action:[/bold]")
-        console.print(f"  1. Review duplicate images manually")
-        console.print(f"  2. Delete incorrect images using [cyan]make remove-bad-images[/cyan]")
-        console.print(f"  3. Re-run scraper for affected fighters")
+        console.print("\n[bold]Recommended Action:[/bold]")
+        console.print("  1. Review duplicate images manually")
+        console.print("  2. Delete incorrect images using [cyan]make remove-bad-images[/cyan]")
+        console.print("  3. Re-run scraper for affected fighters")
 
 
 async def main():

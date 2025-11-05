@@ -531,7 +531,7 @@ async def load_fighters_from_jsonl(
     ) as progress:
         task = progress.add_task("Loading fighters from list...", total=None)
 
-        with open(jsonl_path, "r", encoding="utf-8") as f:
+        with open(jsonl_path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 if limit and loaded_count >= limit:
                     break
@@ -608,7 +608,7 @@ async def load_fighter_detail(
         return False
 
     try:
-        with open(json_path, "r", encoding="utf-8") as f:
+        with open(json_path, encoding="utf-8") as f:
             data = json.load(f)
 
         fighter_id = data.get("fighter_id")

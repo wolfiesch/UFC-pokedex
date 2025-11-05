@@ -100,6 +100,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         self._fighters = {
             "sample-fighter": FighterDetail(
                 fighter_id="sample-fighter",
+                detail_url="http://www.ufcstats.com/fighter-details/sample-fighter",
                 name="Sample Fighter",
                 nickname="Prototype",
                 height="6'0\"",

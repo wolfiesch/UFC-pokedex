@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date
 import sys
 import types
-from typing import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,7 +18,7 @@ class _StubRedisClient:
     """Redis client shim implementing the minimal async surface the cache expects."""
 
     @classmethod
-    def from_url(cls, *_args: object, **_kwargs: object) -> "_StubRedisClient":
+    def from_url(cls, *_args: object, **_kwargs: object) -> _StubRedisClient:
         return cls()
 
     async def ping(self) -> bool:
@@ -119,7 +119,7 @@ def client(
     """Provide a ``TestClient`` configured with the stub fighter service."""
 
     class _StubConnection:
-        async def __aenter__(self) -> "_StubConnection":
+        async def __aenter__(self) -> _StubConnection:
             return self
 
         async def __aexit__(self, exc_type, exc, tb) -> bool:

@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Literal
 from typing import cast as typing_cast
 
-from sqlalchemy import Float, cast, desc, func, inspect, literal, select, union_all
+from sqlalchemy import Float, cast, desc, func, inspect, literal, select, true, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
@@ -40,8 +40,23 @@ from backend.services.image_resolver import (
 )
 from backend.utils.event_utils import detect_event_type
 
-
 _WAS_INTERIM_SUPPORTED_CACHE: bool | None = None
+
+_FIGHT_HISTORY_LOAD_COLUMNS = (
+    Fight.id,
+    Fight.fighter_id,
+    Fight.opponent_id,
+    Fight.opponent_name,
+    Fight.event_name,
+    Fight.event_date,
+    Fight.result,
+    Fight.method,
+    Fight.round,
+    Fight.time,
+    Fight.fight_card_url,
+    Fight.stats,
+    Fight.weight_class,
+)
 
 
 def _invert_fight_result(result: str | None) -> str:
@@ -227,64 +242,78 @@ class PostgreSQLFighterRepository:
         if not fighter_ids:
             return {}
 
+        unique_fighter_ids = list(dict.fromkeys(fighter_ids))
+        if not unique_fighter_ids:
+            return {}
+        fighter_ids = unique_fighter_ids
+
         effective_window: int | None = None if window is None else max(2, window)
 
-        subject_stmt = (
+        # Inline table of fighter IDs so we can join laterals efficiently.
+        fighter_id_selects = [
+            select(literal(f_id).label("fighter_id")) for f_id in unique_fighter_ids
+        ]
+        if len(fighter_id_selects) == 1:
+            target_fighters = fighter_id_selects[0].cte("target_fighters")
+        else:
+            target_fighters = union_all(*fighter_id_selects).cte("target_fighters")
+
+        order_clause = Fight.event_date.desc().nulls_last()
+
+        primary_fights = (
             select(
-                Fight.fighter_id.label("subject_id"),
                 Fight.event_date.label("event_date"),
                 Fight.result.label("result"),
-                literal(True).label("is_primary"),
-            ).where(Fight.fighter_id.in_(fighter_ids))
+            )
+            .where(Fight.fighter_id == target_fighters.c.fighter_id)
+            .order_by(order_clause)
         )
+        if effective_window is not None:
+            primary_fights = primary_fights.limit(effective_window)
+        primary_fights = primary_fights.lateral("primary_fights")
+
+        opponent_fights = (
+            select(
+                Fight.event_date.label("event_date"),
+                Fight.result.label("result"),
+            )
+            .where(Fight.opponent_id == target_fighters.c.fighter_id)
+            .order_by(order_clause)
+        )
+        if effective_window is not None:
+            opponent_fights = opponent_fights.limit(effective_window)
+        opponent_fights = opponent_fights.lateral("opponent_fights")
+
+        primary_stmt = (
+            select(
+                target_fighters.c.fighter_id.label("subject_id"),
+                primary_fights.c.event_date,
+                primary_fights.c.result,
+                literal(True).label("is_primary"),
+            ).select_from(target_fighters.join(primary_fights, true()))
+        )
+
         opponent_stmt = (
             select(
-                Fight.opponent_id.label("subject_id"),
-                Fight.event_date.label("event_date"),
-                Fight.result.label("result"),
+                target_fighters.c.fighter_id.label("subject_id"),
+                opponent_fights.c.event_date,
+                opponent_fights.c.result,
                 literal(False).label("is_primary"),
-            )
-            .where(Fight.opponent_id.in_(fighter_ids))
-            .where(Fight.opponent_id.is_not(None))
+            ).select_from(target_fighters.join(opponent_fights, true()))
         )
 
-        unified = union_all(subject_stmt, opponent_stmt).subquery("subject_fights")
+        combined = union_all(primary_stmt, opponent_stmt).subquery("subject_fights")
 
-        order_clause = unified.c.event_date.desc().nulls_last()
-
-        if effective_window is not None:
-            ranked = (
-                select(
-                    unified.c.subject_id,
-                    unified.c.event_date,
-                    unified.c.result,
-                    unified.c.is_primary,
-                    func.row_number()
-                    .over(
-                        partition_by=unified.c.subject_id,
-                        order_by=order_clause,
-                    )
-                    .label("row_number"),
-                )
-            ).subquery("ranked_subject_fights")
-
-            stmt = (
-                select(
-                    ranked.c.subject_id,
-                    ranked.c.event_date,
-                    ranked.c.result,
-                    ranked.c.is_primary,
-                )
-                .where(ranked.c.row_number <= effective_window)
-                .order_by(ranked.c.subject_id, ranked.c.event_date.desc().nulls_last())
+        stmt = (
+            select(
+                combined.c.subject_id,
+                combined.c.event_date,
+                combined.c.result,
+                combined.c.is_primary,
+            ).order_by(
+                combined.c.subject_id, combined.c.event_date.desc().nulls_last()
             )
-        else:
-            stmt = select(
-                unified.c.subject_id,
-                unified.c.event_date,
-                unified.c.result,
-                unified.c.is_primary,
-            ).order_by(unified.c.subject_id, order_clause)
+        )
 
         result = await self._session.execute(stmt)
         all_fights = result.all()
@@ -500,7 +529,6 @@ class PostgreSQLFighterRepository:
             select(Fighter)
             .options(
                 load_only(*load_columns),
-                selectinload(Fighter.fights),  # Eager load fights relationship
             )
             .where(Fighter.id == fighter_id)
         )
@@ -528,11 +556,23 @@ class PostgreSQLFighterRepository:
         # Query fights from BOTH perspectives:
         # 1. Fights where this fighter is fighter_id (already loaded via relationship)
         # 2. Fights where this fighter is opponent_id
-        fights_query = select(Fight).where(
-            (Fight.fighter_id == fighter_id) | (Fight.opponent_id == fighter_id)
+        primary_fights_result = await self._session.execute(
+            select(Fight)
+            .options(load_only(*_FIGHT_HISTORY_LOAD_COLUMNS))
+            .where(Fight.fighter_id == fighter_id)
+            .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
         )
-        fights_result = await self._session.execute(fights_query)
-        all_fights = fights_result.scalars().all()
+        primary_fights = primary_fights_result.scalars().all()
+
+        opponent_fights_result = await self._session.execute(
+            select(Fight)
+            .options(load_only(*_FIGHT_HISTORY_LOAD_COLUMNS))
+            .where(Fight.opponent_id == fighter_id)
+            .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
+        )
+        opponent_fights = opponent_fights_result.scalars().all()
+
+        all_fights = primary_fights + opponent_fights
 
         # Build fight history, deduplicating by fight metadata (not database ID)
         # This prevents duplicate entries when both fighters have Fight records for the same bout
@@ -1559,10 +1599,12 @@ class PostgreSQLFighterRepository:
             key = (row.division, bucket_start)
             entry = buckets.setdefault(key, {"label": bucket_label, "durations": []})
             durations = entry["durations"]
-            assert isinstance(durations, list), (
-                f"Expected the aggregated duration payload to be a list for key {key}, "
-                f"received {type(durations)!r} instead."
-            )
+            if not isinstance(durations, list):
+                message = (
+                    "Expected the aggregated duration payload to be a list for key "
+                    f"{key}, received {type(durations)!r} instead."
+                )
+                raise TypeError(message)
             durations.append(duration)
 
         averaged: list[AverageFightDuration] = []

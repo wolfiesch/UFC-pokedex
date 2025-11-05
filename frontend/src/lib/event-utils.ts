@@ -109,12 +109,26 @@ export function getEventTypeConfig(eventType: EventType | null | undefined): Eve
   return EVENT_TYPE_CONFIGS[eventType] || EVENT_TYPE_CONFIGS.other;
 }
 
+export function normalizeEventType(value: string | null | undefined): EventType | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value in EVENT_TYPE_CONFIGS) {
+    return value as EventType;
+  }
+
+  return null;
+}
+
 export function isPPVEvent(eventName: string): boolean {
   return detectEventType(eventName) === "ppv";
 }
 
-export function groupEventsByMonth(events: Array<{date: string; name: string}>): Map<string, typeof events> {
-  const grouped = new Map<string, typeof events>();
+export function groupEventsByMonth<T extends { date: string }>(
+  events: T[]
+): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
 
   for (const event of events) {
     const date = new Date(event.date);

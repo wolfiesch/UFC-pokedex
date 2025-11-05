@@ -10,10 +10,12 @@ from backend.schemas.favorites import (
     FavoriteCollectionListResponse,
     FavoriteCollectionStats,
     FavoriteCollectionUpdate,
-    FavoriteEntry as FavoriteEntrySchema,
     FavoriteEntryCreate,
     FavoriteEntryReorderRequest,
     FavoriteEntryUpdate,
+)
+from backend.schemas.favorites import (
+    FavoriteEntry as FavoriteEntrySchema,
 )
 from backend.services.favorites_service import FavoritesService, get_favorites_service
 

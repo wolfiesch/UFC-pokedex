@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-
 from typing import Any
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     Date,
@@ -12,7 +12,6 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Table,
 )
@@ -45,7 +44,7 @@ class Event(Base):
     sherdog_url: Mapped[str | None]
 
     # Relationships
-    fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="event")
+    fights: Mapped[list[Fight]] = relationship("Fight", back_populates="event")
 
 
 class Fighter(Base):
@@ -95,7 +94,7 @@ class Fighter(Base):
         JSON, nullable=True
     )
 
-    fights: Mapped[list["Fight"]] = relationship("Fight", back_populates="fighter")
+    fights: Mapped[list[Fight]] = relationship("Fight", back_populates="fighter")
 
 
 class Fight(Base):
@@ -140,7 +139,7 @@ class Fight(Base):
     )
 
     fighter: Mapped[Fighter] = relationship("Fighter", back_populates="fights")
-    event: Mapped["Event | None"] = relationship("Event", back_populates="fights")
+    event: Mapped[Event | None] = relationship("Event", back_populates="fights")
 
 
 fighter_stats = Table(
@@ -153,7 +152,8 @@ fighter_stats = Table(
     Column("value", String, nullable=False),
 )
 
-from .favorites import FavoriteCollection, FavoriteEntry
+# Imported late to avoid circular dependency with favorites module.
+from .favorites import FavoriteCollection, FavoriteEntry  # noqa: E402
 
 __all__ = [
     "Base",

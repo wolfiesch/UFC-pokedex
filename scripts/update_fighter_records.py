@@ -73,7 +73,7 @@ async def update_records_in_json(fighters_dir: Path, records: dict[str, str]) ->
         json_path = fighters_dir / f"{fighter_id}.json"
         if json_path.exists():
             try:
-                with open(json_path, "r") as f:
+                with open(json_path) as f:
                     data = json.load(f)
 
                 data["record"] = record
@@ -98,7 +98,7 @@ async def main(limit: int | None = None) -> None:
         return
 
     fighters = []
-    with open(list_path, "r") as f:
+    with open(list_path) as f:
         for line in f:
             data = json.loads(line)
             fighters.append((data["fighter_id"], data["detail_url"]))

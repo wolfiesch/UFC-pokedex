@@ -2,6 +2,7 @@
 """Sync image files on disk to database (both additions and deletions)."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -10,7 +11,7 @@ from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
-from sqlalchemy import update, select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 console = Console()
@@ -79,7 +80,7 @@ async def sync_images():
             console.print("[green]✓ No deleted images found[/green]")
 
         # === STEP 2: Add image_url for new files ===
-        console.print(f"\n[bold]Adding image URLs for new files...[/bold]")
+        console.print("\n[bold]Adding image URLs for new files...[/bold]")
 
         added_count = 0
         added_fighters = []
@@ -125,11 +126,11 @@ async def sync_images():
         await session.commit()
 
     # === SUMMARY ===
-    console.print(f"\n[bold]Summary:[/bold]")
+    console.print("\n[bold]Summary:[/bold]")
     console.print(f"  Images on disk: {len(image_files)}")
     console.print(f"  Deleted from DB: {deleted_count}")
     console.print(f"  Added to DB: {added_count}")
-    console.print(f"  [green]✓ Database is now in sync with filesystem[/green]")
+    console.print("  [green]✓ Database is now in sync with filesystem[/green]")
 
 
 if __name__ == "__main__":

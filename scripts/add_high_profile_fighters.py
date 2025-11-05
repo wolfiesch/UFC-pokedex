@@ -35,9 +35,10 @@ HIGH_PROFILE_MAPPINGS = {
 
 async def get_fighter_id(name: str) -> str | None:
     """Get fighter ID from database by name."""
+    from sqlalchemy import select
+
     from backend.db.connection import get_session
     from backend.db.models import Fighter
-    from sqlalchemy import select
 
     async with get_session() as session:
         session: AsyncSession
@@ -137,19 +138,19 @@ async def main():
         # Get fighter ID
         fighter_id = await get_fighter_id(name)
         if not fighter_id:
-            console.print(f"  [yellow]⚠[/yellow] Not found in database")
+            console.print("  [yellow]⚠[/yellow] Not found in database")
             continue
 
         # Download image
         if download_image(sherdog_url, fighter_id, images_dir):
             # Update database
             if await update_database(fighter_id, images_dir):
-                console.print(f"  [green]✓[/green] Downloaded and updated")
+                console.print("  [green]✓[/green] Downloaded and updated")
                 success_count += 1
             else:
-                console.print(f"  [red]✗[/red] Failed to update database")
+                console.print("  [red]✗[/red] Failed to update database")
         else:
-            console.print(f"  [red]✗[/red] Failed to download image")
+            console.print("  [red]✗[/red] Failed to download image")
 
     console.print(f"\n[green]✓[/green] Successfully added {success_count} fighters")
 

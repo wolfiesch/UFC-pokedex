@@ -1,26 +1,21 @@
-import inspect
+import logging
 import os
 import uuid
-import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import UTC, datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 from pydantic import ValidationError
 from sqlalchemy.exc import (
-    DatabaseError,
     DBAPIError,
+    DatabaseError,
     IntegrityError,
     OperationalError,
     TimeoutError as SQLAlchemyTimeoutError,
@@ -40,6 +35,9 @@ from .schemas.error import (
     ValidationErrorDetail,
     ValidationErrorResponse,
 )
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -252,7 +250,10 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
     ]
 
     logger.warning(
-        f"Pydantic validation error for request {request_id} to {request.url.path}: {len(errors)} errors"
+        "Pydantic validation error for request %s to %s: %s errors",
+        request_id,
+        request.url.path,
+        len(errors),
     )
 
     error_response = ValidationErrorResponse(

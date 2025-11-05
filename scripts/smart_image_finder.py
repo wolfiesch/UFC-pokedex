@@ -4,16 +4,16 @@
 import asyncio
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from sqlalchemy import update, select
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 console = Console()
@@ -65,7 +65,7 @@ def search_sherdog_for_fighter(session: requests.Session, fighter_name: str) -> 
 
         return None
 
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -259,12 +259,12 @@ def main():
                 time.sleep(1.5)  # Rate limit
 
     # Update database
-    console.print(f"\n[bold]Summary:[/bold]")
+    console.print("\n[bold]Summary:[/bold]")
     console.print(f"[green]✓[/green] Successfully downloaded: {success_count}")
     console.print(f"[red]✗[/red] Failed: {failure_count}")
 
     if success_count > 0:
-        console.print(f"\n[bold cyan]Updating database...[/bold cyan]")
+        console.print("\n[bold cyan]Updating database...[/bold cyan]")
         updated_count = asyncio.run(bulk_update_database(successfully_downloaded, images_dir))
         console.print(f"[green]✓[/green] Updated {updated_count} fighters in database")
 

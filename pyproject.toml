@@ -53,6 +53,9 @@ exclude = ["frontend"]
 select = ["E", "F", "I", "N", "UP", "B", "S", "C4"]
 ignore = ["B008"]  # Allow function default arguments with calls (use carefully)
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-q --disable-warnings"

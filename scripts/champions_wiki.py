@@ -29,7 +29,6 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 from unidecode import unidecode
 
 # Add parent directory to path for imports
@@ -40,7 +39,6 @@ from backend.db.models import Fighter
 from scraper.utils.fuzzy_match import (
     calculate_match_confidence,
     normalize_division,
-    normalize_name,
 )
 
 console = Console()

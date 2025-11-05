@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { groupFightsBySection } from "@/lib/fight-utils";
-import { detectEventType, getEventTypeConfig } from "@/lib/event-utils";
+import { detectEventType, getEventTypeConfig, normalizeEventType } from "@/lib/event-utils";
 import EventStatsPanel from "@/components/events/EventStatsPanel";
 import FightCardSection from "@/components/events/FightCardSection";
 import RelatedEventsWidget from "@/components/events/RelatedEventsWidget";
@@ -126,9 +126,10 @@ export default function EventDetailPage() {
   }
 
   // Detect event type and get config
-  const eventType = event.event_type || detectEventType(event.name);
-  const typeConfig = getEventTypeConfig(eventType);
-  const isPPV = eventType === "ppv";
+  const normalizedEventType =
+    normalizeEventType(event.event_type) ?? detectEventType(event.name);
+  const typeConfig = getEventTypeConfig(normalizedEventType);
+  const isPPV = normalizedEventType === "ppv";
 
   // Group fights into sections
   const fightSections = groupFightsBySection(event.fight_card);

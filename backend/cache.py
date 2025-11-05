@@ -4,8 +4,9 @@ import asyncio
 import json
 import logging
 import os
+from collections.abc import Sequence
 from hashlib import sha256
-from typing import Any, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     from redis.asyncio import Redis

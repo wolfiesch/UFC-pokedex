@@ -4,15 +4,15 @@
 import asyncio
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from bs4 import BeautifulSoup
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from sqlalchemy import update, select
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 console = Console()
@@ -130,7 +130,7 @@ def main():
     # Load list of fighters missing images
     missing_ids_file = Path("/tmp/missing_image_ids.txt")
     if not missing_ids_file.exists():
-        console.print(f"[red]Error:[/red] Missing IDs file not found")
+        console.print("[red]Error:[/red] Missing IDs file not found")
         console.print("Run: psql ... -c \"SELECT id FROM fighters WHERE image_url IS NULL;\" > /tmp/missing_image_ids.txt")
         return
 
@@ -223,7 +223,7 @@ def main():
                 time.sleep(0.5)
 
     # Print summary
-    console.print(f"\n[bold]Download Summary:[/bold]")
+    console.print("\n[bold]Download Summary:[/bold]")
     console.print(f"[green]✓[/green] Successfully downloaded: {success_count}")
 
     if failure_count > 0:
@@ -235,7 +235,7 @@ def main():
 
     # Update database
     if success_count > 0:
-        console.print(f"\n[bold cyan]Updating database...[/bold cyan]")
+        console.print("\n[bold cyan]Updating database...[/bold cyan]")
         updated_count = asyncio.run(bulk_update_database(successfully_downloaded, images_dir))
         console.print(f"[green]✓[/green] Updated {updated_count} fighters in database")
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import httpx
 from scrapy.http import HtmlResponse

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any
 
 from parsel import Selector
 
@@ -490,7 +490,7 @@ def parse_events_list_row(row: Selector) -> dict[str, Any] | None:
 
     # Determine status based on context (caller should pass this)
     # For now, we'll determine it based on the date
-    from datetime import datetime, date as date_type
+    from datetime import datetime
 
     status = "upcoming"
     if event_date:

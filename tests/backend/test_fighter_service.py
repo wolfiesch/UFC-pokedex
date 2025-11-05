@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
+
 pytest.importorskip("pytest_asyncio")
 pytest.importorskip("sqlalchemy")
 

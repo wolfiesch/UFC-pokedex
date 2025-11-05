@@ -3,6 +3,7 @@
 
 # IMPORTANT: Load environment variables FIRST before any other imports
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -13,7 +14,7 @@ from pathlib import Path
 
 import requests
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -286,7 +287,7 @@ async def scrape_fighter_image(
                 # Update database
                 db_updated = await update_database(fighter_id, images_dir)
                 if db_updated:
-                    return (fighter_id, True, f"Downloaded from Wikimedia Commons")
+                    return (fighter_id, True, "Downloaded from Wikimedia Commons")
                 else:
                     return (fighter_id, False, "Failed to update database")
 
@@ -377,7 +378,7 @@ async def main(batch_size: int = 50, test_mode: bool = False):
             time.sleep(1.5)  # 1.5 seconds between requests
 
     # Final report
-    console.print(f"\n[bold]Final Results:[/bold]")
+    console.print("\n[bold]Final Results:[/bold]")
     console.print(f"  [green]✓[/green] Success: {success_count}/{len(fighters)}")
     console.print(f"  [red]✗[/red] Failed: {fail_count}/{len(fighters)}")
     console.print(f"  [cyan]→[/cyan] Success rate: {success_count / len(fighters) * 100:.1f}%")

@@ -1,9 +1,9 @@
 """Pydantic schemas for API responses."""
 
 from backend.schemas.fighter import (  # noqa: F401
-    FightHistoryEntry,
     FighterDetail,
     FighterListItem,
+    FightHistoryEntry,
     PaginatedFightersResponse,
 )
 from backend.schemas.stats import (  # noqa: F401

@@ -9,8 +9,8 @@ even though the package exists locally.
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # NOTE: ``Path(__file__).resolve()`` already resolves any symlinks, so we can
 # reliably climb to the repository root regardless of how the tests are

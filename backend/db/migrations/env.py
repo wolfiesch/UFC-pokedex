@@ -2,18 +2,16 @@ import asyncio
 import os
 from logging.config import fileConfig
 
-from dotenv import load_dotenv
-
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from backend.db.models import Base
+
 # Load environment variables from .env file
 load_dotenv()
-
-# Import your models' Base here
-from backend.db.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -65,7 +63,11 @@ def do_run_migrations(connection: Connection) -> None:
         # Drop all tables defined in the target_metadata
         target_metadata.drop_all(connection)
 
-    context.configure(connection=connection, target_metadata=target_metadata, transactional_ddl=False)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        transactional_ddl=False,
+    )
     context.run_migrations()
 
 

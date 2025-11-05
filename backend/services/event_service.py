@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+import logging
 from typing import Any
 
 from fastapi import Depends
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
 from backend.db.repositories import PostgreSQLEventRepository
 from backend.schemas.event import EventDetail, EventListItem, PaginatedEventsResponse
+
+logger = logging.getLogger(__name__)
 
 
 class EventService:
@@ -61,8 +64,12 @@ class EventService:
             if isinstance(cached, list):
                 try:
                     return [EventListItem.model_validate(item) for item in cached]
-                except Exception:
-                    pass
+                except ValidationError as exc:
+                    logger.warning(
+                        "Failed to deserialize cached event list for key %s: %s",
+                        cache_key,
+                        exc,
+                    )
 
         # Fetch from repository
         events = await self._repository.list_events(
@@ -87,8 +94,12 @@ class EventService:
         if isinstance(cached, dict):
             try:
                 return EventDetail.model_validate(cached)
-            except Exception:
-                pass
+            except ValidationError as exc:
+                logger.warning(
+                    "Failed to deserialize cached event detail for key %s: %s",
+                    cache_key,
+                    exc,
+                )
 
         event = await self._repository.get_event(event_id)
         if event:

@@ -246,7 +246,7 @@ def main():
     # Save results
     save_mapping(updated_mapping)
 
-    console.print(f"\n[green]✓[/green] Verification complete!")
+    console.print("\n[green]✓[/green] Verification complete!")
     console.print(f"Total mapped fighters: {len(updated_mapping)}")
 
     if args.non_interactive:

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Initialize database tables."""
 import asyncio
+
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-from backend.db.models import Base
 from backend.db.connection import create_engine
+from backend.db.models import Base
+
 
 async def init_db():
     engine = create_engine()

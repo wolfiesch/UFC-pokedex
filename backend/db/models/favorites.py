@@ -9,26 +9,29 @@ codebase approachable.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     UniqueConstraint,
-    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from . import Base, Fighter
+from . import Base
+
+if TYPE_CHECKING:
+    from . import Fighter
 
 
 def utcnow():
     """Return current UTC datetime."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class FavoriteCollection(Base):
@@ -94,7 +97,7 @@ class FavoriteCollection(Base):
         ),
     )
 
-    entries: Mapped[list["FavoriteEntry"]] = relationship(
+    entries: Mapped[list[FavoriteEntry]] = relationship(
         "FavoriteEntry",
         back_populates="collection",
         cascade="all, delete-orphan",

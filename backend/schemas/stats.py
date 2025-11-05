@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class StatsSummaryResponse(BaseModel):
 
     metrics: list[StatsSummaryMetric] = Field(default_factory=list)
     generated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -50,7 +50,7 @@ class LeaderboardsResponse(BaseModel):
 
     leaderboards: list[LeaderboardDefinition] = Field(default_factory=list)
     generated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -76,7 +76,7 @@ class TrendsResponse(BaseModel):
 
     trends: list[TrendSeries] = Field(default_factory=list)
     generated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 

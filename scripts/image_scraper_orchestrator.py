@@ -12,6 +12,7 @@ Cascades through multiple sources in priority order:
 
 # IMPORTANT: Load environment variables FIRST before any other imports
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import asyncio
@@ -23,7 +24,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -472,12 +473,12 @@ async def main(batch_size: int = 50, test_mode: bool = False):
             time.sleep(3)
 
     # Final report
-    console.print(f"\n[bold]Final Results:[/bold]")
+    console.print("\n[bold]Final Results:[/bold]")
     console.print(f"  [green]✓[/green] Success: {success_count}/{len(fighters)}")
     console.print(f"  [red]✗[/red] Failed: {fail_count}/{len(fighters)}")
     console.print(f"  [cyan]→[/cyan] Success rate: {success_count / len(fighters) * 100:.1f}%")
 
-    console.print(f"\n[bold]By Source:[/bold]")
+    console.print("\n[bold]By Source:[/bold]")
     console.print(f"  Wikimedia Commons: {source_stats['Wikimedia Commons']}")
     console.print(f"  Sherdog: {source_stats['Sherdog']}")
     console.print(f"  Tapology: {source_stats['Tapology']}")

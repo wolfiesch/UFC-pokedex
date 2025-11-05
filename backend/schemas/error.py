@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -25,12 +25,12 @@ class ErrorResponse(BaseModel):
 
     error_type: ErrorType = Field(..., description="Category of error")
     message: str = Field(..., description="Human-readable error message")
-    detail: Optional[str] = Field(None, description="Additional error details or context")
+    detail: str | None = Field(None, description="Additional error details or context")
     status_code: int = Field(..., description="HTTP status code")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="When error occurred")
-    request_id: Optional[str] = Field(None, description="Unique request identifier for tracking")
-    path: Optional[str] = Field(None, description="Request path that caused the error")
-    retry_after: Optional[int] = Field(
+    request_id: str | None = Field(None, description="Unique request identifier for tracking")
+    path: str | None = Field(None, description="Request path that caused the error")
+    retry_after: int | None = Field(
         None, description="Seconds to wait before retrying (for rate limit/timeout errors)"
     )
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class FavoriteEntryBase(BaseModel):
@@ -34,14 +34,18 @@ class FavoriteEntryBase(BaseModel):
         description="Arbitrary structured metadata persisted alongside the entry.",
     )
 
-    @validator("tags", each_item=True)
-    def _trim_tag(cls, value: str) -> str:
+    @field_validator("tags")
+    @classmethod
+    def _normalize_tags(cls, value: list[str]) -> list[str]:
         """Normalize individual tag tokens so duplicates collapse."""
 
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("Tags must not be blank once whitespace is removed")
-        return cleaned
+        cleaned_tags: list[str] = []
+        for tag in value:
+            cleaned = tag.strip()
+            if not cleaned:
+                raise ValueError("Tags must not be blank once whitespace is removed")
+            cleaned_tags.append(cleaned)
+        return cleaned_tags
 
 
 class FavoriteEntryCreate(FavoriteEntryBase):
@@ -62,7 +66,8 @@ class FavoriteEntryUpdate(BaseModel):
     tags: list[str] | None = Field(None)
     metadata: dict[str, Any] | None = Field(None)
 
-    @validator("tags")
+    @field_validator("tags")
+    @classmethod
     def _validate_tags(cls, value: list[str] | None) -> list[str] | None:
         if value is None:
             return None

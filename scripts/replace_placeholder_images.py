@@ -2,10 +2,11 @@
 """Replace Sherdog placeholder images with real images from Bing."""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import asyncio
 import argparse
+import asyncio
 from pathlib import Path
 
 from rich.console import Console
@@ -16,10 +17,11 @@ console = Console()
 
 async def get_fighters_by_ids(fighter_ids: list[str]) -> list[dict]:
     """Get fighter details from database."""
-    from backend.db.connection import get_session
-    from backend.db.models import Fighter
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from backend.db.connection import get_session
+    from backend.db.models import Fighter
 
     async with get_session() as session:
         session: AsyncSession
@@ -111,9 +113,9 @@ async def main():
 
     # Import and run the orchestrator logic
     from scripts.image_scraper_orchestrator import (
-        search_tapology,
-        search_bing_images,
         download_image,
+        search_bing_images,
+        search_tapology,
         update_database,
     )
 
@@ -136,7 +138,7 @@ async def main():
             old_file = images_dir / f"{fighter_id}.{ext}"
             if old_file.exists():
                 old_file.unlink()
-                console.print(f"  [dim]Deleted old placeholder[/dim]")
+                console.print("  [dim]Deleted old placeholder[/dim]")
 
         image_url = None
         source = None
@@ -166,10 +168,10 @@ async def main():
                 successful_fighter_ids.append(fighter_id)
                 sources_used[source] = sources_used.get(source, 0) + 1
             else:
-                console.print(f"  [red]✗ Downloaded but database update failed[/red]")
+                console.print("  [red]✗ Downloaded but database update failed[/red]")
                 failure_count += 1
         else:
-            console.print(f"  [red]✗ No image found[/red]")
+            console.print("  [red]✗ No image found[/red]")
             failure_count += 1
 
         # Rate limiting
@@ -178,26 +180,26 @@ async def main():
             time.sleep(3)
 
     # Summary
-    console.print(f"\n[bold]Replacement Summary:[/bold]")
+    console.print("\n[bold]Replacement Summary:[/bold]")
     console.print(f"  Success: {success_count}/{len(fighters)}")
     console.print(f"  Failed: {failure_count}/{len(fighters)}")
 
     if sources_used:
-        console.print(f"\n[bold]Sources Used:[/bold]")
+        console.print("\n[bold]Sources Used:[/bold]")
         for source, count in sorted(sources_used.items(), key=lambda x: x[1], reverse=True):
             console.print(f"  {source}: {count}")
 
     # Suggest verification
     if success_count > 0:
-        console.print(f"\n[bold]Next Steps:[/bold]")
-        console.print(f"  1. Verify images: [cyan]make verify-replacement[/cyan]")
-        console.print(f"  2. Sync to database: [cyan]make sync-images-to-db[/cyan]")
+        console.print("\n[bold]Next Steps:[/bold]")
+        console.print("  1. Verify images: [cyan]make verify-replacement[/cyan]")
+        console.print("  2. Sync to database: [cyan]make sync-images-to-db[/cyan]")
 
     # Calculate remaining
     remaining = len(fighter_ids) - len(fighters)
     if remaining > 0:
         console.print(f"\n[yellow]Remaining placeholders: {remaining}[/yellow]")
-        console.print(f"[dim]Run again to process more[/dim]")
+        console.print("[dim]Run again to process more[/dim]")
 
 
 if __name__ == "__main__":

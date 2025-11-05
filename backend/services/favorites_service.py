@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.orm import load_only, selectinload
 
 from backend.cache import (
     CacheClient,
@@ -22,9 +21,11 @@ from backend.cache import (
 from backend.db.connection import get_db
 from backend.db.models import (
     FavoriteCollection,
-    FavoriteEntry as FavoriteEntryModel,
     Fight,
     Fighter,
+)
+from backend.db.models import (
+    FavoriteEntry as FavoriteEntryModel,
 )
 from backend.schemas.favorites import (
     FavoriteActivityItem,
@@ -34,11 +35,13 @@ from backend.schemas.favorites import (
     FavoriteCollectionStats,
     FavoriteCollectionSummary,
     FavoriteCollectionUpdate,
-    FavoriteEntry as FavoriteEntrySchema,
     FavoriteEntryCreate,
     FavoriteEntryReorderRequest,
     FavoriteEntryUpdate,
     FavoriteUpcomingFight,
+)
+from backend.schemas.favorites import (
+    FavoriteEntry as FavoriteEntrySchema,
 )
 
 _FAVORITES_TABLES_READY_CACHE: bool | None = None
@@ -62,23 +65,26 @@ class FavoritesService:
         if self._tables_ready is not None:
             return self._tables_ready
 
-        async def _table_exists(
-            model: type[FavoriteCollection] | type[FavoriteEntryModel],
-        ) -> bool:
-            try:
-                await self._session.execute(select(model.id).limit(1))
-                return True
-            except (ProgrammingError, OperationalError):
-                await self._session.rollback()
+        target_tables = {
+            FavoriteCollection.__tablename__,
+            FavoriteEntryModel.__tablename__,
+        }
+
+        def _check_tables(sync_session) -> bool:
+            """Run inside a sync context; uses the bound engine for inspection."""
+
+            engine = sync_session.get_bind()
+            if engine is None:
                 return False
 
-        collections_ready = await _table_exists(FavoriteCollection)
-        entries_ready = collections_ready and await _table_exists(FavoriteEntryModel)
+            inspector = inspect(engine)
+            existing = set(inspector.get_table_names())
+            return target_tables.issubset(existing)
 
-        self._tables_ready = collections_ready and entries_ready
-
-        _FAVORITES_TABLES_READY_CACHE = self._tables_ready
-        return self._tables_ready
+        tables_ready = await self._session.run_sync(_check_tables)
+        self._tables_ready = tables_ready
+        _FAVORITES_TABLES_READY_CACHE = tables_ready
+        return tables_ready
 
     async def list_collections(self, *, user_id: str) -> FavoriteCollectionListResponse:
         if not await self._favorites_tables_ready():
@@ -96,13 +102,25 @@ class FavoritesService:
                 collections=summaries,
             )
 
+        entry_loader = selectinload(FavoriteCollection.entries).options(
+            load_only(
+                FavoriteEntryModel.id,
+                FavoriteEntryModel.fighter_id,
+                FavoriteEntryModel.position,
+                FavoriteEntryModel.notes,
+                FavoriteEntryModel.tags,
+                FavoriteEntryModel.metadata_json,
+                FavoriteEntryModel.added_at,
+                FavoriteEntryModel.updated_at,
+            ),
+            selectinload(FavoriteEntryModel.fighter).options(
+                load_only(Fighter.id, Fighter.division)
+            ),
+        )
+
         query = (
             select(FavoriteCollection)
-            .options(
-                selectinload(FavoriteCollection.entries).selectinload(
-                    FavoriteEntryModel.fighter
-                )
-            )
+            .options(entry_loader)
             .where(FavoriteCollection.user_id == user_id)
             .order_by(FavoriteCollection.created_at.desc())
         )
@@ -194,7 +212,7 @@ class FavoritesService:
             collection.slug = payload.slug
         if payload.metadata is not None:
             collection.metadata_json = payload.metadata
-        collection.updated_at = datetime.now(timezone.utc)
+        collection.updated_at = datetime.now(UTC)
 
         await self._session.flush()
         await self._invalidate_cache(
@@ -303,7 +321,7 @@ class FavoritesService:
             entry.tags = payload.tags
         if payload.metadata is not None:
             entry.metadata_json = payload.metadata
-        entry.updated_at = datetime.now(timezone.utc)
+        entry.updated_at = datetime.now(UTC)
 
         await self._normalize_positions(collection)
         await self._session.flush()

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-parsel = pytest.importorskip("parsel")
-scrapy_http = pytest.importorskip("scrapy.http")
-
-from parsel import Selector
-from scrapy.http import HtmlResponse
+try:
+    from parsel import Selector
+    from scrapy.http import HtmlResponse
+except ModuleNotFoundError as exc:
+    pytest.skip(
+        f"Optional dependency '{exc.name}' is required for parser tests.",
+        allow_module_level=True,
+    )
 
 from scraper.utils import parser
 
@@ -23,7 +26,11 @@ def test_parse_fighter_list_row():
     <table>
       <tr class="b-statistics__table-row">
         <td>
-          <a href="http://ufcstats.com/fighter-details/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee">John Doe</a>
+          <a
+            href="http://ufcstats.com/fighter-details/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          >
+            John Doe
+          </a>
           <span class="b-statistics__nickname">The Hammer</span>
         </td>
         <td><p>6' 0"</p></td>
@@ -74,25 +81,41 @@ def test_parse_fighter_detail_page():
               </i>
               <ul class="b-list__box-list b-list__box-list_margin-top">
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     SLpM:
                   </i>
                   5.35
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     Str. Acc.:
                   </i>
                   50%
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     SApM:
                   </i>
                   3.10
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     Str. Def.:
                   </i>
                   55%
@@ -102,25 +125,41 @@ def test_parse_fighter_detail_page():
             <div class="b-list__info-box-right b-list__info-box_style-margin-right">
               <ul class="b-list__box-list b-list__box-list_margin-top">
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     TD Avg.:
                   </i>
                   2.00
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     TD Acc.:
                   </i>
                   40%
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     TD Def.:
                   </i>
                   75%
                 </li>
                 <li class="b-list__box-list-item b-list__box-list-item_type_block">
-                  <i class="b-list__box-item-title b-list__box-item-title_font_lowercase b-list__box-item-title_type_width">
+                  <i
+                    class="b-list__box-item-title
+                           b-list__box-item-title_font_lowercase
+                           b-list__box-item-title_type_width"
+                  >
                     Sub. Avg.:
                   </i>
                   1.2
@@ -133,11 +172,27 @@ def test_parse_fighter_detail_page():
           <tbody>
             <tr class="b-fight-details__table-row">
               <td>
-                <a href="http://ufcstats.com/fight-details/99999999-aaaa-bbbb-cccc-dddddddddddd">W</a>
+                <a
+                  href="http://ufcstats.com/fight-details/99999999-aaaa-bbbb-cccc-dddddddddddd"
+                >
+                  W
+                </a>
               </td>
               <td>
-                <p><a href="http://ufcstats.com/fighter-details/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee">John Doe</a></p>
-                <p><a href="http://ufcstats.com/fighter-details/bbbbbbbb-cccc-dddd-eeee-ffffffffffff">Jane Smith</a></p>
+                <p>
+                  <a
+                    href="http://ufcstats.com/fighter-details/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+                  >
+                    John Doe
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href="http://ufcstats.com/fighter-details/bbbbbbbb-cccc-dddd-eeee-ffffffffffff"
+                  >
+                    Jane Smith
+                  </a>
+                </p>
               </td>
               <td>
                 <p>1</p>
@@ -157,7 +212,11 @@ def test_parse_fighter_detail_page():
               </td>
               <td>
                 <p>
-                  <a href="http://ufcstats.com/event-details/eeeeeeee-ffff-gggg-hhhh-iiiiiiiiiiii">UFC 300</a>
+                  <a
+                    href="http://ufcstats.com/event-details/eeeeeeee-ffff-gggg-hhhh-iiiiiiiiiiii"
+                  >
+                    UFC 300
+                  </a>
                 </p>
                 <p>Apr 13, 2024</p>
               </td>

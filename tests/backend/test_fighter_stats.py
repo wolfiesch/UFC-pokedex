@@ -357,7 +357,8 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
         ("L", oldest_past_date),
     ]
 
-    # The repository should report upcoming fights first and sort past results in reverse chronological order.
+    # The repository should report upcoming fights first and sort past results in
+    # reverse chronological order.
     assert ordered_results == expected_order
 
 
