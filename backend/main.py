@@ -4,7 +4,7 @@ import uuid
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
@@ -226,7 +226,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         message="Request validation failed",
         detail=f"{len(errors)} validation error(s)",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         errors=errors,
@@ -260,7 +260,7 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
         message="Data validation failed",
         detail=f"{len(errors)} validation error(s)",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         errors=errors,
@@ -286,7 +286,7 @@ async def database_connection_exception_handler(request: Request, exc: Exception
         message="Database connection failed",
         detail="Unable to connect to the database. Please try again later.",
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         retry_after=5,
@@ -313,7 +313,7 @@ async def database_timeout_exception_handler(
         message="Database query timeout",
         detail="The database query took too long to complete. Please try again.",
         status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         retry_after=3,
@@ -338,7 +338,7 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
         message="Data integrity constraint violation",
         detail="The operation would violate a database constraint.",
         status_code=status.HTTP_409_CONFLICT,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
     )
@@ -362,7 +362,7 @@ async def database_generic_exception_handler(request: Request, exc: DatabaseErro
         message="Database operation failed",
         detail="An error occurred while accessing the database. Please try again.",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         retry_after=3,
@@ -387,7 +387,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
         message="Internal server error",
         detail=f"An unexpected error occurred: {type(exc).__name__}",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         request_id=request_id,
         path=str(request.url.path),
         retry_after=5,
