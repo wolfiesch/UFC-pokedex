@@ -248,6 +248,14 @@ function normalizeFighterListItemPayload(item: unknown): FighterListItem | null 
       typeof item.age === "number" && Number.isFinite(item.age)
         ? item.age
         : null,
+    current_streak_type:
+      typeof item.current_streak_type === "string"
+        ? (item.current_streak_type as FighterListItem["current_streak_type"])
+        : "none",
+    current_streak_count:
+      typeof item.current_streak_count === "number"
+        ? item.current_streak_count
+        : 0,
   };
 }
 
@@ -913,7 +921,7 @@ export async function getFighters(
   const apiUrl = getApiBaseUrl();
   try {
     const response = await fetchWithRetry(
-      `${apiUrl}/fighters/?limit=${limit}&offset=${offset}`,
+      `${apiUrl}/fighters/?limit=${limit}&offset=${offset}&include_streak=1&streak_window=6`,
       buildRequestInit()
     );
     const payload = await response.json();

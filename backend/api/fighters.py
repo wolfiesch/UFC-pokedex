@@ -15,10 +15,24 @@ router = APIRouter()
 async def list_fighters(
     limit: int = Query(20, ge=1, le=100, description="Number of fighters to return"),
     offset: int = Query(0, ge=0, description="Number of fighters to skip"),
+    include_streak: bool = Query(
+        False,
+        description=(
+            "When true, include lightweight current streak fields in list payloads."
+        ),
+    ),
+    streak_window: int = Query(
+        6,
+        ge=2,
+        le=20,
+        description="How many recent fights to examine when computing a current streak.",
+    ),
     service: FighterService = Depends(get_fighter_service),
 ) -> PaginatedFightersResponse:
     """List fighters with pagination."""
-    fighters = await service.list_fighters(limit=limit, offset=offset)
+    fighters = await service.list_fighters(
+        limit=limit, offset=offset, include_streak=include_streak, streak_window=streak_window
+    )
     total = await service.count_fighters()
     return PaginatedFightersResponse(
         fighters=fighters,

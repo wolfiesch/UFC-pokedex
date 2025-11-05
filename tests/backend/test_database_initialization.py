@@ -80,8 +80,8 @@ class TestPreflightLogging:
                 "postgresql+psycopg://user:***@localhost/db",
             ),
             (
-                "sqlite+aiosqlite:///./app.db",
-                "sqlite+aiosqlite:///./app.db",
+                "sqlite+aiosqlite:///./data/app.db",
+                "sqlite+aiosqlite:///./data/app.db",
             ),
             (
                 "postgresql+psycopg://user@localhost/db",

@@ -295,6 +295,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/favorites/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Collections
+         * @description Return the caller's collections, hydrating stats summaries.
+         */
+        get: operations["list_collections_favorites_collections_get"];
+        put?: never;
+        /**
+         * Create Collection
+         * @description Create a new collection and return the fully hydrated payload.
+         */
+        post: operations["create_collection_favorites_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/favorites/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collection
+         * @description Retrieve a single collection by identifier.
+         */
+        get: operations["get_collection_favorites_collections__collection_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Collection
+         * @description Remove a collection and all of its entries.
+         */
+        delete: operations["delete_collection_favorites_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Collection
+         * @description Apply partial updates to a collection.
+         */
+        patch: operations["update_collection_favorites_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/favorites/collections/{collection_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Entry
+         * @description Insert a fighter into the requested collection.
+         */
+        post: operations["add_entry_favorites_collections__collection_id__entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/favorites/collections/{collection_id}/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Entry
+         * @description Remove an entry from a collection.
+         */
+        delete: operations["delete_entry_favorites_collections__collection_id__entries__entry_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Entry
+         * @description Mutate entry metadata such as notes, tags, or ordering.
+         */
+        patch: operations["update_entry_favorites_collections__collection_id__entries__entry_id__patch"];
+        trace?: never;
+    };
+    "/favorites/collections/{collection_id}/entries/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder Entries
+         * @description Persist drag-and-drop ordering from the UI.
+         */
+        post: operations["reorder_entries_favorites_collections__collection_id__entries_reorder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/favorites/collections/{collection_id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Collection Stats
+         * @description Return stats for a collection without fetching entries.
+         */
+        get: operations["get_collection_stats_favorites_collections__collection_id__stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fightweb/graph": {
         parameters: {
             query?: never;
@@ -423,6 +559,314 @@ export interface components {
             /** Event Type */
             event_type?: string | null;
         };
+        /**
+         * FavoriteActivityItem
+         * @description Single entry in the activity feed timeline.
+         */
+        FavoriteActivityItem: {
+            /** Entry Id */
+            entry_id: number;
+            /** Fighter Id */
+            fighter_id: string;
+            /** Action */
+            action: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Metadata */
+            metadata?: Record<string, never>;
+        };
+        /**
+         * FavoriteCollectionCreate
+         * @description Payload for creating a brand-new collection.
+         */
+        FavoriteCollectionCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Public
+             * @description Flag that toggles visibility in the upcoming sharing flow.
+             * @default false
+             */
+            is_public: boolean;
+            /**
+             * Slug
+             * @description Optional stable slug used to build friendly URLs.
+             */
+            slug?: string | null;
+            /**
+             * Metadata
+             * @description Key/value bag with future customization switches.
+             */
+            metadata?: Record<string, never>;
+            /**
+             * User Id
+             * @description Opaque identifier for the collection owner.
+             */
+            user_id: string;
+        };
+        /**
+         * FavoriteCollectionDetail
+         * @description Full payload that includes entry information and activity feed.
+         */
+        FavoriteCollectionDetail: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Public
+             * @description Flag that toggles visibility in the upcoming sharing flow.
+             * @default false
+             */
+            is_public: boolean;
+            /**
+             * Slug
+             * @description Optional stable slug used to build friendly URLs.
+             */
+            slug?: string | null;
+            /**
+             * Metadata
+             * @description Key/value bag with future customization switches.
+             */
+            metadata?: Record<string, never>;
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            stats?: components["schemas"]["FavoriteCollectionStats"] | null;
+            /** Entries */
+            entries?: components["schemas"]["FavoriteEntry"][];
+            /** Activity */
+            activity?: components["schemas"]["FavoriteActivityItem"][];
+        };
+        /**
+         * FavoriteCollectionListResponse
+         * @description Container returned by the listing endpoint.
+         */
+        FavoriteCollectionListResponse: {
+            /** Total */
+            total: number;
+            /** Collections */
+            collections: components["schemas"]["FavoriteCollectionSummary"][];
+        };
+        /**
+         * FavoriteCollectionStats
+         * @description Aggregated statistics for a single collection.
+         */
+        FavoriteCollectionStats: {
+            /** Total Fighters */
+            total_fighters: number;
+            /** Win Rate */
+            win_rate: number;
+            /** Result Breakdown */
+            result_breakdown: {
+                [key: string]: number;
+            };
+            /** Divisions */
+            divisions?: string[];
+            /** Upcoming Fights */
+            upcoming_fights?: components["schemas"]["FavoriteUpcomingFight"][];
+        };
+        /**
+         * FavoriteCollectionSummary
+         * @description Lightweight representation used by listing endpoints.
+         */
+        FavoriteCollectionSummary: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Public
+             * @description Flag that toggles visibility in the upcoming sharing flow.
+             * @default false
+             */
+            is_public: boolean;
+            /**
+             * Slug
+             * @description Optional stable slug used to build friendly URLs.
+             */
+            slug?: string | null;
+            /**
+             * Metadata
+             * @description Key/value bag with future customization switches.
+             */
+            metadata?: Record<string, never>;
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            stats?: components["schemas"]["FavoriteCollectionStats"] | null;
+        };
+        /**
+         * FavoriteCollectionUpdate
+         * @description Partial update payload for a collection.
+         */
+        FavoriteCollectionUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Is Public */
+            is_public?: boolean | null;
+            /** Slug */
+            slug?: string | null;
+            /** Metadata */
+            metadata?: Record<string, never> | null;
+        };
+        /**
+         * FavoriteEntry
+         * @description Read model exposed in API responses.
+         */
+        FavoriteEntry: {
+            /**
+             * Fighter Id
+             * @description Primary key from the fighters table
+             */
+            fighter_id: string;
+            /**
+             * Position
+             * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
+             * @default 0
+             */
+            position: number;
+            /**
+             * Notes
+             * @description Optional scouting report written by the curator.
+             */
+            notes?: string | null;
+            /**
+             * Tags
+             * @description User-defined labels that help cluster fighters.
+             */
+            tags?: string[];
+            /**
+             * Metadata
+             * @description Arbitrary structured metadata persisted alongside the entry.
+             */
+            metadata?: Record<string, never>;
+            /**
+             * Id
+             * @description Surrogate primary key for the entry row
+             */
+            id: number;
+            /**
+             * Created At
+             * Format: date-time
+             * @description Timestamp when the fighter was added to the collection.
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description Last mutation timestamp
+             */
+            updated_at: string;
+        };
+        /**
+         * FavoriteEntryCreate
+         * @description Payload for inserting a fighter into a collection.
+         */
+        FavoriteEntryCreate: {
+            /**
+             * Fighter Id
+             * @description Primary key from the fighters table
+             */
+            fighter_id: string;
+            /**
+             * Position
+             * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
+             * @default 0
+             */
+            position: number;
+            /**
+             * Notes
+             * @description Optional scouting report written by the curator.
+             */
+            notes?: string | null;
+            /**
+             * Tags
+             * @description User-defined labels that help cluster fighters.
+             */
+            tags?: string[];
+            /**
+             * Metadata
+             * @description Arbitrary structured metadata persisted alongside the entry.
+             */
+            metadata?: Record<string, never>;
+        };
+        /**
+         * FavoriteEntryReorderRequest
+         * @description Payload used by the drag-and-drop UI to persist ordering changes.
+         */
+        FavoriteEntryReorderRequest: {
+            /**
+             * Entry Ids
+             * @description Ordered list of entry identifiers representing the desired front-end arrangement.
+             */
+            entry_ids: number[];
+        };
+        /**
+         * FavoriteEntryUpdate
+         * @description Partial update payload for an existing entry.
+         */
+        FavoriteEntryUpdate: {
+            /**
+             * Position
+             * @description New zero-based ordering index when drag-and-drop is used.
+             */
+            position?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Metadata */
+            metadata?: Record<string, never> | null;
+        };
+        /**
+         * FavoriteUpcomingFight
+         * @description Normalized summary describing an upcoming booked fight.
+         */
+        FavoriteUpcomingFight: {
+            /** Fighter Id */
+            fighter_id: string;
+            /** Opponent Name */
+            opponent_name: string;
+            /** Event Name */
+            event_name: string;
+            /**
+             * Event Date
+             * @description Scheduled date for the fight
+             */
+            event_date?: string | null;
+            /** Weight Class */
+            weight_class?: string | null;
+        };
         /** FightGraphLink */
         FightGraphLink: {
             /** Source */
@@ -510,6 +954,8 @@ export interface components {
             record?: string | null;
             /** Division */
             division?: string | null;
+            /** Age */
+            age?: number | null;
             /** Striking */
             striking?: Record<string, never>;
             /** Grappling */
@@ -570,6 +1016,8 @@ export interface components {
             dob?: string | null;
             /** Image Url */
             image_url?: string | null;
+            /** Age */
+            age?: number | null;
             /**
              * Is Current Champion
              * @default false
@@ -585,10 +1033,19 @@ export interface components {
              * @default false
              */
             was_interim: boolean;
+            /**
+             * Current Streak Type
+             * @default none
+             * @enum {string}
+             */
+            current_streak_type: "win" | "loss" | "draw" | "none";
+            /**
+             * Current Streak Count
+             * @default 0
+             */
+            current_streak_count: number;
             /** Leg Reach */
             leg_reach?: string | null;
-            /** Age */
-            age?: number | null;
             /** Striking */
             striking?: Record<string, never>;
             /** Grappling */
@@ -633,6 +1090,8 @@ export interface components {
             dob?: string | null;
             /** Image Url */
             image_url?: string | null;
+            /** Age */
+            age?: number | null;
             /**
              * Is Current Champion
              * @default false
@@ -648,6 +1107,17 @@ export interface components {
              * @default false
              */
             was_interim: boolean;
+            /**
+             * Current Streak Type
+             * @default none
+             * @enum {string}
+             */
+            current_streak_type: "win" | "loss" | "draw" | "none";
+            /**
+             * Current Streak Count
+             * @default 0
+             */
+            current_streak_count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -826,6 +1296,10 @@ export interface operations {
                 limit?: number;
                 /** @description Number of fighters to skip */
                 offset?: number;
+                /** @description When true, include lightweight current streak fields in list payloads. */
+                include_streak?: boolean;
+                /** @description How many recent fights to examine when computing a current streak. */
+                streak_window?: number;
             };
             header?: never;
             path?: never;
@@ -1248,6 +1722,350 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrendsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_collections_favorites_collections_get: {
+        parameters: {
+            query: {
+                /** @description Identifier for the owner */
+                user_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_collection_favorites_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteCollectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_collection_favorites_collections__collection_id__get: {
+        parameters: {
+            query?: {
+                /** @description Optional owner identifier used to ensure the caller can only access their own collections. */
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_favorites_collections__collection_id__delete: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_favorites_collections__collection_id__patch: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteCollectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_entry_favorites_collections__collection_id__entries_post: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteEntryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entry_favorites_collections__collection_id__entries__entry_id__delete: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_entry_favorites_collections__collection_id__entries__entry_id__patch: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteEntryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_entries_favorites_collections__collection_id__entries_reorder_post: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteEntryReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_collection_stats_favorites_collections__collection_id__stats_get: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteCollectionStats"];
                 };
             };
             /** @description Validation Error */

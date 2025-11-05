@@ -69,7 +69,7 @@ make api:seed-full     # Seed with all scraped fighters (data/processed/fighters
 ```
 
 **How it works:**
-- **No DATABASE_URL set**: Automatically uses `sqlite+aiosqlite:///./app.db`
+- **No DATABASE_URL set**: Automatically uses `sqlite+aiosqlite:///./data/app.db`
 - **USE_SQLITE=1 env var**: Forces SQLite even if DATABASE_URL is set
 - **Tables auto-created**: On startup, SQLite mode automatically creates all tables (no Alembic needed)
 - **Seeding is idempotent**: Running `make api:seed` multiple times won't create duplicates (uses upsert)
@@ -80,13 +80,13 @@ make api:seed-full     # Seed with all scraped fighters (data/processed/fighters
 USE_SQLITE=1
 
 # Optional - if unset, falls back to SQLite automatically
-# DATABASE_URL=sqlite+aiosqlite:///./app.db
+# DATABASE_URL=sqlite+aiosqlite:///./data/app.db
 ```
 
 **Important notes:**
 - SQLite is for **development only** (single-writer, not for production)
 - When switching back to PostgreSQL, just set DATABASE_URL and run `make db-upgrade`
-- SQLite database file: `app.db` (in project root)
+- SQLite database file: `data/app.db` (in data directory)
 - Alembic migrations **only** apply to PostgreSQL (SQLite uses `create_all()`)
 
 **Production seed safety:**

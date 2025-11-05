@@ -180,6 +180,6 @@ docker-compose up -d
 
 ## Need More Help?
 
-- Full documentation: See `CLAUDE.md`
+- Full documentation: See `../../CLAUDE.md`
 - Tunnel setup: See `TUNNEL_SETUP.md`
 - Check DNS propagation: `bash scripts/check_dns_propagation.sh`

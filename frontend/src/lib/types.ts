@@ -15,6 +15,9 @@ export type FighterListItem = {
   is_current_champion?: boolean;
   is_former_champion?: boolean;
   was_interim?: boolean;
+  /** Lightweight current streak summary provided by the list endpoint. */
+  current_streak_type?: "win" | "loss" | "draw" | "none";
+  current_streak_count?: number;
 };
 
 export type FightHistoryEntry = {

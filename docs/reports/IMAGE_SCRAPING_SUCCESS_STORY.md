@@ -290,9 +290,9 @@ These fighters truly have minimal online presence:
 - `scripts/playwright_duckduckgo_scraper.py` - DuckDuckGo (non-functional)
 
 ### Documentation
-- `IMAGE_SCRAPING_SUMMARY.md` - Initial investigation
-- `IMAGE_SCRAPING_BREAKTHROUGH.md` - Bing discovery
-- `FINAL_IMAGE_SCRAPING_REPORT.md` - Technical report
+- `IMAGE_SCRAPING_SUMMARY.md` - Initial investigation (this directory)
+- `IMAGE_SCRAPING_BREAKTHROUGH.md` - Bing discovery (this directory)
+- `FINAL_IMAGE_SCRAPING_REPORT.md` - Technical report (this directory)
 - `IMAGE_SCRAPING_SUCCESS_STORY.md` - This document
 
 ### Makefile Commands

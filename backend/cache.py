@@ -18,6 +18,9 @@ _LIST_PREFIX = "fighters:list"
 _SEARCH_PREFIX = "fighters:search"
 _COMPARISON_PREFIX = "fighters:compare"
 _GRAPH_PREFIX = "fighters:graph"
+_FAVORITE_LIST_PREFIX = "favorites:list"
+_FAVORITE_COLLECTION_PREFIX = "favorites:collection"
+_FAVORITE_STATS_PREFIX = "favorites:stats"
 
 _redis_client: Redis | None = None
 _client_lock = asyncio.Lock()
@@ -78,6 +81,18 @@ def graph_key(
     ]
     digest = sha256("|".join(parts).encode("utf-8")).hexdigest()
     return f"{_GRAPH_PREFIX}:{digest}"
+
+
+def favorite_list_key(user_id: str) -> str:
+    return f"{_FAVORITE_LIST_PREFIX}:{user_id}"
+
+
+def favorite_collection_key(collection_id: int | str) -> str:
+    return f"{_FAVORITE_COLLECTION_PREFIX}:{collection_id}"
+
+
+def favorite_stats_key(collection_id: int | str) -> str:
+    return f"{_FAVORITE_STATS_PREFIX}:{collection_id}"
 
 
 async def get_redis() -> Redis | None:

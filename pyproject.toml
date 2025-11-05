@@ -25,6 +25,10 @@ dependencies = [
     "pandas>=2.0.0",
     "unidecode>=1.3.0",
     "requests>=2.31.0",
+    "opencv-python>=4.8.1",
+    "dlib>=19.24.2",
+    "numpy>=1.26.0",
+    "pillow>=10.1.0",
 ]
 
 [project.optional-dependencies]

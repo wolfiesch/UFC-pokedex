@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import StatsDisplay from "@/components/StatsDisplay";
 import type { FighterDetail } from "@/lib/types";
 import type { ApiError } from "@/lib/errors";
 import { ErrorType } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -17,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
 import FighterImageFrame from "@/components/FighterImageFrame";
-import { resolveImageUrl } from "@/lib/utils";
+import { resolveImageUrl, cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -29,7 +31,8 @@ import {
 import { StatsRadarChart } from "@/components/visualizations/StatsRadarChart";
 import { RecordBreakdownChart } from "@/components/visualizations/RecordBreakdownChart";
 import { PerformanceBarCharts } from "@/components/visualizations/PerformanceBarCharts";
-import { FightHistoryTimeline } from "@/components/visualizations/FightHistoryTimeline";
+import { FightScatterDemo } from "@/components/analytics/FightScatterDemo";
+import { useFavorites } from "@/hooks/useFavorites";
 
 type Props = {
   fighterId: string;
@@ -42,10 +45,43 @@ type Props = {
 export default function FighterDetailCard({ fighterId, fighter, isLoading, error, onRetry }: Props) {
   // Hooks must be called at the top level, before any conditional returns
   const [imageError, setImageError] = useState(false);
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const isFavorited = fighter ? isFavorite(fighter.fighter_id) : false;
+
   const fightHistory =
     fighter?.fight_history?.filter((fight) => fight.event_name !== null) ?? [];
   const imageSrc = resolveImageUrl(fighter?.image_url);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
+
+  const handleFavoriteClick = () => {
+    if (!fighter) return;
+
+    const wasAdding = !isFavorited;
+    toggleFavorite({
+      fighter_id: fighter.fighter_id,
+      name: fighter.name,
+      nickname: fighter.nickname,
+      division: fighter.division,
+      record: fighter.record,
+      height: fighter.height,
+      weight: fighter.weight,
+      reach: fighter.reach,
+      leg_reach: fighter.leg_reach,
+      stance: fighter.stance,
+      dob: fighter.dob,
+      image_url: fighter.image_url,
+      is_current_champion: fighter.is_current_champion,
+      is_former_champion: fighter.is_former_champion,
+      was_interim: fighter.was_interim,
+    });
+
+    // Show toast notification
+    if (wasAdding) {
+      toast.success(`Added ${fighter.name} to favorites`);
+    } else {
+      toast(`Removed ${fighter.name} from favorites`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -187,34 +223,65 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
             </FighterImageFrame>
           </div>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <CardTitle className="text-3xl">{fighter.name}</CardTitle>
-              {fighter.is_current_champion && (
-                <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-bold border-0">
-                  <svg
-                    className="mr-1 h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  CURRENT CHAMPION
-                </Badge>
-              )}
-              {!fighter.is_current_champion && fighter.is_former_champion && (
-                <Badge variant="outline" className="font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
-                  <svg
-                    className="mr-1 h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  FORMER CHAMPION
-                </Badge>
-              )}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <CardTitle className="text-3xl">{fighter.name}</CardTitle>
+                {fighter.is_current_champion && (
+                  <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-bold border-0">
+                    <svg
+                      className="mr-1 h-4 w-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    CURRENT CHAMPION
+                  </Badge>
+                )}
+                {!fighter.is_current_champion && fighter.is_former_champion && (
+                  <Badge variant="outline" className="font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
+                    <svg
+                      className="mr-1 h-4 w-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    FORMER CHAMPION
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant={isFavorited ? "default" : "outline"}
+                size="lg"
+                onClick={handleFavoriteClick}
+                className={cn(
+                  "group/fav transition-all flex-shrink-0",
+                  isFavorited && "hover:scale-105"
+                )}
+              >
+                <svg
+                  className={cn(
+                    "mr-2 h-5 w-5 transition-transform",
+                    isFavorited
+                      ? "fill-current group-hover/fav:scale-110"
+                      : "fill-none group-hover/fav:scale-110"
+                  )}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                  />
+                </svg>
+                {isFavorited ? "Favorited" : "Add to Favorites"}
+              </Button>
             </div>
             {fighter.nickname ? (
               <CardDescription className="text-base tracking-tight text-muted-foreground">
@@ -277,12 +344,12 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           <StatsDisplay title="Career" stats={fighter.career} />
         ) : null}
 
-        {/* Fight History Timeline */}
+        {/* Fight History Visualization */}
         {fightHistory.length > 0 ? (
-          <FightHistoryTimeline
-            fightHistory={fightHistory}
-            fighterName={fighter.name}
-          />
+          <section className="space-y-4">
+            <h3 className="text-xl font-semibold">Fight History Analysis</h3>
+            <FightScatterDemo fightHistory={fightHistory} />
+          </section>
         ) : null}
 
         {fightHistory.length > 0 ? (

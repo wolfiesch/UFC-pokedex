@@ -40,7 +40,12 @@ from backend.schemas.stats import (
 
 class FighterRepositoryProtocol:
     async def list_fighters(
-        self, *, limit: int | None = None, offset: int | None = None
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+        include_streak: bool = False,
+        streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
         """Return lightweight fighter listings honoring pagination hints."""
 
@@ -110,7 +115,12 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         }
 
     async def list_fighters(
-        self, *, limit: int | None = None, offset: int | None = None
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+        include_streak: bool = False,
+        streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
         """Return fighters in insertion order while honoring pagination hints."""
 
@@ -381,16 +391,25 @@ class FighterService:
         await self._cache.set_json(key, value, ttl=ttl)
 
     async def list_fighters(
-        self, limit: int | None = None, offset: int | None = None
+        self,
+        limit: int | None = None,
+        offset: int | None = None,
+        *,
+        include_streak: bool = False,
+        streak_window: int = 6,
     ) -> list[FighterListItem]:
         """Return paginated fighter summaries from the backing repository."""
 
+        # Disable list cache when streaks are included to avoid mixing cached
+        # payload variants. We could fold the flags into the cache key, but the
+        # list cache primarily exists for the simple roster view.
         use_cache = (
             self._cache is not None
             and limit is not None
             and offset is not None
             and limit >= 0
             and offset >= 0
+            and not include_streak
         )
         cache_key = list_key(limit, offset) if use_cache else None
 
@@ -402,7 +421,12 @@ class FighterService:
                 except Exception:  # pragma: no cover - defensive fallback
                     pass
 
-        fighters = await self._repository.list_fighters(limit=limit, offset=offset)
+        fighters = await self._repository.list_fighters(
+            limit=limit,
+            offset=offset,
+            include_streak=include_streak,
+            streak_window=streak_window,
+        )
         fighter_list = list(fighters)
 
         if use_cache and cache_key is not None:

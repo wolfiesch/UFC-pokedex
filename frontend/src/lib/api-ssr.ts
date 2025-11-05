@@ -31,8 +31,8 @@ export async function getFightersSSR(
   const response = await fetch(
     `${apiUrl}/fighters/?limit=${limit}&offset=${offset}`,
     {
-      // Allow Next.js to cache this for ISR
-      next: { revalidate: false }, // Static at build time
+      // Cache for 60 seconds (1 minute)
+      next: { revalidate: 60 },
     }
   );
 
@@ -52,8 +52,9 @@ export async function getFightersSSR(
 export async function getFighterSSR(fighterId: string): Promise<FighterDetail> {
   const apiUrl = getApiBaseUrl();
   const response = await fetch(`${apiUrl}/fighters/${fighterId}`, {
-    // ISR: cache for 24 hours (86400 seconds)
-    next: { revalidate: 86400 },
+    // Cache for 5 minutes (300 seconds)
+    // Stale-while-revalidate for 10 minutes
+    next: { revalidate: 300 },
   });
 
   if (!response.ok) {
@@ -79,7 +80,7 @@ export async function getAllFighterIdsSSR(
 
   // Strategy: Fetch fighters in batches until we have all of them
   const allFighters: FighterListItem[] = [];
-  const batchSize = 1000;
+  const batchSize = 100; // Backend max limit (le=100 in Query validation)
   let offset = 0;
   let hasMore = true;
 

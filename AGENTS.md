@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Source lives in `backend/` (FastAPI services), `frontend/` (Next.js 14 UI), and `scraper/` (Scrapy spiders + BeautifulSoup helpers). Shared domain models sit in `ufc_pokedex_project/`. Pytest suites land in `tests/`, while Vitest suites belong inside `frontend/src/**/__tests__`. Operational assets such as docs, ETL scripts, and cached payloads sit in `docs/`, `scripts/`, and `data/` (ignored by git).
+Source lives in `backend/` (FastAPI services), `frontend/` (Next.js 14 UI), and `scraper/` (Scrapy spiders + BeautifulSoup helpers). Shared domain models sit in `scraper/models/`. Pytest suites land in `tests/`, while Vitest suites belong inside `frontend/src/**/__tests__`. Operational assets such as docs, ETL scripts, and cached payloads sit in `docs/`, `scripts/`, and `data/` (ignored by git).
 
 ## Build, Test, and Development Commands
 Run `make bootstrap` once to install Python deps via `uv` plus frontend packages via `pnpm`. Use `make dev` for the full stack in watch mode (FastAPI reload + Next.js dev server). `pnpm build` or `npm run build` compiles the UI bundle. Database migrations use `make db-upgrade` and `make db-downgrade`. Crawlers are exposed through `make scraper` and `make scraper-details`.

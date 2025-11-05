@@ -88,7 +88,7 @@ icons: {
 ## 🚀 UI Improvement Proposals
 
 ### Overview
-Created comprehensive proposal document: `UI_IMPROVEMENTS_PROPOSAL.md`
+Created comprehensive proposal document: `../proposals/UI_IMPROVEMENTS_PROPOSAL.md`
 
 ### Key Highlights
 
@@ -318,7 +318,7 @@ npm install cmdk
 ## 📚 Documentation Improvements
 
 ### Created Today
-- ✅ `UI_IMPROVEMENTS_PROPOSAL.md` - Comprehensive improvement roadmap
+- ✅ `../proposals/UI_IMPROVEMENTS_PROPOSAL.md` - Comprehensive improvement roadmap
 - ✅ `EnhancedFighterCard.tsx` - Example component with docs
 - ✅ `CommandPalette.tsx` - Example feature with usage guide
 - ✅ This summary document

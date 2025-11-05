@@ -5,16 +5,19 @@ This checklist captures the reproducible steps for establishing local tooling re
 ## Python Backend & Scraper
 
 1. Install Python 3.11 (recommended via `pyenv`).
-2. Create a virtual environment:
+2. Install dependencies using `uv` (recommended):
+   ```bash
+   make bootstrap
+   # or manually:
+   uv sync --all-extras
+   ```
+3. Alternative (legacy pip method - requirements files archived in `docs/legacy/`):
    ```bash
    python3.11 -m venv .venv
    source .venv/bin/activate
    pip install -U pip
-   pip install -r requirements.txt
-   ```
-3. Optional (development extras):
-   ```bash
-   pip install -r requirements-dev.txt
+   pip install -r docs/legacy/requirements.txt
+   pip install -r docs/legacy/requirements-dev.txt
    pre-commit install
    ```
 

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Iterable
+from typing import Any, Iterable
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -47,8 +47,29 @@ class FavoritesService:
     def __init__(self, session: AsyncSession, cache: CacheClient) -> None:
         self._session = session
         self._cache = cache
+        self._tables_ready: bool | None = None
+
+    async def _favorites_tables_ready(self) -> bool:
+        if self._tables_ready is not None:
+            return self._tables_ready
+
+        def check(sync_session: Any) -> bool:
+            bind = sync_session.get_bind()
+            inspector = inspect(bind)
+            tables = {name.lower() for name in inspector.get_table_names()}
+            return "favorite_collections" in tables and "favorite_entries" in tables
+
+        try:
+            self._tables_ready = await self._session.run_sync(check)
+        except Exception:
+            self._tables_ready = False
+
+        return self._tables_ready
 
     async def list_collections(self, *, user_id: str) -> FavoriteCollectionListResponse:
+        if not await self._favorites_tables_ready():
+            return FavoriteCollectionListResponse(total=0, collections=[])
+
         cache_key = favorite_list_key(user_id)
         cached = await self._cache.get_json(cache_key)
         if cached is not None:
@@ -89,6 +110,9 @@ class FavoritesService:
     async def get_collection(
         self, *, collection_id: int, user_id: str | None = None
     ) -> FavoriteCollectionDetail | None:
+        if not await self._favorites_tables_ready():
+            return None
+
         cache_key = favorite_collection_key(collection_id)
         cached = await self._cache.get_json(cache_key)
         if cached is not None:
@@ -110,6 +134,11 @@ class FavoritesService:
     async def create_collection(
         self, payload: FavoriteCollectionCreate
     ) -> FavoriteCollectionDetail:
+        if not await self._favorites_tables_ready():
+            raise RuntimeError(
+                "Favorites tables are missing; run database migrations to enable favorites."
+            )
+
         collection = FavoriteCollection(
             user_id=payload.user_id,
             title=payload.title,
@@ -130,6 +159,11 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteCollectionUpdate,
     ) -> FavoriteCollectionDetail:
+        if not await self._favorites_tables_ready():
+            raise RuntimeError(
+                "Favorites tables are missing; run database migrations to enable favorites."
+            )
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             raise LookupError("Collection not found")
@@ -157,6 +191,9 @@ class FavoritesService:
     async def delete_collection(
         self, *, collection_id: int, user_id: str | None
     ) -> None:
+        if not await self._favorites_tables_ready():
+            return
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             return
@@ -176,6 +213,11 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryCreate,
     ) -> FavoriteEntrySchema:
+        if not await self._favorites_tables_ready():
+            raise RuntimeError(
+                "Favorites tables are missing; run database migrations to enable favorites."
+            )
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             raise LookupError("Collection not found")
@@ -224,6 +266,11 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryUpdate,
     ) -> FavoriteEntrySchema:
+        if not await self._favorites_tables_ready():
+            raise RuntimeError(
+                "Favorites tables are missing; run database migrations to enable favorites."
+            )
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             raise LookupError("Collection not found")
@@ -258,6 +305,9 @@ class FavoritesService:
         entry_id: int,
         user_id: str | None,
     ) -> None:
+        if not await self._favorites_tables_ready():
+            return
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             return
@@ -283,6 +333,11 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryReorderRequest,
     ) -> FavoriteCollectionDetail:
+        if not await self._favorites_tables_ready():
+            raise RuntimeError(
+                "Favorites tables are missing; run database migrations to enable favorites."
+            )
+
         collection = await self._load_collection(collection_id)
         if collection is None:
             raise LookupError("Collection not found")
@@ -303,6 +358,9 @@ class FavoritesService:
         return await self._collection_to_detail(collection)
 
     async def _load_collection(self, collection_id: int) -> FavoriteCollection | None:
+        if not await self._favorites_tables_ready():
+            return None
+
         query = (
             select(FavoriteCollection)
             .options(

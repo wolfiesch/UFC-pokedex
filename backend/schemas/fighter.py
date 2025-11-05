@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -37,6 +37,11 @@ class FighterListItem(BaseModel):
     is_current_champion: bool = False
     is_former_champion: bool = False
     was_interim: bool = False
+    # Lightweight current streak summary for roster views. Only populated when
+    # requested by the list endpoint (defaults to omitted/none for backwards
+    # compatibility).
+    current_streak_type: Literal["win", "loss", "draw", "none"] = "none"
+    current_streak_count: int = 0
 
 
 class FighterDetail(FighterListItem):

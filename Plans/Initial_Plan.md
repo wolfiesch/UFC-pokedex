@@ -127,7 +127,7 @@ ufc-pokedex/
 │       └── scrape_schedule.yml  # GitHub Actions for scheduled scraping
 │
 ├── docker-compose.yml         # Local development with PostgreSQL
-├── requirements.txt           # Python dependencies
+├── pyproject.toml             # Python dependencies (requirements.txt archived in docs/legacy/)
 └── README.md                  # Project README
 ```
 

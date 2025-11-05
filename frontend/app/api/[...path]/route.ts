@@ -23,6 +23,10 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `${API_BASE_URL}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
+    // Add timeout to prevent long hangs when backend is unresponsive
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -30,7 +34,10 @@ export async function GET(
       },
       // Don't cache to ensure fresh data
       cache: 'no-store',
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     // Get response body
     const data = await response.arrayBuffer();
@@ -47,6 +54,15 @@ export async function GET(
     });
   } catch (error) {
     console.error('API Proxy Error:', error);
+
+    // Check if it's a timeout error
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: 'Backend request timed out' },
+        { status: 504 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to fetch from API' },
       { status: 500 }

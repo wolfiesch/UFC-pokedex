@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, Literal, cast as typing_cast
 
 from sqlalchemy import Float, cast, desc, func, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +34,10 @@ from backend.schemas.stats import (
     TrendsResponse,
     WinStreakSummary,
 )
-from backend.services.image_resolver import resolve_fighter_image
+from backend.services.image_resolver import (
+    resolve_fighter_image,
+    resolve_fighter_image_cropped,
+)
 
 
 def _invert_fight_result(result: str | None) -> str:
@@ -230,9 +233,19 @@ class PostgreSQLFighterRepository:
         ]
 
     async def list_fighters(
-        self, *, limit: int | None = None, offset: int | None = None
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+        include_streak: bool = False,
+        streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
-        """List all fighters with optional pagination."""
+        """List all fighters with optional pagination.
+
+        When ``include_streak`` is True, compute a lightweight current streak summary for
+        the fighters returned on this page only. The computation uses at most
+        ``streak_window`` most recent completed fights (ignores upcoming/NC/other results).
+        """
         base_columns = self._fighter_summary_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
@@ -251,6 +264,67 @@ class PostgreSQLFighterRepository:
 
         result = await self._session.execute(query)
         fighters = result.scalars().all()
+
+        # Optionally compute current streaks for the returned fighters only
+        streak_by_fighter: dict[str, tuple[str, int]] = {}
+        if include_streak and fighters:
+            fighter_ids = [f.id for f in fighters]
+            fights_stmt = select(Fight).where(
+                (Fight.fighter_id.in_(fighter_ids))
+                | (Fight.opponent_id.in_(fighter_ids))
+            )
+            fights_result = await self._session.execute(fights_stmt)
+            fights = fights_result.scalars().all()
+
+            # Aggregate fights per fighter perspective
+            fights_for: dict[str, list[tuple[date | None, str]]] = {}
+            for fight in fights:
+                # Perspective: primary fighter
+                if fight.fighter_id in fighter_ids:
+                    fights_for.setdefault(fight.fighter_id, []).append(
+                        (fight.event_date, fight.result or "")
+                    )
+                # Perspective: opponent
+                if fight.opponent_id and fight.opponent_id in fighter_ids:
+                    fights_for.setdefault(fight.opponent_id, []).append(
+                        (fight.event_date, _invert_fight_result(fight.result))
+                    )
+
+            # Compute streak from the most recent fights per fighter
+            for fid, entries in fights_for.items():
+                # Sort newest first. ``None`` dates are pushed last.
+                entries.sort(key=lambda e: (e[0] is None, e[0] or date.min), reverse=True)
+
+                # Consider only the last ``streak_window`` fights
+                recent = entries[: max(2, streak_window)]
+
+                # Identify the last completed result type
+                def _category(text: str) -> str:
+                    return _normalize_result_category(text)
+
+                last_type = None
+                for _, res in recent:
+                    cat = _category(res)
+                    if cat in {"win", "loss", "draw"}:
+                        last_type = cat
+                        break
+                if last_type is None:
+                    continue
+
+                # Count consecutive same-type results from most recent
+                count = 0
+                for _, res in recent:
+                    cat = _category(res)
+                    if cat == last_type:
+                        count += 1
+                    elif cat in {"win", "loss", "draw"}:
+                        break
+                    else:
+                        # Skip non-completed outcomes inside the window
+                        continue
+
+                if count >= 2:
+                    streak_by_fighter[fid] = (last_type, count)
 
         # Cache a single "today" value in UTC so every fighter on the page uses
         # the same reference point for age calculations.
@@ -277,20 +351,38 @@ class PostgreSQLFighterRepository:
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
                 was_interim=fighter.was_interim if supports_was_interim else False,
+                current_streak_type=(
+                    typing_cast(
+                        Literal["win", "loss", "draw", "none"],
+                        (
+                            streak_by_fighter.get(fighter.id, ("none", 0))[0]
+                            if include_streak
+                            else "none"
+                        ),
+                    )
+                ),
+                current_streak_count=(
+                    int(streak_by_fighter.get(fighter.id, ("none", 0))[1])
+                    if include_streak
+                    else 0
+                ),
             )
             for fighter in fighters
         ]
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
-        """Get detailed fighter information by ID."""
-        # Query fighter details
+        """Get detailed fighter information by ID with eager-loaded relationships."""
+        # Query fighter details with eager-loaded fights
         base_columns = self._fighter_detail_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
         fighter_query = (
             select(Fighter)
-            .options(load_only(*load_columns))
+            .options(
+                load_only(*load_columns),
+                selectinload(Fighter.fights),  # Eager load fights relationship
+            )
             .where(Fighter.id == fighter_id)
         )
         fighter_result = await self._session.execute(fighter_query)
@@ -315,7 +407,7 @@ class PostgreSQLFighterRepository:
             category_stats[metric] = value
 
         # Query fights from BOTH perspectives:
-        # 1. Fights where this fighter is fighter_id
+        # 1. Fights where this fighter is fighter_id (already loaded via relationship)
         # 2. Fights where this fighter is opponent_id
         fights_query = select(Fight).where(
             (Fight.fighter_id == fighter_id) | (Fight.opponent_id == fighter_id)
@@ -547,6 +639,7 @@ class PostgreSQLFighterRepository:
                     Fighter.division,
                     Fighter.record,
                     Fighter.image_url,
+                    Fighter.cropped_image_url,
                 ).order_by(Fighter.name, Fighter.id)
             )
             if division:
@@ -561,7 +654,9 @@ class PostgreSQLFighterRepository:
                     name=row.name,
                     division=row.division,
                     record=row.record,
-                    image_url=resolve_fighter_image(row.id, row.image_url),
+                    image_url=resolve_fighter_image_cropped(
+                        row.id, row.image_url, row.cropped_image_url
+                    ),
                     total_fights=0,
                     latest_event_date=None,
                 )
@@ -586,6 +681,7 @@ class PostgreSQLFighterRepository:
             Fighter.division,
             Fighter.record,
             Fighter.image_url,
+            Fighter.cropped_image_url,
         ).where(Fighter.id.in_(id_order))
         fighters_result = await self._session.execute(fighters_query)
         fighters = fighters_result.all()
@@ -602,8 +698,10 @@ class PostgreSQLFighterRepository:
                     name=fighter_row.name,
                     division=fighter_row.division,
                     record=fighter_row.record,
-                    image_url=resolve_fighter_image(
-                        fighter_row.id, fighter_row.image_url
+                    image_url=resolve_fighter_image_cropped(
+                        fighter_row.id,
+                        fighter_row.image_url,
+                        fighter_row.cropped_image_url,
                     ),
                     total_fights=count_map.get(fighter_row.id, 0),
                     latest_event_date=latest_map.get(fighter_row.id),

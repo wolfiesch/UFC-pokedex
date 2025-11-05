@@ -9,7 +9,7 @@ codebase approachable.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -24,6 +24,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import Base, Fighter
+
+
+def utcnow():
+    """Return current UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 class FavoriteCollection(Base):
@@ -70,15 +75,13 @@ class FavoriteCollection(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=func.now,
-        server_default=func.now(),
+        default=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=func.now,
-        onupdate=func.now,
-        server_default=func.now(),
+        default=utcnow,
+        onupdate=utcnow,
     )
     metadata_json: Mapped[dict[str, object]] = mapped_column(
         JSON,
@@ -144,15 +147,13 @@ class FavoriteEntry(Base):
     added_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=func.now,
-        server_default=func.now(),
+        default=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=func.now,
-        onupdate=func.now,
-        server_default=func.now(),
+        default=utcnow,
+        onupdate=utcnow,
     )
     metadata_json: Mapped[dict[str, object]] = mapped_column(
         JSON,

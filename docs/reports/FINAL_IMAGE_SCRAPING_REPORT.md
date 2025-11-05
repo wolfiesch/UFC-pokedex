@@ -134,8 +134,8 @@ async def scrape_fighter_image(fighter, images_dir):
 - Updated Bing query with "MMA" for better specificity
 
 ### Documentation
-- `IMAGE_SCRAPING_SUMMARY.md` - Initial investigation report
-- `IMAGE_SCRAPING_BREAKTHROUGH.md` - Bing Images breakthrough
+- `IMAGE_SCRAPING_SUMMARY.md` - Initial investigation report (this directory)
+- `IMAGE_SCRAPING_BREAKTHROUGH.md` - Bing Images breakthrough (this directory)
 - `FINAL_IMAGE_SCRAPING_REPORT.md` - This file
 
 ### Makefile Commands

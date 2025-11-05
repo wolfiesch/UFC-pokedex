@@ -58,6 +58,44 @@ def resolve_fighter_image(fighter_id: str, stored_path: str | None) -> str | Non
     return _find_local_image(fighter_id)
 
 
+def resolve_fighter_image_cropped(
+    fighter_id: str,
+    stored_path: str | None,
+    cropped_path: str | None,
+) -> str | None:
+    """Return the best cropped image reference for a fighter.
+
+    This function prioritizes cropped (face-focused) images and is intended
+    for use in contexts where a tight portrait is preferred, such as opponent
+    images in fight history graphs.
+
+    Args:
+        fighter_id: Primary key for the fighter record.
+        stored_path: The ``image_url`` column as persisted in the database.
+        cropped_path: The ``cropped_image_url`` column from the database.
+
+    Returns:
+        Either the ``cropped_path`` (when available), falling back to the
+        original image resolution logic if no cropped version exists.
+
+    Priority:
+        1. Cropped image from database (``cropped_path``)
+        2. Cropped image from filesystem cache (``cropped/{fighter_id}.jpg``)
+        3. Original image (via ``resolve_fighter_image``)
+    """
+    # First priority: database-stored cropped path
+    if cropped_path:
+        return cropped_path
+
+    # Second priority: check filesystem for cropped image
+    cropped_local = _find_local_cropped_image(fighter_id)
+    if cropped_local:
+        return cropped_local
+
+    # Fallback to original image
+    return resolve_fighter_image(fighter_id, stored_path)
+
+
 @lru_cache(maxsize=2048)
 def _find_local_image(fighter_id: str) -> str | None:
     """Locate a cached fighter image by trying the known extensions."""
@@ -69,4 +107,18 @@ def _find_local_image(fighter_id: str) -> str | None:
     return None
 
 
-__all__ = ["resolve_fighter_image"]
+@lru_cache(maxsize=2048)
+def _find_local_cropped_image(fighter_id: str) -> str | None:
+    """Locate a cached cropped fighter image by checking the cropped subdirectory."""
+
+    # Cropped images are stored in data/images/fighters/cropped/
+    cropped_dir = _IMAGE_ROOT / "cropped"
+
+    for extension in _SUPPORTED_EXTENSIONS:
+        candidate = cropped_dir / f"{fighter_id}{extension}"
+        if candidate.exists():
+            return f"{_RELATIVE_PREFIX}/cropped/{candidate.name}"
+    return None
+
+
+__all__ = ["resolve_fighter_image", "resolve_fighter_image_cropped"]

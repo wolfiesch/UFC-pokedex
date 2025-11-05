@@ -18,12 +18,12 @@ def get_database_url() -> str:
     use_sqlite = os.getenv("USE_SQLITE", "").strip() == "1"
 
     if use_sqlite:
-        return "sqlite+aiosqlite:///./app.db"
+        return "sqlite+aiosqlite:///./data/app.db"
 
     url = os.getenv("DATABASE_URL")
     if not url:
         # Fallback to SQLite when DATABASE_URL is not set
-        return "sqlite+aiosqlite:///./app.db"
+        return "sqlite+aiosqlite:///./data/app.db"
 
     # Validate PostgreSQL URL format
     if not url.startswith("postgresql+psycopg"):
@@ -44,7 +44,34 @@ def get_database_type() -> str:
 
 
 def create_engine() -> AsyncEngine:
-    return create_async_engine(get_database_url(), future=True, echo=False)
+    """Create async database engine with optimized connection pooling.
+
+    For PostgreSQL:
+    - pool_size=10: Maintain 10 warm connections
+    - max_overflow=20: Allow up to 30 total connections
+    - pool_pre_ping=True: Validate connections before use
+    - pool_recycle=1800: Recycle connections every 30 minutes
+
+    For SQLite:
+    - No pooling parameters (not supported)
+    """
+    db_type = get_database_type()
+    url = get_database_url()
+
+    if db_type == "postgresql":
+        # PostgreSQL: Optimize connection pooling
+        return create_async_engine(
+            url,
+            future=True,
+            echo=False,
+            pool_size=10,  # Maintain 10 warm connections
+            max_overflow=20,  # Allow up to 30 total connections
+            pool_pre_ping=True,  # Validate connections before use
+            pool_recycle=1800,  # Recycle connections every 30 min
+        )
+
+    # SQLite: No pooling needed
+    return create_async_engine(url, future=True, echo=False)
 
 
 def create_session_factory(engine: AsyncEngine) -> sessionmaker[AsyncSession]:

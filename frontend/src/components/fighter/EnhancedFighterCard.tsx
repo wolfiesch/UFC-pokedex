@@ -52,8 +52,21 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
 
   // Record pill uses fighter.record directly (no win% computation)
 
-  // Calculate streak and last fight from details
-  const streak = details ? calculateStreak(details.fight_history) : null;
+  // Calculate streak and last fight. Prefer server-provided lightweight streak
+  // from the list payload, and upgrade to precise streak when details are
+  // fetched (on hover).
+  const listStreak = (() => {
+    const count = fighter.current_streak_count ?? 0;
+    const type = fighter.current_streak_type ?? "none";
+    const isTyped = type === "win" || type === "loss" || type === "draw";
+    if (isTyped && count >= 2) {
+      return { type, count, label: String(count) } as const;
+    }
+    return null;
+  })();
+  const streak = details
+    ? calculateStreak(details.fight_history)
+    : listStreak;
   const lastFight = details ? getLastFight(details.fight_history) : null;
 
   // Debug: Log streak info
@@ -416,6 +429,8 @@ const fighterEqualityKeys: Array<keyof FighterListItem> = [
   "image_url",
   "is_current_champion",
   "is_former_champion",
+  "current_streak_type",
+  "current_streak_count",
 ];
 
 const areFighterCardPropsEqual = (

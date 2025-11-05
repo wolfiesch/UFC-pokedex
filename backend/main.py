@@ -99,10 +99,18 @@ async def lifespan(app: FastAPI):
 
     logger.info("=" * 60)
 
+    # NEW: Warmup connections
+    from backend.warmup import warmup_all
+
+    await warmup_all()
+
     yield
 
     # Shutdown: Clean up resources
+    from backend.cache import close_redis
+
     logger.info("Shutting down UFC Pokedex API")
+    await close_redis()
 
 
 app = FastAPI(
