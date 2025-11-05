@@ -13,16 +13,33 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import json
 import os
 import sys
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.db.connection import get_database_type, get_session
+from backend.db.connection import (
+    get_database_type as _connection_get_database_type,
+    get_engine as _connection_get_engine,
+    get_session,
+)
 from backend.db.models import Fighter
+
+
+def get_database_type() -> str:
+    """Expose the database type helper for unit tests."""
+
+    return _connection_get_database_type()
+
+
+def get_engine() -> AsyncEngine:
+    """Expose the async engine factory for unit tests."""
+
+    return _connection_get_engine()
 
 
 def parse_date(value: str | None) -> date | None:
@@ -104,7 +121,6 @@ def check_sqlite_production_seed_safety(db_type: str, jsonl_path: Path) -> bool:
 
 async def ensure_tables() -> None:
     """Create database tables if they don't exist (for SQLite)."""
-    from backend.db.connection import get_database_type, get_engine
     from backend.db.models import Base
 
     db_type = get_database_type()

@@ -1,3 +1,4 @@
+import inspect
 import os
 import uuid
 import logging
@@ -23,6 +24,13 @@ from sqlalchemy.exc import (
     IntegrityError,
     OperationalError,
     TimeoutError as SQLAlchemyTimeoutError,
+)
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from backend.db.connection import (
+    get_database_type as _connection_get_database_type,
+    get_database_url as _connection_get_database_url,
+    get_engine as _connection_get_engine,
 )
 
 from .api import events, favorites, fighters, fightweb, search, stats
@@ -65,11 +73,47 @@ def _sanitize_database_url(url: str) -> str:
     return url
 
 
+def get_database_type() -> str:
+    """Return the configured database flavor.
+
+    The helper simply proxies ``backend.db.connection.get_database_type`` while
+    keeping an explicit module-level symbol that our test-suite can patch.  The
+    indirection keeps the production implementation in one place yet allows
+    dependency injection without touching private attributes.
+    """
+
+    return _connection_get_database_type()
+
+
+def get_database_url() -> str:
+    """Return the database URL currently in use.
+
+    A dedicated wrapper with a descriptive docstring clarifies *why* the helper
+    exists in this module: FastAPI's lifespan hooks and the accompanying unit
+    tests expect to patch ``backend.main.get_database_url`` directly.  Surfacing
+    the function at module scope avoids repeated local imports and keeps
+    observability behaviour—such as preflight logging—centralised in this file.
+    """
+
+    return _connection_get_database_url()
+
+
+def get_engine() -> AsyncEngine:
+    """Retrieve (and lazily create) the shared SQLAlchemy async engine.
+
+    The wrapper preserves the public contract of ``backend.db.connection`` while
+    providing a stable attribute for unit tests to stub.  Returning the
+    ``AsyncEngine`` keeps type-checkers honest and improves developer ergonomics
+    when navigating usages.
+    """
+
+    return _connection_get_engine()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup: Initialize database tables for SQLite
-    from backend.db.connection import get_database_type, get_database_url, get_engine
     from backend.db.models import Base
 
     db_type = get_database_type()

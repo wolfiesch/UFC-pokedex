@@ -54,7 +54,11 @@ def parse_date(value: str | None) -> str | None:
     # Remove periods after month abbreviations (e.g., "Nov. 16, 2024" -> "Nov 16, 2024")
     text_normalized = text.replace(".", "")
     # Try multiple date formats
-    for fmt in ("%B %d, %Y", "%b %d, %Y", "%Y-%m-%d"):  # %B = full month name, %b = abbreviated
+    for fmt in (
+        "%B %d, %Y",
+        "%b %d, %Y",
+        "%Y-%m-%d",
+    ):  # %B = full month name, %b = abbreviated
         try:
             return datetime.strptime(text_normalized, fmt).date().isoformat()
         except ValueError:
@@ -282,15 +286,13 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
         result = _extract_result(row.css("td:nth-child(1)"))
         event_date = _extract_event_date(event_cell)
 
-        # Skip placeholder fights: rows where ALL key fields are None/Unknown
-        # These are empty table rows that UFCStats includes for formatting
-        if (
-            (opponent_name in (None, "Unknown"))
-            and event_name is None
-            and result is None
-            and event_date is None
-        ):
-            continue
+        method_description = " ".join(
+            [
+                clean_text(text)
+                for text in row.css("td:nth-child(8) p:nth-child(1)::text").getall()
+                if clean_text(text)
+            ]
+        )
 
         fights.append(
             {
@@ -300,16 +302,11 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
                 "event_name": event_name,
                 "event_date": event_date,
                 "result": result,
-                "method": " ".join(
-                    [
-                        clean_text(t)
-                        for t in row.css(
-                            "td:nth-child(8) p:nth-child(1)::text"
-                        ).getall()
-                        if clean_text(t)
-                    ]
-                )
-                or None,
+                # Persist rows even when the method is missing so downstream
+                # consumers can still display placeholder fight history with
+                # ``None`` statistics (mirrors expectations codified in the unit
+                # tests).
+                "method": method_description or None,
                 "round": _parse_int(row.css("td:nth-child(9) p::text").get()),
                 "time": clean_text(row.css("td:nth-child(10) p::text").get()),
                 "fight_card_url": clean_text(event_cell.css("a::attr(href)").get()),
@@ -340,7 +337,9 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
 
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (
-        selector.css("h2.b-content__title span.b-content__title-highlight::text").getall()
+        selector.css(
+            "h2.b-content__title span.b-content__title-highlight::text"
+        ).getall()
         or selector.css(".b-content__title-highlight::text").getall()
         or selector.css(".b-content__banner h2::text").getall()
         or selector.css(".b-content__title h2::text").getall()
@@ -349,8 +348,20 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
     full_name = " ".join(filter(None, (clean_text(n) for n in name_candidates if n)))
     name = full_name.strip() if full_name else fighter_id
 
-    # Nickname is a <p> tag at the root level, not nested in hero section
-    nickname = clean_text(selector.css("p.b-content__Nickname::text").get())
+    # Nicknames appear in different containers (``<span>`` or ``<p>``) depending
+    # on the era of the markup, so we normalise by collecting every text node
+    # within ``.b-content__Nickname`` and selecting the first non-empty string.
+    nickname_candidates = selector.css(
+        ".b-content__Nickname::text, .b-content__Nickname *::text"
+    ).getall()
+    nickname = next(
+        (
+            clean_text(candidate)
+            for candidate in nickname_candidates
+            if clean_text(candidate)
+        ),
+        None,
+    )
     # Record is in the title heading
     record_text = clean_text(selector.css("span.b-content__title-record::text").get())
     record = (
@@ -433,7 +444,8 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
             or stat_sections.get("career_statistics", {})
             or {}
         ),
-        "significant_strikes": stat_sections.get("significant_strikes", {}) or stat_sections.get("career_statistics", {}),
+        "significant_strikes": stat_sections.get("significant_strikes", {})
+        or stat_sections.get("career_statistics", {}),
         "takedown_stats": stat_sections.get("takedowns", {})
         or stat_sections.get("grappling", {})
         or stat_sections.get("career_statistics", {}),
@@ -479,6 +491,7 @@ def parse_events_list_row(row: Selector) -> dict[str, Any] | None:
     # Determine status based on context (caller should pass this)
     # For now, we'll determine it based on the date
     from datetime import datetime, date as date_type
+
     status = "upcoming"
     if event_date:
         try:
@@ -532,7 +545,9 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
             (
                 clean_text(t)
                 for t in all_text
-                if clean_text(t) and clean_text(t).upper() != f"{label}:" and clean_text(t) != original_label
+                if clean_text(t)
+                and clean_text(t).upper() != f"{label}:"
+                and clean_text(t) != original_label
             ),
             None,
         )
@@ -544,6 +559,7 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
 
     # Determine status
     from datetime import datetime
+
     status = "upcoming"
     if event_date:
         try:
@@ -569,6 +585,7 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
             if fight_url:
                 # Extract URL from onclick="doNav('url')"
                 import re
+
                 match = re.search(r"doNav\('([^']+)'\)", fight_url)
                 if match:
                     fight_url = match.group(1)
@@ -582,8 +599,16 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
 
             # Fighter names (column 2) - contains two links
             fighter_links = row.css("td:nth-child(2) p a")
-            fighter_1_name = clean_text(fighter_links[0].css("::text").get()) if len(fighter_links) > 0 else None
-            fighter_2_name = clean_text(fighter_links[1].css("::text").get()) if len(fighter_links) > 1 else None
+            fighter_1_name = (
+                clean_text(fighter_links[0].css("::text").get())
+                if len(fighter_links) > 0
+                else None
+            )
+            fighter_2_name = (
+                clean_text(fighter_links[1].css("::text").get())
+                if len(fighter_links) > 1
+                else None
+            )
 
             # Fighter IDs
             fighter_urls = row.css("td:nth-child(2) p a::attr(href)").getall()
@@ -605,10 +630,16 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
 
             # Result fields (for completed events)
             # Column 8: Method, Column 9: Round, Column 10: Time
-            method = " ".join([
-                clean_text(t) for t in row.css("td:nth-child(8) p::text").getall()
-                if clean_text(t)
-            ]) or None
+            method = (
+                " ".join(
+                    [
+                        clean_text(t)
+                        for t in row.css("td:nth-child(8) p::text").getall()
+                        if clean_text(t)
+                    ]
+                )
+                or None
+            )
             round_num = _parse_int(row.css("td:nth-child(9) p::text").get())
             time = clean_text(row.css("td:nth-child(10) p::text").get())
 
@@ -624,20 +655,22 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
             if not fighter_1_name or not fighter_2_name:
                 continue
 
-            fight_card.append({
-                "fight_id": fight_id or f"{event_id}-fight-{index}",
-                "fighter_1_id": fighter_1_id,
-                "fighter_1_name": fighter_1_name,
-                "fighter_2_id": fighter_2_id,
-                "fighter_2_name": fighter_2_name,
-                "weight_class": weight_class,
-                "result": None,  # Need to determine from fight detail page
-                "method": method,
-                "round": round_num,
-                "time": time,
-                "fight_url": fight_url,
-                "stats": stats,
-            })
+            fight_card.append(
+                {
+                    "fight_id": fight_id or f"{event_id}-fight-{index}",
+                    "fighter_1_id": fighter_1_id,
+                    "fighter_1_name": fighter_1_name,
+                    "fighter_2_id": fighter_2_id,
+                    "fighter_2_name": fighter_2_name,
+                    "weight_class": weight_class,
+                    "result": None,  # Need to determine from fight detail page
+                    "method": method,
+                    "round": round_num,
+                    "time": time,
+                    "fight_url": fight_url,
+                    "stats": stats,
+                }
+            )
 
     return {
         "item_type": "event_detail",
