@@ -424,7 +424,7 @@ export async function getStatsTrends(): Promise<StatsTrendsResponse> {
  */
 export async function getFavoriteCollections(
   userId: string
-): Promise<FavoriteCollectionListResponse> {
+) {
   const { data, error } = await client.GET("/favorites/collections", {
     params: {
       query: {
@@ -441,7 +441,7 @@ export async function getFavoriteCollections(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteCollectionListResponse;
+  return data;
 }
 
 /**
