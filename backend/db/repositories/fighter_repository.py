@@ -36,10 +36,7 @@ from backend.schemas.fighter import (
 )
 from backend.services.image_resolver import (
     resolve_fighter_image,
-    resolve_fighter_image_cropped,
 )
-
-
 class FighterRepository(BaseRepository):
     """Repository for fighter CRUD operations and queries."""
 
