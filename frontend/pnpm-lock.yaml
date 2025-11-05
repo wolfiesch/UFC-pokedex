@@ -32,6 +32,9 @@ importers:
       d3-scale:
         specifier: ^4.0.2
         version: 4.0.2
+      d3-selection:
+        specifier: ^3.0.0
+        version: 3.0.0
       d3-zoom:
         specifier: ^3.0.0
         version: 3.0.0
