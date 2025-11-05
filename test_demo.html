@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFC Pokedex - Demo Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #444;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 16px;
+        }
+        .fighter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .fighter-card {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #444;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .fighter-card:hover {
+            transform: translateY(-4px);
+            border-color: #d20a0a;
+        }
+        .fighter-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .fighter-record {
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .favorite-btn {
+            background: #d20a0a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .favorite-btn:hover {
+            background: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🥊 UFC Pokedex</h1>
+        <p>Catch 'em All - Fighter Edition</p>
+        <input type="search" class="search-box" placeholder="Search fighters..." id="searchInput">
+    </div>
+
+    <div class="fighter-grid" id="fighterGrid">
+        <div class="fighter-card" data-fighter-id="1">
+            <div class="fighter-name">Conor McGregor</div>
+            <div class="fighter-record">22-6-0</div>
+            <div>Division: Lightweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+
+        <div class="fighter-card" data-fighter-id="2">
+            <div class="fighter-name">Khabib Nurmagomedov</div>
+            <div class="fighter-record">29-0-0</div>
+            <div>Division: Lightweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+
+        <div class="fighter-card" data-fighter-id="3">
+            <div class="fighter-name">Israel Adesanya</div>
+            <div class="fighter-record">24-3-0</div>
+            <div>Division: Middleweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+
+        <div class="fighter-card" data-fighter-id="4">
+            <div class="fighter-name">Jon Jones</div>
+            <div class="fighter-record">27-1-0</div>
+            <div>Division: Heavyweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+
+        <div class="fighter-card" data-fighter-id="5">
+            <div class="fighter-name">Amanda Nunes</div>
+            <div class="fighter-record">22-5-0</div>
+            <div>Division: Bantamweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+
+        <div class="fighter-card" data-fighter-id="6">
+            <div class="fighter-name">Georges St-Pierre</div>
+            <div class="fighter-record">26-2-0</div>
+            <div>Division: Welterweight</div>
+            <button class="favorite-btn" onclick="alert('Added to favorites!')">Add to Favorites</button>
+        </div>
+    </div>
+
+    <script>
+        // Simple search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.fighter-card');
+
+            cards.forEach(card => {
+                const name = card.querySelector('.fighter-name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Log to console for testing
+        console.log('UFC Pokedex Demo loaded successfully');
+        console.log('Found 6 fighters in the system');
+    </script>
+</body>
+</html>

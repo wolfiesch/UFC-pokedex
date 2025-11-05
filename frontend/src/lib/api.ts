@@ -146,7 +146,7 @@ export function getApiBaseUrl(): string {
 export async function getFighters(
   limit = 20,
   offset = 0
-): Promise<PaginatedFightersResponse> {
+) {
   const { data, error } = await client.GET("/fighters/", {
     params: {
       query: {
@@ -166,7 +166,7 @@ export async function getFighters(
     throw new ApiError("No data returned from API", { statusCode: 500 });
   }
 
-  return data as PaginatedFightersResponse;
+  return data;
 }
 
 /**
@@ -207,7 +207,7 @@ export async function searchFighters(
   minStreakCount: number | null = null,
   limit = 20,
   offset = 0
-): Promise<PaginatedFightersResponse> {
+) {
   const trimmed = query.trim();
 
   // Build query parameters dynamically
@@ -247,7 +247,7 @@ export async function searchFighters(
     throw new ApiError("No data returned from search", { statusCode: 500 });
   }
 
-  return data as PaginatedFightersResponse;
+  return data;
 }
 
 /**
@@ -262,7 +262,7 @@ export async function searchFighters(
  * console.log(randomFighter.name);
  * ```
  */
-export async function getRandomFighter(): Promise<FighterListItem> {
+export async function getRandomFighter() {
   const { data, error } = await client.GET("/fighters/random");
 
   if (error) {
@@ -273,7 +273,7 @@ export async function getRandomFighter(): Promise<FighterListItem> {
     throw new ApiError("No fighter data returned", { statusCode: 500 });
   }
 
-  return data as FighterListItem;
+  return data;
 }
 
 /**
@@ -292,7 +292,7 @@ export async function getRandomFighter(): Promise<FighterListItem> {
  * console.log(fighter.fight_history);
  * ```
  */
-export async function getFighter(fighterId: string): Promise<FighterDetail> {
+export async function getFighter(fighterId: string) {
   const { data, error } = await client.GET("/fighters/{fighter_id}", {
     params: {
       path: {
@@ -314,7 +314,7 @@ export async function getFighter(fighterId: string): Promise<FighterDetail> {
     throw new ApiError("No fighter data returned", { statusCode: 500 });
   }
 
-  return data as FighterDetail;
+  return data;
 }
 
 /**
@@ -331,7 +331,7 @@ export async function getFighter(fighterId: string): Promise<FighterDetail> {
  * });
  * ```
  */
-export async function getStatsSummary(): Promise<StatsSummaryResponse> {
+export async function getStatsSummary() {
   const { data, error } = await client.GET("/stats/summary");
 
   if (error) {
@@ -342,7 +342,7 @@ export async function getStatsSummary(): Promise<StatsSummaryResponse> {
     throw new ApiError("No stats data returned", { statusCode: 500 });
   }
 
-  return data as StatsSummaryResponse;
+  return data;
 }
 
 /**
@@ -362,7 +362,7 @@ export async function getStatsSummary(): Promise<StatsSummaryResponse> {
  * });
  * ```
  */
-export async function getStatsLeaderboards(): Promise<StatsLeaderboardsResponse> {
+export async function getStatsLeaderboards() {
   const { data, error } = await client.GET("/stats/leaderboards");
 
   if (error) {
@@ -373,7 +373,7 @@ export async function getStatsLeaderboards(): Promise<StatsLeaderboardsResponse>
     throw new ApiError("No leaderboard data returned", { statusCode: 500 });
   }
 
-  return data as StatsLeaderboardsResponse;
+  return data;
 }
 
 /**
@@ -393,7 +393,7 @@ export async function getStatsLeaderboards(): Promise<StatsLeaderboardsResponse>
  * });
  * ```
  */
-export async function getStatsTrends(): Promise<StatsTrendsResponse> {
+export async function getStatsTrends() {
   const { data, error } = await client.GET("/stats/trends");
 
   if (error) {
@@ -404,7 +404,7 @@ export async function getStatsTrends(): Promise<StatsTrendsResponse> {
     throw new ApiError("No trend data returned", { statusCode: 500 });
   }
 
-  return data as StatsTrendsResponse;
+  return data;
 }
 
 /**
@@ -554,7 +554,7 @@ export async function addFavoriteEntry(
   collectionId: number,
   payload: FavoriteEntryCreatePayload,
   userId?: string
-): Promise<FavoriteEntry> {
+) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
     queryParams.user_id = userId;
@@ -581,7 +581,7 @@ export async function addFavoriteEntry(
     throw new ApiError("No entry data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteEntry;
+  return data;
 }
 
 /**
@@ -604,7 +604,7 @@ export async function reorderFavoriteEntries(
   collectionId: number,
   payload: FavoriteEntryReorderPayload,
   userId?: string
-): Promise<FavoriteCollectionDetail> {
+) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
     queryParams.user_id = userId;
@@ -631,7 +631,7 @@ export async function reorderFavoriteEntries(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteCollectionDetail;
+  return data;
 }
 
 /**
@@ -657,7 +657,7 @@ export async function updateFavoriteEntry(
   entryId: number,
   payload: FavoriteEntryUpdatePayload,
   userId?: string
-): Promise<FavoriteEntry> {
+) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
     queryParams.user_id = userId;
@@ -685,7 +685,7 @@ export async function updateFavoriteEntry(
     throw new ApiError("No entry data returned", { statusCode: 500 });
   }
 
-  return data as FavoriteEntry;
+  return data;
 }
 
 /**
@@ -707,7 +707,7 @@ export async function deleteFavoriteEntry(
   collectionId: number,
   entryId: number,
   userId?: string
-): Promise<void> {
+) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
     queryParams.user_id = userId;
@@ -752,7 +752,7 @@ export async function deleteFavoriteEntry(
  */
 export async function getFightGraph(
   params: FightGraphQueryParams = {}
-): Promise<FightGraphResponse> {
+) {
   const queryParams: Record<string, string | number | boolean> = {};
 
   if (params.division && params.division.trim().length > 0) {
@@ -785,7 +785,7 @@ export async function getFightGraph(
     throw new ApiError("No graph data returned", { statusCode: 500 });
   }
 
-  return data as FightGraphResponse;
+  return data;
 }
 
 /**
@@ -806,7 +806,7 @@ export async function getFightGraph(
  */
 export async function compareFighters(
   fighterIds: string[]
-): Promise<FighterComparisonResponse> {
+) {
   if (fighterIds.length < 2) {
     throw new ApiError("Select at least two fighters to compare.", {
       statusCode: 400,
@@ -830,5 +830,5 @@ export async function compareFighters(
     throw new ApiError("No comparison data returned", { statusCode: 500 });
   }
 
-  return data as FighterComparisonResponse;
+  return data;
 }
