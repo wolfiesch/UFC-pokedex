@@ -33,6 +33,7 @@ class FighterListItem(BaseModel):
     stance: str | None = None
     dob: date | None = None
     image_url: str | None = None
+    age: int | None = None
     is_current_champion: bool = False
     is_former_champion: bool = False
     was_interim: bool = False
@@ -40,7 +41,6 @@ class FighterListItem(BaseModel):
 
 class FighterDetail(FighterListItem):
     leg_reach: str | None = None
-    age: int | None = None
     striking: dict[str, Any] = Field(default_factory=dict)
     grappling: dict[str, Any] = Field(default_factory=dict)
     significant_strikes: dict[str, Any] = Field(default_factory=dict)
@@ -63,6 +63,7 @@ class FighterComparisonEntry(BaseModel):
     name: str
     record: str | None = None
     division: str | None = None
+    age: int | None = None
     striking: dict[str, Any] = Field(default_factory=dict)
     grappling: dict[str, Any] = Field(default_factory=dict)
     significant_strikes: dict[str, Any] = Field(default_factory=dict)

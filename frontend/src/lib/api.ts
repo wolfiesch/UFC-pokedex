@@ -232,6 +232,10 @@ function normalizeFighterListItemPayload(item: unknown): FighterListItem | null 
     stance: typeof item.stance === "string" ? item.stance : null,
     dob: typeof item.dob === "string" ? item.dob : null,
     image_url: typeof item.image_url === "string" ? item.image_url : null,
+    age:
+      typeof item.age === "number" && Number.isFinite(item.age)
+        ? item.age
+        : null,
   };
 }
 
@@ -566,6 +570,10 @@ function normalizeComparisonEntry(entry: unknown): FighterComparisonEntry | null
     name: entry.name,
     record: typeof entry.record === "string" ? entry.record : null,
     division: typeof entry.division === "string" ? entry.division : null,
+    age:
+      typeof entry.age === "number" && Number.isFinite(entry.age)
+        ? entry.age
+        : null,
     striking: normalizeStatsCategory(entry.striking),
     grappling: normalizeStatsCategory(entry.grappling),
     significant_strikes: normalizeStatsCategory(entry.significant_strikes),
