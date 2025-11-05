@@ -194,7 +194,7 @@ class FavoritesService:
             raise ValueError("Fighter already exists in the collection")
 
         position = payload.position
-        if position is None or position >= len(collection.entries):
+        if position >= len(collection.entries):
             position = len(collection.entries)
 
         entry = FavoriteEntryModel(
