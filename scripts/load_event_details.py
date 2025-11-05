@@ -124,9 +124,16 @@ async def load_event_details_from_json(
                     if not fight_id:
                         continue
 
-                    # Determine result from method (if available)
-                    # For now, we'll leave result as None since we need more context
-                    result = None
+                    # Determine result based on event status and date
+                    # Check if event is upcoming (either by status or date)
+                    is_upcoming = status == "upcoming" or (
+                        event_date and event_date > date_type.today()
+                    )
+
+                    # Set result to "next" for upcoming fights, otherwise check fight data
+                    result = fight_data.get("result")
+                    if is_upcoming and not result:
+                        result = "next"
 
                     fight = Fight(
                         id=fight_id,

@@ -183,7 +183,7 @@ export function formatFightDate(date: string | null): string {
 }
 
 /**
- * Get a relative time string like "2 months ago"
+ * Get a relative time string like "2 months ago" or "In 3 days"
  */
 export function getRelativeTime(date: string | null): string {
   if (!date) return "";
@@ -195,10 +195,26 @@ export function getRelativeTime(date: string | null): string {
     }
 
     const now = new Date();
-    const diffMs = now.getTime() - parsedDate.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const dayMs = 1000 * 60 * 60 * 24;
 
-    if (diffDays < 1) return "Today";
+    // Check if date is in the future
+    if (parsedDate > now) {
+      const diffMs = parsedDate.getTime() - now.getTime();
+      const daysAhead = Math.ceil(diffMs / dayMs);
+
+      if (daysAhead === 0) return "Later today";
+      if (daysAhead === 1) return "Tomorrow";
+      if (daysAhead < 7) return `In ${daysAhead} days`;
+      if (daysAhead < 30) return `In ${Math.ceil(daysAhead / 7)} weeks`;
+      if (daysAhead < 365) return `In ${Math.ceil(daysAhead / 30)} months`;
+      return `In ${Math.ceil(daysAhead / 365)} years`;
+    }
+
+    // Date is in the past
+    const diffMs = now.getTime() - parsedDate.getTime();
+    const diffDays = Math.floor(diffMs / dayMs);
+
+    if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;

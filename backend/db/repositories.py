@@ -432,6 +432,28 @@ class PostgreSQLFighterRepository:
             )
         )
 
+        # Compute record from fight_history if not already populated
+        computed_record = fighter.record
+        if not computed_record and fight_history:
+            wins = sum(
+                1
+                for fight in fight_history
+                if _normalize_result_category(fight.result) == "win"
+            )
+            losses = sum(
+                1
+                for fight in fight_history
+                if _normalize_result_category(fight.result) == "loss"
+            )
+            draws = sum(
+                1
+                for fight in fight_history
+                if _normalize_result_category(fight.result) == "draw"
+            )
+            # Only set computed record if we found at least one completed fight
+            if wins + losses + draws > 0:
+                computed_record = f"{wins}-{losses}-{draws}"
+
         today_utc: date = datetime.now(tz=UTC).date()
         fighter_age: int | None = _calculate_age(
             dob=fighter.dob,
@@ -449,7 +471,7 @@ class PostgreSQLFighterRepository:
             stance=fighter.stance,
             dob=fighter.dob,
             image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-            record=fighter.record,
+            record=computed_record,
             leg_reach=fighter.leg_reach,
             division=fighter.division,
             age=fighter_age,

@@ -264,19 +264,30 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                           Quick Stats
                         </h4>
 
-                        {/* Last Fight Info */}
+                        {/* Last Fight / Next Fight Info */}
                         {lastFight && (
                           <div className="w-full rounded-lg bg-white/10 p-3">
-                            <div className="mb-1 text-xs text-white/60">Last Fight</div>
-                            <div className="text-sm font-bold">
-                              {lastFight.result} vs {lastFight.opponent}
-                            </div>
-                            <div className="text-xs text-white/70">
-                              {lastFight.method}
-                            </div>
-                            <div className="mt-1 text-xs text-white/50">
-                              {getRelativeTime(lastFight.date)}
-                            </div>
+                            {(() => {
+                              const isUpcoming =
+                                lastFight.result?.toLowerCase() === "next" ||
+                                (lastFight.date && new Date(lastFight.date) > new Date());
+                              return (
+                                <>
+                                  <div className="mb-1 text-xs text-white/60">
+                                    {isUpcoming ? "Next Fight" : "Last Fight"}
+                                  </div>
+                                  <div className="text-sm font-bold">
+                                    {lastFight.result} vs {lastFight.opponent}
+                                  </div>
+                                  <div className="text-xs text-white/70">
+                                    {lastFight.method}
+                                  </div>
+                                  <div className="mt-1 text-xs text-white/50">
+                                    {getRelativeTime(lastFight.date)}
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
 
