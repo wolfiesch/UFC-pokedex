@@ -817,7 +817,7 @@ export async function compareFighters(
   const { data, error } = await client.GET("/fighters/compare", {
     params: {
       query: {
-        fighter_ids: fighterIds,
+        fighter_ids: fighterIds.filter(Boolean),
       },
     },
   });
