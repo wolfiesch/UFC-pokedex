@@ -134,6 +134,85 @@ cloudflared tunnel info ufc-pokedex     # Get tunnel details
 - Test connectivity: `curl https://api.ufc.wolfgangschoenberger.com/health`
 - Re-run setup if DNS routes are missing: `bash scripts/setup_tunnel.sh`
 
+### Railway Deployment (Production Backend)
+
+Deploy your FastAPI backend to Railway for production hosting with PostgreSQL and Redis.
+
+**Quick Deploy:**
+```bash
+# Install Railway CLI
+npm i -g @railway/cli
+
+# Login to Railway
+railway login
+
+# Initialize project (first time only)
+railway init
+
+# Add PostgreSQL plugin
+railway add --plugin postgresql
+
+# Add Redis plugin (optional)
+railway add --plugin redis
+
+# Deploy
+railway up
+```
+
+**Configuration Files:**
+- `railway.json` - Railway service configuration
+- `nixpacks.toml` - Nixpacks build configuration
+- `.railway-ignore` - Files to exclude from deployment
+- `.env.railway` - Environment variables template
+
+**Required Environment Variables:**
+Railway will auto-configure `DATABASE_URL` and `REDIS_URL` when you add the plugins. You need to manually set:
+
+```bash
+# Set via Railway dashboard or CLI
+railway variables set CORS_ALLOW_ORIGINS=https://your-frontend-domain.com
+railway variables set LOG_LEVEL=INFO
+```
+
+**Railway MCP Server:**
+Control Railway deployments through Claude Code using the Railway MCP server (configured in `.claude/mcp.json`):
+
+```bash
+# Get your Railway API token
+# Visit: https://railway.app/account/tokens
+
+# Set token in environment
+export RAILWAY_API_TOKEN=your-token-here
+```
+
+**MCP Commands:**
+```
+"Show me my Railway projects"
+"Deploy the backend to production"
+"Get logs from my API service"
+"List all environment variables"
+"Create a new Railway environment for staging"
+```
+
+**Deployment Workflow:**
+1. Push code to GitHub
+2. Railway auto-deploys on push to main branch (configure in Railway dashboard)
+3. Or deploy manually: `railway up`
+4. Check health: `curl https://your-railway-domain.railway.app/health`
+
+**Database Migrations on Railway:**
+Railway will automatically run migrations if you configure a deploy command:
+```bash
+railway run uv run alembic upgrade head
+```
+
+**Monitoring:**
+```bash
+railway logs                    # View recent logs
+railway status                  # Check service status
+railway open                    # Open Railway dashboard
+```
+
 ### Testing & Quality
 ```bash
 make test           # Run all tests (Python + frontend)
@@ -520,8 +599,22 @@ NEXT_PUBLIC_API_BASE_URL=https://api.ufc.wolfgangschoenberger.com
 CORS_ALLOW_ORIGINS=https://ufc.wolfgangschoenberger.com
 ```
 
+**MCP Servers** (optional - for Claude Code automation):
+```bash
+# Railway MCP Server (for deployment automation)
+export RAILWAY_API_TOKEN=your-railway-token
+
+# Get token from: https://railway.app/account/tokens
+```
+
+**MCP Configuration:**
+MCP servers are configured in `.claude/mcp.json` (project-level):
+- **Vercel MCP**: Deployed via HTTP at `https://mcp.vercel.com/` (OAuth authentication)
+- **Railway MCP**: Installed via NPX with `RAILWAY_API_TOKEN` for authentication
+
 **Note:**
 - Use `@localhost` for local development when running backend on host machine
 - Use `@db` when running backend in Docker container
 - Copy `.env.example` to `.env` to get started
 - `make dev` automatically configures tunnel URLs in `.env` and `frontend/.env.local`
+- MCP servers enable conversational deployment and monitoring through Claude Code
