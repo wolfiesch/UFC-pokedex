@@ -1325,7 +1325,16 @@ class PostgreSQLFighterRepository:
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter from the database."""
-        query = select(Fighter).order_by(func.random()).limit(1)
+        base_columns = self._fighter_summary_columns()
+        load_columns, _ = await self._resolve_fighter_columns(
+            base_columns, include_was_interim=False
+        )
+        query = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .order_by(func.random())
+            .limit(1)
+        )
         result = await self._session.execute(query)
         fighter = result.scalar_one_or_none()
 
@@ -1417,28 +1426,22 @@ class PostgreSQLEventRepository:
             for opponent_id in (fight.opponent_id for fight in event.fights)
             if opponent_id
         )
-        fighter_lookup: dict[str, Fighter] = {}
+        fighter_lookup: dict[str, str] = {}
         if fighter_ids:
             fighter_rows = await self._session.execute(
-                select(Fighter).where(Fighter.id.in_(fighter_ids))
+                select(Fighter.id, Fighter.name).where(Fighter.id.in_(fighter_ids))
             )
-            fighter_lookup = {
-                fetched_fighter.id: fetched_fighter
-                for fetched_fighter in fighter_rows.scalars()
-            }
+            fighter_lookup = {row.id: row.name for row in fighter_rows.all()}
 
         for fight in event.fights:
             fighter_1_id = fight.fighter_id
             fighter_2_id = fight.opponent_id
 
-            fighter_1 = fighter_lookup.get(fighter_1_id)
-            fighter_1_name = fighter_1.name if fighter_1 else "Unknown"
+            fighter_1_name = fighter_lookup.get(fighter_1_id, "Unknown")
 
             fighter_2_name = fight.opponent_name
             if fighter_2_id:
-                fighter_2 = fighter_lookup.get(fighter_2_id)
-                if fighter_2:
-                    fighter_2_name = fighter_2.name
+                fighter_2_name = fighter_lookup.get(fighter_2_id, fighter_2_name)
 
             fight_card.append(
                 EventFight(

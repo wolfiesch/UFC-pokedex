@@ -10,7 +10,6 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useComparison } from "@/hooks/useComparison";
 import { resolveImageUrl, getInitials } from "@/lib/utils";
 import {
-  parseRecord,
   calculateStreak,
   getLastFight,
   formatFightDate,
@@ -51,9 +50,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   const imageSrc = resolveImageUrl(fighter.image_url);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
 
-  // Parse record for win percentage
-  const parsedRecord = parseRecord(fighter.record);
-  const winPercentage = parsedRecord?.winPercentage;
+  // Record pill uses fighter.record directly (no win% computation)
 
   // Calculate streak and last fight from details
   const streak = details ? calculateStreak(details.fight_history) : null;
@@ -79,6 +76,12 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
     return colors[division || ""] || "from-gray-500/20 to-gray-600/20";
   };
 
+  const championGlowClass = fighter.is_current_champion
+    ? "ring-2 ring-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+    : fighter.is_former_champion
+    ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+    : "";
+
   return (
     <motion.div
       className="group relative h-full"
@@ -89,7 +92,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
       transition={{ duration: 0.3 }}
     >
       <Link href={`/fighters/${fighter.fighter_id}`} className="h-full flex flex-col">
-        <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1">
+        <div className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 ${championGlowClass}`}>
           {/* Quick Actions Toolbar */}
           <AnimatePresence>
             {isHovered && (
@@ -196,7 +199,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  CHAMP
+                  {fighter.was_interim ? "CHAMP (I)" : "CHAMP"}
                 </span>
               )}
               {!fighter.is_current_champion && fighter.is_former_champion && (
@@ -208,28 +211,17 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  FORMER
+                  {fighter.was_interim ? "FORMER (I)" : "FORMER"}
                 </span>
               )}
             </div>
 
-            {/* Win Percentage Badge */}
-            {winPercentage && (
+            {/* Record Badge */}
+            {fighter.record && (
               <div className="absolute bottom-3 left-3">
-                <div className="flex items-center gap-1 rounded-full bg-green-500/90 px-2 py-1 backdrop-blur-sm">
-                  <svg
-                    className="h-3 w-3 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="text-xs font-bold text-white">{winPercentage}%</span>
-                </div>
+                <span className="rounded-full bg-gray-700/90 px-2 py-1 text-xs font-semibold text-gray-200 backdrop-blur-sm">
+                  {fighter.record}
+                </span>
               </div>
             )}
 
