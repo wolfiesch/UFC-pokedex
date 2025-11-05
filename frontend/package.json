@@ -13,6 +13,9 @@
     "generate:types": "pnpm exec openapi-typescript http://localhost:8000/openapi.json -o src/lib/generated/api-schema.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-query": "^5.90.6",
     "clsx": "^2.1.0",
     "cmdk": "^1.1.1",

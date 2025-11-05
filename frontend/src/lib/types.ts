@@ -222,3 +222,115 @@ export interface FighterComparisonEntry {
 export interface FighterComparisonResponse {
   fighters: FighterComparisonEntry[];
 }
+
+/** Activity item surfaced in the favorites dashboard timeline. */
+export interface FavoriteActivityItem {
+  /** Surrogate key for the entry that triggered the activity. */
+  entry_id: number;
+  /** Fighter identifier associated with the activity. */
+  fighter_id: string;
+  /** Human-readable label describing what happened (added, updated, etc.). */
+  action: string;
+  /** ISO timestamp recording when the action took place. */
+  occurred_at: string;
+  /** Arbitrary structured metadata attached to the activity record. */
+  metadata: Record<string, unknown>;
+}
+
+/** Upcoming fight metadata for any fighter inside a collection. */
+export interface FavoriteUpcomingFight {
+  fighter_id: string;
+  opponent_name: string;
+  event_name: string;
+  event_date?: string | null;
+  weight_class?: string | null;
+}
+
+/** Aggregated stats summarising an entire favorites collection. */
+export interface FavoriteCollectionStats {
+  total_fighters: number;
+  win_rate: number;
+  result_breakdown: Record<string, number>;
+  divisions: string[];
+  upcoming_fights: FavoriteUpcomingFight[];
+}
+
+/** Individual fighter entry within a favorites collection. */
+export interface FavoriteEntry {
+  id: number;
+  fighter_id: string;
+  position: number;
+  notes?: string | null;
+  tags: string[];
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Lightweight collection representation used for listings. */
+export interface FavoriteCollectionSummary {
+  id: number;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  is_public: boolean;
+  slug?: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  stats?: FavoriteCollectionStats | null;
+}
+
+/** Fully-hydrated collection payload including entries and activity feed. */
+export interface FavoriteCollectionDetail extends FavoriteCollectionSummary {
+  entries: FavoriteEntry[];
+  activity: FavoriteActivityItem[];
+  stats: FavoriteCollectionStats;
+}
+
+/** Response payload returned from the favorites listing endpoint. */
+export interface FavoriteCollectionListResponse {
+  total: number;
+  collections: FavoriteCollectionSummary[];
+}
+
+/** Client-side payload for creating a new favorites collection. */
+export interface FavoriteCollectionCreatePayload {
+  user_id: string;
+  title: string;
+  description?: string | null;
+  is_public?: boolean;
+  slug?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+/** Partial update payload for mutating collection metadata. */
+export interface FavoriteCollectionUpdatePayload {
+  title?: string;
+  description?: string | null;
+  is_public?: boolean;
+  slug?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+/** Payload used when inserting a fighter into a collection. */
+export interface FavoriteEntryCreatePayload {
+  fighter_id: string;
+  position?: number;
+  notes?: string | null;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+/** Partial update payload for an existing favorites entry. */
+export interface FavoriteEntryUpdatePayload {
+  position?: number;
+  notes?: string | null;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+/** Payload used to persist drag-and-drop ordering changes. */
+export interface FavoriteEntryReorderPayload {
+  entry_ids: number[];
+}
