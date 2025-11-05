@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "uv sync"
+    "buildCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync"
   },
   "deploy": {
-    "startCommand": "uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
+    "startCommand": "export PATH=\"$HOME/.cargo/bin:$PATH\" && uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
