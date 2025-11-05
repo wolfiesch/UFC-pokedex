@@ -198,8 +198,16 @@ async def close_redis() -> None:
 
 
 async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
+    """Invalidate all caches related to a fighter."""
     await cache.delete(detail_key(fighter_id))
     await cache.delete_pattern(f"{_COMPARISON_PREFIX}:*{fighter_id}*")
+
+    # Also invalidate search and list caches (fighter data changed)
+    await cache.delete_pattern(f"{_SEARCH_PREFIX}:*")
+    await cache.delete_pattern(f"{_LIST_PREFIX}:*")
+
+    # Invalidate count cache
+    await cache.delete("fighters:count")
 
 
 async def invalidate_collections(cache: CacheClient) -> None:

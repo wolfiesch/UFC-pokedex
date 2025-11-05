@@ -62,12 +62,16 @@ class Fighter(Base):
             "and autocomplete queries."
         ),
     )
-    division: Mapped[str | None]
+    division: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, index=True, doc="Indexed for division filtering queries"
+    )
     height: Mapped[str | None]
     weight: Mapped[str | None]
     reach: Mapped[str | None]
     leg_reach: Mapped[str | None]
-    stance: Mapped[str | None]
+    stance: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, index=True, doc="Indexed for stance filtering queries"
+    )
     dob: Mapped[date | None]
     record: Mapped[str | None]
     sherdog_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
@@ -120,7 +124,9 @@ class Fight(Base):
     event_name: Mapped[str] = mapped_column(
         String, nullable=False
     )  # Keep for backward compatibility
-    event_date: Mapped[date | None]  # Keep for backward compatibility
+    event_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, index=True, doc="Indexed for date sorting/filtering queries"
+    )
     result: Mapped[str] = mapped_column(String, nullable=False)
     method: Mapped[str | None]
     round: Mapped[int | None]
@@ -141,7 +147,7 @@ fighter_stats = Table(
     "fighter_stats",
     Base.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("fighter_id", ForeignKey("fighters.id"), nullable=False),
+    Column("fighter_id", ForeignKey("fighters.id"), nullable=False, index=True),
     Column("category", String, nullable=False),
     Column("metric", String, nullable=False),
     Column("value", String, nullable=False),

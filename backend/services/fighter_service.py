@@ -11,24 +11,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.cache import (
     CacheClient,
     comparison_key,
-    graph_key,
     detail_key,
     get_cache_client,
+    graph_key,
     list_key,
     search_key,
 )
 from backend.db.connection import get_db
 from backend.db.repositories import PostgreSQLFighterRepository
+from backend.schemas.fight_graph import (
+    FightGraphLink,
+    FightGraphNode,
+    FightGraphResponse,
+)
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
     FighterListItem,
     PaginatedFightersResponse,
-)
-from backend.schemas.fight_graph import (
-    FightGraphLink,
-    FightGraphNode,
-    FightGraphResponse,
 )
 from backend.schemas.stats import (
     LeaderboardDefinition,
@@ -488,13 +488,25 @@ class FighterService:
         return await self._repository.stats_summary()
 
     async def count_fighters(self) -> int:
-        """Get the total count of fighters."""
+        """Get the total count of fighters with caching."""
+        cache_key = "fighters:count"
+
+        # Try cache first
+        cached = await self._cache_get(cache_key)
+        if cached is not None:
+            return int(cached)
+
+        # Compute count from repository
         if hasattr(self._repository, "count_fighters"):
-            return await self._repository.count_fighters()
+            count = await self._repository.count_fighters()
         else:
             # Fallback for repositories without count
             fighters = await self._repository.list_fighters()
-            return len(list(fighters))
+            count = len(list(fighters))
+
+        # Cache for 10 minutes (count rarely changes)
+        await self._cache_set(cache_key, count, ttl=600)
+        return count
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter."""
