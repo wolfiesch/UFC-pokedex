@@ -485,6 +485,10 @@ class FavoritesService:
             await self._cache.delete(*keys)
 
     def _empty_breakdown(self) -> dict[str, int]:
+        """
+        Returns a template dictionary for fight result categories with zero counts.
+        Ensures all expected keys are present in the breakdown dictionary.
+        """
         return {"win": 0, "loss": 0, "draw": 0, "nc": 0, "upcoming": 0, "other": 0}
 
     def _normalize_result(self, result: str | None) -> str:
