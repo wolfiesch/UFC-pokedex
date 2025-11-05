@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date
-from typing import Any
 
 from sqlalchemy import Float, cast, func, select
 
