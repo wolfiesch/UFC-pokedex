@@ -673,7 +673,7 @@ export async function updateFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload as never,
+      body: payload,
     }
   );
 
