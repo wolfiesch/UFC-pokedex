@@ -7,9 +7,10 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from fastapi import Depends
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from backend.cache import (
     CacheClient,
@@ -61,16 +62,20 @@ class FavoritesService:
         if self._tables_ready is not None:
             return self._tables_ready
 
-        def check(sync_session: Any) -> bool:
-            bind = sync_session.get_bind()
-            inspector = inspect(bind)
-            tables = {name.lower() for name in inspector.get_table_names()}
-            return "favorite_collections" in tables and "favorite_entries" in tables
+        async def _table_exists(
+            model: type[FavoriteCollection] | type[FavoriteEntryModel],
+        ) -> bool:
+            try:
+                await self._session.execute(select(model.id).limit(1))
+                return True
+            except (ProgrammingError, OperationalError):
+                await self._session.rollback()
+                return False
 
-        try:
-            self._tables_ready = await self._session.run_sync(check)
-        except Exception:
-            self._tables_ready = False
+        collections_ready = await _table_exists(FavoriteCollection)
+        entries_ready = collections_ready and await _table_exists(FavoriteEntryModel)
+
+        self._tables_ready = collections_ready and entries_ready
 
         _FAVORITES_TABLES_READY_CACHE = self._tables_ready
         return self._tables_ready
