@@ -122,7 +122,11 @@ def get_engine() -> AsyncEngine:
 
 
 async def get_db() -> AsyncSession:
-    """FastAPI dependency that provides a database session."""
+    """
+    Dependency to provide database session.
+
+    Yields async session and ensures proper cleanup even on errors.
+    """
     engine = get_engine()
     session_factory = create_session_factory(engine)
     async with session_factory() as session:
