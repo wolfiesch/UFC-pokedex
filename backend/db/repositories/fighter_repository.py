@@ -543,8 +543,8 @@ class FighterRepository(BaseRepository):
                     was_interim=fighter.was_interim if supports_was_interim else False,
                     # Phase 2: Use pre-computed streak columns from database
                     current_streak_type=(
-                        _validate_streak_type(fighter.current_streak_type) or "none"
-                        if include_streak and fighter.current_streak_type
+                        (_validate_streak_type(fighter.current_streak_type) or "none")
+                        if include_streak
                         else "none"
                     ),
                     current_streak_count=(
