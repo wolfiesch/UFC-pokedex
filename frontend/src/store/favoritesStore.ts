@@ -41,7 +41,7 @@ type FavoritesState = {
 
   // Actions
   initialize: () => Promise<void>;
-  toggleFavorite: (fighter: FighterListItem) => Promise<void>;
+  toggleFavorite: (fighter: FighterListItem) => Promise<{ success: boolean; error?: string }>;
   isFavorite: (fighterId: string) => boolean;
   getFavorites: () => FighterListItem[];
 

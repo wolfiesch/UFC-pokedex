@@ -228,7 +228,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search Fighters */
+        /**
+         * Search Fighters
+         * @description Search fighters with validation.
+         */
         get: operations["search_fighters_search__get"];
         put?: never;
         post?: never;
