@@ -37,6 +37,30 @@ from backend.schemas.fighter import (
 from backend.services.image_resolver import (
     resolve_fighter_image,
 )
+
+# Type alias for valid streak types
+StreakType = Literal["win", "loss", "draw", "none"]
+
+
+def _validate_streak_type(value: str | None) -> StreakType | None:
+    """Validate streak type matches allowed values.
+
+    Args:
+        value: The streak type value to validate
+
+    Returns:
+        The validated streak type or None
+
+    Raises:
+        ValueError: If the value is not a valid streak type
+    """
+    if value is None:
+        return None
+    if value not in ("win", "loss", "draw", "none"):
+        raise ValueError(f"Invalid streak type: {value}")
+    return value  # type: ignore[return-value]  # We've validated it matches the literal
+
+
 class FighterRepository(BaseRepository):
     """Repository for fighter CRUD operations and queries."""
 
@@ -519,7 +543,7 @@ class FighterRepository(BaseRepository):
                     was_interim=fighter.was_interim if supports_was_interim else False,
                     # Phase 2: Use pre-computed streak columns from database
                     current_streak_type=(
-                        fighter.current_streak_type  # type: ignore[arg-type]
+                        _validate_streak_type(fighter.current_streak_type) or "none"
                         if include_streak and fighter.current_streak_type
                         else "none"
                     ),

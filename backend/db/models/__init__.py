@@ -15,7 +15,7 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
 
 
 class Base(DeclarativeBase):
@@ -110,6 +110,15 @@ class Fighter(Base):
     )
 
     fights: Mapped[list[Fight]] = relationship("Fight", back_populates="fighter")
+
+    @validates("current_streak_type")
+    def validate_streak_type(self, key: str, value: str | None) -> str | None:
+        """Validate that streak type is one of the allowed values."""
+        if value is not None and value not in ("win", "loss", "draw", "none"):
+            raise ValueError(
+                f"Invalid streak type '{value}'. Must be one of: win, loss, draw, none"
+            )
+        return value
 
 
 class Fight(Base):
