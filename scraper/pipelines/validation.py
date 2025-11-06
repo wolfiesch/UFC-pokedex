@@ -3,7 +3,7 @@ from __future__ import annotations
 from itemadapter import ItemAdapter
 
 from scraper.models.event import EventDetail, EventListItem
-from scraper.models.fighter import FighterDetail, FighterListItem
+from scraper.models.fighter import FighterDetail, FighterListItem, SherdogFighterDetail
 
 
 class ValidationPipeline:
@@ -16,6 +16,8 @@ class ValidationPipeline:
         # Route to appropriate model based on item_type
         if item_type == "fighter_detail":
             model = FighterDetail.model_validate(data)
+        elif item_type == "sherdog_fighter_detail":
+            model = SherdogFighterDetail.model_validate(data)
         elif item_type == "event_detail":
             model = EventDetail.model_validate(data)
         elif item_type == "event_list":
