@@ -214,17 +214,22 @@ def parse_sherdog_reach(reach_str: str | None) -> dict[str, Any]:
 def parse_sherdog_fighter_detail(response: Selector) -> dict[str, Any] | None:
     """Parse Sherdog fighter detail page to extract stats.
 
-    Sherdog fighter pages typically have a bio module with:
-    - Birthday (DOB)
-    - Height
-    - Weight
-    - Reach (listed as "Arm Reach" in some layouts)
-    - Stance (Orthodox, Southpaw, etc.)
-    - Nationality
+    Sherdog fighter pages have stats in a table inside div.bio-holder:
+    - AGE / Birthday (DOB) - in span with itemprop="birthDate"
+    - HEIGHT - in b with itemprop="height"
+    - WEIGHT - in b with itemprop="weight"
+    - Nationality - in strong with itemprop="nationality"
 
-    Common HTML patterns:
-    - Bio module: div.module.bio_fighter or div.bio
-    - Stats in spans with specific classes or in definition list (dt/dd pairs)
+    HTML structure:
+    <div class="module bio_fighter">
+        <div class="bio-holder">
+            <table>
+                <tr><td>AGE</td><td><b>36</b> / <span itemprop="birthDate">Sep 20, 1989</span></td></tr>
+                <tr><td>HEIGHT</td><td><b itemprop="height">6'0"</b> / 182.88 cm</td></tr>
+                <tr><td>WEIGHT</td><td><b itemprop="weight">155 lbs</b> / 70.31 kg</td></tr>
+            </table>
+        </div>
+    </div>
 
     Args:
         response: Scrapy response selector
@@ -233,75 +238,56 @@ def parse_sherdog_fighter_detail(response: Selector) -> dict[str, Any] | None:
         Dict with extracted fighter data or None if parsing failed
     """
     try:
-        # Find the bio/vitals section
-        # Sherdog uses various layouts, so try multiple selectors
-        bio_section = (
-            response.css("div.module.bio_fighter")
-            or response.css("div.bio")
-            or response.css("div.content.table")
-        )
-
-        if not bio_section:
-            logger.warning("Could not find bio section on Sherdog page")
-            return None
-
         data: dict[str, Any] = {}
 
-        # Strategy 1: Look for definition list (dt/dd pairs)
-        # Example: <dt>Birthday</dt><dd>1987-07-19</dd>
-        bio_items = bio_section.css("div.bio span.item, div.birth_info span.item")
+        # Extract DOB from birthDate span
+        dob_text = clean_text(response.css("span[itemprop='birthDate']::text").get())
+        if dob_text:
+            data["dob_raw"] = dob_text
+            data["dob"] = parse_sherdog_date(dob_text)
 
-        for item in bio_items:
-            # Get label and value
-            label = clean_text(item.css("strong::text").get())
-            value = clean_text(item.css("::text").getall()[-1] if item.css("::text").getall() else None)
+        # Extract height from itemprop height
+        height_text = clean_text(response.css("b[itemprop='height']::text").get())
+        if height_text:
+            height_data = parse_sherdog_height(height_text)
+            data["height"] = height_data["value"]
+            data["height_cm"] = height_data["cm"]
 
-            if not label or not value:
-                continue
+        # Extract weight from itemprop weight
+        weight_text = clean_text(response.css("b[itemprop='weight']::text").get())
+        if weight_text:
+            weight_data = parse_sherdog_weight(weight_text)
+            data["weight"] = weight_data["value"]
+            data["weight_kg"] = weight_data["kg"]
 
-            label_lower = label.lower().replace(":", "").strip()
+        # Extract nationality
+        nationality_text = clean_text(
+            response.css("strong[itemprop='nationality']::text").get()
+        )
+        if nationality_text:
+            data["nationality"] = nationality_text
 
-            if "birthday" in label_lower or "born" in label_lower:
-                data["dob_raw"] = value
-                data["dob"] = parse_sherdog_date(value)
-            elif "height" in label_lower:
-                height_data = parse_sherdog_height(value)
-                data["height"] = height_data["value"]
-                data["height_cm"] = height_data["cm"]
-            elif "weight" in label_lower:
-                weight_data = parse_sherdog_weight(value)
-                data["weight"] = weight_data["value"]
-                data["weight_kg"] = weight_data["kg"]
-            elif "reach" in label_lower or "arm reach" in label_lower:
-                reach_data = parse_sherdog_reach(value)
-                data["reach"] = reach_data["value"]
-                data["reach_cm"] = reach_data["cm"]
-            elif "stance" in label_lower:
-                data["stance"] = value
-            elif "nationality" in label_lower:
-                data["nationality"] = value
+        # Try to find reach - look in table rows for "REACH" label
+        # Sherdog sometimes has this field, sometimes doesn't
+        table_rows = response.css("div.bio-holder table tr")
+        for row in table_rows:
+            label = clean_text(row.css("td:first-child::text").get())
+            if label and "reach" in label.lower():
+                reach_text = clean_text(row.css("td:nth-child(2) b::text").get())
+                if reach_text:
+                    reach_data = parse_sherdog_reach(reach_text)
+                    data["reach"] = reach_data["value"]
+                    data["reach_cm"] = reach_data["cm"]
+                break
 
-        # Strategy 2: Try alternative selectors if no data found
-        if not data:
-            # Look for spans with class like "birthdate", "height", etc.
-            dob_alt = clean_text(
-                bio_section.css("span.birthday::text, span.birthdate::text").get()
-            )
-            if dob_alt:
-                data["dob_raw"] = dob_alt
-                data["dob"] = parse_sherdog_date(dob_alt)
-
-            height_alt = clean_text(bio_section.css("span.height::text").get())
-            if height_alt:
-                height_data = parse_sherdog_height(height_alt)
-                data["height"] = height_data["value"]
-                data["height_cm"] = height_data["cm"]
-
-            weight_alt = clean_text(bio_section.css("span.weight::text").get())
-            if weight_alt:
-                weight_data = parse_sherdog_weight(weight_alt)
-                data["weight"] = weight_data["value"]
-                data["weight_kg"] = weight_data["kg"]
+        # Try to find stance - also in table rows
+        for row in table_rows:
+            label = clean_text(row.css("td:first-child::text").get())
+            if label and "stance" in label.lower():
+                stance_text = clean_text(row.css("td:nth-child(2) b::text").get())
+                if stance_text:
+                    data["stance"] = stance_text
+                break
 
         # If we got any data, return it
         if data:

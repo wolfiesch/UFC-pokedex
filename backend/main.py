@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
@@ -181,11 +182,49 @@ def _default_origins() -> list[str]:
 
 default_origins = _default_origins()
 extra_origins = [
-    origin.strip()
+    origin.strip().rstrip("/")
     for origin in os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
     if origin.strip()
 ]
-allow_origins = extra_origins or default_origins
+
+
+def _extract_origin(url: str | None) -> str | None:
+    if not url:
+        return None
+    try:
+        parsed = urlsplit(url.strip())
+        if not parsed.scheme or not parsed.netloc:
+            return None
+        return f"{parsed.scheme}://{parsed.netloc}"
+    except ValueError:
+        return None
+
+
+def _combine_origins(*origin_groups: list[str]) -> list[str]:
+    """Merge origins preserving order and removing duplicates."""
+    seen: set[str] = set()
+    combined: list[str] = []
+    for group in origin_groups:
+        for origin in group:
+            normalized = origin.rstrip("/")
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                combined.append(normalized)
+    return combined
+
+
+derived_origins: list[str] = []
+for env_var in ("PUBLIC_FRONTEND_URL", "NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_API_BASE_URL"):
+    origin = _extract_origin(os.getenv(env_var))
+    if origin:
+        derived_origins.append(origin)
+
+if extra_origins:
+    allow_origins = _combine_origins(default_origins, extra_origins, derived_origins)
+else:
+    allow_origins = _combine_origins(default_origins, derived_origins)
+
+cors_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX") or None
 
 app.add_middleware(
     CORSMiddleware,
@@ -193,6 +232,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=cors_origin_regex,
 )
 
 
@@ -306,9 +346,7 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(
-    request: Request, exc: SQLAlchemyTimeoutError
-):
+async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -360,9 +398,7 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
     request_id = request_id_context.get()
-    logger.error(
-        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
-    )
+    logger.error(f"Database error for request {request_id} to {request.url.path}: {str(exc)}")
 
     error_response = ErrorResponse(
         error_type=ErrorType.DATABASE_ERROR,

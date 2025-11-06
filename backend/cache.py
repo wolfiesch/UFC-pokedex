@@ -47,8 +47,16 @@ def detail_key(fighter_id: str) -> str:
     return f"{_DETAIL_PREFIX}:{fighter_id}"
 
 
-def list_key(limit: int, offset: int) -> str:
-    return f"{_LIST_PREFIX}:{limit}:{offset}"
+def list_key(
+    limit: int,
+    offset: int,
+    *,
+    include_streak: bool = False,
+    streak_window: int | None = None,
+) -> str:
+    streak_part = "1" if include_streak else "0"
+    window_part = str(streak_window) if include_streak and streak_window is not None else ""
+    return f"{_LIST_PREFIX}:{limit}:{offset}:{streak_part}:{window_part}"
 
 
 def search_key(
@@ -126,17 +134,13 @@ async def get_redis() -> RedisClient | None:
             return _redis_client
 
         try:
-            _redis_client = Redis.from_url(
-                _redis_url(), decode_responses=True, encoding="utf-8"
-            )
+            _redis_client = Redis.from_url(_redis_url(), decode_responses=True, encoding="utf-8")
             # Test connection
             await _redis_client.ping()
             logger.info("Redis connection established successfully")
             return _redis_client
         except RedisConnectionError as e:
-            logger.warning(
-                f"Redis connection failed: {e}. Caching will be disabled."
-            )
+            logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
             return None
 
 

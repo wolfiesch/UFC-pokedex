@@ -164,6 +164,12 @@ verify-sherdog-matches-auto: ## Non-interactive verification (auto-approve ≥70
 scrape-sherdog-images: ## Download fighter images from Sherdog
 	.venv/bin/scrapy crawl sherdog_images
 
+scrape-sherdog-details: ## Scrape detailed fighter stats from Sherdog (DOB, height, reach, etc.)
+	.venv/bin/scrapy crawl sherdog_detail
+
+scrape-sherdog-details-sample: ## Scrape Sherdog details for sample fighters (min confidence 70%)
+	.venv/bin/scrapy crawl sherdog_detail -a min_confidence=70 -s CLOSESPIDER_ITEMCOUNT=10
+
 update-fighter-images: ## Update database with Sherdog IDs and image paths
 	.venv/bin/python -m scripts.update_fighter_images
 

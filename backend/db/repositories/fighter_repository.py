@@ -231,31 +231,39 @@ class FighterRepository(BaseRepository):
             return None
 
         # Query fighter stats (kept as separate query since stats are in different table)
-        stats_result = await self._session.execute(
-            select(
-                fighter_stats.c.category,
-                fighter_stats.c.metric,
-                fighter_stats.c.value,
-            ).where(fighter_stats.c.fighter_id == fighter_id)
-        )
+        # NOTE: fighter_stats table is not yet populated by scraper - skipping query for performance
+        # TODO: Re-enable this query once scraper populates fighter_stats table
+        # stats_result = await self._session.execute(
+        #     select(
+        #         fighter_stats.c.category,
+        #         fighter_stats.c.metric,
+        #         fighter_stats.c.value,
+        #     ).where(fighter_stats.c.fighter_id == fighter_id)
+        # )
         stats_map: dict[str, dict[str, str]] = {}
-        for category, metric, value in stats_result.all():
-            if category is None or metric is None:
-                continue
-            category_stats = stats_map.setdefault(category, {})
-            category_stats[metric] = value
+        # for category, metric, value in stats_result.all():
+        #     if category is None or metric is None:
+        #         continue
+        #     category_stats = stats_map.setdefault(category, {})
+        #     category_stats[metric] = value
 
         # Get fights from relationship (already loaded via selectinload - no additional query!)
         primary_fights = [f for f in fighter.fights]
 
         # Query fights from opponent's perspective (where this fighter is opponent_id)
-        # This cannot be eager loaded via relationship as it's reverse lookup
+        # Join with Fighter table to get opponent names in a single query
         opponent_fights_result = await self._session.execute(
-            select(Fight)
+            select(Fight, Fighter.name.label("fighter_name"))
+            .join(Fighter, Fight.fighter_id == Fighter.id, isouter=True)
             .where(Fight.opponent_id == fighter_id)
             .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
         )
-        opponent_fights = opponent_fights_result.scalars().all()
+        opponent_fights_with_names = opponent_fights_result.all()
+        opponent_fights = [row[0] for row in opponent_fights_with_names]
+        # Build a lookup for opponent names from the joined query
+        opponent_fights_names_lookup = {
+            row[0].id: row[1] or "Unknown" for row in opponent_fights_with_names
+        }
 
         all_fights = list(primary_fights) + list(opponent_fights)
 
@@ -314,21 +322,22 @@ class FighterRepository(BaseRepository):
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
-        # Collect unique opponent identifiers to collapse the legacy N+1 pattern
-        # into a single batched lookup against the fighters table.
+        # Collect unique opponent identifiers for primary fights only
+        # (opponent fights already have names from the JOIN above)
         opponent_ids: set[str] = set()
-        for fight in all_fights:
-            # Only collect IDs of actual opponents
-            if fight.fighter_id == fighter_id and fight.opponent_id:
+        for fight in primary_fights:
+            if fight.opponent_id:
                 opponent_ids.add(fight.opponent_id)
-            elif fight.opponent_id == fighter_id and fight.fighter_id:
-                opponent_ids.add(fight.fighter_id)
+
         opponent_lookup: dict[str, str] = {}
         if opponent_ids:
             opponent_rows = await self._session.execute(
                 select(Fighter.id, Fighter.name).where(Fighter.id.in_(opponent_ids))
             )
             opponent_lookup = {row.id: row.name for row in opponent_rows.all()}
+
+        # Merge with opponent fights names from JOIN
+        opponent_lookup.update(opponent_fights_names_lookup)
 
         # Second pass: Process fights from opponent's perspective (only if not already seen)
         for fight in all_fights:

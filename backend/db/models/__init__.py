@@ -14,6 +14,7 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
+    Index,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
 
@@ -49,6 +50,7 @@ class Event(Base):
 
 class Fighter(Base):
     __tablename__ = "fighters"
+    __table_args__ = (Index("ix_fighters_name_id", "name", "id"),)
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -57,8 +59,7 @@ class Fighter(Base):
         nullable=True,
         index=True,
         doc=(
-            "Index ensures quick nickname lookups for fighter search "
-            "and autocomplete queries."
+            "Index ensures quick nickname lookups for fighter search " "and autocomplete queries."
         ),
     )
     division: Mapped[str | None] = mapped_column(
@@ -87,12 +88,8 @@ class Fighter(Base):
     is_former_champion: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
-    was_interim: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, index=True
-    )
-    championship_history: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON, nullable=True
-    )
+    was_interim: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    championship_history: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     # Pre-computed streak columns for performance (Phase 2 optimization)
     current_streak_type: Mapped[str | None] = mapped_column(
@@ -131,9 +128,7 @@ class Fight(Base):
         index=True,
         doc="Index optimizes fighter fight history retrieval and aggregation queries.",
     )
-    event_id: Mapped[str | None] = mapped_column(
-        ForeignKey("events.id"), nullable=True, index=True
-    )
+    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), nullable=True, index=True)
     opponent_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

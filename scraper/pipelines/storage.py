@@ -20,8 +20,12 @@ class StoragePipeline:
         self.events_detail_dir = self.output_dir / "events"
         self.events_detail_dir.mkdir(exist_ok=True)
 
+        # Sherdog fighter details storage
+        self.sherdog_details_file = self.output_dir / "sherdog_fighter_details.jsonl"
+
         self._seen_fighters: set[str] = set()
         self._seen_events: set[str] = set()
+        self._seen_sherdog_details: set[str] = set()
 
     def open_spider(self, spider):  # noqa: D401, ANN001
         """Called when the spider opens; rotate list file for fresh crawls."""
@@ -43,6 +47,13 @@ class StoragePipeline:
             fighter_id = item["fighter_id"]
             path = self.fighters_detail_dir / f"{fighter_id}.json"
             path.write_text(json.dumps(item, indent=2), encoding="utf-8")
+        elif item_type == "sherdog_fighter_detail":
+            ufc_id = item["ufc_id"]
+            if ufc_id in self._seen_sherdog_details:
+                return item
+            self._seen_sherdog_details.add(ufc_id)
+            with self.sherdog_details_file.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(item) + "\n")
         elif item_type == "event_detail":
             event_id = item["event_id"]
             path = self.events_detail_dir / f"{event_id}.json"

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import secrets
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
+import time
 from typing import Any, Literal
 
 from fastapi import Depends
@@ -41,6 +43,31 @@ from backend.schemas.stats import (
 )
 
 logger = logging.getLogger(__name__)
+
+_LOCAL_CACHE_DEFAULT_TTL = 300
+_local_cache: dict[str, tuple[float, Any]] = {}
+_local_cache_lock = asyncio.Lock()
+
+
+async def _local_cache_get(key: str) -> Any | None:
+    """Return cached value from the in-process cache if it is still fresh."""
+    async with _local_cache_lock:
+        entry = _local_cache.get(key)
+        if entry is None:
+            return None
+
+        expires_at, value = entry
+        if expires_at < time.time():
+            _local_cache.pop(key, None)
+            return None
+        return value
+
+
+async def _local_cache_set(key: str, value: Any, ttl: int | None = None) -> None:
+    """Store value in the in-process cache with a TTL."""
+    ttl_seconds = ttl if ttl is not None and ttl > 0 else _LOCAL_CACHE_DEFAULT_TTL
+    async with _local_cache_lock:
+        _local_cache[key] = (time.time() + ttl_seconds, value)
 
 
 class FighterRepositoryProtocol:
@@ -416,14 +443,18 @@ class FighterService:
         self._cache = cache
 
     async def _cache_get(self, key: str) -> Any:
-        if self._cache is None:
-            return None
-        return await self._cache.get_json(key)
+        cached: Any | None = None
+        if self._cache is not None:
+            cached = await self._cache.get_json(key)
+        if cached is not None:
+            return cached
+        return await _local_cache_get(key)
 
     async def _cache_set(self, key: str, value: Any, ttl: int | None = None) -> None:
-        if self._cache is None:
-            return
-        await self._cache.set_json(key, value, ttl=ttl)
+        if self._cache is not None:
+            await self._cache.set_json(key, value, ttl=ttl)
+        if value is not None:
+            await _local_cache_set(key, value, ttl=ttl)
 
     async def list_fighters(
         self,
@@ -435,18 +466,19 @@ class FighterService:
     ) -> list[FighterListItem]:
         """Return paginated fighter summaries from the backing repository."""
 
-        # Disable list cache when streaks are included to avoid mixing cached
-        # payload variants. We could fold the flags into the cache key, but the
-        # list cache primarily exists for the simple roster view.
-        use_cache = (
-            self._cache is not None
-            and limit is not None
-            and offset is not None
-            and limit >= 0
-            and offset >= 0
-            and not include_streak
+        # Cache paginated responses (including streak variants) using a key that
+        # incorporates pagination and streak options so variants remain isolated.
+        use_cache = limit is not None and offset is not None and limit >= 0 and offset >= 0
+        cache_key = (
+            list_key(
+                limit,
+                offset,
+                include_streak=include_streak,
+                streak_window=streak_window,
+            )
+            if use_cache
+            else None
         )
-        cache_key = list_key(limit, offset) if use_cache else None
 
         if use_cache and cache_key is not None:
             cached = await self._cache_get(cache_key)
@@ -493,8 +525,8 @@ class FighterService:
 
         fighter = await self._repository.get_fighter(fighter_id)
         if fighter:
-            # Fighter detail (bio rarely changes) - cache for 30 minutes
-            await self._cache_set(cache_key, fighter.model_dump(), ttl=1800)
+            # Fighter detail (bio rarely changes) - cache for 2 hours
+            await self._cache_set(cache_key, fighter.model_dump(), ttl=7200)
         return fighter
 
     async def get_stats_summary(self) -> StatsSummaryResponse:
@@ -568,7 +600,8 @@ class FighterService:
             normalized_query
             or normalized_stance
             or normalized_division
-            or normalized_champion_statuses or streak_type
+            or normalized_champion_statuses
+            or streak_type
         )
         cache_key = (
             search_key(
@@ -612,9 +645,7 @@ class FighterService:
                 offset=resolved_offset,
             )
         else:
-            fighters_iterable = await self._repository.list_fighters(
-                include_streak=include_streak
-            )
+            fighters_iterable = await self._repository.list_fighters(include_streak=include_streak)
             query_lower = query_param.lower() if query_param else None
             stance_lower = stance_param.lower() if stance_param else None
             division_lower = division_param.lower() if division_param else None
