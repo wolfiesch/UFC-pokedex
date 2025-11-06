@@ -21,6 +21,9 @@ const DEMO_USER_ID =
 
 const DEFAULT_COLLECTION_TITLE = "My Favorites";
 
+// Add outside the store - promise-based initialization lock
+let initializationPromise: Promise<void> | null = null;
+
 type FavoritesState = {
   // Backend-synced state
   defaultCollection: FavoriteCollectionDetail | null;
@@ -72,52 +75,69 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   // Initialize the store by loading collections from backend
   initialize: async () => {
     const state = get();
-    if (state.isInitialized || state.isLoading) {
-      return; // Already initialized or loading
+
+    // If already initialized, return immediately
+    if (state.isInitialized) {
+      return;
     }
 
-    set({ isLoading: true, error: null });
+    // If initialization is in progress, wait for it
+    if (initializationPromise) {
+      return initializationPromise;
+    }
 
-    try {
-      const response = await getFavoriteCollections(DEMO_USER_ID);
+    // Set the promise IMMEDIATELY before any async operations
+    // This prevents race conditions where multiple calls check before it's set
+    initializationPromise = (async () => {
+      // Start initialization
+      set({ isLoading: true, error: null });
 
-      // Find or create default collection
-      let defaultCollection: FavoriteCollectionDetail | null = null;
+      try {
+        const response = await getFavoriteCollections(DEMO_USER_ID);
 
-      if (response.collections && response.collections.length > 0) {
-        // Use first collection as default
-        const firstCollectionId = response.collections[0].collection_id;
-        defaultCollection = await getFavoriteCollectionDetail(
-          firstCollectionId,
-          DEMO_USER_ID
+        // Find or create default collection
+        let defaultCollection: FavoriteCollectionDetail | null = null;
+
+        if (response.collections && response.collections.length > 0) {
+          // Use first collection as default
+          const firstCollectionId = response.collections[0].collection_id;
+          defaultCollection = await getFavoriteCollectionDetail(
+            firstCollectionId,
+            DEMO_USER_ID
+          );
+        } else {
+          // Create default collection if none exists
+          logger.info("No collections found, creating default collection");
+          const collectionId = await get()._ensureDefaultCollection();
+          defaultCollection = await getFavoriteCollectionDetail(
+            collectionId,
+            DEMO_USER_ID
+          );
+        }
+
+        set({
+          defaultCollection,
+          isLoading: false,
+          isInitialized: true,
+          error: null,
+        });
+      } catch (error) {
+        logger.error(
+          "Failed to initialize favorites store",
+          error instanceof Error ? error : undefined
         );
-      } else {
-        // Create default collection if none exists
-        logger.info("No collections found, creating default collection");
-        const collectionId = await get()._ensureDefaultCollection();
-        defaultCollection = await getFavoriteCollectionDetail(
-          collectionId,
-          DEMO_USER_ID
-        );
+        set({
+          isLoading: false,
+          isInitialized: true,
+          error: error instanceof Error ? error.message : "Failed to load favorites",
+        });
+      } finally {
+        // Clear the promise when done
+        initializationPromise = null;
       }
+    })();
 
-      set({
-        defaultCollection,
-        isLoading: false,
-        isInitialized: true,
-        error: null,
-      });
-    } catch (error) {
-      logger.error(
-        "Failed to initialize favorites store",
-        error instanceof Error ? error : undefined
-      );
-      set({
-        isLoading: false,
-        isInitialized: true,
-        error: error instanceof Error ? error.message : "Failed to load favorites",
-      });
-    }
+    return initializationPromise;
   },
 
   // Ensure default collection exists, return its ID
