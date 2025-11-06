@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.schemas.fighter import PaginatedFightersResponse
 from backend.services.search_service import SearchService, get_search_service
@@ -34,6 +34,15 @@ async def search_fighters(
     offset: int = Query(0, ge=0, description="Number of matches to skip."),
     service: SearchService = Depends(get_search_service),
 ) -> PaginatedFightersResponse:
+    """Search fighters with validation."""
+
+    # Validate streak parameters are used together
+    if (streak_type is None) != (min_streak_count is None):
+        raise HTTPException(
+            status_code=422,
+            detail="streak_type and min_streak_count must be provided together"
+        )
+
     return await service.search_fighters(
         query=q or None,
         stance=stance,
