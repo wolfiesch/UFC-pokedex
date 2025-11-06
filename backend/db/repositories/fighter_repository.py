@@ -717,6 +717,7 @@ class FighterRepository(BaseRepository):
 
         order_clause = Fight.event_date.desc().nulls_last()
 
+        # Remove individual limits - we'll limit after union
         primary_fights = (
             select(
                 Fight.event_date.label("event_date"),
@@ -725,8 +726,6 @@ class FighterRepository(BaseRepository):
             .where(Fight.fighter_id == target_fighters.c.fighter_id)
             .order_by(order_clause)
         )
-        if effective_window is not None:
-            primary_fights = primary_fights.limit(effective_window)
         primary_fights = primary_fights.lateral("primary_fights")
 
         opponent_fights = (
@@ -737,8 +736,6 @@ class FighterRepository(BaseRepository):
             .where(Fight.opponent_id == target_fighters.c.fighter_id)
             .order_by(order_clause)
         )
-        if effective_window is not None:
-            opponent_fights = opponent_fights.limit(effective_window)
         opponent_fights = opponent_fights.lateral("opponent_fights")
 
         primary_stmt = select(
@@ -757,12 +754,38 @@ class FighterRepository(BaseRepository):
 
         combined = union_all(primary_stmt, opponent_stmt).subquery("subject_fights")
 
-        stmt = select(
-            combined.c.subject_id,
-            combined.c.event_date,
-            combined.c.result,
-            combined.c.is_primary,
-        ).order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
+        # Apply window limit to total combined fights per fighter
+        if effective_window is not None:
+            # Use window function to limit total fights per fighter
+            stmt = (
+                select(
+                    combined.c.subject_id,
+                    combined.c.event_date,
+                    combined.c.result,
+                    combined.c.is_primary,
+                    func.row_number()
+                    .over(
+                        partition_by=combined.c.subject_id,
+                        order_by=combined.c.event_date.desc().nulls_last(),
+                    )
+                    .label("row_num"),
+                )
+                .order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
+            )
+            # Filter to only the first N fights per fighter
+            stmt = select(
+                stmt.c.subject_id,
+                stmt.c.event_date,
+                stmt.c.result,
+                stmt.c.is_primary,
+            ).where(stmt.c.row_num <= effective_window)
+        else:
+            stmt = select(
+                combined.c.subject_id,
+                combined.c.event_date,
+                combined.c.result,
+                combined.c.is_primary,
+            ).order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
 
         result = await self._session.execute(stmt)
         all_fights = result.all()

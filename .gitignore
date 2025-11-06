@@ -69,3 +69,4 @@ frontend/src/lib/generated/
 # Backup files
 *.backup
 .gitignore.backup
+.vercel
