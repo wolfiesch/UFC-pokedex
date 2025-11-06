@@ -311,9 +311,9 @@ export interface FavoriteCollectionCreatePayload {
   user_id: string;
   title: string;
   description?: string | null;
-  is_public?: boolean;
+  is_public: boolean;
   slug?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, never>;
 }
 
 /** Partial update payload for mutating collection metadata. */
@@ -322,24 +322,24 @@ export interface FavoriteCollectionUpdatePayload {
   description?: string | null;
   is_public?: boolean;
   slug?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, never>;
 }
 
 /** Payload used when inserting a fighter into a collection. */
 export interface FavoriteEntryCreatePayload {
   fighter_id: string;
-  position?: number;
+  position: number;
   notes?: string | null;
   tags?: string[];
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, never>;
 }
 
 /** Partial update payload for an existing favorites entry. */
 export interface FavoriteEntryUpdatePayload {
-  position?: number;
+  position?: number | null;
   notes?: string | null;
-  tags?: string[];
-  metadata?: Record<string, unknown>;
+  tags?: string[] | null;
+  metadata?: Record<string, never> | null;
 }
 
 /** Payload used to persist drag-and-drop ordering changes. */

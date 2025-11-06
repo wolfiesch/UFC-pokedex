@@ -500,7 +500,7 @@ export async function getFavoriteCollectionDetail(
     entries: data.entries?.map((entry) => ({
       ...entry,
       entry_id: entry.id,
-      collection_id: entry.collection_id ?? data.id,
+      collection_id: data.id,
     })) ?? [],
   } as FavoriteCollectionDetail;
 }
@@ -527,7 +527,7 @@ export async function createFavoriteCollection(
   payload: FavoriteCollectionCreatePayload
 ) {
   const { data, error } = await client.POST("/favorites/collections", {
-    body: payload as any,
+    body: payload,
   });
 
   if (error) {
@@ -578,7 +578,7 @@ export async function addFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload as any,
+      body: payload,
     }
   );
 
@@ -628,7 +628,7 @@ export async function reorderFavoriteEntries(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload as any,
+      body: payload,
     }
   );
 
@@ -682,7 +682,7 @@ export async function updateFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-      body: payload as any,
+      body: payload,
     }
   );
 
