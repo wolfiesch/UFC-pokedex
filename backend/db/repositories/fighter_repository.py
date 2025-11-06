@@ -23,7 +23,6 @@ from sqlalchemy.orm import load_only
 from backend.db.models import Fight, Fighter, fighter_stats
 from backend.db.repositories.base import (
     BaseRepository,
-    _FIGHT_HISTORY_LOAD_COLUMNS,
     _calculate_age,
     _invert_fight_result,
     _normalize_result_category,
@@ -258,7 +257,7 @@ class FighterRepository(BaseRepository):
         )
         opponent_fights = opponent_fights_result.scalars().all()
 
-        all_fights = primary_fights + opponent_fights
+        all_fights = list(primary_fights) + list(opponent_fights)
 
         # Build fight history, deduplicating by fight metadata (not database ID)
         # This prevents duplicate entries when both fighters have Fight records for the same bout
