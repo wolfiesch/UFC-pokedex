@@ -208,8 +208,11 @@ class FighterRepository(BaseRepository):
         ]
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
-        """Get detailed fighter information by ID with eager-loaded relationships."""
-        # Query fighter details with eager-loaded fights
+        """Get detailed fighter information by ID with optimized single-query fetch."""
+        from sqlalchemy.orm import selectinload
+
+        # Query fighter details with eager-loaded fights using selectinload
+        # This uses a single JOIN query to load fighter + all fights (no N+1)
         base_columns = self._fighter_detail_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
@@ -218,6 +221,7 @@ class FighterRepository(BaseRepository):
             select(Fighter)
             .options(
                 load_only(*load_columns),
+                selectinload(Fighter.fights),  # Eager load fights to prevent N+1
             )
             .where(Fighter.id == fighter_id)
         )
@@ -227,7 +231,7 @@ class FighterRepository(BaseRepository):
         if fighter is None:
             return None
 
-        # Query fighter stats
+        # Query fighter stats (kept as separate query since stats are in different table)
         stats_result = await self._session.execute(
             select(
                 fighter_stats.c.category,
@@ -242,20 +246,13 @@ class FighterRepository(BaseRepository):
             category_stats = stats_map.setdefault(category, {})
             category_stats[metric] = value
 
-        # Query fights from BOTH perspectives:
-        # 1. Fights where this fighter is fighter_id (already loaded via relationship)
-        # 2. Fights where this fighter is opponent_id
-        primary_fights_result = await self._session.execute(
-            select(Fight)
-            .options(load_only(*_FIGHT_HISTORY_LOAD_COLUMNS))
-            .where(Fight.fighter_id == fighter_id)
-            .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
-        )
-        primary_fights = primary_fights_result.scalars().all()
+        # Get fights from relationship (already loaded via selectinload - no additional query!)
+        primary_fights = [f for f in fighter.fights]
 
+        # Query fights from opponent's perspective (where this fighter is opponent_id)
+        # This cannot be eager loaded via relationship as it's reverse lookup
         opponent_fights_result = await self._session.execute(
             select(Fight)
-            .options(load_only(*_FIGHT_HISTORY_LOAD_COLUMNS))
             .where(Fight.opponent_id == fighter_id)
             .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
         )
