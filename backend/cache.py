@@ -129,7 +129,7 @@ async def get_redis() -> RedisClient | None:
                     # Test connection
                     await _redis_client.ping()
                     logger.info("Redis connection established successfully")
-                except (RedisConnectionError, Exception) as e:
+                except RedisConnectionError as e:
                     logger.warning(
                         f"Redis connection failed: {e}. Caching will be disabled."
                     )
@@ -152,7 +152,7 @@ class CacheClient:
                 return json.loads(payload)
             except json.JSONDecodeError:
                 return None
-        except (RedisConnectionError, Exception) as e:
+        except RedisConnectionError as e:
             logger.debug(f"Redis get failed for key {key}: {e}")
             return None
 
@@ -164,7 +164,7 @@ class CacheClient:
             if ttl is None:
                 ttl = _DEFAULT_TTL_SECONDS
             await self._redis.set(key, encoded, ex=ttl)
-        except (RedisConnectionError, Exception) as e:
+        except RedisConnectionError as e:
             logger.debug(f"Redis set failed for key {key}: {e}")
 
     async def delete(self, *keys: str) -> None:
@@ -172,7 +172,7 @@ class CacheClient:
             return
         try:
             await self._redis.delete(*keys)
-        except (RedisConnectionError, Exception) as e:
+        except RedisConnectionError as e:
             logger.debug(f"Redis delete failed: {e}")
 
     async def delete_pattern(self, pattern: str) -> None:
@@ -181,7 +181,7 @@ class CacheClient:
         try:
             async for key in self._redis.scan_iter(match=pattern):
                 await self._redis.delete(key)
-        except (RedisConnectionError, Exception) as e:
+        except RedisConnectionError as e:
             logger.debug(f"Redis delete_pattern failed for {pattern}: {e}")
 
 
