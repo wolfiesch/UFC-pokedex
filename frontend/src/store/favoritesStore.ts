@@ -192,7 +192,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   },
 
   // Toggle favorite status for a fighter
-  toggleFavorite: async (fighter: FighterListItem) => {
+  toggleFavorite: async (fighter: FighterListItem): Promise<{ success: boolean; error?: string }> => {
     const state = get();
 
     // Initialize if needed
@@ -265,6 +265,8 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
 
       // Refresh to get correct data from backend
       await get()._refreshCollection();
+
+      return { success: true };
     } catch (error) {
       logger.error(
         "Failed to toggle favorite",
@@ -275,6 +277,11 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       });
       // Refresh collection to revert optimistic update
       await get()._refreshCollection();
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   },
 

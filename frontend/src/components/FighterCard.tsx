@@ -37,17 +37,21 @@ export default function FighterCard({ fighter }: Props) {
   const placeholderClass =
     "flex h-full w-full items-center justify-center rounded-[1.18rem] text-white";
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const wasAdding = !isFavorite;
-    toggleFavorite(fighter);
+    const result = await toggleFavorite(fighter);
 
-    // Show toast notification
-    if (wasAdding) {
-      toast.success(`Added ${fighter.name} to favorites`);
+    // Show toast notification based on result
+    if (result.success) {
+      if (wasAdding) {
+        toast.success(`Added ${fighter.name} to favorites`);
+      } else {
+        toast(`Removed ${fighter.name} from favorites`);
+      }
     } else {
-      toast(`Removed ${fighter.name} from favorites`);
+      toast.error(`Failed to update favorites: ${result.error}`);
     }
   };
 
