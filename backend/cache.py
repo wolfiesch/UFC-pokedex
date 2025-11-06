@@ -119,22 +119,25 @@ async def get_redis() -> RedisClient | None:
         logger.info("Redis dependency not installed; caching remains disabled.")
         return None
 
-    if _redis_client is None:
-        async with _client_lock:
-            if _redis_client is None:
-                try:
-                    _redis_client = Redis.from_url(
-                        _redis_url(), decode_responses=True, encoding="utf-8"
-                    )
-                    # Test connection
-                    await _redis_client.ping()
-                    logger.info("Redis connection established successfully")
-                except RedisConnectionError as e:
-                    logger.warning(
-                        f"Redis connection failed: {e}. Caching will be disabled."
-                    )
-                    _redis_client = None
-    return _redis_client
+    # ALWAYS acquire lock first to prevent TOCTOU race
+    async with _client_lock:
+        # Double-check pattern inside lock
+        if _redis_client is not None:
+            return _redis_client
+
+        try:
+            _redis_client = Redis.from_url(
+                _redis_url(), decode_responses=True, encoding="utf-8"
+            )
+            # Test connection
+            await _redis_client.ping()
+            logger.info("Redis connection established successfully")
+            return _redis_client
+        except RedisConnectionError as e:
+            logger.warning(
+                f"Redis connection failed: {e}. Caching will be disabled."
+            )
+            return None
 
 
 class CacheClient:
