@@ -493,7 +493,16 @@ export async function getFavoriteCollectionDetail(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'collection_id'
+  return {
+    ...data,
+    collection_id: data.id,
+    entries: data.entries?.map((entry) => ({
+      ...entry,
+      entry_id: entry.id,
+      collection_id: entry.collection_id ?? data.id,
+    })) ?? [],
+  } as FavoriteCollectionDetail;
 }
 
 /**
