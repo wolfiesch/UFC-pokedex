@@ -85,7 +85,7 @@ def validate_image(image_path: Path) -> dict[str, any]:
             # Very low entropy (< 3.0) might indicate a placeholder or simple graphic
             if entropy < 3.0:
                 issues.append(f"Low complexity (entropy {entropy:.2f})")
-        except Exception:
+        except (ValueError, TypeError, ImportError):
             # Skip entropy check if it fails
             pass
 
@@ -105,7 +105,7 @@ def validate_image(image_path: Path) -> dict[str, any]:
                 # If more than 80% is one color, it's suspicious
                 if most_common_pct > 80:
                     issues.append(f"Single color dominates ({most_common_pct:.1f}%)")
-        except Exception:
+        except (ValueError, TypeError, MemoryError):
             # Skip color check if it fails
             pass
 
@@ -115,7 +115,7 @@ def validate_image(image_path: Path) -> dict[str, any]:
             'details': details,
         }
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         return {
             'valid': False,
             'issues': [f"Cannot open image: {str(e)}"],

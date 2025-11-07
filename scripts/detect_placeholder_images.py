@@ -23,7 +23,7 @@ def compute_image_hash(image_path: Path) -> str:
         img = Image.open(image_path)
         # Use average hash - works well for placeholder detection
         return str(imagehash.average_hash(img))
-    except Exception as e:
+    except (OSError, ValueError) as e:
         console.print(f"[red]Error hashing {image_path.name}: {e}[/red]")
         return None
 

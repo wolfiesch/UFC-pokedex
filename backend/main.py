@@ -53,6 +53,36 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+def _validate_environment() -> None:
+    """Validate environment variables at startup and log warnings for missing optional vars."""
+    warnings = []
+
+    # Check optional but recommended environment variables
+    if not os.getenv("REDIS_URL"):
+        warnings.append(
+            "REDIS_URL is not set - caching will use in-memory fallback "
+            "(performance may be degraded)"
+        )
+
+    if not os.getenv("CORS_ALLOW_ORIGINS"):
+        warnings.append(
+            "CORS_ALLOW_ORIGINS is not set - using default localhost origins only "
+            "(may cause CORS issues in production)"
+        )
+
+    # Log warnings if any
+    if warnings:
+        logger.warning("=" * 60)
+        logger.warning("Environment Configuration Warnings:")
+        for warning in warnings:
+            logger.warning(f"  • {warning}")
+        logger.warning("=" * 60)
+
+
+# Validate environment at module load time
+_validate_environment()
+
 # Context variable for request ID tracking
 request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 

@@ -56,7 +56,8 @@ def download_image(session: requests.Session, fighter_id: str, sherdog_url: str,
         (images_dir / f"{fighter_id}.{ext}").write_bytes(img_response.content)
         return True
 
-    except Exception:
+    except (requests.exceptions.RequestException, OSError) as e:
+        console.print(f"  [red]Download error: {e}[/red]")
         return False
 
 

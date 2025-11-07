@@ -82,7 +82,7 @@ def normalize_image(
             'file_size_after': new_file_size,
         }
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         return {
             'status': 'error',
             'error': str(e),

@@ -65,7 +65,8 @@ def search_sherdog_for_fighter(session: requests.Session, fighter_name: str) -> 
 
         return None
 
-    except Exception:
+    except (requests.exceptions.RequestException, OSError) as e:
+        console.print(f"[dim]Sherdog search error: {e}[/dim]")
         return None
 
 
@@ -112,7 +113,7 @@ def download_image_from_url(
 
         return (ufc_id, True, None)
 
-    except Exception as e:
+    except (requests.exceptions.RequestException, OSError) as e:
         return (ufc_id, False, str(e))
 
 

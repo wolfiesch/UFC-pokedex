@@ -296,6 +296,6 @@ def parse_sherdog_fighter_detail(response: Selector) -> dict[str, Any] | None:
         logger.warning("Could not extract any fighter stats from Sherdog page")
         return None
 
-    except Exception as e:
+    except (AttributeError, ValueError, TypeError, KeyError) as e:
         logger.error(f"Error parsing Sherdog fighter detail: {e}")
         return None

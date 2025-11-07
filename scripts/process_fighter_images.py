@@ -242,7 +242,7 @@ def process_single_fighter(
             result["cropped_path"] = crop_result.cropped_path
             result["error"] = crop_result.error_message
 
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         logger.error(f"Error processing fighter {fighter_id}: {e}")
         result["error"] = str(e)
 
@@ -448,7 +448,7 @@ async def main():
                             fighter.id,
                         )
 
-                except Exception as e:
+                except (OSError, ValueError, RuntimeError) as e:
                     logger.error(f"Error processing {fighter.id}: {e}")
                     stats.add_failure(str(e), fighter.id)
 

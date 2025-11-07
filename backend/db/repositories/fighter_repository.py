@@ -27,6 +27,12 @@ from backend.db.repositories.base import (
     _invert_fight_result,
     _normalize_result_category,
 )
+from backend.db.repositories.fight_utils import (
+    compute_record_from_fights,
+    create_fight_key,
+    should_replace_fight,
+    sort_fight_history,
+)
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
@@ -230,22 +236,10 @@ class FighterRepository(BaseRepository):
         if fighter is None:
             return None
 
-        # Query fighter stats (kept as separate query since stats are in different table)
-        # NOTE: fighter_stats table is not yet populated by scraper - skipping query for performance
-        # TODO: Re-enable this query once scraper populates fighter_stats table
-        # stats_result = await self._session.execute(
-        #     select(
-        #         fighter_stats.c.category,
-        #         fighter_stats.c.metric,
-        #         fighter_stats.c.value,
-        #     ).where(fighter_stats.c.fighter_id == fighter_id)
-        # )
+        # Fighter stats from fighter_stats table
+        # NOTE: The fighter_stats table exists but is not populated by the scraper.
+        # Stats fields (striking, grappling, etc.) will be empty until scraper is updated.
         stats_map: dict[str, dict[str, str]] = {}
-        # for category, metric, value in stats_result.all():
-        #     if category is None or metric is None:
-        #         continue
-        #     category_stats = stats_map.setdefault(category, {})
-        #     category_stats[metric] = value
 
         # Get fights from relationship (already loaded via selectinload - no additional query!)
         primary_fights = [f for f in fighter.fights]
@@ -272,25 +266,6 @@ class FighterRepository(BaseRepository):
         # Prioritize fights where fighter_id matches (fighter's own perspective)
         # Also prioritize fights with actual results (win/loss/draw) over "N/A"
         fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
-
-        def create_fight_key(
-            event_name: str,
-            event_date: date | None,
-            opponent_id: str | None,
-            opponent_name: str,
-        ) -> tuple[str, str | None, str]:
-            """Create a unique key for deduplication based on fight metadata."""
-            date_str = event_date.isoformat() if event_date else None
-            # Use opponent_id if available, otherwise use opponent_name (normalized)
-            opponent_key = opponent_id if opponent_id else opponent_name.lower().strip()
-            return (event_name, date_str, opponent_key)
-
-        def should_replace_fight(existing_result: str, new_result: str) -> bool:
-            """Determine if new fight should replace existing based on result quality."""
-            # Prefer actual results (win/loss/draw) over "N/A"
-            if existing_result == "N/A" and new_result != "N/A":
-                return True
-            return False
 
         # First pass: Process fights where this fighter is the primary fighter_id
         for fight in all_fights:
@@ -376,40 +351,16 @@ class FighterRepository(BaseRepository):
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
-        # Convert dict to list
+        # Convert dict to list and sort
         fight_history: list[FightHistoryEntry] = list(fight_dict.values())
-
-        # Sort fight history: upcoming fights first, then past fights by most recent
-        fight_history.sort(
-            key=lambda fight: (
-                # Primary: upcoming fights first (result="next" → 0, others → 1)
-                0 if fight.result == "next" else 1,
-                # Secondary: most recent first (use min date for nulls to push them last)
-                -(fight.event_date or date.min).toordinal(),
-            )
-        )
+        fight_history = sort_fight_history(fight_history)
 
         # Compute record from fight_history if not already populated
         computed_record = fighter.record
-        if not computed_record and fight_history:
-            wins = sum(
-                1
-                for fight in fight_history
-                if _normalize_result_category(fight.result) == "win"
-            )
-            losses = sum(
-                1
-                for fight in fight_history
-                if _normalize_result_category(fight.result) == "loss"
-            )
-            draws = sum(
-                1
-                for fight in fight_history
-                if _normalize_result_category(fight.result) == "draw"
-            )
-            # Only set computed record if we found at least one completed fight
-            if wins + losses + draws > 0:
-                computed_record = f"{wins}-{losses}-{draws}"
+        if not computed_record:
+            computed_from_fights = compute_record_from_fights(fight_history)
+            if computed_from_fights:
+                computed_record = computed_from_fights
 
         today_utc: date = datetime.now(tz=UTC).date()
         fighter_age: int | None = _calculate_age(

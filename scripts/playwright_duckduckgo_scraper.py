@@ -93,7 +93,7 @@ def search_duckduckgo_images(fighter_name: str, nickname: str | None = None) -> 
                     })
 
             return images
-    except Exception as e:
+    except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError) as e:
         console.print(f"  [yellow]Search error: {e}[/yellow]")
 
     return []
@@ -131,7 +131,7 @@ def download_image(image_url: str, fighter_id: str, images_dir: Path) -> bool:
             image_path.write_bytes(content)
 
             return True
-    except Exception as e:
+    except (requests.exceptions.RequestException, OSError) as e:
         console.print(f"    [red]Download error: {str(e)[:50]}[/red]")
 
     return False
