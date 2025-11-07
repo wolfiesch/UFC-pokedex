@@ -71,13 +71,16 @@ class FighterDetailSpider(scrapy.Spider):
             return []
         urls: list[str] = []
         with path.open(encoding="utf-8") as handle:
-            for line in handle:
+            for line_num, line in enumerate(handle, start=1):
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     data = json.loads(line)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
+                    self.logger.warning(
+                        f"Skipping invalid JSON at line {line_num} in {file_path}: {e}"
+                    )
                     continue
                 detail_url = data.get("detail_url")
                 if detail_url:

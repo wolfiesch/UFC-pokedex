@@ -259,3 +259,66 @@ class PostgreSQLEventRepository:
         locations = result.scalars().all()
         return list(locations)
 
+    async def count_search_events(
+        self,
+        *,
+        q: str | None = None,
+        year: int | None = None,
+        location: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+    ) -> int:
+        """
+        Count events matching search criteria.
+
+        Args:
+            q: Search query (searches in event name, location)
+            year: Filter by year
+            location: Filter by location (case-insensitive partial match)
+            event_type: Filter by event type (ppv, fight_night, etc.)
+            status: Filter by status (upcoming, completed)
+
+        Returns:
+            Total count of matching events
+        """
+        # If event_type is specified, we must do post-processing
+        # So we need to fetch all matching events and filter in memory
+        if event_type is not None:
+            # Fall back to fetching all results and counting
+            results = await self.search_events(
+                q=q,
+                year=year,
+                location=location,
+                event_type=event_type,
+                status=status,
+                limit=None,
+                offset=None,
+            )
+            return len(list(results))
+
+        # Build count query with same filters as search_events
+        query = select(func.count()).select_from(Event)
+
+        # Text search in name and location
+        if q:
+            search_pattern = f"%{q}%"
+            query = query.where(
+                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
+            )
+
+        # Year filter
+        if year:
+            query = query.where(func.extract("year", Event.date) == year)
+
+        # Location filter
+        if location:
+            query = query.where(Event.location.ilike(f"%{location}%"))
+
+        # Status filter
+        if status:
+            query = query.where(Event.status == status)
+
+        result = await self._session.execute(query)
+        count = result.scalar_one_or_none()
+        return count if count is not None else 0
+

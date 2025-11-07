@@ -134,13 +134,26 @@ async def get_redis() -> RedisClient | None:
             return _redis_client
 
         try:
-            _redis_client = Redis.from_url(_redis_url(), decode_responses=True, encoding="utf-8")
-            # Test connection
-            await _redis_client.ping()
+            _redis_client = Redis.from_url(
+                _redis_url(),
+                decode_responses=True,
+                encoding="utf-8",
+                socket_connect_timeout=5,  # 5 second connection timeout
+                socket_timeout=5,  # 5 second operation timeout
+            )
+            # Test connection with timeout
+            await asyncio.wait_for(_redis_client.ping(), timeout=5.0)
             logger.info("Redis connection established successfully")
             return _redis_client
-        except RedisConnectionError as e:
+        except (RedisConnectionError, asyncio.TimeoutError) as e:
             logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
+            # Clean up client if ping timed out
+            if _redis_client is not None:
+                try:
+                    await _redis_client.aclose()
+                except Exception:
+                    pass
+                _redis_client = None
             return None
 
 

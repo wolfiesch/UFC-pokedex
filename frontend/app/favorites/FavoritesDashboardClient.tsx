@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import CollectionsGrid from "@/components/favorites/CollectionsGrid";
@@ -41,6 +41,7 @@ export function FavoritesDashboardClient({
   const [selectedDetail, setSelectedDetail] = useState<any>(initialDetail);
   const [isPending, startTransition] = useTransition();
   const [isReordering, setIsReordering] = useState(false);
+  const activeRequestIdRef = useRef<number | null>(null);
 
   const selectedCollectionId = selectedDetail?.id ?? null;
 
@@ -52,21 +53,31 @@ export function FavoritesDashboardClient({
   }, [collections, selectedCollectionId]);
 
   function handleSelectCollection(collection: FavoriteCollectionSummary) {
+    // Track active request to prevent race conditions
+    const requestId = collection.id;
+    activeRequestIdRef.current = requestId;
+
     startTransition(() => {
       getFavoriteCollectionDetail(collection.id, userId)
         .then((detail) => {
-          setSelectedDetail(detail);
-          setCollections((current) =>
-            current.map((item) =>
-              item.id === detail.id ? { ...item, stats: detail.stats } : item
-            )
-          );
+          // Only update state if this is still the active request
+          if (activeRequestIdRef.current === requestId) {
+            setSelectedDetail(detail);
+            setCollections((current) =>
+              current.map((item) =>
+                item.id === detail.id ? { ...item, stats: detail.stats } : item
+              )
+            );
+          }
         })
         .catch((error) => {
-          console.error("Failed to load collection detail", error);
-          toast.error("Unable to load favorites collection", {
-            description: error instanceof Error ? error.message : "Unknown error",
-          });
+          // Only show error if this is still the active request
+          if (activeRequestIdRef.current === requestId) {
+            console.error("Failed to load collection detail", error);
+            toast.error("Unable to load favorites collection", {
+              description: error instanceof Error ? error.message : "Unknown error",
+            });
+          }
         });
     });
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { create } from "zustand";
 
 import type { FighterListItem } from "@/lib/types";
@@ -327,14 +328,17 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     set({ winStreakCount: null, lossStreakCount: null }),
 }));
 
-// Helper hook with auto-initialization
+// Helper hook with auto-initialization using useEffect
 export function useFavorites() {
   const store = useFavoritesStore();
+  const { initialize, isInitialized, isLoading } = store;
 
-  // Auto-initialize on first use
-  if (typeof window !== "undefined" && !store.isInitialized && !store.isLoading) {
-    store.initialize();
-  }
+  // Auto-initialize on mount (not during render)
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isInitialized && !isLoading) {
+      initialize();
+    }
+  }, [initialize, isInitialized, isLoading]);
 
   return store;
 }

@@ -86,31 +86,33 @@ def parse_fighter_list_row(row: Selector) -> dict[str, Any] | None:
         logger.warning(f"Failed to extract UUID from URL '{detail_url}': {e}")
         return None
 
-    # Extract first name (column 1) and last name (column 2)
-    first_name = clean_text(row.css("td:nth-child(1) a::text").get())
-    last_name = clean_text(row.css("td:nth-child(2) a::text").get())
+    # Extract fighter name from column 1 (name is in a single cell, not split)
+    fighter_name = clean_text(row.css("td:nth-child(1) a::text").get()) or fighter_id
 
-    # Combine first and last name
-    name_parts = [first_name, last_name]
-    fighter_name = " ".join(filter(None, name_parts)) or fighter_id
+    # Extract nickname from column 1 (inside the same cell as name)
+    nickname = clean_text(row.css("td:nth-child(1) .b-statistics__nickname::text").get())
 
-    nickname = clean_text(row.css(".b-statistics__nickname::text").get()) or clean_text(
-        row.css("td:nth-child(3) a::text").get()
+    # Extract stats from columns 2-6 (not 1-5)
+    # Column 1: Name
+    # Column 2: Height
+    # Column 3: Weight
+    # Column 4: Reach
+    # Column 5: Stance
+    # Column 6: DOB
+    height = clean_text(row.css("td:nth-child(2) p::text").get()) or clean_text(
+        row.css("td:nth-child(2)::text").get()
     )
-    height = clean_text(row.css("td:nth-child(2)::text").get()) or clean_text(
-        row.css("td:nth-child(2) ::text").get()
+    weight = clean_text(row.css("td:nth-child(3) p::text").get()) or clean_text(
+        row.css("td:nth-child(3)::text").get()
     )
-    weight = clean_text(row.css("td:nth-child(3)::text").get()) or clean_text(
-        row.css("td:nth-child(3) ::text").get()
+    reach = clean_text(row.css("td:nth-child(4) p::text").get()) or clean_text(
+        row.css("td:nth-child(4)::text").get()
     )
-    reach = clean_text(row.css("td:nth-child(4)::text").get()) or clean_text(
-        row.css("td:nth-child(4) ::text").get()
+    stance = clean_text(row.css("td:nth-child(5) p::text").get()) or clean_text(
+        row.css("td:nth-child(5)::text").get()
     )
-    stance = clean_text(row.css("td:nth-child(5)::text").get()) or clean_text(
-        row.css("td:nth-child(5) ::text").get()
-    )
-    dob_text = clean_text(row.css("td:nth-child(6)::text").get()) or clean_text(
-        row.css("td:nth-child(6) ::text").get()
+    dob_text = clean_text(row.css("td:nth-child(6) p::text").get()) or clean_text(
+        row.css("td:nth-child(6)::text").get()
     )
     dob = parse_date(dob_text) if dob_text else None
 
@@ -335,7 +337,18 @@ def _parse_int(value: str | None) -> int | None:
 
 def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-untyped-def]
     selector = response if hasattr(response, "css") else Selector(text=response)
-    fighter_id = _extract_uuid(getattr(response, "url", None))
+
+    # Extract fighter ID from URL with error handling
+    response_url = getattr(response, "url", None)
+    if not response_url:
+        logger.warning("Response has no URL attribute, cannot extract fighter ID")
+        return {}
+
+    try:
+        fighter_id = _extract_uuid(response_url)
+    except ValueError as e:
+        logger.warning(f"Failed to extract fighter ID from URL '{response_url}': {e}")
+        return {}
 
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (

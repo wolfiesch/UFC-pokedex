@@ -189,15 +189,17 @@ class FighterRepository(BaseRepository):
                 is_current_champion=fighter.is_current_champion,
                 is_former_champion=fighter.is_former_champion,
                 was_interim=fighter.was_interim if supports_was_interim else False,
-                current_streak_type=typing_cast(
-                    Literal["win", "loss", "draw", "none"],
-                    (
-                        streak_by_fighter.get(fighter.id, {}).get(
-                            "current_streak_type", "none"
+                current_streak_type=(
+                    _validate_streak_type(
+                        str(
+                            streak_by_fighter.get(fighter.id, {}).get(
+                                "current_streak_type", "none"
+                            )
                         )
-                        if include_streak
-                        else "none"
-                    ),
+                    )
+                    or "none"
+                    if include_streak
+                    else "none"
                 ),
                 current_streak_count=(
                     int(

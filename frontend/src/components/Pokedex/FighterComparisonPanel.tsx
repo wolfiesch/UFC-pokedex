@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { compareFighters, searchFighters } from "@/lib/api";
 import { formatCategoryLabel, formatMetricLabel } from "@/lib/format";
@@ -63,6 +63,15 @@ export default function FighterComparisonPanel({
   const [comparison, setComparison] = useState<ComparisonState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Track mounted state for async operations
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -130,6 +139,10 @@ export default function FighterComparisonPanel({
     setIsLoading(true);
     try {
       const response = await compareFighters([primaryFighterId, option.fighter_id]);
+      // Only update state if component is still mounted
+      if (!isMountedRef.current) {
+        return;
+      }
       if (response.fighters.length === 0) {
         setError("Comparison data is unavailable for the selected fighters.");
         setComparison(null);
@@ -137,10 +150,17 @@ export default function FighterComparisonPanel({
         setComparison({ entries: response.fighters });
       }
     } catch (err) {
+      // Only update state if component is still mounted
+      if (!isMountedRef.current) {
+        return;
+      }
       setError(err instanceof Error ? err.message : "Unable to compare fighters");
       setComparison(null);
     } finally {
-      setIsLoading(false);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }
 
