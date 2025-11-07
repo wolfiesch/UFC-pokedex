@@ -1,11 +1,13 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
 from backend.schemas.stats import (
+    LeaderboardMetricId,
     LeaderboardsResponse,
     StatsSummaryResponse,
+    TrendTimeBucket,
     TrendsResponse,
 )
 from backend.services.fighter_service import FighterService, get_fighter_service
@@ -23,14 +25,16 @@ async def stats_summary(
 @router.get("/leaderboards", response_model=LeaderboardsResponse)
 async def stats_leaderboards(
     limit: int = Query(10, ge=1, le=50, description="Maximum entries per leaderboard."),
-    accuracy_metric: str = Query(
-        "sig_strikes_accuracy_pct",
-        description="fighter_stats.metric name representing accuracy to rank.",
-    ),
-    submissions_metric: str = Query(
-        "avg_submissions",
-        description="fighter_stats.metric name representing submissions to rank.",
-    ),
+    accuracy_metric: Annotated[
+        LeaderboardMetricId,
+        Query(description="fighter_stats.metric name representing accuracy to rank."),
+    ] = "sig_strikes_accuracy_pct",
+    submissions_metric: Annotated[
+        LeaderboardMetricId,
+        Query(
+            description="fighter_stats.metric name representing submissions to rank."
+        ),
+    ] = "avg_submissions",
     start_date: date | None = Query(
         None, description="Optional inclusive lower bound on fight event dates."
     ),
@@ -58,10 +62,10 @@ async def stats_trends(
     end_date: date | None = Query(
         None, description="Optional inclusive upper bound on fight event dates."
     ),
-    time_bucket: Literal["month", "quarter", "year"] = Query(
-        "month",
-        description="Temporal grouping for average fight durations.",
-    ),
+    time_bucket: Annotated[
+        TrendTimeBucket,
+        Query(description="Temporal grouping for average fight durations."),
+    ] = "month",
     streak_limit: int = Query(
         5, ge=1, le=50, description="Maximum fighters returned for win streak trends."
     ),

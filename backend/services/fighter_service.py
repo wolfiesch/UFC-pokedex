@@ -37,8 +37,11 @@ from backend.schemas.fighter import (
 )
 from backend.schemas.stats import (
     LeaderboardDefinition,
+    LeaderboardMetricId,
     LeaderboardsResponse,
+    StatsSummaryMetric,
     StatsSummaryResponse,
+    TrendTimeBucket,
     TrendsResponse,
 )
 
@@ -91,8 +94,8 @@ class FighterRepositoryProtocol:
         self,
         *,
         limit: int,
-        accuracy_metric: str,
-        submissions_metric: str,
+        accuracy_metric: LeaderboardMetricId,
+        submissions_metric: LeaderboardMetricId,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
@@ -103,7 +106,7 @@ class FighterRepositoryProtocol:
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: Literal["month", "quarter", "year"],
+        time_bucket: TrendTimeBucket,
         streak_limit: int,
     ) -> TrendsResponse:
         """Summarize longitudinal streaks and fight duration trends within the roster."""
@@ -166,15 +169,24 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         return self._fighters.get(fighter_id)
 
-    async def stats_summary(self) -> dict[str, float]:
-        return {"fighters_indexed": float(len(self._fighters))}
+    async def stats_summary(self) -> StatsSummaryResponse:
+        return StatsSummaryResponse(
+            metrics=[
+                StatsSummaryMetric(
+                    id="fighters_indexed",
+                    label="Fighters Indexed",
+                    value=float(len(self._fighters)),
+                    description="Prototype repository fighter count.",
+                )
+            ]
+        )
 
     async def get_leaderboards(
         self,
         *,
         limit: int,
-        accuracy_metric: str,
-        submissions_metric: str,
+        accuracy_metric: LeaderboardMetricId,
+        submissions_metric: LeaderboardMetricId,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
@@ -208,7 +220,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: Literal["month", "quarter", "year"],
+        time_bucket: TrendTimeBucket,
         streak_limit: int,
     ) -> TrendsResponse:
         """Return empty trend payloads for the in-memory prototype repository."""
@@ -269,7 +281,11 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         stance_lower = ((stance or "").strip().lower()) or None
         division_lower = ((division or "").strip().lower()) or None
         normalized_champion_statuses = (
-            {status.strip().lower() for status in champion_statuses if status and status.strip()}
+            {
+                status.strip().lower()
+                for status in champion_statuses
+                if status and status.strip()
+            }
             if champion_statuses
             else None
         )
@@ -302,7 +318,8 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
                     "interim": bool(getattr(fighter, "was_interim", False)),
                 }
                 champion_match = any(
-                    status_flags.get(status, False) for status in normalized_champion_statuses
+                    status_flags.get(status, False)
+                    for status in normalized_champion_statuses
                 )
 
             if name_match and stance_match and division_match and champion_match:
@@ -395,9 +412,13 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
         metadata = dict(graph.metadata)
         metadata.setdefault("insights", {})
         metadata.setdefault("generated_at", datetime.now(UTC).isoformat())
-        return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
+        return FightGraphResponse(
+            nodes=graph.nodes, links=graph.links, metadata=metadata
+        )
 
-    nodes_by_id: dict[str, FightGraphNode] = {node.fighter_id: node for node in graph.nodes}
+    nodes_by_id: dict[str, FightGraphNode] = {
+        node.fighter_id: node for node in graph.nodes
+    }
     total_fights = sum(node.total_fights for node in graph.nodes)
     average_fights = round(total_fights / max(1, len(graph.nodes)), 2)
     density = _calculate_network_density(len(graph.nodes), len(graph.links))
@@ -468,7 +489,9 @@ class FighterService:
 
         # Cache paginated responses (including streak variants) using a key that
         # incorporates pagination and streak options so variants remain isolated.
-        use_cache = limit is not None and offset is not None and limit >= 0 and offset >= 0
+        use_cache = (
+            limit is not None and offset is not None and limit >= 0 and offset >= 0
+        )
         cache_key = (
             list_key(
                 limit,
@@ -531,8 +554,22 @@ class FighterService:
 
     async def get_stats_summary(self) -> StatsSummaryResponse:
         """Expose system-level counts such as fighters indexed for dashboards."""
+        cache_key = "stats:summary"
 
-        return await self._repository.stats_summary()
+        cached = await self._cache_get(cache_key)
+        if isinstance(cached, dict):
+            try:
+                return StatsSummaryResponse.model_validate(cached)
+            except ValidationError as exc:  # pragma: no cover - defensive fallback
+                logger.warning(
+                    "Failed to deserialize cached stats summary for key %s: %s",
+                    cache_key,
+                    exc,
+                )
+
+        summary = await self._repository.stats_summary()
+        await self._cache_set(cache_key, summary.model_dump(mode="json"), ttl=300)
+        return summary
 
     async def count_fighters(self) -> int:
         """Get the total count of fighters with caching."""
@@ -608,11 +645,15 @@ class FighterService:
                 query=normalized_query,
                 stance=normalized_stance if normalized_stance else None,
                 division=normalized_division if normalized_division else None,
-                champion_statuses=",".join(sorted(normalized_champion_statuses))
-                if normalized_champion_statuses
-                else None,
+                champion_statuses=(
+                    ",".join(sorted(normalized_champion_statuses))
+                    if normalized_champion_statuses
+                    else None
+                ),
                 streak_type=streak_type if streak_type else None,
-                min_streak_count=min_streak_count if min_streak_count is not None else None,
+                min_streak_count=(
+                    min_streak_count if min_streak_count is not None else None
+                ),
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
@@ -645,7 +686,9 @@ class FighterService:
                 offset=resolved_offset,
             )
         else:
-            fighters_iterable = await self._repository.list_fighters(include_streak=include_streak)
+            fighters_iterable = await self._repository.list_fighters(
+                include_streak=include_streak
+            )
             query_lower = query_param.lower() if query_param else None
             stance_lower = stance_param.lower() if stance_param else None
             division_lower = division_param.lower() if division_param else None
@@ -665,7 +708,9 @@ class FighterService:
                     stance_match = fighter_stance == stance_lower
                 division_match = True
                 if division_lower:
-                    fighter_division = (getattr(fighter, "division", None) or "").lower()
+                    fighter_division = (
+                        getattr(fighter, "division", None) or ""
+                    ).lower()
                     division_match = fighter_division == division_lower
                 streak_match = True
                 if streak_type_param and min_streak_count_param:
@@ -696,7 +741,9 @@ class FighterService:
 
         return response
 
-    async def compare_fighters(self, fighter_ids: Sequence[str]) -> list[FighterComparisonEntry]:
+    async def compare_fighters(
+        self, fighter_ids: Sequence[str]
+    ) -> list[FighterComparisonEntry]:
         """Retrieve comparable stat bundles for the requested fighters."""
 
         use_cache = self._cache is not None and len(fighter_ids) >= 2
@@ -706,7 +753,9 @@ class FighterService:
             cached = await self._cache_get(cache_key)
             if isinstance(cached, list):
                 try:
-                    return [FighterComparisonEntry.model_validate(item) for item in cached]
+                    return [
+                        FighterComparisonEntry.model_validate(item) for item in cached
+                    ]
                 except ValidationError as exc:  # pragma: no cover
                     logger.warning(
                         "Failed to deserialize cached fighter comparison for key %s: %s",
@@ -803,14 +852,37 @@ class FighterService:
         self,
         *,
         limit: int = 10,
-        accuracy_metric: str = "sig_strikes_accuracy_pct",
-        submissions_metric: str = "avg_submissions",
+        accuracy_metric: LeaderboardMetricId = "sig_strikes_accuracy_pct",
+        submissions_metric: LeaderboardMetricId = "avg_submissions",
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> LeaderboardsResponse:
         """Surface aggregated leaderboards for accuracy- and submission-based metrics."""
 
-        return await self._repository.get_leaderboards(
+        cache_key = ":".join(
+            [
+                "stats",
+                "leaderboards",
+                str(limit),
+                accuracy_metric,
+                submissions_metric,
+                start_date.isoformat() if start_date else "*",
+                end_date.isoformat() if end_date else "*",
+            ]
+        )
+
+        cached = await self._cache_get(cache_key)
+        if isinstance(cached, dict):
+            try:
+                return LeaderboardsResponse.model_validate(cached)
+            except ValidationError as exc:  # pragma: no cover - defensive fallback
+                logger.warning(
+                    "Failed to deserialize cached leaderboards for key %s: %s",
+                    cache_key,
+                    exc,
+                )
+
+        response = await self._repository.get_leaderboards(
             limit=limit,
             accuracy_metric=accuracy_metric,
             submissions_metric=submissions_metric,
@@ -818,22 +890,58 @@ class FighterService:
             end_date=end_date,
         )
 
+        await self._cache_set(
+            cache_key,
+            response.model_dump(mode="json"),
+            ttl=180,
+        )
+        return response
+
     async def get_trends(
         self,
         *,
         start_date: date | None = None,
         end_date: date | None = None,
-        time_bucket: Literal["month", "quarter", "year"] = "month",
+        time_bucket: TrendTimeBucket = "month",
         streak_limit: int = 5,
     ) -> TrendsResponse:
         """Provide historical streaks and fight duration trends for analytics dashboards."""
 
-        return await self._repository.get_trends(
+        cache_key = ":".join(
+            [
+                "stats",
+                "trends",
+                start_date.isoformat() if start_date else "*",
+                end_date.isoformat() if end_date else "*",
+                time_bucket,
+                str(streak_limit),
+            ]
+        )
+
+        cached = await self._cache_get(cache_key)
+        if isinstance(cached, dict):
+            try:
+                return TrendsResponse.model_validate(cached)
+            except ValidationError as exc:  # pragma: no cover - defensive fallback
+                logger.warning(
+                    "Failed to deserialize cached trends for key %s: %s",
+                    cache_key,
+                    exc,
+                )
+
+        response = await self._repository.get_trends(
             start_date=start_date,
             end_date=end_date,
             time_bucket=time_bucket,
             streak_limit=streak_limit,
         )
+
+        await self._cache_set(
+            cache_key,
+            response.model_dump(mode="json"),
+            ttl=180,
+        )
+        return response
 
 
 async def get_fighter_service(

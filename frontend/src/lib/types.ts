@@ -63,9 +63,21 @@ export interface PaginatedFightersResponse {
  * statistics summary feed. Each metric is designed to provide a concise
  * high-level snapshot of platform-wide performance.
  */
+export type StatsSummaryMetricId =
+  | "fighters_indexed"
+  | "avg_sig_strikes_accuracy_pct"
+  | "avg_takedown_accuracy_pct"
+  | "avg_submission_attempts"
+  | "avg_fight_duration_minutes"
+  | "max_win_streak";
+
+export type LeaderboardMetricId =
+  | "sig_strikes_accuracy_pct"
+  | "avg_submissions";
+
 export interface StatsSummaryMetric {
   /** Machine-friendly metric identifier (e.g., `total_fights`). */
-  id: string;
+  id: StatsSummaryMetricId;
   /** Human-readable label for visual display (e.g., `Total Fights`). */
   label: string;
   /** Primary numeric value associated with the KPI. */
@@ -110,7 +122,7 @@ export interface LeaderboardEntry {
  */
 export interface LeaderboardDefinition {
   /** Identifier for the metric powering the leaderboard. */
-  metric_id: string;
+  metric_id: LeaderboardMetricId;
   /** Title rendered above the leaderboard (e.g., `Top Finishers`). */
   title: string;
   /** Optional descriptive helper copy to provide extra context. */

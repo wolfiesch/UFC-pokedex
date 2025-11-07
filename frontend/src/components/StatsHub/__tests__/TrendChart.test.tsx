@@ -48,4 +48,16 @@ describe("TrendChart", () => {
 
     expect(screen.getByTestId("trend-chart-stub")).toHaveTextContent("1 series");
   });
+
+  it("matches snapshot with populated trend data", () => {
+    const { container } = render(
+      <TrendChart
+        title="Trends"
+        description="Win streak duration over time"
+        series={sampleSeries}
+      />
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
 });

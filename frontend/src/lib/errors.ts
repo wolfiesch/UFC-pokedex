@@ -48,6 +48,7 @@ export class ApiError extends Error {
   public readonly validationErrors?: ValidationErrorDetail[];
   public readonly retryCount: number;
   public readonly isRetryable: boolean;
+  public readonly context?: string;
 
   constructor(
     message: string,
@@ -62,6 +63,7 @@ export class ApiError extends Error {
       validationErrors?: ValidationErrorDetail[];
       retryCount?: number;
       cause?: Error;
+      context?: string;
     } = {}
   ) {
     super(message);
@@ -80,6 +82,7 @@ export class ApiError extends Error {
     this.retryAfter = options.retryAfter;
     this.validationErrors = options.validationErrors;
     this.retryCount = options.retryCount || 0;
+    this.context = options.context;
 
     // Determine if error is retryable based on status code and error type
     this.isRetryable = this.determineRetryability();
