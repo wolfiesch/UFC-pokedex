@@ -56,9 +56,10 @@ def sort_fight_history(fights: list[FightHistoryEntry]) -> list[FightHistoryEntr
         fights: List of fight history entries to sort
 
     Returns:
-        Sorted list of fight history entries
+        A new sorted list of fight history entries (input list is not modified)
     """
-    fights.sort(
+    sorted_fights = fights.copy()
+    sorted_fights.sort(
         key=lambda fight: (
             # Primary: upcoming fights first (result="next" → 0, others → 1)
             0 if fight.result == "next" else 1,
@@ -66,7 +67,7 @@ def sort_fight_history(fights: list[FightHistoryEntry]) -> list[FightHistoryEntr
             -(fight.event_date or date.min).toordinal(),
         )
     )
-    return fights
+    return sorted_fights
 
 
 def compute_record_from_fights(fights: list[FightHistoryEntry]) -> str | None:
@@ -78,7 +79,7 @@ def compute_record_from_fights(fights: list[FightHistoryEntry]) -> str | None:
     Returns:
         Record string in format "W-L-D" or None if no completed fights
     """
-    from backend.db.repositories.fighter_repository import _normalize_result_category
+    from backend.db.repositories.base import _normalize_result_category
 
     if not fights:
         return None
