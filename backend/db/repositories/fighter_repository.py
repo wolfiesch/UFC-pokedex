@@ -329,6 +329,10 @@ class FighterRepository(BaseRepository):
             if fight.opponent_id:
                 opponent_ids.add(fight.opponent_id)
 
+        # Also collect fighter_ids from opponent fights for name lookup
+        for fight in opponent_fights:
+            opponent_ids.add(fight.fighter_id)
+
         opponent_lookup: dict[str, str] = {}
         if opponent_ids:
             opponent_rows = await self._session.execute(

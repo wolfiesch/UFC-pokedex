@@ -1744,9 +1744,9 @@ export interface operations {
     };
     list_collections_favorites_collections_get: {
         parameters: {
-            query: {
+            query?: {
                 /** @description Identifier for the owner */
-                user_id: string;
+                user_id?: string;
             };
             header?: never;
             path?: never;

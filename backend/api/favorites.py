@@ -24,7 +24,7 @@ router = APIRouter()
 
 @router.get("/collections", response_model=FavoriteCollectionListResponse)
 async def list_collections(
-    user_id: str = Query(..., min_length=1, description="Identifier for the owner"),
+    user_id: str = Query("demo-user", min_length=1, description="Identifier for the owner"),
     service: FavoritesService = Depends(get_favorites_service),
 ) -> FavoriteCollectionListResponse:
     """Return the caller's collections, hydrating stats summaries."""
