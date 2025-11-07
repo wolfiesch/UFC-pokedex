@@ -73,7 +73,7 @@ def download_fighter_image_from_sherdog(
 
         return (ufc_id, True, None)
 
-    except Exception as e:
+    except (requests.exceptions.RequestException, OSError) as e:
         return (ufc_id, False, str(e))
 
 

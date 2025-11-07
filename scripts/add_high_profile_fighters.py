@@ -86,7 +86,7 @@ def download_image(sherdog_url: str, ufc_id: str, images_dir: Path) -> bool:
 
         return True
 
-    except Exception as e:
+    except (requests.exceptions.RequestException, OSError) as e:
         console.print(f"[red]Error downloading {sherdog_url}: {e}[/red]")
         return False
 

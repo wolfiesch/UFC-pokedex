@@ -125,7 +125,7 @@ def main():
                 print("✅ Analysis complete!")
                 print(f"{'='*80}\n")
                 break
-            except Exception as e:
+            except (requests.exceptions.RequestException, OSError) as e:
                 print(f"❌ Error fetching page: {e}")
                 print("Trying next fighter...")
                 continue

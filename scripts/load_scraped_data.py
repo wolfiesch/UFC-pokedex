@@ -582,7 +582,7 @@ async def load_fighters_from_jsonl(
                 except json.JSONDecodeError as e:
                     console.print(f"[red]Line {line_num}: JSON decode error: {e}[/red]")
                     skipped_count += 1
-                except Exception as e:
+                except (ValueError, TypeError, KeyError) as e:
                     console.print(
                         f"[red]Line {line_num}: Error loading fighter: {e}[/red]"
                     )
@@ -698,7 +698,7 @@ async def load_fighter_detail(
             await invalidate_fighter(cache, fighter_id)
         return True
 
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, ValueError, TypeError, KeyError) as e:
         console.print(f"[red]Error loading {json_path}: {e}[/red]")
         if session.in_transaction():
             await session.rollback()
@@ -718,7 +718,7 @@ async def main(args: argparse.Namespace) -> None:
     if not args.dry_run:
         try:
             cache_client = await get_cache_client()
-        except Exception as cache_error:  # pragma: no cover - best effort logging
+        except (ConnectionError, OSError, TimeoutError) as cache_error:  # pragma: no cover - best effort logging
             console.print(
                 f"[yellow]Warning: unable to connect to Redis cache ({cache_error}). Proceeding without caching.[/yellow]"
             )

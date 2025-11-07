@@ -588,7 +588,7 @@ async def main():
         console.print(f"✓ CSV exported: {CSV_OUTPUT_PATH}")
         console.print("\n[bold green]✓ Done![/bold green]\n")
 
-    except Exception as e:
+    except (requests.exceptions.RequestException, OSError, ValueError, KeyError) as e:
         console.print(f"\n[red]✗ Error: {e}[/red]")
         raise
 

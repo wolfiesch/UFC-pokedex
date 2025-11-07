@@ -165,7 +165,7 @@ async def load_event_details_from_json(
             except json.JSONDecodeError as e:
                 console.print(f"[red]File {json_file.name}: JSON decode error: {e}[/red]")
                 skipped_count += 1
-            except Exception as e:
+            except (ValueError, TypeError, KeyError) as e:
                 console.print(
                     f"[red]File {json_file.name}: Error loading event: {e}[/red]"
                 )
@@ -195,7 +195,7 @@ async def main(args: argparse.Namespace) -> None:
     if not args.dry_run:
         try:
             cache_client = await get_cache_client()
-        except Exception as cache_error:
+        except (ConnectionError, OSError, TimeoutError) as cache_error:
             console.print(
                 f"[yellow]Warning: unable to connect to Redis cache ({cache_error}). Proceeding without caching.[/yellow]"
             )
@@ -232,7 +232,7 @@ async def main(args: argparse.Namespace) -> None:
                 console.print(
                     f"[dim]Invalidated {len(keys_to_delete)} cache entries[/dim]"
                 )
-        except Exception as e:
+        except (ConnectionError, OSError, TimeoutError) as e:
             console.print(f"[yellow]Warning: Could not invalidate cache: {e}[/yellow]")
 
         # Close Redis connection gracefully

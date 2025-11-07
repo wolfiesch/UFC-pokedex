@@ -44,7 +44,7 @@ async def fetch_fighter_record(
             return fighter_id, record
         return fighter_id, record_text
 
-    except Exception as e:
+    except (httpx.HTTPError, httpx.TimeoutException) as e:
         console.print(f"[yellow]Error fetching {fighter_id}: {e}[/yellow]")
         return fighter_id, None
 
@@ -82,7 +82,7 @@ async def update_records_in_json(fighters_dir: Path, records: dict[str, str]) ->
                     json.dump(data, f, indent=2)
 
                 updated += 1
-            except Exception as e:
+            except (OSError, json.JSONDecodeError) as e:
                 console.print(f"[yellow]Error updating JSON for {fighter_id}: {e}[/yellow]")
 
     return updated

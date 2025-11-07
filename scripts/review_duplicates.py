@@ -35,7 +35,8 @@ def display_image_iterm2(image_path: Path, width: int = 40):
 
         console.print(escape_sequence)
         return True
-    except Exception:
+    except (OSError, ValueError) as e:
+        console.print(f"[dim]iTerm2 display error: {e}[/dim]")
         return False
 
 
@@ -49,7 +50,8 @@ def display_image_kitty(image_path: Path, width: int = 40):
             timeout=2
         )
         return result.returncode == 0
-    except Exception:
+    except (OSError, subprocess.TimeoutExpired) as e:
+        console.print(f"[dim]Kitty display error: {e}[/dim]")
         return False
 
 
@@ -81,7 +83,8 @@ def display_image_ascii(image_path: Path, width: int = 80):
 
         console.print(ascii_str)
         return True
-    except Exception:
+    except (OSError, ValueError) as e:
+        console.print(f"[dim]ASCII display error: {e}[/dim]")
         return False
 
 
@@ -133,8 +136,8 @@ def display_image(image_path: Path, method: str = 'auto', width: int = 40) -> bo
             else:
                 subprocess.run(['xdg-open', str(image_path)], check=True)
             return True
-        except Exception:
-            pass
+        except (OSError, subprocess.CalledProcessError) as e:
+            console.print(f"[dim]System viewer error: {e}[/dim]")
 
     # Final fallback - just show path
     console.print(f"[dim]Image path: {image_path}[/dim]")

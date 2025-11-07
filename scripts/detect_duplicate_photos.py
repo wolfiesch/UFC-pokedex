@@ -25,7 +25,8 @@ def compute_image_hash(image_path: Path) -> str:
         img = Image.open(image_path)
         # Use average hash for good balance of speed and accuracy
         return str(imagehash.average_hash(img, hash_size=8))
-    except Exception:
+    except (OSError, ValueError) as e:
+        console.print(f"[dim]Error hashing {image_path.name}: {e}[/dim]")
         return None
 
 
@@ -34,7 +35,8 @@ def compute_phash(image_path: Path) -> str:
     try:
         img = Image.open(image_path)
         return str(imagehash.phash(img, hash_size=8))
-    except Exception:
+    except (OSError, ValueError) as e:
+        console.print(f"[dim]Error computing phash for {image_path.name}: {e}[/dim]")
         return None
 
 

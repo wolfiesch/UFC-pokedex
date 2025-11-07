@@ -34,11 +34,11 @@ def setup_query_monitoring(
 
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
     def receive_before_cursor_execute(
-        conn: Any,
-        cursor: Any,
+        conn: Any,  # SQLAlchemy Connection - using Any due to incomplete typing in library
+        cursor: Any,  # DBAPI cursor - type varies by database driver
         statement: str,
-        parameters: Any,
-        context: Any,
+        parameters: Any,  # Query parameters - type varies by query
+        context: Any,  # ExecutionContext - using Any due to incomplete typing in library
         executemany: bool,
     ) -> None:
         """Record query start time."""
@@ -46,11 +46,11 @@ def setup_query_monitoring(
 
     @event.listens_for(engine.sync_engine, "after_cursor_execute")
     def receive_after_cursor_execute(
-        conn: Any,
-        cursor: Any,
+        conn: Any,  # SQLAlchemy Connection - using Any due to incomplete typing in library
+        cursor: Any,  # DBAPI cursor - type varies by database driver
         statement: str,
-        parameters: Any,
-        context: Any,
+        parameters: Any,  # Query parameters - type varies by query
+        context: Any,  # ExecutionContext - using Any due to incomplete typing in library
         executemany: bool,
     ) -> None:
         """Log slow queries after execution."""
@@ -75,15 +75,18 @@ def setup_query_monitoring(
     if log_pool_stats:
         # Log connection pool statistics periodically
         @event.listens_for(Pool, "connect")
-        def receive_connect(dbapi_conn: Any, connection_record: Any) -> None:
+        def receive_connect(
+            dbapi_conn: Any,  # DBAPI connection - type varies by database driver
+            connection_record: Any,  # PoolProxiedConnection - using Any due to incomplete typing
+        ) -> None:
             """Log when new connections are created."""
             logger.debug("New database connection created")
 
         @event.listens_for(Pool, "checkout")
         def receive_checkout(
-            dbapi_conn: Any,
-            connection_record: Any,
-            connection_proxy: Any,
+            dbapi_conn: Any,  # DBAPI connection - type varies by database driver
+            connection_record: Any,  # ConnectionPoolEntry - using Any due to incomplete typing
+            connection_proxy: Any,  # PoolProxiedConnection - using Any due to incomplete typing
         ) -> None:
             """Log connection pool checkout."""
             pool = connection_proxy._pool

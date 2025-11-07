@@ -151,7 +151,7 @@ async def main(args: argparse.Namespace) -> None:
                     console.print(f"\n[dim]Invalidated {len(keys_to_delete)} cache entries[/dim]")
 
                 await close_redis()
-        except Exception as e:
+        except (ConnectionError, OSError, TimeoutError) as e:
             console.print(f"\n[yellow]Warning: Could not invalidate cache: {e}[/yellow]")
 
     console.print("\n[bold green]✓ Fight-event linking complete![/bold green]")
