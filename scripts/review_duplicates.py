@@ -138,7 +138,6 @@ def display_image(image_path: Path, method: str = 'auto', width: int = 40) -> bo
             return True
         except (OSError, subprocess.CalledProcessError) as e:
             console.print(f"[dim]System viewer error: {e}[/dim]")
-            pass
 
     # Final fallback - just show path
     console.print(f"[dim]Image path: {image_path}[/dim]")
