@@ -464,6 +464,9 @@ class FavoritesService:
     async def _compute_collection_stats(
         self, collection: FavoriteCollection
     ) -> FavoriteCollectionStats:
+        # Eagerly load entries to avoid lazy loading in async context
+        await self._session.refresh(collection, ["entries"])
+
         if not collection.entries:
             return FavoriteCollectionStats(
                 total_fighters=0,
