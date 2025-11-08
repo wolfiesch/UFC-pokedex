@@ -29,7 +29,9 @@ make db-upgrade                         # Run database migrations
 ### Running Services
 ```bash
 make dev-local      # Start backend + frontend with localhost (recommended for local dev)
+                    # Overwrites frontend/.env.local with localhost URLs
 make dev            # Start backend + frontend + Cloudflare tunnels together
+                    # Overwrites frontend/.env.local with Cloudflare tunnel URLs
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
 make stop           # Stop all running services (backend, frontend, tunnels)
@@ -37,7 +39,7 @@ make dev-clean      # Clean frontend caches and restart (fixes webpack cache iss
 make scraper        # Run Scrapy spider (fighters_list)
 ```
 
-**Recommended for local development:** Use `make dev-local` - it starts both services without modifying environment files or starting tunnels.
+**Recommended for local development:** Use `make dev-local` - it keeps everything on localhost and automatically prepares `frontend/.env.local` with the right URLs each time.
 
 **Troubleshooting dev build crashes:** If you encounter webpack cache issues, MODULE_NOT_FOUND errors, or chunk 404s, run `make dev-clean` to clear all frontend build caches and restart cleanly.
 
