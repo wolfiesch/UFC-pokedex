@@ -82,6 +82,20 @@ const nextConfig = {
   // Fix date-fns barrel optimization issue
   experimental: {
     optimizePackageImports: ['date-fns'],
+    // Turbopack-specific configuration
+    turbo: {
+      // Exclude repository root directories from watch (Turbopack mode)
+      // These directories contain data/docs/scripts that shouldn't trigger rebuilds
+      resolveAlias: {},
+      rules: {
+        // Empty loaders for directories we want to exclude from watching
+        '../../data/**': { loaders: [] },
+        '../../docs/**': { loaders: [] },
+        '../../scripts/**': { loaders: [] },
+        '../../scraper/**': { loaders: [] },
+        '../../tests/**': { loaders: [] },
+      },
+    },
   },
 
   // Proxy REST API requests when a base URL is provided.
