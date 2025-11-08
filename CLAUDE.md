@@ -31,7 +31,7 @@ make db-upgrade                         # Run database migrations
 make dev-local      # Start backend + frontend with localhost (recommended for local dev)
                     # Overwrites frontend/.env.local with localhost URLs
 make dev            # Start backend + frontend + Cloudflare tunnels together
-                    # Rewrites frontend/.env.local with Cloudflare tunnel URLs
+                    # Overwrites frontend/.env.local with Cloudflare tunnel URLs
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
 make stop           # Stop all running services (backend, frontend, tunnels)
