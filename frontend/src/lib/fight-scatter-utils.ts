@@ -10,7 +10,7 @@ import type {
   FightResult,
   HexbinBucket,
 } from "@/types/fight-scatter";
-import { getImageUrl } from "./utils";
+import { resolveImageUrl } from "./utils";
 
 /**
  * Standard round duration in seconds (5 minutes)
@@ -147,7 +147,7 @@ export function convertFightToScatterPoint(
   // Construct headshot URL from opponent_id or use placeholder
   // Images are served from backend at /images/fighters/{id}.jpg
   const headshot_url = fight.opponent_id
-    ? getImageUrl(`/images/fighters/${fight.opponent_id}.jpg`)
+    ? (resolveImageUrl(`/images/fighters/${fight.opponent_id}.jpg`) ?? defaultHeadshotUrl)
     : defaultHeadshotUrl;
 
   return {
