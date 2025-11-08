@@ -12,7 +12,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from types import ModuleType
-from typing import Any, AsyncIterator, Final
+from typing import Any, AsyncIterator
 
 
 def _redis_is_available() -> bool:
@@ -31,8 +31,8 @@ class _StubRedis:
 
     def __init__(self) -> None:
         # No connection is ever established; the stub only signals failures.
-        self._connected: Final[bool] = False
-
+        pass
+        
     @classmethod
     def from_url(cls, *_args: Any, **_kwargs: Any) -> "_StubRedis":
         """Return a client instance regardless of the provided parameters."""
@@ -67,8 +67,6 @@ class _StubRedis:
 
     async def aclose(self) -> None:
         """Provide an awaitable close method for graceful shutdown calls."""
-
-        return None
 
 
 def _install_stub() -> None:

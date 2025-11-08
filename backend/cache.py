@@ -7,7 +7,7 @@ import os
 from collections.abc import Sequence
 from functools import lru_cache
 from hashlib import sha256
-from typing import TYPE_CHECKING, Any, Tuple, Type
+from typing import TYPE_CHECKING, Any
 
 try:
     from redis.exceptions import ConnectionError as RedisConnectionError
@@ -36,6 +36,7 @@ _FAVORITE_STATS_PREFIX = "favorites:stats"
 
 _redis_client: RedisClient | None = None
 _client_lock = asyncio.Lock()
+_redis_disabled = False
 
 
 def _redis_url() -> str:
@@ -123,10 +124,14 @@ def favorite_stats_key(collection_id: int | str) -> str:
 
 async def get_redis() -> RedisClient | None:
     """Get Redis client, returning None if connection fails."""
-    global _redis_client
+    global _redis_client, _redis_disabled
     redis_class, _ = _load_redis_components()
     if redis_class is None:
         logger.info("Redis dependency not installed; caching remains disabled.")
+        return None
+
+    if _redis_disabled:
+        logger.debug("Redis connection disabled after previous failure; skipping attempt.")
         return None
 
     # ALWAYS acquire lock first to prevent TOCTOU race
@@ -134,6 +139,9 @@ async def get_redis() -> RedisClient | None:
         # Double-check pattern inside lock
         if _redis_client is not None:
             return _redis_client
+
+        if _redis_disabled:
+            return None
 
         try:
             client: RedisClient = redis_class.from_url(  # type: ignore[call-arg]
@@ -150,12 +158,13 @@ async def get_redis() -> RedisClient | None:
                     f"Redis connection failed: {exc}. Caching will be disabled."
                 )
                 _redis_client = None
+                _redis_disabled = True
                 return None
             raise
 
 
 @lru_cache(maxsize=1)
-def _load_redis_components() -> Tuple[RedisClient | None, Type[BaseException]]:
+def _load_redis_components() -> tuple[RedisClient | None, type[BaseException]]:
     """Return the Redis asyncio client class and connection error type."""
 
     try:  # pragma: no cover - optional dependency import
@@ -213,7 +222,7 @@ class CacheClient:
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
                 logger.debug(f"Redis set failed for key {key}: {exc}")
-                return None
+                return
             raise
 
     async def delete(self, *keys: str) -> None:
@@ -224,7 +233,7 @@ class CacheClient:
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
                 logger.debug(f"Redis delete failed: {exc}")
-                return None
+                return
             raise
 
     async def delete_pattern(self, pattern: str) -> None:
@@ -236,7 +245,7 @@ class CacheClient:
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
                 logger.debug(f"Redis delete_pattern failed for {pattern}: {exc}")
-                return None
+                return
             raise
 
 
@@ -247,10 +256,11 @@ async def get_cache_client() -> CacheClient:
 
 async def close_redis() -> None:
     """Close the global Redis connection gracefully."""
-    global _redis_client
+    global _redis_client, _redis_disabled
     if _redis_client is not None:
         await _redis_client.aclose()
         _redis_client = None
+    _redis_disabled = False
 
 
 async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:

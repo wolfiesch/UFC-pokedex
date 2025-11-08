@@ -25,8 +25,7 @@ def _ensure_redis_stub_loaded() -> None:
         # The shim only exists inside the kata runner where optional
         # dependencies are omitted. When running in a fully provisioned
         # environment the import naturally fails and can be ignored.
-        return None
-    return None
+        pass
 
 
 class _AsyncioCompatPlugin:
