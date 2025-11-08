@@ -8,6 +8,15 @@ function isLikelyLocalAddress(value: string): boolean {
 
 function ensureAbsoluteUrl(value: string): string {
   const parsed = new URL(value);
+  // Guard against URLs that parse successfully but lack a usable origin (e.g.,
+  // "localhost:8000" which the WHATWG URL parser treats as a custom scheme and
+  // yields an origin of "null"). Treat these as invalid so the caller can try
+  // alternative candidates with explicit schemes.
+  if (parsed.origin === "null") {
+    throw new TypeError(
+      `URL "${value}" is missing a valid scheme and cannot be resolved.`
+    );
+  }
   const normalizedPath =
     parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/$/, "");
   return `${parsed.origin}${normalizedPath}`;

@@ -13,6 +13,7 @@ import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./generated/api-schema";
 import { ApiError } from "./errors";
 import { logger } from "./logger";
+import { resolveApiBaseUrl } from "./resolve-api-base-url";
 
 const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRY_ATTEMPTS = 3;
@@ -22,7 +23,10 @@ const RETRY_DELAY_MS = 1000; // 1 second base delay
  * Get the API base URL from environment variables
  */
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  return resolveApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    "http://localhost:8000"
+  );
 }
 
 /**
