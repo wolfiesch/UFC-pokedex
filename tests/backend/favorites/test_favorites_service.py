@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 
 import pytest
 
 try:
     import pytest_asyncio
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+    from sqlalchemy.orm import Session
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for favorites service tests.",
@@ -16,12 +21,19 @@ except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency gua
     )
 
 from backend.cache import favorite_collection_key, favorite_list_key, favorite_stats_key
-from backend.db.models import Base, Fight, Fighter
+from backend.db.models import (
+    Base,
+    Fight,
+    Fighter,
+    FavoriteCollection,
+    FavoriteEntry as FavoriteEntryModel,
+)
 from backend.schemas.favorites import (
     FavoriteCollectionCreate,
     FavoriteEntryCreate,
     FavoriteEntryReorderRequest,
 )
+import backend.services.favorites_service as favorites_module
 from backend.services.favorites_service import FavoritesService
 
 
@@ -66,6 +78,16 @@ async def session() -> AsyncIterator[AsyncSession]:
         if session.in_transaction():
             await session.rollback()
     await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def reset_favorites_tables_cache() -> Iterator[None]:
+    """Ensure the process-wide favorites readiness cache starts fresh for each test."""
+
+    previous_cache: bool | None = favorites_module._FAVORITES_TABLES_READY_CACHE
+    favorites_module._FAVORITES_TABLES_READY_CACHE = None
+    yield
+    favorites_module._FAVORITES_TABLES_READY_CACHE = previous_cache
 
 
 @pytest.mark.asyncio
@@ -189,6 +211,56 @@ async def test_stats_aggregation_populates_cache(session: AsyncSession) -> None:
     cached = await service.get_collection(collection_id=detail.id, user_id="tester")
     assert cached is not None
     assert cached.stats == stats
+
+
+@pytest.mark.asyncio
+async def test_tables_ready_cache_recovers_after_initial_failure(
+    session: AsyncSession,
+) -> None:
+    """FavoritesService should recover once the tables appear after an initial miss."""
+
+    def _drop_tables(sync_session: Session) -> None:
+        """Remove favorites tables to mimic an environment where migrations lag."""
+
+        FavoriteEntryModel.__table__.drop(sync_session.connection(), checkfirst=True)
+        FavoriteCollection.__table__.drop(sync_session.connection(), checkfirst=True)
+
+    def _create_tables(sync_session: Session) -> None:
+        """Recreate favorites tables after the simulated migration completes."""
+
+        FavoriteCollection.__table__.create(sync_session.connection(), checkfirst=True)
+        FavoriteEntryModel.__table__.create(sync_session.connection(), checkfirst=True)
+
+    await session.run_sync(_drop_tables)
+
+    cache = MemoryCache()
+    service = FavoritesService(session, cache)
+
+    response = await service.list_collections(user_id="tester")
+    assert response.total == 0
+    assert service._tables_ready is False
+    assert favorites_module._FAVORITES_TABLES_READY_CACHE is None
+
+    await session.run_sync(_create_tables)
+
+    created = await service.create_collection(
+        FavoriteCollectionCreate(
+            user_id="tester",
+            title="Active",
+            description="Newly available after migrations.",
+            is_public=False,
+            slug="active",
+            metadata={},
+        )
+    )
+
+    assert created.id is not None
+    assert service._tables_ready is True
+    assert favorites_module._FAVORITES_TABLES_READY_CACHE is True
+
+    refreshed = await service.list_collections(user_id="tester")
+    assert refreshed.total == 1
+    assert refreshed.collections[0].id == created.id
 
 
 @pytest.mark.asyncio
