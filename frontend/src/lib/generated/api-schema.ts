@@ -487,11 +487,8 @@ export interface components {
              * @default UFC
              */
             promotion: string;
-            /**
-             * Ufcstats Url
-             * Format: uri
-             */
-            ufcstats_url: string;
+            /** Ufcstats Url */
+            ufcstats_url?: string | null;
             /** Tapology Url */
             tapology_url?: string | null;
             /** Sherdog Url */
