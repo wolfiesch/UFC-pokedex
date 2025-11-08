@@ -1132,8 +1132,11 @@ export interface components {
          * @description Container for leaderboard metadata and ranked entries for a metric.
          */
         LeaderboardDefinition: {
-            /** Metric Id */
-            metric_id: string;
+            /**
+             * Metric Id
+             * @enum {string}
+             */
+            metric_id: "sig_strikes_accuracy_pct" | "avg_submissions";
             /** Title */
             title: string;
             /** Description */
@@ -1199,8 +1202,11 @@ export interface components {
          * @description Individual metric displayed in the summary KPIs section.
          */
         StatsSummaryMetric: {
-            /** Id */
-            id: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "fighters_indexed" | "avg_sig_strikes_accuracy_pct" | "avg_takedown_accuracy_pct" | "avg_submission_attempts" | "avg_fight_duration_minutes" | "max_win_streak";
             /** Label */
             label: string;
             /** Value */
@@ -1670,9 +1676,9 @@ export interface operations {
                 /** @description Maximum entries per leaderboard. */
                 limit?: number;
                 /** @description fighter_stats.metric name representing accuracy to rank. */
-                accuracy_metric?: string;
+                accuracy_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
                 /** @description fighter_stats.metric name representing submissions to rank. */
-                submissions_metric?: string;
+                submissions_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
                 /** @description Optional inclusive lower bound on fight event dates. */
                 start_date?: string | null;
                 /** @description Optional inclusive upper bound on fight event dates. */
