@@ -25,6 +25,7 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from backend.db.connection import begin_engine_transaction
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
 )
@@ -168,7 +169,7 @@ async def lifespan(app: FastAPI):
 
         # For SQLite, create tables automatically (bypass Alembic)
         engine = get_engine()
-        async with engine.begin() as conn:
+        async with begin_engine_transaction(engine) as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("✓ SQLite tables initialized successfully")
     else:
@@ -244,7 +245,11 @@ def _combine_origins(*origin_groups: list[str]) -> list[str]:
 
 
 derived_origins: list[str] = []
-for env_var in ("PUBLIC_FRONTEND_URL", "NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_API_BASE_URL"):
+for env_var in (
+    "PUBLIC_FRONTEND_URL",
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_API_BASE_URL",
+):
     origin = _extract_origin(os.getenv(env_var))
     if origin:
         derived_origins.append(origin)
@@ -376,7 +381,9 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
+async def database_timeout_exception_handler(
+    request: Request, exc: SQLAlchemyTimeoutError
+):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -428,7 +435,9 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
     request_id = request_id_context.get()
-    logger.error(f"Database error for request {request_id} to {request.url.path}: {str(exc)}")
+    logger.error(
+        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
+    )
 
     error_response = ErrorResponse(
         error_type=ErrorType.DATABASE_ERROR,

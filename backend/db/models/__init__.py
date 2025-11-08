@@ -16,7 +16,13 @@ from sqlalchemy import (
     Table,
     Index,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    validates,
+)
 
 
 class Base(DeclarativeBase):
@@ -40,7 +46,7 @@ class Event(Base):
     promotion: Mapped[str] = mapped_column(String, nullable=False, default="UFC")
 
     # Cross-reference URLs
-    ufcstats_url: Mapped[str] = mapped_column(String, nullable=False)
+    ufcstats_url: Mapped[str | None] = mapped_column(String, nullable=True)
     tapology_url: Mapped[str | None]
     sherdog_url: Mapped[str | None]
 
@@ -59,18 +65,25 @@ class Fighter(Base):
         nullable=True,
         index=True,
         doc=(
-            "Index ensures quick nickname lookups for fighter search " "and autocomplete queries."
+            "Index ensures quick nickname lookups for fighter search "
+            "and autocomplete queries."
         ),
     )
     division: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, index=True, doc="Indexed for division filtering queries"
+        String(50),
+        nullable=True,
+        index=True,
+        doc="Indexed for division filtering queries",
     )
     height: Mapped[str | None]
     weight: Mapped[str | None]
     reach: Mapped[str | None]
     leg_reach: Mapped[str | None]
     stance: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, index=True, doc="Indexed for stance filtering queries"
+        String(20),
+        nullable=True,
+        index=True,
+        doc="Indexed for stance filtering queries",
     )
     dob: Mapped[date | None]
     record: Mapped[str | None]
@@ -78,7 +91,9 @@ class Fighter(Base):
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image_scraped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     cropped_image_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    face_detection_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    face_detection_confidence: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
     crop_processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Champion status fields
@@ -88,8 +103,12 @@ class Fighter(Base):
     is_former_champion: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
-    was_interim: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
-    championship_history: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    was_interim: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    championship_history: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True
+    )
 
     # Pre-computed streak columns for performance (Phase 2 optimization)
     current_streak_type: Mapped[str | None] = mapped_column(
@@ -128,7 +147,9 @@ class Fight(Base):
         index=True,
         doc="Index optimizes fighter fight history retrieval and aggregation queries.",
     )
-    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), nullable=True, index=True)
+    event_id: Mapped[str | None] = mapped_column(
+        ForeignKey("events.id"), nullable=True, index=True
+    )
     opponent_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
@@ -143,7 +164,10 @@ class Fight(Base):
         String, nullable=False
     )  # Keep for backward compatibility
     event_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, index=True, doc="Indexed for date sorting/filtering queries"
+        Date,
+        nullable=True,
+        index=True,
+        doc="Indexed for date sorting/filtering queries",
     )
     result: Mapped[str] = mapped_column(String, nullable=False)
     method: Mapped[str | None]

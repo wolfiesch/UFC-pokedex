@@ -5,14 +5,13 @@ import json
 import logging
 import os
 from collections.abc import Sequence
+from functools import lru_cache
 from hashlib import sha256
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Tuple, Type
 
 try:
-    from redis.asyncio import Redis
     from redis.exceptions import ConnectionError as RedisConnectionError
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    Redis = None  # type: ignore[assignment]
 
     class RedisConnectionError(Exception):
         """Fallback exception class defined when redis package is not installed."""
@@ -55,7 +54,9 @@ def list_key(
     streak_window: int | None = None,
 ) -> str:
     streak_part = "1" if include_streak else "0"
-    window_part = str(streak_window) if include_streak and streak_window is not None else ""
+    window_part = (
+        str(streak_window) if include_streak and streak_window is not None else ""
+    )
     return f"{_LIST_PREFIX}:{limit}:{offset}:{streak_part}:{window_part}"
 
 
@@ -123,7 +124,8 @@ def favorite_stats_key(collection_id: int | str) -> str:
 async def get_redis() -> RedisClient | None:
     """Get Redis client, returning None if connection fails."""
     global _redis_client
-    if Redis is None:
+    redis_class, _ = _load_redis_components()
+    if redis_class is None:
         logger.info("Redis dependency not installed; caching remains disabled.")
         return None
 
@@ -134,14 +136,49 @@ async def get_redis() -> RedisClient | None:
             return _redis_client
 
         try:
-            _redis_client = Redis.from_url(_redis_url(), decode_responses=True, encoding="utf-8")
-            # Test connection
-            await _redis_client.ping()
+            client: RedisClient = redis_class.from_url(  # type: ignore[call-arg]
+                _redis_url(), decode_responses=True, encoding="utf-8"
+            )
+            # Test connection before storing the singleton instance.
+            await client.ping()
+            _redis_client = client
             logger.info("Redis connection established successfully")
             return _redis_client
-        except RedisConnectionError as e:
-            logger.warning(f"Redis connection failed: {e}. Caching will be disabled.")
-            return None
+        except Exception as exc:  # type: ignore[broad-except]
+            if _is_redis_connection_error(exc):
+                logger.warning(
+                    f"Redis connection failed: {exc}. Caching will be disabled."
+                )
+                _redis_client = None
+                return None
+            raise
+
+
+@lru_cache(maxsize=1)
+def _load_redis_components() -> Tuple[RedisClient | None, Type[BaseException]]:
+    """Return the Redis asyncio client class and connection error type."""
+
+    try:  # pragma: no cover - optional dependency import
+        from redis.asyncio import Redis as redis_class  # type: ignore
+        from redis.exceptions import ConnectionError as real_error
+    except ModuleNotFoundError:  # pragma: no cover - optional dependency
+        return None, RedisConnectionError
+
+    globals()["RedisConnectionError"] = real_error  # type: ignore[assignment]
+    return redis_class, real_error
+
+
+def _is_redis_connection_error(exc: BaseException) -> bool:
+    """Return ``True`` when ``exc`` represents a Redis connection failure."""
+
+    if isinstance(exc, RedisConnectionError):
+        return True
+
+    error_type = type(exc)
+    return (
+        error_type.__name__ == "ConnectionError"
+        and error_type.__module__.startswith("redis")
+    )
 
 
 class CacheClient:
@@ -159,9 +196,11 @@ class CacheClient:
                 return json.loads(payload)
             except json.JSONDecodeError:
                 return None
-        except RedisConnectionError as e:
-            logger.debug(f"Redis get failed for key {key}: {e}")
-            return None
+        except Exception as exc:  # type: ignore[broad-except]
+            if _is_redis_connection_error(exc):
+                logger.debug(f"Redis get failed for key {key}: {exc}")
+                return None
+            raise
 
     async def set_json(self, key: str, value: Any, ttl: int | None = None) -> None:
         if self._redis is None:
@@ -171,16 +210,22 @@ class CacheClient:
             if ttl is None:
                 ttl = _DEFAULT_TTL_SECONDS
             await self._redis.set(key, encoded, ex=ttl)
-        except RedisConnectionError as e:
-            logger.debug(f"Redis set failed for key {key}: {e}")
+        except Exception as exc:  # type: ignore[broad-except]
+            if _is_redis_connection_error(exc):
+                logger.debug(f"Redis set failed for key {key}: {exc}")
+                return None
+            raise
 
     async def delete(self, *keys: str) -> None:
         if self._redis is None or not keys:
             return
         try:
             await self._redis.delete(*keys)
-        except RedisConnectionError as e:
-            logger.debug(f"Redis delete failed: {e}")
+        except Exception as exc:  # type: ignore[broad-except]
+            if _is_redis_connection_error(exc):
+                logger.debug(f"Redis delete failed: {exc}")
+                return None
+            raise
 
     async def delete_pattern(self, pattern: str) -> None:
         if self._redis is None:
@@ -188,8 +233,11 @@ class CacheClient:
         try:
             async for key in self._redis.scan_iter(match=pattern):
                 await self._redis.delete(key)
-        except RedisConnectionError as e:
-            logger.debug(f"Redis delete_pattern failed for {pattern}: {e}")
+        except Exception as exc:  # type: ignore[broad-except]
+            if _is_redis_connection_error(exc):
+                logger.debug(f"Redis delete_pattern failed for {pattern}: {exc}")
+                return None
+            raise
 
 
 async def get_cache_client() -> CacheClient:

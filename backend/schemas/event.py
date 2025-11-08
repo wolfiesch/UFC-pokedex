@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 class EventFight(BaseModel):
     """A fight in an event's fight card"""
+
     fight_id: str | None = None
     fighter_1_id: str | None = None
     fighter_1_name: str
@@ -21,6 +22,7 @@ class EventFight(BaseModel):
 
 class EventListItem(BaseModel):
     """Event summary for list views"""
+
     event_id: str
     name: str
     date: date
@@ -33,8 +35,9 @@ class EventListItem(BaseModel):
 
 class EventDetail(EventListItem):
     """Detailed event information including fight card"""
+
     promotion: str = "UFC"
-    ufcstats_url: HttpUrl
+    ufcstats_url: HttpUrl | None = None
     tapology_url: HttpUrl | None = None
     sherdog_url: HttpUrl | None = None
     fight_card: list[EventFight] = Field(default_factory=list)
@@ -42,6 +45,7 @@ class EventDetail(EventListItem):
 
 class PaginatedEventsResponse(BaseModel):
     """Paginated list of events"""
+
     events: list[EventListItem]
     total: int
     limit: int
