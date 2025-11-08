@@ -78,13 +78,18 @@ function getErrorDetail(error: unknown): string | undefined {
  * @param defaultMessage - Fallback error message
  * @throws {ApiError} Always throws with structured error information
  */
-function throwApiError(error: unknown, defaultMessage: string): never {
+function throwApiError(
+  error: unknown,
+  defaultMessage: string,
+  context?: string
+): never {
   const statusCode = getStatusCode(error);
   const detail = getErrorDetail(error);
 
   throw new ApiError(detail || defaultMessage, {
     statusCode,
     detail,
+    context,
   });
 }
 
@@ -102,7 +107,8 @@ function throwApiErrorWithNotFound(
   error: unknown,
   resourceType: string,
   notFoundMessage: string,
-  defaultMessage: string
+  defaultMessage: string,
+  context?: string
 ): never {
   const statusCode = getStatusCode(error);
 
@@ -110,7 +116,7 @@ function throwApiErrorWithNotFound(
     throw new NotFoundError(resourceType, notFoundMessage);
   }
 
-  throwApiError(error, defaultMessage);
+  throwApiError(error, defaultMessage, context);
 }
 
 /**
@@ -335,11 +341,14 @@ export async function getStatsSummary() {
   const { data, error } = await client.GET("/stats/summary");
 
   if (error) {
-    throwApiError(error, "Failed to fetch stats summary");
+    throwApiError(error, "Unable to load stats summary metrics", "stats_summary");
   }
 
   if (!data) {
-    throw new ApiError("No stats data returned", { statusCode: 500 });
+    throw new ApiError("No stats data returned", {
+      statusCode: 500,
+      context: "stats_summary",
+    });
   }
 
   return data;
@@ -366,11 +375,14 @@ export async function getStatsLeaderboards() {
   const { data, error } = await client.GET("/stats/leaderboards");
 
   if (error) {
-    throwApiError(error, "Failed to fetch leaderboards");
+    throwApiError(error, "Unable to load stats leaderboards", "stats_leaderboards");
   }
 
   if (!data) {
-    throw new ApiError("No leaderboard data returned", { statusCode: 500 });
+    throw new ApiError("No leaderboard data returned", {
+      statusCode: 500,
+      context: "stats_leaderboards",
+    });
   }
 
   return data;
@@ -397,11 +409,14 @@ export async function getStatsTrends() {
   const { data, error } = await client.GET("/stats/trends");
 
   if (error) {
-    throwApiError(error, "Failed to fetch trends");
+    throwApiError(error, "Unable to load stats trends", "stats_trends");
   }
 
   if (!data) {
-    throw new ApiError("No trend data returned", { statusCode: 500 });
+    throw new ApiError("No trend data returned", {
+      statusCode: 500,
+      context: "stats_trends",
+    });
   }
 
   return data;

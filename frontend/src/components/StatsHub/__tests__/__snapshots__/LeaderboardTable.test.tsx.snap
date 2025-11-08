@@ -1,0 +1,111 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LeaderboardTable > matches snapshot with populated leaderboard data 1`] = `
+<div
+  class="group/card relative rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-colors rounded-3xl border-border bg-card/80"
+>
+  <div
+    class="flex flex-col gap-2 p-6 pb-0 space-y-2"
+  >
+    <h3
+      class="text-lg font-semibold tracking-tight text-xl"
+    >
+      Top Finishers
+    </h3>
+    <p
+      class="text-sm text-muted-foreground"
+    >
+      Measured by total finishes.
+    </p>
+  </div>
+  <div
+    class="p-6 pt-4"
+  >
+    <div
+      class="relative w-full overflow-auto"
+    >
+      <table
+        class="w-full caption-bottom text-sm"
+      >
+        <thead
+          class="[&_tr]:border-b [&_tr]:border-border"
+        >
+          <tr
+            class="transition-colors hover:bg-muted/40"
+          >
+            <th
+              class="h-10 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground w-16"
+            >
+              Rank
+            </th>
+            <th
+              class="h-10 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            >
+              Fighter
+            </th>
+            <th
+              class="h-10 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground text-right"
+            >
+              Finishes
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          class="divide-y divide-border/60"
+        >
+          <tr
+            class="transition-colors hover:bg-muted/40"
+          >
+            <td
+              class="px-4 py-3 align-middle text-sm text-sm font-semibold"
+            >
+              1
+            </td>
+            <td
+              class="px-4 py-3 align-middle text-sm"
+            >
+              <a
+                class="font-medium text-foreground transition hover:text-foreground/70"
+                href="/fighters/1"
+              >
+                <span
+                  class="sr-only"
+                >
+                  View fighter profile:
+                </span>
+                Fighter One
+              </a>
+            </td>
+            <td
+              class="px-4 py-3 align-middle text-sm text-right font-mono text-sm font-semibold"
+            >
+              15
+            </td>
+          </tr>
+          <tr
+            class="transition-colors hover:bg-muted/40"
+          >
+            <td
+              class="px-4 py-3 align-middle text-sm text-sm font-semibold"
+            >
+              2
+            </td>
+            <td
+              class="px-4 py-3 align-middle text-sm"
+            >
+              <span>
+                Fighter Two
+              </span>
+            </td>
+            <td
+              class="px-4 py-3 align-middle text-sm text-right font-mono text-sm font-semibold"
+            >
+              12.5
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`;

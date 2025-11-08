@@ -56,4 +56,17 @@ describe("LeaderboardTable", () => {
 
     expect(screen.getByText(/No leaderboard data available/i)).toBeInTheDocument();
   });
+
+  it("matches snapshot with populated leaderboard data", () => {
+    const { container } = render(
+      <LeaderboardTable
+        title="Top Finishers"
+        description="Measured by total finishes."
+        entries={sampleEntries}
+        metricLabel="Finishes"
+      />
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
 });

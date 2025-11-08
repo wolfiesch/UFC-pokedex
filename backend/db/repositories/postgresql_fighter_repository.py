@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from datetime import date
-from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,8 +24,10 @@ from backend.schemas.fighter import (
     FighterListItem,
 )
 from backend.schemas.stats import (
+    LeaderboardMetricId,
     LeaderboardsResponse,
     StatsSummaryResponse,
+    TrendTimeBucket,
     TrendsResponse,
 )
 
@@ -138,8 +139,8 @@ class PostgreSQLFighterRepository:
         self,
         *,
         limit: int,
-        accuracy_metric: str,
-        submissions_metric: str,
+        accuracy_metric: LeaderboardMetricId,
+        submissions_metric: LeaderboardMetricId,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
@@ -157,7 +158,7 @@ class PostgreSQLFighterRepository:
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: Literal["month", "quarter", "year"],
+        time_bucket: TrendTimeBucket,
         streak_limit: int,
     ) -> TrendsResponse:
         """Aggregate longitudinal trends."""
@@ -172,4 +173,3 @@ class PostgreSQLFighterRepository:
     async def create_fight(self, fight: Fight) -> Fight:
         """Create a new fight record."""
         return await self._fight_repo.create_fight(fight)
-

@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TrendChart > matches snapshot with populated trend data 1`] = `
+<div
+  class="group/card relative rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-colors rounded-3xl border-border bg-card/80"
+>
+  <div
+    class="flex flex-col gap-2 p-6 pb-0 space-y-2"
+  >
+    <h3
+      class="text-lg font-semibold tracking-tight text-xl"
+    >
+      Trends
+    </h3>
+    <p
+      class="text-sm text-muted-foreground"
+    >
+      Win streak duration over time
+    </p>
+  </div>
+  <div
+    class="p-6 pt-4"
+  >
+    <div
+      data-testid="trend-chart-stub"
+    >
+      1
+       series
+    </div>
+  </div>
+</div>
+`;

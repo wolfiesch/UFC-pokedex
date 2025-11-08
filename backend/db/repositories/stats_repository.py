@@ -10,89 +10,124 @@ This repository handles:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from datetime import date
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import ClassVar, Mapping
 
-from sqlalchemy import Float, cast, func, select
+from sqlalchemy import Date, Float, Integer, case, cast, func, select
+from sqlalchemy.sql import ColumnElement
 
 from backend.db.models import Fight, Fighter, fighter_stats
 from backend.db.repositories.base import BaseRepository
 from backend.schemas.stats import (
     AverageFightDuration,
+    LEADERBOARD_METRIC_DESCRIPTIONS,
     LeaderboardDefinition,
     LeaderboardEntry,
     LeaderboardsResponse,
+    LeaderboardMetricId,
+    SUMMARY_METRIC_DESCRIPTIONS,
+    SUMMARY_METRIC_LABELS,
     StatsSummaryMetric,
+    StatsSummaryMetricId,
     StatsSummaryResponse,
     TrendPoint,
     TrendSeries,
+    TrendTimeBucket,
     TrendsResponse,
     WinStreakSummary,
 )
 
 
+@dataclass(frozen=True, slots=True)
+class _LeaderboardPayload:
+    """Lightweight container that pairs leaderboard metadata with ranked entries."""
+
+    metric_id: str
+    title: str
+    description: str
+    entries: Iterable[LeaderboardEntry]
+
+
 class StatsRepository(BaseRepository):
-    """Repository for analytics and aggregate statistics."""
+    """Repository for analytics and aggregate statistics using SQL window functions."""
+
+    _WIN_RESULTS: ClassVar[set[str]] = {"w", "win"}
+    _SUMMARY_METRIC_PRECISION: ClassVar[
+        Mapping[StatsSummaryMetricId, int]
+    ] = {
+        "avg_sig_strikes_accuracy_pct": 1,
+        "avg_takedown_accuracy_pct": 1,
+        "avg_submission_attempts": 2,
+    }
 
     async def stats_summary(self) -> StatsSummaryResponse:
-        """Get aggregate statistics about fighters."""
-        # Count total fighters
-        count_query = select(func.count(Fighter.id))
-        result = await self._session.execute(count_query)
-        total_fighters = result.scalar_one_or_none() or 0
+        """Return dashboard friendly KPIs derived directly from SQL window functions."""
 
-        metrics: list[StatsSummaryMetric] = [
+        metrics: list[StatsSummaryMetric] = []
+
+        total_fighters_stmt = select(func.count(Fighter.id))
+        total_fighters_result = await self._session.execute(total_fighters_stmt)
+        total_fighters = int(total_fighters_result.scalar_one_or_none() or 0)
+        metrics.append(
             StatsSummaryMetric(
                 id="fighters_indexed",
-                label="Fighters Indexed",
+                label=SUMMARY_METRIC_LABELS["fighters_indexed"],
                 value=float(total_fighters),
-                description="Total number of UFC fighters ingested from UFCStats.",
+                description=SUMMARY_METRIC_DESCRIPTIONS["fighters_indexed"],
             )
-        ]
-
-        avg_sig_accuracy = await self._average_metric("sig_strikes_accuracy_pct")
-        if avg_sig_accuracy is not None:
-            metrics.append(
-                StatsSummaryMetric(
-                    id="avg_sig_strikes_accuracy_pct",
-                    label="Avg. Sig. Strike Accuracy",
-                    value=round(avg_sig_accuracy, 1),
-                    description="Average significant strike accuracy across the roster (%).",
-                )
-            )
-
-        avg_takedown_accuracy = await self._average_metric("takedown_accuracy_pct")
-        if avg_takedown_accuracy is not None:
-            metrics.append(
-                StatsSummaryMetric(
-                    id="avg_takedown_accuracy_pct",
-                    label="Avg. Takedown Accuracy",
-                    value=round(avg_takedown_accuracy, 1),
-                    description="Average takedown accuracy rate across all fighters (%).",
-                )
-            )
-
-        avg_submissions = await self._average_metric("avg_submissions")
-        if avg_submissions is not None:
-            metrics.append(
-                StatsSummaryMetric(
-                    id="avg_submission_attempts",
-                    label="Avg. Submission Attempts",
-                    value=round(avg_submissions, 2),
-                    description="Average submission attempts per fight recorded for the roster.",
-                )
-            )
-
-        avg_fight_duration_seconds = await self._average_metric(
-            "avg_fight_duration_seconds"
         )
-        if avg_fight_duration_seconds is not None:
+
+        # Aggregate fighter_stats metrics with a windowed average so the SQL engine does all the
+        # heavy lifting regardless of dataset size.
+        metric_mapping: Mapping[str, StatsSummaryMetricId] = {
+            "sig_strikes_accuracy_pct": "avg_sig_strikes_accuracy_pct",
+            "takedown_accuracy_pct": "avg_takedown_accuracy_pct",
+            "avg_submissions": "avg_submission_attempts",
+        }
+        metric_averages = await self._average_metrics(metric_mapping.keys())
+
+        for source_metric, summary_id in metric_mapping.items():
+            value = metric_averages.get(source_metric)
+            if value is None:
+                continue
+            metrics.append(
+                StatsSummaryMetric(
+                    id=summary_id,
+                    label=SUMMARY_METRIC_LABELS[summary_id],
+                    value=round(
+                        value,
+                        self._SUMMARY_METRIC_PRECISION.get(summary_id, 1),
+                    ),
+                    description=SUMMARY_METRIC_DESCRIPTIONS[summary_id],
+                )
+            )
+
+        avg_duration_seconds = await self._global_average_fight_duration_seconds()
+        if avg_duration_seconds is not None:
             metrics.append(
                 StatsSummaryMetric(
                     id="avg_fight_duration_minutes",
-                    label="Avg. Fight Duration",
-                    value=round(avg_fight_duration_seconds / 60, 1),
-                    description="Average fight duration (minutes) derived from recorded bouts.",
+                    label=SUMMARY_METRIC_LABELS["avg_fight_duration_minutes"],
+                    value=round(avg_duration_seconds / 60.0, 1),
+                    description=SUMMARY_METRIC_DESCRIPTIONS[
+                        "avg_fight_duration_minutes"
+                    ],
+                )
+            )
+
+        top_streaks = await self._calculate_win_streaks(
+            start_date=None, end_date=None, limit=1
+        )
+        if top_streaks:
+            longest = top_streaks[0]
+            metrics.append(
+                StatsSummaryMetric(
+                    id="max_win_streak",
+                    label=SUMMARY_METRIC_LABELS["max_win_streak"],
+                    value=float(longest.streak),
+                    description=SUMMARY_METRIC_DESCRIPTIONS["max_win_streak"],
                 )
             )
 
@@ -102,56 +137,69 @@ class StatsRepository(BaseRepository):
         self,
         *,
         limit: int,
-        accuracy_metric: str,
-        submissions_metric: str,
+        accuracy_metric: LeaderboardMetricId,
+        submissions_metric: LeaderboardMetricId,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Compute leaderboard slices for accuracy and submission metrics using SQL casts."""
+        """Compute leaderboard slices for accuracy and submission metrics via SQL windows."""
 
-        eligible_fighters = await self._fighters_active_between(start_date, end_date)
+        leaderboards: list[_LeaderboardPayload] = []
 
         accuracy_entries = await self._collect_leaderboard_entries(
             metric_name=accuracy_metric,
-            eligible_fighters=eligible_fighters,
             limit=limit,
+            start_date=start_date,
+            end_date=end_date,
         )
-        submissions_entries = await self._collect_leaderboard_entries(
-            metric_name=submissions_metric,
-            eligible_fighters=eligible_fighters,
-            limit=limit,
-        )
-
-        leaderboards = []
-
         if accuracy_entries:
             leaderboards.append(
-                LeaderboardDefinition(
+                _LeaderboardPayload(
                     metric_id=accuracy_metric,
                     title="Striking Accuracy",
-                    description="Fighters with the highest significant strike accuracy",
+                    description=LEADERBOARD_METRIC_DESCRIPTIONS.get(
+                        accuracy_metric, "Accuracy-focused leaderboard"
+                    ),
                     entries=accuracy_entries,
                 )
             )
 
+        submissions_entries = await self._collect_leaderboard_entries(
+            metric_name=submissions_metric,
+            limit=limit,
+            start_date=start_date,
+            end_date=end_date,
+        )
         if submissions_entries:
             leaderboards.append(
-                LeaderboardDefinition(
+                _LeaderboardPayload(
                     metric_id=submissions_metric,
                     title="Submissions",
-                    description="Fighters with the most submission attempts per fight",
+                    description=LEADERBOARD_METRIC_DESCRIPTIONS.get(
+                        submissions_metric, "Submission-focused leaderboard"
+                    ),
                     entries=submissions_entries,
                 )
             )
 
-        return LeaderboardsResponse(leaderboards=leaderboards)
+        response_payload = [
+            LeaderboardDefinition(
+                metric_id=payload.metric_id,
+                title=payload.title,
+                description=payload.description,
+                entries=list(payload.entries),
+            )
+            for payload in leaderboards
+        ]
+
+        return LeaderboardsResponse(leaderboards=response_payload)
 
     async def get_trends(
         self,
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: str,
+        time_bucket: TrendTimeBucket,
         streak_limit: int,
     ) -> TrendsResponse:
         """Aggregate longitudinal trends such as win streaks and average fight durations."""
@@ -165,46 +213,40 @@ class StatsRepository(BaseRepository):
 
         trends: list[TrendSeries] = []
 
-        # Transform win streaks into TrendSeries format
-        # Each fighter gets their own series with a single point (their max streak)
         for streak in streaks:
-            if streak.last_win_date:
-                trends.append(
-                    TrendSeries(
-                        metric_id="win_streak",
-                        fighter_id=streak.fighter_id,
-                        label=f"{streak.fighter_name} - Win Streak",
-                        points=[
-                            TrendPoint(
-                                timestamp=streak.last_win_date.isoformat(),
-                                value=float(streak.streak),
-                            )
-                        ],
-                    )
+            if streak.last_win_date is None:
+                continue
+            trends.append(
+                TrendSeries(
+                    metric_id="win_streak",
+                    fighter_id=streak.fighter_id,
+                    label=f"{streak.fighter_name} • Win Streak",
+                    points=[
+                        TrendPoint(
+                            timestamp=streak.last_win_date.isoformat(),
+                            value=float(streak.streak),
+                        )
+                    ],
                 )
+            )
 
-        # Transform average durations into TrendSeries format
-        # Group by division to create time-series for each division
-        duration_by_division: dict[str, list[TrendPoint]] = {}
+        duration_series: dict[str, list[TrendPoint]] = {}
         for duration in average_durations:
-            division_key = duration.division or "All Divisions"
-            if division_key not in duration_by_division:
-                duration_by_division[division_key] = []
-            duration_by_division[division_key].append(
+            division_label = duration.division or "All Divisions"
+            duration_series.setdefault(division_label, []).append(
                 TrendPoint(
                     timestamp=duration.bucket_start.isoformat(),
                     value=duration.average_duration_minutes,
                 )
             )
 
-        # Create TrendSeries for each division
-        for division, points in duration_by_division.items():
-            # Sort points by timestamp
-            points.sort(key=lambda p: p.timestamp)
+        for division_label, points in duration_series.items():
+            points.sort(key=lambda item: item.timestamp)
+            slug = division_label.lower().replace(" ", "_")
             trends.append(
                 TrendSeries(
-                    metric_id=f"avg_duration_{division.lower().replace(' ', '_')}",
-                    label=f"{division} - Average Fight Duration",
+                    metric_id=f"avg_fight_duration_{slug}",
+                    label=f"{division_label} • Average Fight Duration",
                     points=points,
                 )
             )
@@ -214,70 +256,108 @@ class StatsRepository(BaseRepository):
     async def _collect_leaderboard_entries(
         self,
         *,
-        metric_name: str,
-        eligible_fighters: Sequence[str] | None,
+        metric_name: LeaderboardMetricId,
         limit: int,
+        start_date: date | None,
+        end_date: date | None,
     ) -> list[LeaderboardEntry]:
-        """Collect leaderboard entries for a specific metric, casting values to floats."""
+        """Collect leaderboard entries for a specific metric using window functions."""
 
-        value_column = self._numeric_stat_value()
+        numeric_value = self._numeric_stat_value()
 
-        stmt = (
+        fight_exists = select(Fight.id).where(
+            Fight.fighter_id == fighter_stats.c.fighter_id
+        )
+        if start_date is not None:
+            fight_exists = fight_exists.where(Fight.event_date >= start_date)
+        if end_date is not None:
+            fight_exists = fight_exists.where(Fight.event_date <= end_date)
+
+        ranked = (
             select(
-                fighter_stats.c.fighter_id,
-                Fighter.name,
-                Fighter.division,
-                value_column.label("numeric_value"),
+                fighter_stats.c.fighter_id.label("fighter_id"),
+                Fighter.name.label("fighter_name"),
+                Fighter.division.label("division"),
+                numeric_value.label("numeric_value"),
+                func.row_number().over(order_by=numeric_value.desc()).label("rank"),
             )
             .join(Fighter, Fighter.id == fighter_stats.c.fighter_id)
             .where(fighter_stats.c.metric == metric_name)
+            .where(numeric_value.isnot(None))
         )
 
-        if eligible_fighters is not None:
-            stmt = stmt.where(fighter_stats.c.fighter_id.in_(eligible_fighters))
+        if start_date is not None or end_date is not None:
+            ranked = ranked.where(fight_exists.exists())
+
+        ranked_subquery = ranked.subquery()
 
         stmt = (
-            stmt.where(value_column.is_not(None))
-            .order_by(value_column.desc())
-            .distinct(fighter_stats.c.fighter_id)
-            .limit(limit)
+            select(
+                ranked_subquery.c.fighter_id,
+                ranked_subquery.c.fighter_name,
+                ranked_subquery.c.numeric_value,
+            )
+            .where(ranked_subquery.c.rank <= limit)
+            .order_by(ranked_subquery.c.rank)
         )
 
         result = await self._session.execute(stmt)
-        rows = result.all()
-
         return [
             LeaderboardEntry(
                 fighter_id=row.fighter_id,
-                fighter_name=row.name,
+                fighter_name=row.fighter_name,
                 metric_value=float(row.numeric_value),
                 detail_url=f"/fighters/{row.fighter_id}",
             )
-            for row in rows
+            for row in result.fetchall()
         ]
 
-    def _numeric_stat_value(self):
-        """Return an expression that casts the fighter stat value column to a float."""
+    def _numeric_stat_value(self) -> ColumnElement[float | None]:
+        """Return an expression that safely coerces the fighter stat value column to a float."""
 
         trimmed = func.trim(func.replace(fighter_stats.c.value, "%", ""))
         sanitized = func.nullif(trimmed, "")
         sanitized = func.nullif(sanitized, "--")
         return cast(sanitized, Float)
 
-    async def _average_metric(self, metric_name: str) -> float | None:
-        """Compute the average value for the given metric across all fighters."""
+    async def _average_metrics(self, metrics: Iterable[str]) -> dict[str, float]:
+        """Compute average values for each supplied metric using window functions."""
+
+        metric_list = list(metrics)
+        if not metric_list:
+            return {}
 
         value_column = self._numeric_stat_value()
-        stmt = (
-            select(func.avg(value_column))
-            .where(fighter_stats.c.metric == metric_name)
-            .where(value_column.is_not(None))
-        )
+        windowed = (
+            select(
+                fighter_stats.c.metric.label("metric"),
+                func.avg(value_column)
+                .over(partition_by=fighter_stats.c.metric)
+                .label("average_value"),
+            )
+            .where(fighter_stats.c.metric.in_(metric_list))
+            .where(value_column.isnot(None))
+        ).subquery()
+
+        stmt = select(windowed.c.metric, windowed.c.average_value).distinct()
         result = await self._session.execute(stmt)
-        value = result.scalar()
-        if value is None:
-            return None
-        return float(value)
+        return {row.metric: float(row.average_value) for row in result.fetchall()}
+
+    async def _global_average_fight_duration_seconds(self) -> float | None:
+        """Compute the global average fight duration (in seconds) via windowed aggregation."""
+
+        duration_expr = self._fight_duration_seconds_expression()
+        duration_cte = (
+            select(
+                duration_expr.label("duration_seconds"),
+                func.avg(duration_expr).over().label("avg_duration"),
+            ).where(duration_expr.isnot(None))
+        ).cte("duration_stats")
+
+        stmt = select(duration_cte.c.avg_duration).limit(1)
+        result = await self._session.execute(stmt)
+        value = result.scalar_one_or_none()
+        return float(value) if value is not None else None
 
     async def _calculate_win_streaks(
         self,
@@ -288,170 +368,264 @@ class StatsRepository(BaseRepository):
     ) -> list[WinStreakSummary]:
         """Compute longest consecutive win streaks for fighters in the time range."""
 
-        stmt = (
+        win_flag = case(
+            (func.lower(func.trim(Fight.result)).in_(self._WIN_RESULTS), 1),
+            else_=0,
+        ).label("is_win")
+
+        ordered_fights = (
             select(
-                Fight.fighter_id,
-                Fighter.name,
-                Fighter.division,
-                Fight.event_date,
-                Fight.result,
+                Fight.fighter_id.label("fighter_id"),
+                Fighter.name.label("fighter_name"),
+                Fighter.division.label("division"),
+                Fight.event_date.label("event_date"),
+                win_flag,
+                func.row_number()
+                .over(partition_by=Fight.fighter_id, order_by=Fight.event_date)
+                .label("row_number"),
+                func.sum(win_flag)
+                .over(partition_by=Fight.fighter_id, order_by=Fight.event_date)
+                .label("wins_to_date"),
             )
             .join(Fighter, Fighter.id == Fight.fighter_id)
-            .order_by(Fight.fighter_id, Fight.event_date)
+            .where(Fight.event_date.isnot(None))
         )
 
         if start_date is not None:
-            stmt = stmt.where(Fight.event_date >= start_date)
+            ordered_fights = ordered_fights.where(Fight.event_date >= start_date)
         if end_date is not None:
-            stmt = stmt.where(Fight.event_date <= end_date)
+            ordered_fights = ordered_fights.where(Fight.event_date <= end_date)
 
-        result = await self._session.execute(stmt)
-        rows = result.all()
+        ordered_cte = ordered_fights.cte("ordered_fights")
 
-        streaks: dict[str, WinStreakSummary] = {}
-        active_streaks: dict[str, int] = {}
-        for row in rows:
-            fighter_id = row.fighter_id
-            result_text = (row.result or "").strip().lower()
-            is_win = result_text in {"w", "win"}
+        streak_groups = (
+            select(
+                ordered_cte.c.fighter_id,
+                ordered_cte.c.fighter_name,
+                ordered_cte.c.division,
+                ordered_cte.c.event_date,
+                ordered_cte.c.is_win,
+                (ordered_cte.c.row_number - ordered_cte.c.wins_to_date).label(
+                    "streak_group"
+                ),
+            )
+        ).cte("streak_groups")
 
-            if is_win:
-                active = active_streaks.get(fighter_id, 0) + 1
-                active_streaks[fighter_id] = active
-                current_best = streaks.get(fighter_id)
-                if current_best is None or active > current_best.streak:
-                    streaks[fighter_id] = WinStreakSummary(
-                        fighter_id=fighter_id,
-                        fighter_name=row.name,
-                        division=row.division,
-                        streak=active,
-                        last_win_date=row.event_date,
+        streak_aggregates = (
+            select(
+                streak_groups.c.fighter_id,
+                streak_groups.c.fighter_name,
+                streak_groups.c.division,
+                func.count().label("streak_length"),
+                func.max(streak_groups.c.event_date).label("last_win_date"),
+            )
+            .where(streak_groups.c.is_win == 1)
+            .group_by(
+                streak_groups.c.fighter_id,
+                streak_groups.c.fighter_name,
+                streak_groups.c.division,
+                streak_groups.c.streak_group,
+            )
+        ).cte("streak_aggregates")
+
+        ranked = (
+            select(
+                streak_aggregates.c.fighter_id,
+                streak_aggregates.c.fighter_name,
+                streak_aggregates.c.division,
+                streak_aggregates.c.streak_length,
+                streak_aggregates.c.last_win_date,
+                func.row_number()
+                .over(
+                    order_by=(
+                        streak_aggregates.c.streak_length.desc(),
+                        streak_aggregates.c.last_win_date.desc(),
                     )
-            else:
-                active_streaks[fighter_id] = 0
+                )
+                .label("streak_rank"),
+            )
+        ).subquery()
 
-        sorted_streaks = sorted(
-            streaks.values(),
-            key=lambda entry: (entry.streak, entry.last_win_date or date.min),
-            reverse=True,
+        stmt = (
+            select(
+                ranked.c.fighter_id,
+                ranked.c.fighter_name,
+                ranked.c.division,
+                ranked.c.streak_length,
+                ranked.c.last_win_date,
+            )
+            .where(ranked.c.streak_rank <= limit)
+            .order_by(
+                ranked.c.streak_length.desc(),
+                ranked.c.last_win_date.desc(),
+                ranked.c.fighter_name,
+            )
         )
 
-        return sorted_streaks[:limit]
+        result = await self._session.execute(stmt)
+        return [
+            WinStreakSummary(
+                fighter_id=row.fighter_id,
+                fighter_name=row.fighter_name,
+                division=row.division,
+                streak=int(row.streak_length),
+                last_win_date=row.last_win_date,
+            )
+            for row in result.fetchall()
+        ]
 
     async def _calculate_average_durations(
         self,
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: str,
+        time_bucket: TrendTimeBucket,
     ) -> list[AverageFightDuration]:
-        """Compute average fight durations grouped by division and time bucket."""
+        """Compute average fight durations grouped by division and temporal bucket."""
 
-        stmt = select(
-            Fight.event_date,
-            Fight.round,
-            Fight.time,
-            Fighter.division,
-        ).join(Fighter, Fighter.id == Fight.fighter_id)
+        duration_expr = self._fight_duration_seconds_expression()
+        bucket_expr = self._bucket_start_expression(time_bucket)
+
+        base_query = (
+            select(
+                Fighter.division.label("division"),
+                bucket_expr.label("bucket_start"),
+                duration_expr.label("duration_seconds"),
+            )
+            .join(Fighter, Fighter.id == Fight.fighter_id)
+            .where(duration_expr.isnot(None))
+            .where(Fight.event_date.isnot(None))
+        )
 
         if start_date is not None:
-            stmt = stmt.where(Fight.event_date >= start_date)
+            base_query = base_query.where(Fight.event_date >= start_date)
         if end_date is not None:
-            stmt = stmt.where(Fight.event_date <= end_date)
+            base_query = base_query.where(Fight.event_date <= end_date)
+
+        base_cte = base_query.cte("duration_base")
+
+        windowed = (
+            select(
+                base_cte.c.division,
+                base_cte.c.bucket_start,
+                func.avg(base_cte.c.duration_seconds)
+                .over(partition_by=(base_cte.c.division, base_cte.c.bucket_start))
+                .label("avg_duration"),
+            )
+        ).subquery()
+
+        stmt = select(
+            windowed.c.division, windowed.c.bucket_start, windowed.c.avg_duration
+        ).distinct()
 
         result = await self._session.execute(stmt)
-        rows = result.all()
-
-        buckets: dict[tuple[str | None, date], dict[str, object]] = {}
-
-        for row in rows:
-            if row.event_date is None:
+        durations: list[AverageFightDuration] = []
+        for row in result.fetchall():
+            bucket_start_value = row.bucket_start
+            if bucket_start_value is None:
                 continue
-            duration = self._fight_duration_seconds(row.round, row.time)
-            if duration is None:
-                continue
-            bucket_start, bucket_label = self._bucket_start(row.event_date, time_bucket)
-            key = (row.division, bucket_start)
-            entry = buckets.setdefault(key, {"label": bucket_label, "durations": []})
-            durations = entry["durations"]
-            if not isinstance(durations, list):
-                message = (
-                    "Expected the aggregated duration payload to be a list for key "
-                    f"{key}, received {type(durations)!r} instead."
-                )
-                raise TypeError(message)
-            durations.append(duration)
-
-        averaged: list[AverageFightDuration] = []
-        for (division, bucket_start), payload in buckets.items():
-            durations = payload.get("durations")
-            if not isinstance(durations, list) or not durations:
-                continue
-            avg_seconds = sum(durations) / len(durations)
-            averaged.append(
+            if isinstance(bucket_start_value, datetime):
+                bucket_start_date = bucket_start_value.date()
+            elif isinstance(bucket_start_value, date):
+                bucket_start_date = bucket_start_value
+            else:
+                bucket_start_date = date.fromisoformat(str(bucket_start_value))
+            durations.append(
                 AverageFightDuration(
-                    division=division,
-                    bucket_start=bucket_start,
-                    bucket_label=str(payload.get("label", "")),
-                    average_duration_seconds=avg_seconds,
-                    average_duration_minutes=avg_seconds / 60.0,
+                    division=row.division,
+                    bucket_start=bucket_start_date,
+                    bucket_label=self._format_bucket_label(
+                        bucket_start_date, time_bucket
+                    ),
+                    average_duration_seconds=float(row.avg_duration),
+                    average_duration_minutes=float(row.avg_duration) / 60.0,
                 )
             )
 
-        averaged.sort(key=lambda entry: (entry.bucket_start, entry.division or ""))
-        return averaged
+        durations.sort(key=lambda entry: (entry.bucket_start, entry.division or ""))
+        return durations
 
-    def _fight_duration_seconds(
-        self, round_number: int | None, time_remaining: str | None
-    ) -> float | None:
-        """Translate fight round/time combination to elapsed seconds."""
+    def _fight_duration_seconds_expression(self) -> ColumnElement[float | None]:
+        """Translate fight round/time combination to elapsed seconds in SQL."""
 
-        if round_number is None or time_remaining is None:
-            return None
+        if self._dialect_name() == "sqlite":
+            colon_index = func.instr(Fight.time, ":")
+            raw_minutes = case(
+                (colon_index > 0, func.substr(Fight.time, 1, colon_index - 1)),
+                else_=None,
+            )
+            raw_seconds = case(
+                (colon_index > 0, func.substr(Fight.time, colon_index + 1)),
+                else_=None,
+            )
+        else:
+            raw_minutes = func.split_part(Fight.time, ":", 1)
+            raw_seconds = func.split_part(Fight.time, ":", 2)
 
-        try:
-            minutes_str, seconds_str = time_remaining.split(":", maxsplit=1)
-            minutes = int(minutes_str)
-            seconds = int(seconds_str)
-        except (ValueError, AttributeError):
-            return None
+        minute_text = func.nullif(func.nullif(raw_minutes, ""), "--")
+        second_text = func.nullif(func.nullif(raw_seconds, ""), "--")
 
-        # Each regulation round is five minutes. Earlier rounds contribute full five minutes.
-        regulation_round_seconds = 5 * 60
-        elapsed_before_round = max(round_number - 1, 0) * regulation_round_seconds
-        elapsed_this_round = minutes * 60 + seconds
-        return float(elapsed_before_round + elapsed_this_round)
+        valid_time = (
+            Fight.time.isnot(None)
+            & minute_text.isnot(None)
+            & second_text.isnot(None)
+            & Fight.round.isnot(None)
+        )
 
-    def _bucket_start(self, event_date: date, bucket: str) -> tuple[date, str]:
-        """Compute the bucket start date and label for the given resolution."""
+        round_index = func.coalesce(Fight.round, 1)
+        completed_rounds = case((round_index > 1, round_index - 1), else_=0)
+        elapsed_before_round = completed_rounds * 300
+        elapsed_this_round = cast(minute_text, Integer) * 60 + cast(
+            second_text, Integer
+        )
+
+        return case(
+            (valid_time, cast(elapsed_before_round + elapsed_this_round, Float)),
+            else_=None,
+        )
+
+    def _bucket_start_expression(self, bucket: TrendTimeBucket) -> ColumnElement[date]:
+        """Return a SQL expression resolving the bucket start for the requested interval."""
+
+        if self._dialect_name() == "sqlite":
+            year_text = func.strftime("%Y", Fight.event_date)
+
+            if bucket == "year":
+                return cast(func.date(func.printf("%s-01-01", year_text)), Date)
+
+            if bucket == "quarter":
+                month_text = func.strftime("%m", Fight.event_date)
+                quarter_start = case(
+                    (month_text.in_(("01", "02", "03")), "01"),
+                    (month_text.in_(("04", "05", "06")), "04"),
+                    (month_text.in_(("07", "08", "09")), "07"),
+                    else_="10",
+                )
+                return cast(
+                    func.date(func.printf("%s-%s-01", year_text, quarter_start)),
+                    Date,
+                )
+
+            return cast(
+                func.date(func.strftime("%Y-%m-01", Fight.event_date)),
+                Date,
+            )
+
+        truncate_unit = {"year": "year", "quarter": "quarter"}.get(bucket, "month")
+        return cast(func.date_trunc(truncate_unit, Fight.event_date), Date)
+
+    def _dialect_name(self) -> str:
+        bind = self._session.bind
+        if bind is None:
+            return ""
+        return bind.dialect.name
+
+    def _format_bucket_label(self, bucket_start: date, bucket: TrendTimeBucket) -> str:
+        """Format a human readable label for the supplied bucket start."""
 
         if bucket == "year":
-            bucket_start = date(event_date.year, 1, 1)
-            label = f"{event_date.year}"
-        elif bucket == "quarter":
-            quarter = (event_date.month - 1) // 3 + 1
-            quarter_start_month = (quarter - 1) * 3 + 1
-            bucket_start = date(event_date.year, quarter_start_month, 1)
-            label = f"Q{quarter} {event_date.year}"
-        else:
-            bucket_start = date(event_date.year, event_date.month, 1)
-            label = bucket_start.strftime("%b %Y")
-
-        return bucket_start, label
-
-    async def _fighters_active_between(
-        self, start_date: date | None, end_date: date | None
-    ) -> Sequence[str] | None:
-        """Return fighter identifiers with fights in the supplied date window."""
-
-        if start_date is None and end_date is None:
-            return None
-
-        stmt = select(Fight.fighter_id).group_by(Fight.fighter_id)
-        if start_date is not None:
-            stmt = stmt.where(Fight.event_date >= start_date)
-        if end_date is not None:
-            stmt = stmt.where(Fight.event_date <= end_date)
-
-        result = await self._session.execute(stmt)
-        return [row.fighter_id for row in result]
+            return f"{bucket_start.year}"
+        if bucket == "quarter":
+            quarter = (bucket_start.month - 1) // 3 + 1
+            return f"Q{quarter} {bucket_start.year}"
+        return bucket_start.strftime("%b %Y")
