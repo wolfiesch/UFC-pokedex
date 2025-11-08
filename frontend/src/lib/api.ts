@@ -456,7 +456,14 @@ export async function getFavoriteCollections(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'collection_id'
+  return {
+    total: data.total,
+    collections: data.collections.map((collection) => ({
+      ...collection,
+      collection_id: collection.id,
+    })),
+  } as FavoriteCollectionListResponse;
 }
 
 /**
@@ -553,7 +560,16 @@ export async function createFavoriteCollection(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'collection_id'
+  return {
+    ...data,
+    collection_id: data.id,
+    entries: data.entries?.map((entry) => ({
+      ...entry,
+      entry_id: entry.id,
+      collection_id: data.id,
+    })) ?? [],
+  } as FavoriteCollectionDetail;
 }
 
 /**
@@ -605,7 +621,12 @@ export async function addFavoriteEntry(
     throw new ApiError("No entry data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'entry_id'
+  return {
+    ...data,
+    entry_id: data.id,
+    collection_id: collectionId,
+  } as FavoriteEntry;
 }
 
 /**
@@ -655,7 +676,16 @@ export async function reorderFavoriteEntries(
     throw new ApiError("No collection data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'collection_id'
+  return {
+    ...data,
+    collection_id: data.id,
+    entries: data.entries?.map((entry) => ({
+      ...entry,
+      entry_id: entry.id,
+      collection_id: data.id,
+    })) ?? [],
+  } as FavoriteCollectionDetail;
 }
 
 /**
@@ -709,7 +739,12 @@ export async function updateFavoriteEntry(
     throw new ApiError("No entry data returned", { statusCode: 500 });
   }
 
-  return data;
+  // Map backend response to frontend types - backend uses 'id', frontend expects 'entry_id'
+  return {
+    ...data,
+    entry_id: data.id,
+    collection_id: collectionId,
+  } as FavoriteEntry;
 }
 
 /**
