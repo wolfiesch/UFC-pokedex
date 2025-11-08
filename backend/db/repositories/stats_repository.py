@@ -12,10 +12,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import ClassVar, Mapping
 
-from sqlalchemy import Float, Integer, case, cast, func, select
+from sqlalchemy import Date, Float, Integer, case, cast, func, select
 from sqlalchemy.sql import ColumnElement
 
 from backend.db.models import Fight, Fighter, fighter_stats
@@ -54,6 +54,13 @@ class StatsRepository(BaseRepository):
     """Repository for analytics and aggregate statistics using SQL window functions."""
 
     _WIN_RESULTS: ClassVar[set[str]] = {"w", "win"}
+    _SUMMARY_METRIC_PRECISION: ClassVar[
+        Mapping[StatsSummaryMetricId, int]
+    ] = {
+        "avg_sig_strikes_accuracy_pct": 1,
+        "avg_takedown_accuracy_pct": 1,
+        "avg_submission_attempts": 2,
+    }
 
     async def stats_summary(self) -> StatsSummaryResponse:
         """Return dashboard friendly KPIs derived directly from SQL window functions."""
@@ -89,7 +96,10 @@ class StatsRepository(BaseRepository):
                 StatsSummaryMetric(
                     id=summary_id,
                     label=SUMMARY_METRIC_LABELS[summary_id],
-                    value=round(value, 2 if "submission" in summary_id else 1),
+                    value=round(
+                        value,
+                        self._SUMMARY_METRIC_PRECISION.get(summary_id, 1),
+                    ),
                     description=SUMMARY_METRIC_DESCRIPTIONS[summary_id],
                 )
             )
@@ -189,17 +199,16 @@ class StatsRepository(BaseRepository):
         *,
         start_date: date | None,
         end_date: date | None,
-        time_bucket: str,
+        time_bucket: TrendTimeBucket,
         streak_limit: int,
     ) -> TrendsResponse:
         """Aggregate longitudinal trends such as win streaks and average fight durations."""
 
-        resolved_bucket = self._coerce_bucket(time_bucket)
         streaks = await self._calculate_win_streaks(
             start_date=start_date, end_date=end_date, limit=streak_limit
         )
         average_durations = await self._calculate_average_durations(
-            start_date=start_date, end_date=end_date, time_bucket=resolved_bucket
+            start_date=start_date, end_date=end_date, time_bucket=time_bucket
         )
 
         trends: list[TrendSeries] = []
@@ -512,9 +521,15 @@ class StatsRepository(BaseRepository):
         result = await self._session.execute(stmt)
         durations: list[AverageFightDuration] = []
         for row in result.fetchall():
-            bucket_start_date = row.bucket_start
-            if not isinstance(bucket_start_date, date):
-                bucket_start_date = row.bucket_start.date()
+            bucket_start_value = row.bucket_start
+            if bucket_start_value is None:
+                continue
+            if isinstance(bucket_start_value, datetime):
+                bucket_start_date = bucket_start_value.date()
+            elif isinstance(bucket_start_value, date):
+                bucket_start_date = bucket_start_value
+            else:
+                bucket_start_date = date.fromisoformat(str(bucket_start_value))
             durations.append(
                 AverageFightDuration(
                     division=row.division,
@@ -533,12 +548,22 @@ class StatsRepository(BaseRepository):
     def _fight_duration_seconds_expression(self) -> ColumnElement[float | None]:
         """Translate fight round/time combination to elapsed seconds in SQL."""
 
-        minute_text = func.nullif(
-            func.nullif(func.split_part(Fight.time, ":", 1), ""), "--"
-        )
-        second_text = func.nullif(
-            func.nullif(func.split_part(Fight.time, ":", 2), ""), "--"
-        )
+        if self._dialect_name() == "sqlite":
+            colon_index = func.instr(Fight.time, ":")
+            raw_minutes = case(
+                (colon_index > 0, func.substr(Fight.time, 1, colon_index - 1)),
+                else_=None,
+            )
+            raw_seconds = case(
+                (colon_index > 0, func.substr(Fight.time, colon_index + 1)),
+                else_=None,
+            )
+        else:
+            raw_minutes = func.split_part(Fight.time, ":", 1)
+            raw_seconds = func.split_part(Fight.time, ":", 2)
+
+        minute_text = func.nullif(func.nullif(raw_minutes, ""), "--")
+        second_text = func.nullif(func.nullif(raw_seconds, ""), "--")
 
         valid_time = (
             Fight.time.isnot(None)
@@ -548,7 +573,7 @@ class StatsRepository(BaseRepository):
         )
 
         round_index = func.coalesce(Fight.round, 1)
-        completed_rounds = func.greatest(round_index - 1, 0)
+        completed_rounds = case((round_index > 1, round_index - 1), else_=0)
         elapsed_before_round = completed_rounds * 300
         elapsed_this_round = cast(minute_text, Integer) * 60 + cast(
             second_text, Integer
@@ -562,11 +587,38 @@ class StatsRepository(BaseRepository):
     def _bucket_start_expression(self, bucket: TrendTimeBucket) -> ColumnElement[date]:
         """Return a SQL expression resolving the bucket start for the requested interval."""
 
-        if bucket == "year":
-            return cast(func.date_trunc("year", Fight.event_date), date)
-        if bucket == "quarter":
-            return cast(func.date_trunc("quarter", Fight.event_date), date)
-        return cast(func.date_trunc("month", Fight.event_date), date)
+        if self._dialect_name() == "sqlite":
+            year_text = func.strftime("%Y", Fight.event_date)
+
+            if bucket == "year":
+                return cast(func.date(func.printf("%s-01-01", year_text)), Date)
+
+            if bucket == "quarter":
+                month_text = func.strftime("%m", Fight.event_date)
+                quarter_start = case(
+                    (month_text.in_(("01", "02", "03")), "01"),
+                    (month_text.in_(("04", "05", "06")), "04"),
+                    (month_text.in_(("07", "08", "09")), "07"),
+                    else_="10",
+                )
+                return cast(
+                    func.date(func.printf("%s-%s-01", year_text, quarter_start)),
+                    Date,
+                )
+
+            return cast(
+                func.date(func.strftime("%Y-%m-01", Fight.event_date)),
+                Date,
+            )
+
+        truncate_unit = {"year": "year", "quarter": "quarter"}.get(bucket, "month")
+        return cast(func.date_trunc(truncate_unit, Fight.event_date), Date)
+
+    def _dialect_name(self) -> str:
+        bind = self._session.bind
+        if bind is None:
+            return ""
+        return bind.dialect.name
 
     def _format_bucket_label(self, bucket_start: date, bucket: TrendTimeBucket) -> str:
         """Format a human readable label for the supplied bucket start."""
@@ -577,10 +629,3 @@ class StatsRepository(BaseRepository):
             quarter = (bucket_start.month - 1) // 3 + 1
             return f"Q{quarter} {bucket_start.year}"
         return bucket_start.strftime("%b %Y")
-
-    def _coerce_bucket(self, bucket: str) -> TrendTimeBucket:
-        """Normalise arbitrary bucket strings into the canonical TrendTimeBucket literal."""
-
-        if bucket in {"month", "quarter", "year"}:
-            return bucket  # type: ignore[return-value]
-        return "month"
