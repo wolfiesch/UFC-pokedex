@@ -11,6 +11,8 @@ import time
 
 from sqlalchemy import select, text
 
+from backend.db.connection import begin_engine_transaction
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +47,7 @@ async def warmup_database() -> None:
 
         engine = resolve_engine()
 
-        async with engine.begin() as conn:
+        async with begin_engine_transaction(engine) as conn:
             # Simple ping query to warm up connection
             await conn.execute(text("SELECT 1"))
 

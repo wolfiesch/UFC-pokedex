@@ -21,6 +21,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from backend.db.connection import begin_engine_transaction
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
 )
@@ -129,7 +130,7 @@ async def ensure_tables() -> None:
     db_type = get_database_type()
     if db_type == "sqlite":
         engine = get_engine()
-        async with engine.begin() as conn:
+        async with begin_engine_transaction(engine) as conn:
             await conn.run_sync(Base.metadata.create_all)
         print("✓ SQLite tables initialized")
 

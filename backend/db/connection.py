@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -107,6 +109,20 @@ async def get_session(engine: AsyncEngine | None = None):
     session_factory = create_session_factory(engine)
     async with session_factory() as session:
         yield session
+
+
+@asynccontextmanager
+async def begin_engine_transaction(engine: AsyncEngine) -> AsyncIterator[Any]:
+    """Yield a connection from ``engine.begin()`` with mock-friendly support."""
+
+    begin_result = engine.begin()
+    if asyncio.iscoroutine(begin_result):
+        begin_context = await begin_result
+    else:
+        begin_context = begin_result
+
+    async with begin_context as connection:
+        yield connection
 
 
 # Global engine instance for FastAPI dependency injection

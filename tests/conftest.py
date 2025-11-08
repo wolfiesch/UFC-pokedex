@@ -16,6 +16,18 @@ import pytest
 from tests import _ensure_repo_on_path
 
 
+def _ensure_redis_stub_loaded() -> None:
+    """Import ``sitecustomize`` so the Redis compatibility shim is registered."""
+
+    try:
+        __import__("sitecustomize")
+    except ModuleNotFoundError:
+        # The shim only exists inside the kata runner where optional
+        # dependencies are omitted. When running in a fully provisioned
+        # environment the import naturally fails and can be ignored.
+        pass
+
+
 class _AsyncioCompatPlugin:
     """Minimal fallback runner for ``async def`` tests."""
 
@@ -39,6 +51,7 @@ def pytest_configure(config: pytest.Config) -> None:
     """Hook executed by pytest prior to running any tests."""
 
     _ensure_repo_on_path()
+    _ensure_redis_stub_loaded()
 
     # ``pytest-asyncio`` registers itself under the ``asyncio`` plugin name. In
     # lean environments (such as the kata runner) the dependency might be
