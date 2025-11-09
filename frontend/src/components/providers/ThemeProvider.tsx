@@ -81,12 +81,7 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }): J
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (storedTheme === "dark" || storedTheme === "light") {
       setThemeState(storedTheme);
-      applyThemeToDocument(storedTheme);
-      return;
     }
-
-    applyThemeToDocument("dark");
-    window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
   }, []);
 
   useEffect(() => {
