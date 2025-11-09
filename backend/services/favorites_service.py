@@ -56,14 +56,25 @@ class FavoritesService:
         self._tables_ready: bool | None = None
 
     async def _favorites_tables_ready(self) -> bool:
+        """Check whether the backing favorites tables exist.
+
+        The readiness probe intentionally only caches *successful* discoveries so that a
+        transient migration gap (e.g. application booted before Alembic runs) does not
+        permanently disable the feature. A failed probe therefore leads to a re-check the
+        next time an operation touches the service.
+        """
+
         global _FAVORITES_TABLES_READY_CACHE
 
-        if _FAVORITES_TABLES_READY_CACHE is not None:
-            self._tables_ready = _FAVORITES_TABLES_READY_CACHE
-            return _FAVORITES_TABLES_READY_CACHE
+        if _FAVORITES_TABLES_READY_CACHE is True:
+            # A previous instance already observed the tables; mirror that locally to
+            # avoid redundant inspector calls.
+            self._tables_ready = True
+            return True
 
-        if self._tables_ready is not None:
-            return self._tables_ready
+        if self._tables_ready is True:
+            # This instance already confirmed the schema exists.
+            return True
 
         target_tables = {
             FavoriteCollection.__tablename__,
@@ -82,8 +93,18 @@ class FavoritesService:
             return target_tables.issubset(existing)
 
         tables_ready = await self._session.run_sync(_check_tables)
-        self._tables_ready = tables_ready
-        _FAVORITES_TABLES_READY_CACHE = tables_ready
+
+        if tables_ready:
+            # Persist both the process-wide and instance-level flags so future invocations
+            # skip the inspector hit altogether.
+            self._tables_ready = True
+            _FAVORITES_TABLES_READY_CACHE = True
+        else:
+            # Record the local failure for observability while leaving the global cache
+            # untouched—this ensures the service retries on the next call instead of
+            # becoming permanently disabled when migrations lag behind process startup.
+            self._tables_ready = False
+
         return tables_ready
 
     async def list_collections(self, *, user_id: str) -> FavoriteCollectionListResponse:
