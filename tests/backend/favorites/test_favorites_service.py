@@ -34,7 +34,6 @@ from backend.schemas.favorites import (
     FavoriteEntryReorderRequest,
 )
 import backend.services.favorites_service as favorites_module
-from backend.services.favorites_service import FavoritesService
 
 
 class MemoryCache:
