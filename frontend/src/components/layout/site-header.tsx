@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
@@ -26,28 +27,31 @@ export function SiteHeader() {
         >
           UFC POKEDEX
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-full px-4 py-2 transition-colors",
-                  isActive
-                    ? "bg-foreground text-background"
-                    : "text-foreground/80 hover:bg-muted"
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-3">
+          <nav className="flex items-center gap-1 text-sm">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-full px-4 py-2 transition-colors",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "text-foreground/80 hover:bg-muted"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <ThemeToggle className="ml-1" />
+        </div>
       </div>
     </header>
   );
