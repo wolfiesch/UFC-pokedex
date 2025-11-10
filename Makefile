@@ -65,14 +65,14 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	@TUNNEL_OUTPUT=$$(bash scripts/start_tunnels.sh); \
 	FRONTEND_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "FRONTEND_URL=" | cut -d'=' -f2); \
 	API_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "API_URL=" | cut -d'=' -f2); \
-	echo ""; \\
-	echo "📝 Configuring runtime environment overrides..."; \\
+	echo ""; \
+	echo "📝 Configuring runtime environment overrides..."; \
 	CORS_ALLOW_ORIGINS="$$FRONTEND_URL"; \
 	NEXT_PUBLIC_API_BASE_URL="$$API_URL"; \
 	echo "   CORS_ALLOW_ORIGINS=$$CORS_ALLOW_ORIGINS"; \
 	echo "   NEXT_PUBLIC_API_BASE_URL=$$NEXT_PUBLIC_API_BASE_URL"; \
-	echo ""; \\
-	echo "🚀 Starting services..."; \\
+	echo ""; \
+	echo "🚀 Starting services..."; \
 	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \
 	CORS_ALLOW_ORIGINS="$$FRONTEND_URL" .venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
 	sleep 2; \
@@ -91,7 +91,7 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	  done; \
 	  echo "⚠️  Backend not ready after 5s, skipping type generation"; \
 	) & \
-	DEV_CMD=$${NEXT_DEV_CMD:-dev}; \\
+	DEV_CMD=$${NEXT_DEV_CMD:-dev}; \
 	cd frontend && NEXT_PUBLIC_API_BASE_URL="$$API_URL" pnpm run "$$DEV_CMD" > /tmp/frontend.log 2>&1 & \
 	sleep 3; \
 	echo ""; \
