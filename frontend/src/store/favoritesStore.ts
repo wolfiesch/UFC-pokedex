@@ -21,12 +21,54 @@ const DEMO_USER_ID =
 
 const DEFAULT_COLLECTION_TITLE = "My Favorites";
 
+type DerivedFavoritesSnapshot = {
+  defaultCollection: FavoriteCollectionDetail | null;
+  favoriteIds: Set<string>;
+  favoriteEntryMap: Map<string, FavoriteEntry>;
+  favoriteListCache: FighterListItem[];
+};
+
+function deriveFavoritesSnapshot(
+  collection: FavoriteCollectionDetail | null
+): DerivedFavoritesSnapshot {
+  if (!collection?.entries?.length) {
+    return {
+      defaultCollection: collection,
+      favoriteIds: new Set<string>(),
+      favoriteEntryMap: new Map<string, FavoriteEntry>(),
+      favoriteListCache: [],
+    };
+  }
+
+  const favoriteIds = new Set<string>();
+  const favoriteEntryMap = new Map<string, FavoriteEntry>();
+  const favoriteListCache: FighterListItem[] = [];
+
+  for (const entry of collection.entries) {
+    favoriteIds.add(entry.fighter_id);
+    favoriteEntryMap.set(entry.fighter_id, entry);
+    if (entry.fighter) {
+      favoriteListCache.push(entry.fighter);
+    }
+  }
+
+  return {
+    defaultCollection: collection,
+    favoriteIds,
+    favoriteEntryMap,
+    favoriteListCache,
+  };
+}
+
 // Add outside the store - promise-based initialization lock
 let initializationPromise: Promise<void> | null = null;
 
 type FavoritesState = {
   // Backend-synced state
   defaultCollection: FavoriteCollectionDetail | null;
+  favoriteIds: Set<string>;
+  favoriteEntryMap: Map<string, FavoriteEntry>;
+  favoriteListCache: FighterListItem[];
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
@@ -59,9 +101,11 @@ type FavoritesState = {
   _refreshCollection: () => Promise<void>;
 };
 
+const initialDerivedState = deriveFavoritesSnapshot(null);
+
 export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   // Initial state
-  defaultCollection: null,
+  ...initialDerivedState,
   isLoading: false,
   isInitialized: false,
   error: null,
@@ -116,7 +160,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         }
 
         set({
-          defaultCollection,
+          ...deriveFavoritesSnapshot(defaultCollection),
           isLoading: false,
           isInitialized: true,
           error: null,
@@ -179,7 +223,10 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         state.defaultCollection.collection_id,
         DEMO_USER_ID
       );
-      set({ defaultCollection: updatedCollection, error: null });
+      set({
+        ...deriveFavoritesSnapshot(updatedCollection),
+        error: null,
+      });
     } catch (error) {
       logger.error(
         "Failed to refresh collection",
@@ -193,69 +240,70 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
 
   // Toggle favorite status for a fighter
   toggleFavorite: async (fighter: FighterListItem): Promise<{ success: boolean; error?: string }> => {
-    const state = get();
-
-    // Initialize if needed
-    if (!state.isInitialized) {
+    if (!get().isInitialized) {
       await get().initialize();
     }
 
     try {
       const collectionId = await get()._ensureDefaultCollection();
-      const currentCollection = state.defaultCollection;
-      const existingEntry = currentCollection?.entries?.find(
-        (entry) => entry.fighter_id === fighter.fighter_id
-      );
+      const { favoriteEntryMap } = get();
+      const existingEntry = favoriteEntryMap.get(fighter.fighter_id);
 
       if (existingEntry) {
         // Remove from favorites - optimistic update
-        set({
-          defaultCollection: currentCollection
-            ? {
-                ...currentCollection,
-                entries: currentCollection.entries.filter(
-                  (e) => e.fighter_id !== fighter.fighter_id
-                ),
-              }
-            : null,
+        set((store) => {
+          if (!store.defaultCollection) {
+            return {};
+          }
+
+          const updatedCollection: FavoriteCollectionDetail = {
+            ...store.defaultCollection,
+            entries: store.defaultCollection.entries.filter(
+              (entry) => entry.fighter_id !== fighter.fighter_id
+            ),
+          };
+
+          return deriveFavoritesSnapshot(updatedCollection);
         });
 
-        // Delete from backend
         await deleteFavoriteEntry(
           collectionId,
           existingEntry.entry_id,
           DEMO_USER_ID
         );
       } else {
-        // Add to favorites - optimistic update
         const now = new Date().toISOString();
         const tempId = Date.now();
-        const newEntry: FavoriteEntry = {
-          id: tempId,
-          entry_id: tempId, // Temporary ID for optimistic update
-          collection_id: collectionId,
-          fighter_id: fighter.fighter_id,
-          fighter_name: fighter.name,
-          fighter: fighter,
-          position: (currentCollection?.entries?.length || 0) + 1,
-          notes: null,
-          tags: [],
-          created_at: now,
-          added_at: now,
-          updated_at: now,
-          metadata: {},
-        };
 
-        set({
-          defaultCollection: currentCollection
-            ? {
-                ...currentCollection,
-                entries: [...currentCollection.entries, newEntry],
-              }
-            : null,
+        set((store) => {
+          if (!store.defaultCollection) {
+            return {};
+          }
+
+          const newEntry: FavoriteEntry = {
+            id: tempId,
+            entry_id: tempId,
+            collection_id: collectionId,
+            fighter_id: fighter.fighter_id,
+            fighter_name: fighter.name,
+            fighter,
+            position: store.defaultCollection.entries.length + 1,
+            notes: null,
+            tags: [],
+            created_at: now,
+            added_at: now,
+            updated_at: now,
+            metadata: {},
+          };
+
+          const updatedCollection: FavoriteCollectionDetail = {
+            ...store.defaultCollection,
+            entries: [...store.defaultCollection.entries, newEntry],
+          };
+
+          return deriveFavoritesSnapshot(updatedCollection);
         });
 
-        // Add to backend
         await addFavoriteEntry(
           collectionId,
           { fighter_id: fighter.fighter_id },
@@ -263,7 +311,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
         );
       }
 
-      // Refresh to get correct data from backend
       await get()._refreshCollection();
 
       return { success: true };
@@ -275,7 +322,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : "Failed to update favorite",
       });
-      // Refresh collection to revert optimistic update
       await get()._refreshCollection();
 
       return {
@@ -286,24 +332,12 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   },
 
   // Check if a fighter is favorited
-  isFavorite: (fighterId: string) => {
-    const state = get();
-    return (
-      state.defaultCollection?.entries?.some(
-        (entry) => entry.fighter_id === fighterId
-      ) || false
-    );
-  },
+  isFavorite: (fighterId: string) => get().favoriteIds.has(fighterId),
 
   // Get all favorited fighters
   getFavorites: () => {
-    const state = get();
-    if (!state.defaultCollection?.entries) {
-      return [];
-    }
-    return state.defaultCollection.entries
-      .map((entry) => entry.fighter)
-      .filter((fighter): fighter is FighterListItem => fighter !== null);
+    const { favoriteListCache } = get();
+    return favoriteListCache.slice();
   },
 
   // Filter setters

@@ -183,24 +183,28 @@ export function FightScatter({
 
   // Initialize trend worker
   useEffect(() => {
-    if (typeof Worker !== "undefined") {
-      workerRef.current = new Worker(
-        new URL("../../workers/trendWorker.ts", import.meta.url)
-      );
-
-      workerRef.current.addEventListener(
-        "message",
-        (event: MessageEvent<TrendWorkerResponse>) => {
-          if (event.data.type === "result" && event.data.points) {
-            setTrendPoints(event.data.points);
-          }
-        }
-      );
-
-      return () => {
-        workerRef.current?.terminate();
-      };
+    if (typeof Worker === "undefined") {
+      return;
     }
+
+    const worker = new Worker(
+      new URL("../../workers/trendWorker.ts", import.meta.url)
+    );
+    workerRef.current = worker;
+
+    const handleMessage = (event: MessageEvent<TrendWorkerResponse>) => {
+      if (event.data.type === "result" && event.data.points) {
+        setTrendPoints(event.data.points);
+      }
+    };
+
+    worker.addEventListener("message", handleMessage);
+
+    return () => {
+      worker.removeEventListener("message", handleMessage);
+      worker.terminate();
+      workerRef.current = null;
+    };
   }, []);
 
   // Compute trend when enabled

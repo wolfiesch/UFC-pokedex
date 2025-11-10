@@ -98,25 +98,37 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   useEffect(() => {
     if (!search) {
       setFighters([]);
+      setIsLoading(false);
       return;
     }
 
+    const controller = new AbortController();
     setIsLoading(true);
-    const timer = setTimeout(async () => {
+
+    const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(
-          `/api/search?q=${encodeURIComponent(search)}&limit=8`
+          `/api/search?q=${encodeURIComponent(search)}&limit=8`,
+          { signal: controller.signal }
         );
         const data = await response.json();
         setFighters(data.fighters || []);
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
         console.error("Search error:", error);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [search]);
 
   // Navigate to fighter
