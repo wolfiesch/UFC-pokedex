@@ -6,6 +6,15 @@ from backend.schemas.fighter import (  # noqa: F401
     FightHistoryEntry,
     PaginatedFightersResponse,
 )
+from backend.schemas.ranking import (  # noqa: F401
+    AllRankingsResponse,
+    CurrentRankingsResponse,
+    DivisionListResponse,
+    PeakRankingResponse,
+    RankingEntry,
+    RankingHistoryEntry,
+    RankingHistoryResponse,
+)
 from backend.schemas.stats import (  # noqa: F401
     AverageFightDuration,
     LeaderboardDefinition,

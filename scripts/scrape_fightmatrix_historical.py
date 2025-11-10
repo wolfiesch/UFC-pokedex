@@ -2,18 +2,19 @@
 Fight Matrix Historical Rankings Scraper
 
 Scrapes top 50 fighters per division from Fight Matrix historical snapshots.
-Uses BeautifulSoup4 for HTML parsing (works with both requests and playwright).
+Uses BeautifulSoup4 for HTML parsing with resume capability.
 
 Strategy:
-- Target: Last 12 months of historical data
-- Scope: Top 50 fighters per division (2 pages @ 25 fighters/page)
-- Divisions: Focus on major weight classes (8 men's divisions)
-- Total requests: ~192 pages (8 divisions × 12 months × 2 pages)
+- Phase 3A: Last 24 months (Nov 2023 - Nov 2025) - ~13 min, ~9,600 rankings
+- Phase 3B: 2020-2023 (48 months) - ~26 min, ~19,200 rankings
+- Phase 3C: 2008-2019 (144 months) - ~1.3 hours, ~57,600 rankings
+- All: Complete archive (216 months) - ~2-3 hours, ~86,400 rankings
 
 Usage:
-    python scripts/scrape_fightmatrix_historical.py
-    python scripts/scrape_fightmatrix_historical.py --months 6  # Last 6 months only
-    python scripts/scrape_fightmatrix_historical.py --divisions 1,5,7  # Specific divisions
+    python scripts/scrape_fightmatrix_historical.py --phase 3A  # Recent 24 months
+    python scripts/scrape_fightmatrix_historical.py --phase all  # All 216 months
+    python scripts/scrape_fightmatrix_historical.py --months 6  # Custom month count
+    python scripts/scrape_fightmatrix_historical.py --force  # Re-scrape existing files
 """
 
 import argparse
@@ -35,9 +36,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 BASE_URL = "https://www.fightmatrix.com/historical-mma-rankings/ranking-snapshots/"
 OUTPUT_DIR = Path("data/processed/fightmatrix_historical")
 DIVISION_CODES_FILE = Path("data/processed/fightmatrix_division_codes.json")
+ISSUE_MAPPING_FILE = Path("data/processed/fightmatrix_issue_mapping_complete.json")
 DELAY_SECONDS = 2.0  # Respectful delay between requests
 RETRY_ATTEMPTS = 3
 RETRY_DELAY = 5
+
+# Phase definitions (month ranges from most recent)
+PHASE_DEFINITIONS = {
+    '3A': {'months': 24, 'description': 'Last 24 months (Nov 2023 - Nov 2025)'},
+    '3B': {'months': 72, 'description': '2020-2025 (72 months)'},
+    '3C': {'months': 216, 'description': 'Complete archive (216 months, 2008-2025)'},
+    'all': {'months': 216, 'description': 'Complete archive (216 months, 2008-2025)'},
+}
 
 
 def load_division_codes() -> Dict:

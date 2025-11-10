@@ -298,6 +298,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rankings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All Rankings
+         * @description Get current rankings for all divisions.
+         *
+         *     Returns the most recent rankings snapshot across all weight classes
+         *     from the specified source.
+         *
+         *     Args:
+         *         source: Ranking source (ufc, fightmatrix, tapology)
+         *         service: Ranking service dependency
+         *
+         *     Returns:
+         *         All rankings organized by division
+         */
+        get: operations["get_all_rankings_rankings__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rankings/divisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Divisions
+         * @description Get list of all divisions with rankings available.
+         *
+         *     Args:
+         *         source: Ranking source
+         *         service: Ranking service dependency
+         *
+         *     Returns:
+         *         List of division names
+         */
+        get: operations["get_divisions_rankings_divisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rankings/{division}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Division Rankings
+         * @description Get current rankings for a specific division.
+         *
+         *     Returns the most recent ranking snapshot for the specified weight class.
+         *
+         *     Args:
+         *         division: Weight class (e.g., 'Lightweight', 'Heavyweight')
+         *         source: Ranking source
+         *         service: Ranking service dependency
+         *
+         *     Returns:
+         *         Division rankings with fighter details
+         */
+        get: operations["get_division_rankings_rankings__division__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rankings/fighter/{fighter_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fighter Ranking History
+         * @description Get historical ranking progression for a fighter.
+         *
+         *     Returns a timeline of the fighter's ranking snapshots ordered by date
+         *     (most recent first).
+         *
+         *     Args:
+         *         fighter_id: Fighter's UUID
+         *         source: Ranking source
+         *         limit: Optional limit on number of records
+         *         service: Ranking service dependency
+         *         session: Database session
+         *
+         *     Returns:
+         *         Fighter's ranking history
+         */
+        get: operations["get_fighter_ranking_history_rankings_fighter__fighter_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rankings/fighter/{fighter_id}/peak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fighter Peak Ranking
+         * @description Get fighter's best ranking achievement.
+         *
+         *     Returns the fighter's highest (lowest number) ranking ever achieved
+         *     from the specified source.
+         *
+         *     Args:
+         *         fighter_id: Fighter's UUID
+         *         source: Ranking source
+         *         service: Ranking service dependency
+         *         session: Database session
+         *
+         *     Returns:
+         *         Fighter's peak ranking
+         */
+        get: operations["get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/favorites/collections": {
         parameters: {
             query?: never;
@@ -458,6 +610,91 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AllRankingsResponse
+         * @description All current rankings across all divisions.
+         */
+        AllRankingsResponse: {
+            /**
+             * Source
+             * @description Ranking source
+             */
+            source: string;
+            /**
+             * Rank Date
+             * Format: date
+             * @description Date of rankings snapshot
+             */
+            rank_date: string;
+            /**
+             * Divisions
+             * @description Rankings for each division
+             */
+            divisions?: components["schemas"]["CurrentRankingsResponse"][];
+            /**
+             * Total Divisions
+             * @description Number of divisions included
+             */
+            total_divisions: number;
+            /**
+             * Total Fighters
+             * @description Total ranked fighters across all divisions
+             */
+            total_fighters: number;
+        };
+        /**
+         * CurrentRankingsResponse
+         * @description Current rankings for a specific division.
+         */
+        CurrentRankingsResponse: {
+            /**
+             * Division
+             * @description Weight class (e.g., 'Lightweight')
+             */
+            division: string;
+            /**
+             * Source
+             * @description Ranking source: 'ufc', 'fightmatrix', 'tapology'
+             */
+            source: string;
+            /**
+             * Rank Date
+             * Format: date
+             * @description Date of this ranking snapshot
+             */
+            rank_date: string;
+            /**
+             * Rankings
+             * @description List of ranked fighters
+             */
+            rankings?: components["schemas"]["RankingEntry"][];
+            /**
+             * Total Fighters
+             * @description Total number of fighters in rankings
+             */
+            total_fighters: number;
+        };
+        /**
+         * DivisionListResponse
+         * @description List of divisions with rankings available.
+         */
+        DivisionListResponse: {
+            /**
+             * Divisions
+             * @description Available division names
+             */
+            divisions?: string[];
+            /**
+             * Source
+             * @description Ranking source
+             */
+            source: string;
+            /**
+             * Total Divisions
+             * @description Total number of divisions
+             */
+            total_divisions: number;
+        };
         /**
          * EventDetail
          * @description Detailed event information including fight card
@@ -1195,6 +1432,177 @@ export interface components {
             has_more: boolean;
         };
         /**
+         * PeakRankingResponse
+         * @description Fighter's best ranking achievement.
+         */
+        PeakRankingResponse: {
+            /**
+             * Fighter Id
+             * @description Fighter's UUID
+             */
+            fighter_id: string;
+            /**
+             * Fighter Name
+             * @description Fighter's full name
+             */
+            fighter_name: string;
+            /**
+             * Division
+             * @description Division where peak was achieved
+             */
+            division: string;
+            /**
+             * Peak Rank
+             * @description Best rank achieved (lower is better)
+             */
+            peak_rank: number;
+            /**
+             * Rank Date
+             * Format: date
+             * @description Date when peak rank was achieved
+             */
+            rank_date: string;
+            /**
+             * Is Interim
+             * @description Was this an interim title
+             * @default false
+             */
+            is_interim: boolean;
+            /**
+             * Source
+             * @description Ranking source
+             */
+            source: string;
+        };
+        /**
+         * RankingEntry
+         * @description Single ranking entry within a division leaderboard.
+         */
+        RankingEntry: {
+            /**
+             * Ranking Id
+             * @description Unique ranking record ID
+             */
+            ranking_id: string;
+            /**
+             * Fighter Id
+             * @description Fighter's UUID
+             */
+            fighter_id: string;
+            /**
+             * Fighter Name
+             * @description Fighter's full name
+             */
+            fighter_name: string;
+            /**
+             * Nickname
+             * @description Fighter's nickname
+             */
+            nickname?: string | null;
+            /**
+             * Rank
+             * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked (NR)
+             */
+            rank: number | null;
+            /**
+             * Previous Rank
+             * @description Previous rank position
+             */
+            previous_rank?: number | null;
+            /**
+             * Rank Movement
+             * @description Rank movement delta (positive=moved up, negative=moved down)
+             * @default 0
+             */
+            rank_movement: number;
+            /**
+             * Is Interim
+             * @description Whether this is an interim championship
+             * @default false
+             */
+            is_interim: boolean;
+        };
+        /**
+         * RankingHistoryEntry
+         * @description Single point in a fighter's ranking history timeline.
+         */
+        RankingHistoryEntry: {
+            /**
+             * Ranking Id
+             * @description Unique ranking record ID
+             */
+            ranking_id: string;
+            /**
+             * Division
+             * @description Weight class
+             */
+            division: string;
+            /**
+             * Rank
+             * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked
+             */
+            rank: number | null;
+            /**
+             * Previous Rank
+             * @description Previous rank
+             */
+            previous_rank?: number | null;
+            /**
+             * Rank Movement
+             * @description Rank movement delta
+             * @default 0
+             */
+            rank_movement: number;
+            /**
+             * Is Interim
+             * @description Interim championship flag
+             * @default false
+             */
+            is_interim: boolean;
+            /**
+             * Rank Date
+             * Format: date
+             * @description Date of this snapshot
+             */
+            rank_date: string;
+            /**
+             * Source
+             * @description Ranking source
+             */
+            source: string;
+        };
+        /**
+         * RankingHistoryResponse
+         * @description Historical ranking progression for a fighter.
+         */
+        RankingHistoryResponse: {
+            /**
+             * Fighter Id
+             * @description Fighter's UUID
+             */
+            fighter_id: string;
+            /**
+             * Fighter Name
+             * @description Fighter's full name
+             */
+            fighter_name: string;
+            /**
+             * Source
+             * @description Ranking source
+             */
+            source: string;
+            /**
+             * History
+             * @description Ranking snapshots ordered by date (most recent first)
+             */
+            history?: components["schemas"]["RankingHistoryEntry"][];
+            /**
+             * Total Snapshots
+             * @description Total number of ranking snapshots
+             */
+            total_snapshots: number;
+        };
+        /**
          * StatsSummaryMetric
          * @description Individual metric displayed in the summary KPIs section.
          */
@@ -1732,6 +2140,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrendsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_rankings_rankings__get: {
+        parameters: {
+            query?: {
+                /** @description Ranking source: 'ufc', 'fightmatrix', or 'tapology' */
+                source?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllRankingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_divisions_rankings_divisions_get: {
+        parameters: {
+            query?: {
+                /** @description Ranking source */
+                source?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DivisionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_division_rankings_rankings__division__get: {
+        parameters: {
+            query?: {
+                /** @description Ranking source */
+                source?: string;
+            };
+            header?: never;
+            path: {
+                division: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentRankingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighter_ranking_history_rankings_fighter__fighter_id__history_get: {
+        parameters: {
+            query?: {
+                /** @description Ranking source */
+                source?: string;
+                /** @description Optional limit on number of historical snapshots */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RankingHistoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get: {
+        parameters: {
+            query?: {
+                /** @description Ranking source */
+                source?: string;
+            };
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeakRankingResponse"];
                 };
             };
             /** @description Validation Error */
