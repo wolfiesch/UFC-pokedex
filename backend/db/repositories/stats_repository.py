@@ -277,21 +277,17 @@ class StatsRepository(BaseRepository):
         if end_date is not None:
             fight_exists = fight_exists.where(Fight.event_date <= end_date)
 
-        # First, aggregate by fighter to handle duplicates (take max value per fighter)
-        # Also count fights for data quality indicator
+        # Count all UFC fights for each fighter for data quality indicator
         fight_count_cte = (
             select(
                 Fight.fighter_id,
                 func.count(Fight.id).label("fight_count")
             )
             .where(Fight.event_date.isnot(None))
-        )
-        if start_date is not None:
-            fight_count_cte = fight_count_cte.where(Fight.event_date >= start_date)
-        if end_date is not None:
-            fight_count_cte = fight_count_cte.where(Fight.event_date <= end_date)
-        fight_count_cte = fight_count_cte.group_by(Fight.fighter_id).cte("fight_counts")
+            .group_by(Fight.fighter_id)
+        ).cte("fight_counts")
 
+        # First, aggregate by fighter to handle duplicates (take max value per fighter)
         aggregated = (
             select(
                 fighter_stats.c.fighter_id.label("fighter_id"),
