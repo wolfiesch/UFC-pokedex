@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 
 import StatsDisplay from "@/components/StatsDisplay";
@@ -28,11 +29,48 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StatsRadarChart } from "@/components/visualizations/StatsRadarChart";
-import { RecordBreakdownChart } from "@/components/visualizations/RecordBreakdownChart";
-import { PerformanceBarCharts } from "@/components/visualizations/PerformanceBarCharts";
-import { FightScatterDemo } from "@/components/analytics/FightScatterDemo";
 import { useFavorites } from "@/hooks/useFavorites";
+
+const ChartSkeleton = ({ title }: { title: string }) => (
+  <Card className="bg-card/60">
+    <CardHeader>
+      <CardTitle className="text-base text-muted-foreground">{title}</CardTitle>
+    </CardHeader>
+    <CardContent className="h-64 animate-pulse rounded-2xl bg-muted/40" />
+  </Card>
+);
+
+const StatsRadarChart = dynamic(
+  () =>
+    import("@/components/visualizations/StatsRadarChart").then((mod) => ({
+      default: mod.StatsRadarChart,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton title="Performance Overview" /> }
+);
+
+const RecordBreakdownChart = dynamic(
+  () =>
+    import("@/components/visualizations/RecordBreakdownChart").then((mod) => ({
+      default: mod.RecordBreakdownChart,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton title="Fight Record Breakdown" /> }
+);
+
+const PerformanceBarCharts = dynamic(
+  () =>
+    import("@/components/visualizations/PerformanceBarCharts").then((mod) => ({
+      default: mod.PerformanceBarCharts,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton title="Accuracy & Defense" /> }
+);
+
+const FightScatterDemo = dynamic(
+  () =>
+    import("@/components/analytics/FightScatterDemo").then((mod) => ({
+      default: mod.FightScatterDemo,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton title="Fight History Timeline" /> }
+);
 
 type Props = {
   fighterId: string;

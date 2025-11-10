@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { useFavoritesStore } from "@/store/favoritesStore";
+import { useFavoritesFiltersStore } from "@/store/favoritesFiltersStore";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -11,8 +11,8 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({ isLoading = false }: SearchBarProps) {
-  const current = useFavoritesStore((state) => state.searchTerm);
-  const setSearchTerm = useFavoritesStore((state) => state.setSearchTerm);
+  const current = useFavoritesFiltersStore((state) => state.searchTerm);
+  const setSearchTerm = useFavoritesFiltersStore((state) => state.setSearchTerm);
   const [value, setValue] = useState(current ?? "");
   const isUpdatingRef = useRef(false);
   const prevStoreRef = useRef(current);

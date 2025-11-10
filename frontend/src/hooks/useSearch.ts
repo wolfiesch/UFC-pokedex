@@ -2,21 +2,21 @@
 
 import { useMemo } from "react";
 
-import { useFavoritesStore } from "@/store/favoritesStore";
+import { useFavoritesFiltersStore } from "@/store/favoritesFiltersStore";
 
 export function useSearch() {
-  const searchTerm = useFavoritesStore((state) => state.searchTerm);
-  const stanceFilter = useFavoritesStore((state) => state.stanceFilter);
-  const divisionFilter = useFavoritesStore((state) => state.divisionFilter);
-  const championStatusFilters = useFavoritesStore((state) => state.championStatusFilters);
-  const winStreakCount = useFavoritesStore((state) => state.winStreakCount);
-  const lossStreakCount = useFavoritesStore((state) => state.lossStreakCount);
-  const setSearchTerm = useFavoritesStore((state) => state.setSearchTerm);
-  const setStanceFilter = useFavoritesStore((state) => state.setStanceFilter);
-  const setDivisionFilter = useFavoritesStore((state) => state.setDivisionFilter);
-  const toggleChampionStatusFilter = useFavoritesStore((state) => state.toggleChampionStatusFilter);
-  const setWinStreakCount = useFavoritesStore((state) => state.setWinStreakCount);
-  const setLossStreakCount = useFavoritesStore((state) => state.setLossStreakCount);
+  const searchTerm = useFavoritesFiltersStore((state) => state.searchTerm);
+  const stanceFilter = useFavoritesFiltersStore((state) => state.stanceFilter);
+  const divisionFilter = useFavoritesFiltersStore((state) => state.divisionFilter);
+  const championStatusFilters = useFavoritesFiltersStore((state) => state.championStatusFilters);
+  const winStreakCount = useFavoritesFiltersStore((state) => state.winStreakCount);
+  const lossStreakCount = useFavoritesFiltersStore((state) => state.lossStreakCount);
+  const setSearchTerm = useFavoritesFiltersStore((state) => state.setSearchTerm);
+  const setStanceFilter = useFavoritesFiltersStore((state) => state.setStanceFilter);
+  const setDivisionFilter = useFavoritesFiltersStore((state) => state.setDivisionFilter);
+  const toggleChampionStatusFilter = useFavoritesFiltersStore((state) => state.toggleChampionStatusFilter);
+  const setWinStreakCount = useFavoritesFiltersStore((state) => state.setWinStreakCount);
+  const setLossStreakCount = useFavoritesFiltersStore((state) => state.setLossStreakCount);
 
   return useMemo(
     () => ({

@@ -12,13 +12,10 @@ describe('FavoritesStore Race Conditions', () => {
       isInitialized: false,
       isLoading: false,
       defaultCollection: null,
+      favoriteIds: new Set(),
+      favoriteEntryMap: new Map(),
+      favoriteListCache: [],
       error: null,
-      searchTerm: "",
-      stanceFilter: null,
-      divisionFilter: null,
-      championStatusFilters: [],
-      winStreakCount: null,
-      lossStreakCount: null,
     });
 
     // Reset mocks

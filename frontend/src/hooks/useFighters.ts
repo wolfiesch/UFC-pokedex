@@ -4,7 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import type { FighterListItem, PaginatedFightersResponse } from "@/lib/types";
-import { useFavoritesStore } from "@/store/favoritesStore";
+import { useFavoritesFiltersStore } from "@/store/favoritesFiltersStore";
 import { getFighters, searchFighters } from "@/lib/api";
 import type { ApiError } from "@/lib/errors";
 
@@ -34,12 +34,12 @@ function flattenPages(pages: PaginatedFightersResponse[] | undefined): FighterLi
 export function useFighters(
   initialDataOrLimit?: PaginatedFightersResponse | number
 ) {
-  const searchTerm = useFavoritesStore((state) => state.searchTerm);
-  const stance = useFavoritesStore((state) => state.stanceFilter);
-  const division = useFavoritesStore((state) => state.divisionFilter);
-  const championStatusFilters = useFavoritesStore((state) => state.championStatusFilters);
-  const winStreakCount = useFavoritesStore((state) => state.winStreakCount);
-  const lossStreakCount = useFavoritesStore((state) => state.lossStreakCount);
+  const searchTerm = useFavoritesFiltersStore((state) => state.searchTerm);
+  const stance = useFavoritesFiltersStore((state) => state.stanceFilter);
+  const division = useFavoritesFiltersStore((state) => state.divisionFilter);
+  const championStatusFilters = useFavoritesFiltersStore((state) => state.championStatusFilters);
+  const winStreakCount = useFavoritesFiltersStore((state) => state.winStreakCount);
+  const lossStreakCount = useFavoritesFiltersStore((state) => state.lossStreakCount);
 
   // Support both old API (number) and new API (initialData object)
   const initialData =

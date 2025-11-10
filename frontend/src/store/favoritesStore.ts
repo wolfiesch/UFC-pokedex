@@ -73,28 +73,11 @@ type FavoritesState = {
   isInitialized: boolean;
   error: string | null;
 
-  // UI filter state (client-side only)
-  searchTerm: string;
-  stanceFilter: string | null;
-  divisionFilter: string | null;
-  championStatusFilters: string[];
-  winStreakCount: number | null;
-  lossStreakCount: number | null;
-
   // Actions
   initialize: () => Promise<void>;
   toggleFavorite: (fighter: FighterListItem) => Promise<{ success: boolean; error?: string }>;
   isFavorite: (fighterId: string) => boolean;
   getFavorites: () => FighterListItem[];
-
-  // Filter actions
-  setSearchTerm: (term: string) => void;
-  setStanceFilter: (stance: string | null) => void;
-  setDivisionFilter: (division: string | null) => void;
-  toggleChampionStatusFilter: (status: string) => void;
-  setWinStreakCount: (count: number | null) => void;
-  setLossStreakCount: (count: number | null) => void;
-  clearStreakFilters: () => void;
 
   // Internal helpers
   _ensureDefaultCollection: () => Promise<number>;
@@ -109,12 +92,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   isLoading: false,
   isInitialized: false,
   error: null,
-  searchTerm: "",
-  stanceFilter: null,
-  divisionFilter: null,
-  championStatusFilters: [],
-  winStreakCount: null,
-  lossStreakCount: null,
 
   // Initialize the store by loading collections from backend
   initialize: async () => {
@@ -337,25 +314,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   // Get all favorited fighters
   getFavorites: () => get().favoriteListCache,
 
-  // Filter setters
-  setSearchTerm: (term) => set({ searchTerm: term }),
-  setStanceFilter: (stance) => set({ stanceFilter: stance }),
-  setDivisionFilter: (division) => set({ divisionFilter: division }),
-  toggleChampionStatusFilter: (status) => {
-    const filters = get().championStatusFilters;
-    const exists = filters.includes(status);
-    set({
-      championStatusFilters: exists
-        ? filters.filter((f) => f !== status)
-        : [...filters, status],
-    });
-  },
-  setWinStreakCount: (count) =>
-    set({ winStreakCount: count, lossStreakCount: null }),
-  setLossStreakCount: (count) =>
-    set({ lossStreakCount: count, winStreakCount: null }),
-  clearStreakFilters: () =>
-    set({ winStreakCount: null, lossStreakCount: null }),
 }));
 
 // Helper hook with auto-initialization

@@ -22,6 +22,24 @@ describe('FavoritesStore Error Handling', () => {
 
   beforeEach(() => {
     // Reset store state
+    const existingEntries = [
+      {
+        id: 1,
+        entry_id: 1,
+        collection_id: 1,
+        fighter_id: 'fighter-1',
+        fighter_name: 'Fighter One',
+        fighter: null,
+        position: 1,
+        notes: null,
+        tags: [],
+        created_at: new Date().toISOString(),
+        added_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {},
+      },
+    ];
+
     useFavoritesStore.setState({
       isInitialized: true,
       isLoading: false,
@@ -33,31 +51,12 @@ describe('FavoritesStore Error Handling', () => {
         is_public: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        entries: [
-          {
-            id: 1,
-            entry_id: 1,
-            collection_id: 1,
-            fighter_id: 'fighter-1',
-            fighter_name: 'Fighter One',
-            fighter: null,
-            position: 1,
-            notes: null,
-            tags: [],
-            created_at: new Date().toISOString(),
-            added_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            metadata: {},
-          },
-        ],
+        entries: existingEntries,
       },
+      favoriteIds: new Set(existingEntries.map((entry) => entry.fighter_id)),
+      favoriteEntryMap: new Map(existingEntries.map((entry) => [entry.fighter_id, entry])),
+      favoriteListCache: [],
       error: null,
-      searchTerm: '',
-      stanceFilter: null,
-      divisionFilter: null,
-      championStatusFilters: [],
-      winStreakCount: null,
-      lossStreakCount: null,
     });
 
     // Reset mocks

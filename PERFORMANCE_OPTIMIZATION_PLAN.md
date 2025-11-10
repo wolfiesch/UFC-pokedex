@@ -155,11 +155,11 @@ const [fighters, stats, events] = await Promise.all([
 #### 2.2 Optimize State Management
 - [x] Review Zustand selectors for unnecessary re-renders *(favorites hook now pulls only the slices it needs).*
 - [x] Implement shallow equality checks *(custom hook uses `zustand/shallow` to prevent needless updates).*
-- [ ] Split large stores into smaller, focused stores *(still pending; favorites store refactor partially complete).*
+- [x] Split large stores into smaller, focused stores *(filters now live in `favoritesFiltersStore`, decoupling list filters from backend-synced favorites data).*
 
 #### 2.3 Code Splitting & Lazy Loading
-- [ ] Lazy load chart components (Recharts)
-- [ ] Dynamic imports for heavy visualizations
+- [x] Lazy load chart components (Recharts) *(fighter detail analytics now loaded via `next/dynamic` with skeleton fallbacks).*
+- [x] Dynamic imports for heavy visualizations *(FightScatter demo only loads when needed, trimming initial fighter detail JS).*
 - [ ] Route-based code splitting
 
 **Total Phase 2 Time**: ~15 hours
@@ -328,6 +328,35 @@ function deriveFavoritesSnapshot(collection: FavoriteCollectionDetail | null) {
 
 **Impact**:
 - Toggling a favorite re-renders only the relevant cards instead of the entire list, leading to smoother scroll/interaction when many cards are on screen.
+
+---
+
+### Fix #9: Dedicated Favorites Filter Store
+
+**Files**: `frontend/src/store/favoritesFiltersStore.ts`, `frontend/src/hooks/useFavorites.ts`, `frontend/src/hooks/useFighters.ts`, `frontend/src/hooks/useSearch.ts`, `frontend/src/components/SearchBar.tsx`
+**Status**: ✅ Completed
+
+**Details**:
+- Extracted all search/filter state into a focused Zustand store so the main favorites store only tracks backend data. The new store exposes the same setters plus a `resetFilters` helper for future UI flows.
+- Updated hooks/components (`useFavorites`, `useFighters`, `useSearch`, `SearchBar`) to subscribe to the new store, which prevents favorites data mutations from invalidating filter-heavy UIs (and vice versa).
+- Tests reset the correct slices, matching the runtime structure.
+
+**Impact**:
+- Stores now emit targeted updates, avoiding cascade renders whenever favorites entries update. Filter interactions also stop touching collections, so React Query caches aren’t invalidated unnecessarily.
+
+---
+
+### Fix #10: Chart Lazy Loading
+
+**File**: `frontend/src/components/Pokedex/FighterDetailCard.tsx`
+**Status**: ✅ Completed
+
+**Details**:
+- Wrapped all Recharts/FightScatter-heavy widgets in `next/dynamic` with `ssr: false` so the fighter detail route only loads those bundles after the textual card content renders.
+- Introduced a lightweight `ChartSkeleton` so layout remains stable while the charts hydrate on the client.
+
+**Impact**:
+- Fighter detail route’s initial JS payload drops significantly (Recharts + FightScatter no longer block TTFB), improving the critical rendering path and aligning with Phase 2 code-splitting goals.
 
 ---
 

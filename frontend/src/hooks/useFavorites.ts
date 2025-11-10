@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { shallow } from "zustand/shallow";
 
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { useFavoritesFiltersStore } from "@/store/favoritesFiltersStore";
 
 type UseFavoritesOptions = {
   /**
@@ -41,7 +42,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
     setStanceFilter,
     setDivisionFilter,
     toggleChampionStatusFilter,
-  } = useFavoritesStore(
+  } = useFavoritesFiltersStore(
     (state) => ({
       searchTerm: state.searchTerm,
       stanceFilter: state.stanceFilter,
