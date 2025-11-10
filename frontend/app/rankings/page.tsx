@@ -64,8 +64,8 @@ export default async function RankingsPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {divisions.map((division) => {
-          const dateInfo = division_rank_dates.find(d => d.division === division.division);
+        {(divisions ?? []).map((division) => {
+          const dateInfo = (division_rank_dates ?? []).find(d => d.division === division.division);
 
           return (
             <Card key={division.division}>
@@ -85,13 +85,13 @@ export default async function RankingsPage() {
                 )}
               </CardHeader>
               <CardContent>
-                {division.rankings.length === 0 ? (
+                {(division.rankings ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No rankings available for this division.
                   </p>
                 ) : (
                   <ol className="space-y-2">
-                    {division.rankings.slice(0, 5).map((entry) => (
+                    {(division.rankings ?? []).slice(0, 5).map((entry) => (
                       <li
                         key={entry.ranking_id}
                         className="flex items-center justify-between text-sm"
@@ -112,8 +112,8 @@ export default async function RankingsPage() {
                         </Link>
                         {entry.rank_movement !== 0 && (
                           <Badge
-                            variant={entry.rank_movement > 0 ? "default" : "destructive"}
-                            className="text-xs"
+                            variant="default"
+                            className={entry.rank_movement > 0 ? "text-xs bg-green-600" : "text-xs bg-red-600"}
                           >
                             {entry.rank_movement > 0 ? "↑" : "↓"}
                             {Math.abs(entry.rank_movement)}
@@ -123,7 +123,7 @@ export default async function RankingsPage() {
                     ))}
                   </ol>
                 )}
-                {division.rankings.length > 5 && (
+                {(division.rankings ?? []).length > 5 && (
                   <Link
                     href={`/rankings/${encodeURIComponent(division.division)}`}
                     className="mt-4 block text-sm font-medium text-primary hover:underline"
