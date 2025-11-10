@@ -32,6 +32,7 @@ from backend.db.connection import (
     get_session,
 )
 from backend.db.models import Fighter
+from backend.main import validate_environment
 
 
 def get_database_type() -> str:
@@ -235,6 +236,10 @@ async def seed_fighters(
 
 async def main() -> int:
     """CLI entry point."""
+    # Mirror the FastAPI startup diagnostics for parity with ``uvicorn`` based
+    # launches now that environment validation occurs during lifespan startup.
+    validate_environment()
+
     parser = argparse.ArgumentParser(
         description="Seed minimal fighter data into database"
     )
