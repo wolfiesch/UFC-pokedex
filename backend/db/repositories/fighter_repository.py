@@ -165,7 +165,7 @@ def filter_roster_entries(
             )
 
         matches_streak = True
-        if filters.streak_type and filters.min_streak_count:
+        if filters.streak_type and filters.min_streak_count is not None:
             streak_type = getattr(fighter, "current_streak_type", "none") or "none"
             streak_count = int(getattr(fighter, "current_streak_count", 0) or 0)
             matches_streak = (
