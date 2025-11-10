@@ -165,7 +165,7 @@ The `make dev` command automatically configures CORS. If you see CORS errors:
    ```
    Both should point at the Cloudflare tunnel URLs reported in the terminal.
 
-2. If you rely on dotenv files, generate temporary copies (`.env.dev`, `frontend/.env.dev`) that include the tunnel URLs, load them explicitly, and delete the files once you shut everything down to avoid accidental commits.
+2. If you rely on dotenv files, generate temporary copies (`.env.dev`, `frontend/.env.dev`) that include the tunnel URLs. You will need to modify your application's startup logic to load these files. Delete the files once you shut everything down to avoid accidental commits.
 
 3. Restart services:
    ```bash
