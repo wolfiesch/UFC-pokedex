@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 def _validate_environment() -> None:
     """Validate environment variables at startup and log warnings for missing optional vars."""
-    warnings = []
+    warnings: list[str] = []
 
     # Check optional but recommended environment variables
     if not os.getenv("REDIS_URL"):
@@ -81,8 +81,11 @@ def _validate_environment() -> None:
         logger.warning("=" * 60)
 
 
-# Validate environment at module load time
-_validate_environment()
+def validate_environment() -> None:
+    """Public wrapper ensuring CLI tools can trigger configuration validation."""
+
+    _validate_environment()
+
 
 # Context variable for request ID tracking
 request_id_context: ContextVar[str] = ContextVar("request_id", default="")
@@ -149,6 +152,10 @@ def get_engine() -> AsyncEngine:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
+    # Validate configuration as soon as the application begins starting up so the
+    # same warnings previously emitted at import time remain visible to operators.
+    validate_environment()
+
     # Startup: Initialize database tables for SQLite
     from backend.db.models import Base
 
