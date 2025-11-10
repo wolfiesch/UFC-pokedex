@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import secrets
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
-import time
-from typing import Any, Literal
+from typing import Any, Literal, Protocol, cast
 
 from fastapi import Depends
 from pydantic import ValidationError
@@ -20,6 +18,8 @@ from backend.cache import (
     get_cache_client,
     graph_key,
     list_key,
+    local_cache_get,
+    local_cache_set,
     search_key,
 )
 from backend.db.connection import get_db
@@ -41,39 +41,14 @@ from backend.schemas.stats import (
     LeaderboardsResponse,
     StatsSummaryMetric,
     StatsSummaryResponse,
-    TrendTimeBucket,
     TrendsResponse,
+    TrendTimeBucket,
 )
 
 logger = logging.getLogger(__name__)
 
-_LOCAL_CACHE_DEFAULT_TTL = 300
-_local_cache: dict[str, tuple[float, Any]] = {}
-_local_cache_lock = asyncio.Lock()
 
-
-async def _local_cache_get(key: str) -> Any | None:
-    """Return cached value from the in-process cache if it is still fresh."""
-    async with _local_cache_lock:
-        entry = _local_cache.get(key)
-        if entry is None:
-            return None
-
-        expires_at, value = entry
-        if expires_at < time.time():
-            _local_cache.pop(key, None)
-            return None
-        return value
-
-
-async def _local_cache_set(key: str, value: Any, ttl: int | None = None) -> None:
-    """Store value in the in-process cache with a TTL."""
-    ttl_seconds = ttl if ttl is not None and ttl > 0 else _LOCAL_CACHE_DEFAULT_TTL
-    async with _local_cache_lock:
-        _local_cache[key] = (time.time() + ttl_seconds, value)
-
-
-class FighterRepositoryProtocol:
+class FighterRepositoryProtocol(Protocol):
     async def list_fighters(
         self,
         *,
@@ -83,12 +58,15 @@ class FighterRepositoryProtocol:
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
         """Return lightweight fighter listings honoring pagination hints."""
+        ...
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Retrieve a single fighter with rich detail by unique identifier."""
+        ...
 
     async def stats_summary(self) -> StatsSummaryResponse:
         """Provide high-level metrics describing the indexed roster."""
+        ...
 
     async def get_leaderboards(
         self,
@@ -100,6 +78,7 @@ class FighterRepositoryProtocol:
         end_date: date | None,
     ) -> LeaderboardsResponse:
         """Generate leaderboard slices for accuracy- and submission-oriented metrics."""
+        ...
 
     async def get_trends(
         self,
@@ -110,11 +89,13 @@ class FighterRepositoryProtocol:
         streak_limit: int,
     ) -> TrendsResponse:
         """Summarize longitudinal streaks and fight duration trends within the roster."""
+        ...
 
     async def get_fighters_for_comparison(
         self, fighter_ids: Sequence[str]
     ) -> list[FighterComparisonEntry]:
         """Return stat snapshots for the provided fighter identifiers."""
+        ...
 
     async def get_fight_graph(
         self,
@@ -126,6 +107,7 @@ class FighterRepositoryProtocol:
         include_upcoming: bool = False,
     ) -> FightGraphResponse:
         """Assemble a graph-friendly view of fighters and fight relationships."""
+        ...
 
 
 class InMemoryFighterRepository(FighterRepositoryProtocol):
@@ -281,11 +263,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         stance_lower = ((stance or "").strip().lower()) or None
         division_lower = ((division or "").strip().lower()) or None
         normalized_champion_statuses = (
-            {
-                status.strip().lower()
-                for status in champion_statuses
-                if status and status.strip()
-            }
+            {status.strip().lower() for status in champion_statuses if status and status.strip()}
             if champion_statuses
             else None
         )
@@ -318,8 +296,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
                     "interim": bool(getattr(fighter, "was_interim", False)),
                 }
                 champion_match = any(
-                    status_flags.get(status, False)
-                    for status in normalized_champion_statuses
+                    status_flags.get(status, False) for status in normalized_champion_statuses
                 )
 
             if name_match and stance_match and division_match and champion_match:
@@ -412,13 +389,9 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
         metadata = dict(graph.metadata)
         metadata.setdefault("insights", {})
         metadata.setdefault("generated_at", datetime.now(UTC).isoformat())
-        return FightGraphResponse(
-            nodes=graph.nodes, links=graph.links, metadata=metadata
-        )
+        return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
 
-    nodes_by_id: dict[str, FightGraphNode] = {
-        node.fighter_id: node for node in graph.nodes
-    }
+    nodes_by_id: dict[str, FightGraphNode] = {node.fighter_id: node for node in graph.nodes}
     total_fights = sum(node.total_fights for node in graph.nodes)
     average_fights = round(total_fights / max(1, len(graph.nodes)), 2)
     density = _calculate_network_density(len(graph.nodes), len(graph.links))
@@ -469,13 +442,13 @@ class FighterService:
             cached = await self._cache.get_json(key)
         if cached is not None:
             return cached
-        return await _local_cache_get(key)
+        return await local_cache_get(key)
 
     async def _cache_set(self, key: str, value: Any, ttl: int | None = None) -> None:
         if self._cache is not None:
             await self._cache.set_json(key, value, ttl=ttl)
         if value is not None:
-            await _local_cache_set(key, value, ttl=ttl)
+            await local_cache_set(key, value, ttl=ttl)
 
     async def list_fighters(
         self,
@@ -489,19 +462,19 @@ class FighterService:
 
         # Cache paginated responses (including streak variants) using a key that
         # incorporates pagination and streak options so variants remain isolated.
-        use_cache = (
-            limit is not None and offset is not None and limit >= 0 and offset >= 0
-        )
-        cache_key = (
-            list_key(
-                limit,
-                offset,
+        use_cache = limit is not None and offset is not None and limit >= 0 and offset >= 0
+        cache_key: str | None = None
+        if use_cache:
+            # ``cast`` communicates to static analyzers that ``limit`` and ``offset`` are
+            # guaranteed integers whenever caching activates, avoiding runtime assertions.
+            limit_value = cast(int, limit)
+            offset_value = cast(int, offset)
+            cache_key = list_key(
+                limit_value,
+                offset_value,
                 include_streak=include_streak,
                 streak_window=streak_window,
             )
-            if use_cache
-            else None
-        )
 
         if use_cache and cache_key is not None:
             cached = await self._cache_get(cache_key)
@@ -651,9 +624,7 @@ class FighterService:
                     else None
                 ),
                 streak_type=streak_type if streak_type else None,
-                min_streak_count=(
-                    min_streak_count if min_streak_count is not None else None
-                ),
+                min_streak_count=(min_streak_count if min_streak_count is not None else None),
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
@@ -686,9 +657,7 @@ class FighterService:
                 offset=resolved_offset,
             )
         else:
-            fighters_iterable = await self._repository.list_fighters(
-                include_streak=include_streak
-            )
+            fighters_iterable = await self._repository.list_fighters(include_streak=include_streak)
             query_lower = query_param.lower() if query_param else None
             stance_lower = stance_param.lower() if stance_param else None
             division_lower = division_param.lower() if division_param else None
@@ -708,9 +677,7 @@ class FighterService:
                     stance_match = fighter_stance == stance_lower
                 division_match = True
                 if division_lower:
-                    fighter_division = (
-                        getattr(fighter, "division", None) or ""
-                    ).lower()
+                    fighter_division = (getattr(fighter, "division", None) or "").lower()
                     division_match = fighter_division == division_lower
                 streak_match = True
                 if streak_type_param and min_streak_count_param:
@@ -741,9 +708,7 @@ class FighterService:
 
         return response
 
-    async def compare_fighters(
-        self, fighter_ids: Sequence[str]
-    ) -> list[FighterComparisonEntry]:
+    async def compare_fighters(self, fighter_ids: Sequence[str]) -> list[FighterComparisonEntry]:
         """Retrieve comparable stat bundles for the requested fighters."""
 
         use_cache = self._cache is not None and len(fighter_ids) >= 2
@@ -753,9 +718,7 @@ class FighterService:
             cached = await self._cache_get(cache_key)
             if isinstance(cached, list):
                 try:
-                    return [
-                        FighterComparisonEntry.model_validate(item) for item in cached
-                    ]
+                    return [FighterComparisonEntry.model_validate(item) for item in cached]
                 except ValidationError as exc:  # pragma: no cover
                     logger.warning(
                         "Failed to deserialize cached fighter comparison for key %s: %s",
