@@ -62,9 +62,11 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	FRONTEND_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "FRONTEND_URL=" | cut -d'=' -f2); \
 	API_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "API_URL=" | cut -d'=' -f2); \
 	echo ""; \
-	echo "📝 Updating configuration files..."; \
-	sed -i.bak "s|CORS_ALLOW_ORIGINS=.*|CORS_ALLOW_ORIGINS=$$FRONTEND_URL|" .env && rm .env.bak; \
-	sed -i.bak "s|NEXT_PUBLIC_API_BASE_URL=.*|NEXT_PUBLIC_API_BASE_URL=$$API_URL|" frontend/.env.local && rm frontend/.env.local.bak; \
+        echo "📝 Configuring runtime environment overrides..."; \
+        export CORS_ALLOW_ORIGINS="$$FRONTEND_URL"; \
+        export NEXT_PUBLIC_API_BASE_URL="$$API_URL"; \
+        echo "   CORS_ALLOW_ORIGINS=$$CORS_ALLOW_ORIGINS"; \
+        echo "   NEXT_PUBLIC_API_BASE_URL=$$NEXT_PUBLIC_API_BASE_URL"; \
 	echo ""; \
 	echo "🚀 Starting services..."; \
 	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \

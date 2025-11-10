@@ -158,15 +158,14 @@ bash scripts/check_dns_propagation.sh
 
 The `make dev` command automatically configures CORS. If you see CORS errors:
 
-1. Check `.env` file has:
+1. Verify the runtime environment variables exported by `make dev`:
+   ```bash
+   echo $CORS_ALLOW_ORIGINS
+   echo $NEXT_PUBLIC_API_BASE_URL
    ```
-   CORS_ALLOW_ORIGINS=https://ufc.wolfgangschoenberger.com
-   ```
+   Both should point at the Cloudflare tunnel URLs reported in the terminal.
 
-2. Check `frontend/.env.local` has:
-   ```
-   NEXT_PUBLIC_API_BASE_URL=https://api.ufc.wolfgangschoenberger.com
-   ```
+2. If you rely on dotenv files, generate temporary copies (`.env.dev`, `frontend/.env.dev`) that include the tunnel URLs, load them explicitly, and delete the files once you shut everything down to avoid accidental commits.
 
 3. Restart services:
    ```bash
