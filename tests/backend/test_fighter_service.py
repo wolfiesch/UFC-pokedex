@@ -180,9 +180,7 @@ def test_protocol_runtime_check_detects_missing_methods() -> None:
     """Objects missing protocol methods should fail runtime conformance checks."""
 
     class IncompleteRepository:
-        async def list_fighters(
-            self, *, limit: int | None = None
-        ) -> Iterable[FighterListItem]:
-            return []
+        async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
+            return None
 
     assert not isinstance(IncompleteRepository(), FighterRepositoryProtocol)
