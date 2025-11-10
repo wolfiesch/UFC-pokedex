@@ -7,19 +7,13 @@ on:
     branches: [master, main, develop]
 
 jobs:
-  test:
-    name: Tests (${{ matrix.db }})
+  tests-postgresql:
+    name: Tests (postgresql)
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        db: [postgresql, sqlite]
 
     services:
       postgres:
-        # Only create PostgreSQL service for PostgreSQL matrix job
-        image: ${{ matrix.db == 'postgresql' && 'postgres:15' || '' }}
+        image: postgres:15
         env:
           POSTGRES_USER: ufc_pokedex
           POSTGRES_PASSWORD: ufc_pokedex
@@ -51,7 +45,6 @@ jobs:
           uv sync --all-extras
 
       - name: Configure PostgreSQL database
-        if: matrix.db == 'postgresql'
         env:
           DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
         run: |
@@ -59,13 +52,9 @@ jobs:
           echo "🗄️ PostgreSQL mode - running migrations"
           uv run python -m alembic upgrade head
 
-      - name: Configure SQLite database
-        if: matrix.db == 'sqlite'
-        run: |
-          echo "USE_SQLITE=1" >> $GITHUB_ENV
-          echo "🗄️ SQLite mode - tables will auto-create"
-
       - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
         run: |
           uv run pytest --cov=backend --cov-report=xml --cov-report=term-missing
 
@@ -73,17 +62,58 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
-          flags: ${{ matrix.db }}
-          name: coverage-${{ matrix.db }}
+          flags: postgresql
+          name: coverage-postgresql
         continue-on-error: true
 
-      - name: Verify database mode
+      - name: Verify PostgreSQL database mode
         run: |
-          if [ "${{ matrix.db }}" = "sqlite" ]; then
-            echo "✓ SQLite tests completed"
-            echo "✓ Tables auto-created via create_all()"
-            echo "✓ Migrations skipped (expected)"
-          else
-            echo "✓ PostgreSQL tests completed"
-            echo "✓ Migrations applied successfully"
-          fi
+          echo "✓ PostgreSQL tests completed"
+          echo "✓ Migrations applied successfully"
+
+  tests-sqlite:
+    name: Tests (sqlite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Configure SQLite database
+        run: |
+          echo "USE_SQLITE=1" >> $GITHUB_ENV
+          echo "🗄️ SQLite mode - tables will auto-create"
+
+      - name: Run tests with coverage
+        env:
+          USE_SQLITE: 1
+        run: |
+          uv run pytest --cov=backend --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: sqlite
+          name: coverage-sqlite
+        continue-on-error: true
+
+      - name: Verify SQLite database mode
+        run: |
+          echo "✓ SQLite tests completed"
+          echo "✓ Tables auto-created via create_all()"
+          echo "✓ Migrations skipped (expected)"
