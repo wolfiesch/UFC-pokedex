@@ -26,6 +26,40 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
 
 Refer to `Plans/Initial_Plan.md` for the full project roadmap.
 
+## Container Workflow
+
+Container builds use a multi-stage `uv` pipeline so dependency resolution stays consistent with local development.
+
+### Build the backend image
+
+```bash
+docker build -f backend/Dockerfile -t ufc-pokedex-api .
+```
+
+The builder stage provisions a reusable virtual environment via `uv`, compiles wheels for all locked dependencies, and then hands a slim runtime layer to Uvicorn.
+
+### Run the full stack with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+The `api` service exposes `http://localhost:8000`, connects to PostgreSQL via `DATABASE_URL`, and caches responses through Redis using `REDIS_URL`. Health-checked dependencies ensure the FastAPI container starts only after the database is ready.
+
+To rebuild only the backend image after code changes:
+
+```bash
+docker compose build api
+```
+
+To perform a quick smoke test inside the container:
+
+```bash
+docker compose run --rm api uvicorn backend.main:app --help
+```
+
+This command exits immediately after verifying the entrypoint wiring while still exercising the packaged dependencies.
+
 ## Refreshing Data
 
 Scraped fighters only receive division and other enriched fields after the detail JSON files are loaded into the database.

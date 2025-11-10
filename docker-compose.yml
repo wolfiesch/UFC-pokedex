@@ -26,6 +26,22 @@ services:
     volumes:
       - redis_data:/data
 
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@db:5432/ufc_pokedex
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres_data:
   redis_data:
