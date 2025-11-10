@@ -1,8 +1,9 @@
 # Fighter Rankings Feature - Implementation Plan
 
 **Created:** 2025-11-09
-**Status:** Phase 2 Complete (UFC scraper working), Ready for Phase 3
-**Estimated Completion:** ~4-5 days for remaining phases
+**Last Updated:** 2025-11-10 10:45 AM
+**Status:** Phase 2 COMPLETE ✅ (Data imported to DB), Ready for Phase 3 or Phase 4
+**Estimated Completion:** ~3-4 days for remaining phases
 
 ## Overview
 
@@ -26,19 +27,21 @@ Implement a comprehensive fighter rankings feature that displays:
    - Status: Not started ⏳
 
 ### Name Matching Strategy
-- **Primary:** Fuzzy matching with rapidfuzz (≥80% confidence threshold)
+- **Primary:** Fuzzy matching with rapidfuzz token-set ratio (≥80% confidence threshold)
+- **Normalization:** Lowercase + whitespace collapsing for names (no transliteration yet)
 - **Penalty:** Division mismatch reduces confidence by 10% (0.9x multiplier)
 - **Rejection:** Division mismatch that drops below threshold is rejected
 - **Below Threshold:** Matches <80% are rejected (no record tiebreaker available)
 - **Manual Review:** Operators must manually map fighters in 70-79% confidence range
 - **Note:** Rankings sources don't include fighter records, so no record validation possible
+- **Achieved Rate:** 99.43% match rate (175/176 fighters) in Phase 2 import
 
 ### Database Schema
 
 #### `fighter_rankings` Table
 ```sql
 CREATE TABLE fighter_rankings (
-    id VARCHAR PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id VARCHAR PRIMARY KEY,
     fighter_id VARCHAR NOT NULL REFERENCES fighters(id),
     division VARCHAR(50) NOT NULL,
     rank INTEGER NULL,  -- 0=Champion, 1-15=Ranked, NULL=Not Ranked
@@ -61,6 +64,7 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
 
 **Migrations:**
 - ✅ `f143b7233ba8_add_fighter_rankings_table.py` - Initial table creation with UNIQUE constraint
+- ✅ ORM: UniqueConstraint also defined in `backend/db/models/__init__.py:198-207`; UUID default supplied at ORM level (not DB default)
 
 ### Rank Storage Convention
 - **0** = Champion
@@ -87,7 +91,6 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
 
 2. **Database Migration** ✅
    - File: `backend/db/migrations/versions/f143b7233ba8_add_fighter_rankings_table.py`
-   - File: `backend/db/migrations/versions/0ff38dee59d4_add_unique_constraint_fighter_rankings.py`
    - Status: Ready to apply (requires PostgreSQL running)
    - SQLite: Auto-creates on startup
 
@@ -103,11 +106,10 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
    - Methods:
      - `match_fighter()` - Single name matching with division verification
      - `match_multiple()` - Batch matching
-     - `_boost_confidence_with_record()` - Placeholder (NOT IMPLEMENTED)
    - Fixes applied:
      - Uses tuple list instead of dict to preserve duplicate names
      - Division mismatch re-checks threshold before returning
-     - Honest documentation about lack of record validation
+     - Documentation updated to clarify lack of record validation
 
 5. **Repository** ✅
    - File: `backend/db/repositories/ranking_repository.py`
@@ -122,7 +124,7 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
 
 ## Phase 2: UFC Rankings Scraper ✅ COMPLETED
 
-**Goal:** Scrape current UFC rankings and validate pipeline
+**Goal:** Scrape current UFC rankings, validate pipeline, and import to database
 
 ### Deliverables (All Complete)
 
@@ -135,16 +137,16 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
 
 2. **UFC Rankings Parser** ✅
    - File: `scraper/utils/ufc_rankings_parser.py`
-   - Function: `parse_ufc_rankings_page(html, rank_date)`
-   - Returns: List of ranking dicts (176 entries expected)
-   - HTML Structure:
+   - Dual layout support: Modern table + legacy fallback (Codex enhancement)
+   - Previous rank extraction: Captures `data-previous-rank` and movement deltas when available
+   - Division normalization: Applied in both parsers
+   - HTML Structure (modern):
      - `.view-grouping` - Division container
      - `.view-grouping-header::text` - Division name
      - `.rankings--athlete--champion .info a` - Champion
      - `tbody tr` - Ranked fighters (1-15)
      - `td:nth-child(1)::text` - Rank number
      - `td:nth-child(2) a::text` - Fighter name
-   - Fix applied: Division names now normalized via `normalize_division_name()`
 
 3. **UFC Rankings Spider** ✅
    - File: `scraper/spiders/ufc_rankings.py`
@@ -158,16 +160,36 @@ CREATE INDEX ix_fighter_rankings_fighter_source ON fighter_rankings(fighter_id, 
    - Added routing for `item_type="fighter_ranking"` → `FighterRankingItem`
    - Now handles ranking items correctly
 
-5. **Testing** ✅
+5. **Name Normalization Insight** ✅
+   - File: `scraper/utils/fuzzy_match.py:9-40`
+   - Current behavior: lowercase + whitespace collapse only
+   - Follow-up: track need for transliteration in backlog if match rate drops
+
+6. **Import Script** ✅
+   - File: `scripts/import_ufc_rankings.py`
+   - Features:
+     - Loads scraped rankings JSON
+     - Runs fuzzy name matching against database fighters
+     - Reports match statistics and unmatched fighters
+     - Bulk inserts using `RankingRepository.upsert_ranking()`
+     - Supports `--dry-run` for testing
+   - Result: 175 rankings imported successfully
+
+7. **Testing** ✅
    - Ran spider against live UFC.com
    - Verified: 176 total rankings
    - Verified: 11 divisions (8 men's + 3 women's)
    - Verified: Each division has 16 fighters (1 champion + 15 ranked)
-   - Output: `/tmp/claude/ufc_rankings_final.json`
+   - Scraped output: `/tmp/claude/ufc_rankings_final.json`
+   - Import completed: 175 rankings in database
+   - Unmatched: 1 fighter ("Patricio Pitbull" - legitimate name variant)
 
 ### Test Results
+
+**Scraping (UFC.com):**
 ```
-Divisions scraped:
+Total rankings scraped: 176
+Divisions: 11
   16 Bantamweight
   16 Featherweight
   16 Flyweight
@@ -181,42 +203,101 @@ Divisions scraped:
   16 Women's Strawweight
 ```
 
+**Name Matching:**
+```
+Total fighters: 176
+Matched: 175 (99.43%)
+Unmatched: 1 (0.57%)
+Average Confidence: 100.0%
+
+Unmatched fighter:
+  - Patricio Pitbull (Featherweight #12)
+    Database name: "Patricio Freire"
+    Reason: Nickname used instead of legal name
+```
+
+**Database Import:**
+```
+Inserted/Updated: 175 rankings
+Skipped (unmatched): 1
+Database: fighter_rankings table
+Rank Date: 2025-11-09
+Source: ufc
+```
+
+**Division Breakdown (Database):**
+```sql
+SELECT division, COUNT(*) FROM fighter_rankings GROUP BY division;
+
+Bantamweight              | 16
+Featherweight             | 15  (missing Patricio Pitbull)
+Flyweight                 | 16
+Heavyweight               | 16
+Light Heavyweight         | 16
+Lightweight               | 16
+Middleweight              | 16
+Welterweight              | 16
+Women's Bantamweight      | 16
+Women's Flyweight         | 16
+Women's Strawweight       | 16
+Total: 175 rankings
+```
+
 ---
 
 ## Phase 3: Fight Matrix Historical Data ⏳ NOT STARTED
 
-**Goal:** Scrape Fight Matrix historical rankings to compute peak rankings
+**Goal:** Scrape Fight Matrix historical rankings to compute peak rankings and populate multi-source history.
 
-### Deliverables
+### Milestones & Deliverables
 
-1. **Fight Matrix Parser**
-   - File: `scraper/utils/fightmatrix_rankings_parser.py` (to create)
-   - Function: `parse_fightmatrix_rankings_page(html, rank_date)`
-   - Purpose: Extract rankings from Fight Matrix HTML
-   - Research needed: Inspect Fight Matrix HTML structure first
+1. **Recon & HTML Sampling (0.5 day)**
+   - Capture at least two Fight Matrix ranking pages (desktop & mobile variants)
+   - Document division names, pagination pattern, date stamping, and HTML selectors
+   - Output: `docs/fightmatrix-dom-notes.md`
 
-2. **Fight Matrix Spider**
-   - File: `scraper/spiders/fightmatrix_rankings.py` (to create)
-   - Name: `fightmatrix_rankings`
-   - Strategy: Iterate over last 12 months of ranking snapshots
-   - URL pattern: Determine from Fight Matrix website structure
+2. **Parser Implementation (0.5 day)**
+   - File: `scraper/utils/fightmatrix_rankings_parser.py`
+   - Function: `parse_fightmatrix_rankings_page(html, division, rank_date)`
+   - Requirements:
+     - Normalize division names to match internal conventions
+     - Capture champion + full ranked list (rank 0–15)
+     - Extract snapshot date either from page metadata or request context
+     - Return structure identical to UFC parser for reuse
 
-3. **Import Historical Data**
-   - Script: `scripts/import_fightmatrix_rankings.py` (to create)
-   - Use `FighterNameMatcher` to match names → fighter IDs
-   - Use `RankingRepository.upsert_ranking()` to insert
-   - Handle date ranges (last 12 months)
+3. **Spider & Rate Limiting (1 day)**
+   - File: `scraper/spiders/fightmatrix_rankings.py`
+   - Features:
+     - Accept `start_date`/`end_date` arguments (default last 12 months, monthly cadence)
+     - Respect robots/ToS (3s delay configurable via settings)
+     - Yield `FighterRankingItem` entries with `source="fightmatrix"`
+     - Log low-confidence matches for manual review
 
-4. **Peak Ranking Computation**
-   - Script: `scripts/compute_peak_rankings.py` (to create)
-   - Query: `SELECT fighter_id, MIN(rank) FROM fighter_rankings GROUP BY fighter_id`
-   - Store: Either in `fighters` table or compute on-the-fly in API
+4. **Historical Import Script (0.5 day)**
+   - File: `scripts/import_fightmatrix_rankings.py`
+   - Steps:
+     - Run spider, persist raw JSON for auditing
+     - Use `FighterNameMatcher` to attach fighter IDs
+     - Call `RankingRepository.bulk_upsert_rankings`
+     - Produce summary report (match rate, inserted rows, skipped)
+
+5. **Peak Ranking Computation (0.5 day)**
+   - File: `scripts/compute_peak_rankings.py`
+   - Logic:
+     - For each fighter/source, compute `MIN(rank)` ignoring NULL
+     - Persist to a materialized view or backfill denormalized columns on `fighters`
+     - Provide CLI flag `--dry-run` for validation
+
+6. **QA Checklist (0.5 day)**
+   - Verify each division has ≥12 snapshots in the target window
+   - Spot check 5 fighters to ensure peak ranks match Fight Matrix data
+   - Update `Plans` doc with known gaps (e.g., missing data for debuting fighters)
 
 ### Implementation Notes
-- Fight Matrix may have different division naming → normalize
-- May need to handle weekly vs monthly snapshots
-- Consider rate limiting (delay between requests)
-- Validate data quality before bulk import
+- Fight Matrix may use different division labels (e.g., "Heavyweight (265)"). Build a normalization map alongside parser.
+- Some pages are archived monthly PDFs; if HTML unavailable, skip and note in QA log.
+- Consider caching requests during development to avoid tripping rate limits.
+- Ensure scraper respects `settings.delay_seconds` and rotates user agents if needed.
 
 ---
 
@@ -446,22 +527,45 @@ All code review issues have been addressed (2 review passes):
    - Removed: Unused `_boost_confidence_with_record()` method
    - Clear communication: No record validation available
 
+### Codex Enhancements (Post-Review)
+1. **✅ UniqueConstraint in ORM model**
+   - File: `backend/db/models/__init__.py:198-204`
+   - Added: UniqueConstraint to `FighterRanking.__table_args__`
+   - Impact: SQLite `create_all()` now creates constraint (matches PostgreSQL Alembic migration)
+   - Ensures ORM state in lockstep with migrations
+
+2. **✅ Enhanced UFC Parser**
+   - File: `scraper/utils/ufc_rankings_parser.py:15-290`
+   - Dual layout support: Modern table (`_parse_table_layout`) + legacy fallback (`_parse_legacy_layout`)
+   - Previous rank extraction: Captures `data-previous-rank` and movement deltas when available
+   - Division normalization: Applied in both parsers
+   - Future-proof: Ready for when UFC.com exposes rank movement
+
+3. **✅ Name Matcher Documentation**
+   - File: `scraper/utils/name_matcher.py:1-120`
+   - Updated docstrings to reflect actual fuzzy-matching behavior
+   - Removed misleading references to record-based tiebreaking
+   - Clear about division penalty being the only adjustment
+
 ---
 
 ## Key Files Reference
 
 ### Backend
-- `backend/db/models/__init__.py:188-230` - FighterRanking model
+- `backend/db/models/__init__.py:190-240` - FighterRanking model (with UniqueConstraint)
 - `backend/db/repositories/ranking_repository.py` - RankingRepository
-- `backend/db/migrations/versions/f143b7233ba8_*.py` - Initial migration
-- `backend/db/migrations/versions/0ff38dee59d4_*.py` - UNIQUE constraint
+- `backend/db/migrations/versions/f143b7233ba8_*.py` - Initial migration (includes UNIQUE constraint)
 
 ### Scraper
 - `scraper/models/fighter.py:103-169` - FighterRankingItem
 - `scraper/utils/name_matcher.py` - FighterNameMatcher
-- `scraper/utils/ufc_rankings_parser.py` - UFC parser
+- `scraper/utils/fuzzy_match.py:9-52` - Enhanced normalize_name() with Unicode support
+- `scraper/utils/ufc_rankings_parser.py` - UFC parser (dual layout support)
 - `scraper/spiders/ufc_rankings.py` - UFC spider
 - `scraper/pipelines/validation.py` - Updated for rankings
+
+### Scripts
+- `scripts/import_ufc_rankings.py` - Import scraped rankings to database (with name matching)
 
 ### Frontend (To Create)
 - `frontend/src/components/rankings/RankingBadge.tsx`
@@ -476,11 +580,21 @@ All code review issues have been addressed (2 review passes):
 ### Current UFC Rankings
 ```bash
 # Scrape current UFC rankings
-.venv/bin/scrapy crawl ufc_rankings -o data/processed/ufc_rankings.json
+.venv/bin/scrapy crawl ufc_rankings -o /tmp/claude/ufc_rankings.json
 
-# Import to database (after implementing import script)
-.venv/bin/python scripts/import_ufc_rankings.py
+# Dry-run import (test name matching without DB changes)
+PYTHONPATH=. USE_SQLITE=1 .venv/bin/python scripts/import_ufc_rankings.py \
+  /tmp/claude/ufc_rankings.json --dry-run
+
+# Import to database
+PYTHONPATH=. USE_SQLITE=1 .venv/bin/python scripts/import_ufc_rankings.py \
+  /tmp/claude/ufc_rankings.json
 ```
+
+**Expected Output:**
+- Name matching: ~99% success rate (175/176 fighters)
+- Database insert: 175 rankings across 11 divisions
+- Unmatched: ~1 fighter (nickname/name variants)
 
 ### Future: Historical Rankings
 ```bash
@@ -543,7 +657,18 @@ All code review issues have been addressed (2 review passes):
 
 ---
 
-**Last Updated:** 2025-11-09 20:40 PM
-**Next Phase:** Phase 3 - Fight Matrix Historical Data
+**Last Updated:** 2025-11-09 21:22 PM
+**Current Status:** Phase 2 COMPLETE ✅ - 175 rankings imported to database
+**Next Phase Options:**
+- **Phase 3:** Fight Matrix Historical Data (for peak rankings)
+- **Phase 4:** Backend API Layer (immediate value - expose existing data)
 **Blockers:** None
 **Questions:** See "Questions to Resolve" section above
+
+## Quick Stats
+- ✅ Database: `fighter_rankings` table created with 175 entries
+- ✅ Coverage: 11 divisions, 175 fighters (99.43% of UFC rankings)
+- ✅ Match Rate: 99.43% (175/176 fighters matched successfully)
+- ✅ Unmatched: 1 fighter ("Patricio Pitbull" - nickname variant)
+- ✅ Code Quality: All review issues resolved, Codex enhancements applied
+- 📊 Ready for: API development (Phase 4) or historical data (Phase 3)

@@ -16,6 +16,7 @@ from sqlalchemy import (
     String,
     Table,
     Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -194,6 +195,13 @@ class FighterRanking(Base):
         Index("ix_fighter_rankings_fighter_date", "fighter_id", "rank_date"),
         Index("ix_fighter_rankings_division_date_source", "division", "rank_date", "source"),
         Index("ix_fighter_rankings_fighter_source", "fighter_id", "source"),
+        UniqueConstraint(
+            "fighter_id",
+            "division",
+            "rank_date",
+            "source",
+            name="uq_fighter_rankings_natural_key",
+        ),
     )
 
     id: Mapped[str] = mapped_column(

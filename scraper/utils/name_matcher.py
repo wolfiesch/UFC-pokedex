@@ -2,17 +2,14 @@
 
 This module provides functionality to match fighter names from UFC rankings
 (which may use different naming conventions) to fighter IDs in the database.
-Uses fuzzy string matching with record-based tiebreaking for high accuracy.
+It relies on fuzzy string matching plus optional division validation.
 """
 
 from typing import Any
 
 from rapidfuzz import fuzz, process
 
-from scraper.utils.fuzzy_match import (
-    calculate_record_similarity,
-    normalize_name,
-)
+from scraper.utils.fuzzy_match import normalize_name
 
 
 class FighterNameMatcher:
@@ -38,7 +35,7 @@ class FighterNameMatcher:
     ) -> tuple[str | None, float, str]:
         """Match a fighter name from rankings to a database fighter ID.
 
-        Uses fuzzy string matching with optional record-based tiebreaking.
+        Uses fuzzy string matching with optional division-based validation.
         Confidence threshold is 80% by default (as specified in plan).
 
         Args:
@@ -103,18 +100,14 @@ class FighterNameMatcher:
                 "high_confidence_name_match",
             )
 
-        # Below threshold - no record tiebreaker available (rankings don't include records)
-        # Operator should manually review matches in 70-79% range
+        # Below threshold - rankings HTML contains no record data, so we cannot
+        # safely boost borderline matches. Operators should manually review all
+        # names that fall into the 70-79% range.
         return (
             None,
             round(name_confidence, 2),
             f"below_confidence_threshold (threshold={min_confidence}, score={name_confidence:.2f})",
         )
-
-    # NOTE: _boost_confidence_with_record method removed
-    # Rankings sources (UFC.com, Fight Matrix) don't include fighter records,
-    # so record-based tiebreaking is not possible. Matches below 80% confidence
-    # are rejected and require manual review.
 
     def match_multiple(
         self,
