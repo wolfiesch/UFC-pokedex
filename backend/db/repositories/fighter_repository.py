@@ -12,7 +12,7 @@ This repository handles:
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 from typing import cast as typing_cast
@@ -46,6 +46,7 @@ from backend.services.image_resolver import (
 
 # Type alias for valid streak types
 StreakType = Literal["win", "loss", "draw", "none"]
+StreakMetadata = Mapping[str, int | StreakType]
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -68,6 +69,117 @@ def _validate_streak_type(value: str | None) -> StreakType | None:
     if value not in ("win", "loss", "draw", "none"):
         raise ValueError(f"Invalid streak type: {value}")
     return value  # type: ignore[return-value]  # We've validated it matches the literal
+
+
+def serialize_fighter_list_item(
+    fighter: Fighter,
+    *,
+    reference_date: date,
+    include_streak: bool,
+    supports_was_interim: bool,
+    streak_meta: StreakMetadata | None = None,
+) -> FighterListItem:
+    """Serialize a :class:`~backend.db.models.Fighter` into a list payload.
+
+    Args:
+        fighter: ORM instance returned from the database query.
+        reference_date: Shared "today" snapshot so multiple items in the same
+            response compute age consistently.
+        include_streak: Flag indicating whether streak metadata should be
+            surfaced to the client.
+        supports_was_interim: Indicates whether the underlying schema exposes
+            the ``was_interim`` column. Older SQLite snapshots omit the field
+            and must therefore default to ``False`` even when the ORM instance
+            contains truthy data.
+        streak_meta: Optional metadata computed by helper queries (e.g.,
+            ``_batch_compute_streaks``). When present it takes precedence over
+            the database columns because the computed values represent the
+            latest fight outcomes.
+
+    Returns:
+        A fully-populated :class:`~backend.schemas.fighter.FighterListItem`
+        ready for FastAPI serialization.
+
+    The helper centralizes list-card construction so any future additions to
+    :class:`~backend.schemas.fighter.FighterListItem` require updating a single
+    location rather than coordinating multiple repository call sites.
+    """
+
+    detail_url: str = f"http://www.ufcstats.com/fighter-details/{fighter.id}"
+
+    # Resolve the best available image reference (database column or cached
+    # filesystem fallback). Keeping this here ensures every entry, whether it
+    # comes from list, search, or random selection, leverages the shared cache.
+    image_url: str | None = resolve_fighter_image(fighter.id, fighter.image_url)
+
+    # Compute age once using the provided reference snapshot. This mirrors the
+    # previous inline logic while guaranteeing identical results across list
+    # variants that share the same ``reference_date``.
+    age: int | None = _calculate_age(dob=fighter.dob, reference_date=reference_date)
+
+    resolved_streak_type: StreakType = "none"
+    resolved_streak_count: int = 0
+    if include_streak:
+        # Pull computed streak metadata first because it reflects the latest
+        # aggregation. Fallback to the persisted columns when metadata is
+        # unavailable (e.g., search results sourced directly from the model).
+        meta_type_raw: str | None = None
+        meta_count_raw: int | None = None
+        if streak_meta is not None:
+            candidate_type = streak_meta.get("current_streak_type")
+            if isinstance(candidate_type, str):
+                meta_type_raw = candidate_type
+            candidate_count = streak_meta.get("current_streak_count")
+            if isinstance(candidate_count, int):
+                meta_count_raw = candidate_count
+
+        if meta_type_raw is None and isinstance(fighter.current_streak_type, str):
+            meta_type_raw = fighter.current_streak_type
+
+        if meta_count_raw is None and isinstance(fighter.current_streak_count, int):
+            meta_count_raw = fighter.current_streak_count
+
+        try:
+            validated_type = _validate_streak_type(meta_type_raw)
+        except ValueError:
+            # Invalid metadata should not crash the list endpoint. Log the
+            # anomaly (once loggers are configured) and fall back to "none".
+            logger.debug(
+                "Dropping invalid streak type '%s' for fighter '%s'",
+                meta_type_raw,
+                fighter.id,
+            )
+            validated_type = None
+
+        resolved_streak_type = typing_cast(StreakType, validated_type or "none")
+        resolved_streak_count = meta_count_raw or 0
+
+    is_current_champion_flag: bool = bool(fighter.is_current_champion)
+    is_former_champion_flag: bool = bool(fighter.is_former_champion)
+    was_interim_flag: bool = (
+        bool(fighter.was_interim) if supports_was_interim else False
+    )
+
+    return FighterListItem(
+        fighter_id=fighter.id,
+        detail_url=detail_url,
+        name=fighter.name,
+        nickname=fighter.nickname,
+        record=fighter.record,
+        division=fighter.division,
+        height=fighter.height,
+        weight=fighter.weight,
+        reach=fighter.reach,
+        stance=fighter.stance,
+        dob=fighter.dob,
+        image_url=image_url,
+        age=age,
+        is_current_champion=is_current_champion_flag,
+        is_former_champion=is_former_champion_flag,
+        was_interim=was_interim_flag,
+        current_streak_type=resolved_streak_type if include_streak else "none",
+        current_streak_count=resolved_streak_count if include_streak else 0,
+    )
 
 
 class FighterRepository(BaseRepository):
@@ -172,49 +284,23 @@ class FighterRepository(BaseRepository):
         # the same reference point for age calculations.
         today_utc: date = datetime.now(tz=UTC).date()
 
-        return [
-            FighterListItem(
-                fighter_id=fighter.id,
-                detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                name=fighter.name,
-                nickname=fighter.nickname,
-                record=fighter.record,
-                division=fighter.division,
-                height=fighter.height,
-                weight=fighter.weight,
-                reach=fighter.reach,
-                stance=fighter.stance,
-                dob=fighter.dob,
-                image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                age=_calculate_age(
-                    dob=fighter.dob,
-                    reference_date=today_utc,
-                ),
-                is_current_champion=fighter.is_current_champion,
-                is_former_champion=fighter.is_former_champion,
-                was_interim=fighter.was_interim if supports_was_interim else False,
-                current_streak_type=typing_cast(
-                    Literal["win", "loss", "draw", "none"],
-                    (
-                        streak_by_fighter.get(fighter.id, {}).get(
-                            "current_streak_type", "none"
-                        )
-                        if include_streak
-                        else "none"
-                    ),
-                ),
-                current_streak_count=(
-                    int(
-                        streak_by_fighter.get(fighter.id, {}).get(
-                            "current_streak_count", 0
-                        )
-                    )
-                    if include_streak
-                    else 0
-                ),
+        serialized_fighters: list[FighterListItem] = []
+        for fighter in fighters:
+            raw_streak_meta = (
+                streak_by_fighter.get(fighter.id) if include_streak else None
             )
-            for fighter in fighters
-        ]
+            streak_meta = typing_cast(StreakMetadata | None, raw_streak_meta)
+            serialized_fighters.append(
+                serialize_fighter_list_item(
+                    fighter,
+                    reference_date=today_utc,
+                    include_streak=include_streak,
+                    supports_was_interim=supports_was_interim,
+                    streak_meta=streak_meta,
+                )
+            )
+
+        return serialized_fighters
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Get detailed fighter information by ID with optimized single-query fetch.
@@ -231,8 +317,10 @@ class FighterRepository(BaseRepository):
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        fighter_query = select(Fighter).options(load_only(*load_columns)).where(
-            Fighter.id == fighter_id
+        fighter_query = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .where(Fighter.id == fighter_id)
         )
         fighter_result = await self._session.execute(fighter_query)
         fighter = fighter_result.scalar_one_or_none()
@@ -264,8 +352,7 @@ class FighterRepository(BaseRepository):
                 Fight.stats,
                 literal(True).label("is_primary"),  # Mark as primary fight
                 literal(None).label("inverted_opponent_id"),  # Placeholder
-            )
-            .where(Fight.fighter_id == fighter_id)
+            ).where(Fight.fighter_id == fighter_id)
         ).cte("primary_fights")
 
         # CTE 2: Opponent fights (where fighter is opponent_id) with opponent names via JOIN
@@ -274,7 +361,9 @@ class FighterRepository(BaseRepository):
                 Fight.id.label("fight_id"),
                 Fight.event_name,
                 Fight.event_date,
-                literal(None).label("opponent_id"),  # Will use inverted_opponent_id instead
+                literal(None).label(
+                    "opponent_id"
+                ),  # Will use inverted_opponent_id instead
                 literal(None).label("opponent_name"),  # Will fetch from JOIN
                 Fight.result,
                 Fight.method,
@@ -284,12 +373,13 @@ class FighterRepository(BaseRepository):
                 Fight.stats,
                 literal(False).label("is_primary"),  # Mark as opponent fight
                 Fight.fighter_id.label("inverted_opponent_id"),  # Fighter is opponent
-            )
-            .where(Fight.opponent_id == fighter_id)
+            ).where(Fight.opponent_id == fighter_id)
         ).cte("opponent_fights")
 
         # UNION ALL: Combine both CTEs
-        combined_query = select(primary_fights_cte).union_all(select(opponent_fights_cte))
+        combined_query = select(primary_fights_cte).union_all(
+            select(opponent_fights_cte)
+        )
 
         # Execute single query to get all fights
         all_fights_result = await self._session.execute(combined_query)
@@ -378,7 +468,9 @@ class FighterRepository(BaseRepository):
 
                 if fight_key not in fight_dict:
                     fight_dict[fight_key] = new_entry
-                elif should_replace_fight(fight_dict[fight_key].result, inverted_result):
+                elif should_replace_fight(
+                    fight_dict[fight_key].result, inverted_result
+                ):
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
@@ -389,9 +481,7 @@ class FighterRepository(BaseRepository):
         # Log query performance
         query_time = time.time() - start_time
         if query_time > 0.1:  # Log slow queries (>100ms)
-            logger.warning(
-                f"Slow fighter query: {fighter_id} took {query_time:.3f}s"
-            )
+            logger.warning(f"Slow fighter query: {fighter_id} took {query_time:.3f}s")
 
         # Compute record from fight_history if not already populated
         computed_record = fighter.record
@@ -457,7 +547,9 @@ class FighterRepository(BaseRepository):
             # This works with PostgreSQL trigram indexes (pg_trgm) for 10x speedup
             # Falls back to standard LIKE behavior in SQLite
             pattern = f"%{query}%"
-            filters.append((Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern)))
+            filters.append(
+                (Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern))
+            )
         if stance:
             filters.append(Fighter.stance == stance)
         if division:
@@ -485,11 +577,7 @@ class FighterRepository(BaseRepository):
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        stmt = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .order_by(Fighter.name)
-        )
+        stmt = select(Fighter).options(load_only(*load_columns)).order_by(Fighter.name)
         count_stmt = select(func.count()).select_from(Fighter)
 
         for condition in filters:
@@ -517,42 +605,17 @@ class FighterRepository(BaseRepository):
         # Phase 2: Streak data now comes from pre-computed database columns
         # No need to compute streaks - they're already in the Fighter model!
 
-        return (
-            [
-                FighterListItem(
-                    fighter_id=fighter.id,
-                    detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                    name=fighter.name,
-                    nickname=fighter.nickname,
-                    record=fighter.record,
-                    division=fighter.division,
-                    height=fighter.height,
-                    weight=fighter.weight,
-                    reach=fighter.reach,
-                    stance=fighter.stance,
-                    dob=fighter.dob,
-                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                    age=_calculate_age(
-                        dob=fighter.dob,
-                        reference_date=today_utc,
-                    ),
-                    is_current_champion=fighter.is_current_champion,
-                    is_former_champion=fighter.is_former_champion,
-                    was_interim=fighter.was_interim if supports_was_interim else False,
-                    # Phase 2: Use pre-computed streak columns from database
-                    current_streak_type=(
-                        (_validate_streak_type(fighter.current_streak_type) or "none")
-                        if include_streak
-                        else "none"
-                    ),
-                    current_streak_count=(
-                        fighter.current_streak_count if include_streak else 0
-                    ),
-                )
-                for fighter in fighters
-            ],
-            total,
-        )
+        serialized_results = [
+            serialize_fighter_list_item(
+                fighter,
+                reference_date=today_utc,
+                include_streak=include_streak,
+                supports_was_interim=supports_was_interim,
+            )
+            for fighter in fighters
+        ]
+
+        return (serialized_results, total)
 
     async def get_fighters_for_comparison(
         self, fighter_ids: Sequence[str]
@@ -631,7 +694,9 @@ class FighterRepository(BaseRepository):
                     ),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
-                    was_interim=(fighter.was_interim if supports_was_interim else False),
+                    was_interim=(
+                        fighter.was_interim if supports_was_interim else False
+                    ),
                 )
             )
 
@@ -662,18 +727,13 @@ class FighterRepository(BaseRepository):
         if fighter is None:
             return None
 
-        return FighterListItem(
-            fighter_id=fighter.id,
-            detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-            name=fighter.name,
-            nickname=fighter.nickname,
-            division=fighter.division,
-            height=fighter.height,
-            weight=fighter.weight,
-            reach=fighter.reach,
-            stance=fighter.stance,
-            dob=fighter.dob,
-            image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+        today_utc: date = datetime.now(tz=UTC).date()
+
+        return serialize_fighter_list_item(
+            fighter,
+            reference_date=today_utc,
+            include_streak=False,
+            supports_was_interim=False,
         )
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:
@@ -688,7 +748,9 @@ class FighterRepository(BaseRepository):
 
         # Check if fighter exists
         query = (
-            select(Fighter).options(load_only(Fighter.id)).where(Fighter.id == fighter_id)
+            select(Fighter)
+            .options(load_only(Fighter.id))
+            .where(Fighter.id == fighter_id)
         )
         result = await self._session.execute(query)
         existing_fighter = result.scalar_one_or_none()
@@ -779,21 +841,18 @@ class FighterRepository(BaseRepository):
         # Apply window limit to total combined fights per fighter
         if effective_window is not None:
             # Use window function to limit total fights per fighter
-            stmt = (
-                select(
-                    combined.c.subject_id,
-                    combined.c.event_date,
-                    combined.c.result,
-                    combined.c.is_primary,
-                    func.row_number()
-                    .over(
-                        partition_by=combined.c.subject_id,
-                        order_by=combined.c.event_date.desc().nulls_last(),
-                    )
-                    .label("row_num"),
+            stmt = select(
+                combined.c.subject_id,
+                combined.c.event_date,
+                combined.c.result,
+                combined.c.is_primary,
+                func.row_number()
+                .over(
+                    partition_by=combined.c.subject_id,
+                    order_by=combined.c.event_date.desc().nulls_last(),
                 )
-                .order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
-            )
+                .label("row_num"),
+            ).order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
             # Filter to only the first N fights per fighter
             stmt = select(
                 stmt.c.subject_id,
