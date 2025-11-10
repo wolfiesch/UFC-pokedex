@@ -150,8 +150,9 @@ docker-compose up -d
 - **`.env`** - Backend configuration (CORS, database URL)
 - **`frontend/.env.local`** - Frontend API URL (localhost by default)
 - **`frontend/.env.tunnel`** - Frontend API URL for Cloudflare Tunnel
+- **Optional:** `.env.dev` and `frontend/.env.dev` - Temporary overrides loaded via `dotenv`
 
-**Important:** `make dev` will modify these files automatically. Use `make dev-local` to avoid changes.
+**Important:** `make dev` now exports tunnel URLs as environment variables at runtime instead of editing your tracked `.env` files. If you prefer file-based overrides, create temporary `.env.dev` and `frontend/.env.dev` copies. You will need to modify your application's startup logic to load these files. Remember to delete those files after shutting everything down to avoid leaking tunnel-specific values into source control.
 
 ## Quick Commands Reference
 
