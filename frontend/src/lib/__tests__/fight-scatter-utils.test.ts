@@ -10,6 +10,7 @@ import {
   filterFights,
 } from "../fight-scatter-utils";
 import type { FightHistoryEntry } from "../types";
+import { resolveImageUrl } from "../utils";
 
 describe("calculateFinishSeconds", () => {
   it("should calculate finish time for first round finish", () => {
@@ -71,7 +72,9 @@ describe("convertFightToScatterPoint", () => {
     expect(scatter.result).toBe("W");
     expect(scatter.finish_seconds).toBe(300 + 3 * 60 + 45); // 525
     expect(scatter.opponent_name).toBe("John Doe");
-    expect(scatter.headshot_url).toBe("/img/opponents/opponent1-32.webp");
+    expect(scatter.headshot_url).toBe(
+      resolveImageUrl("/images/fighters/opponent1.jpg")
+    );
   });
 
   it("should convert a submission finish correctly", () => {
