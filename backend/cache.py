@@ -4,23 +4,25 @@ import asyncio
 import json
 import logging
 import os
+import time
 from collections.abc import Sequence
 from functools import lru_cache
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any
 
-try:
-    from redis.exceptions import ConnectionError as RedisConnectionError
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-
-    class RedisConnectionError(Exception):
-        """Fallback exception class defined when redis package is not installed."""
-
-
 if TYPE_CHECKING:
     from redis.asyncio import Redis as RedisClient
+    from redis.exceptions import ConnectionError as RedisConnectionError
 else:  # pragma: no cover - runtime fallback for optional dependency
-    RedisClient = Any
+    try:
+        from redis.asyncio import Redis as RedisClient  # type: ignore
+        from redis.exceptions import ConnectionError as RedisConnectionError
+    except ModuleNotFoundError:
+
+        class RedisConnectionError(Exception):
+            """Fallback exception class defined when redis package is not installed."""
+
+        RedisClient = Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +36,95 @@ _FAVORITE_LIST_PREFIX = "favorites:list"
 _FAVORITE_COLLECTION_PREFIX = "favorites:collection"
 _FAVORITE_STATS_PREFIX = "favorites:stats"
 
+_LOCAL_CACHE_DEFAULT_TTL = 300
+_local_cache: dict[str, tuple[float, Any]] = {}
+_local_cache_lock = asyncio.Lock()
+
 _redis_client: RedisClient | None = None
 _client_lock = asyncio.Lock()
 _redis_disabled = False
+
+
+async def local_cache_get(key: str) -> Any | None:
+    """Return a value from the in-process fallback cache when it remains valid."""
+
+    async with _local_cache_lock:
+        cached_entry = _local_cache.get(key)
+        if cached_entry is None:
+            return None
+
+        expires_at, value = cached_entry
+        if expires_at < time.time():
+            _local_cache.pop(key, None)
+            return None
+        return value
+
+
+async def local_cache_set(key: str, value: Any, ttl: int | None = None) -> None:
+    """Persist ``value`` in the in-process cache while respecting the supplied TTL."""
+
+    ttl_seconds = ttl if ttl is not None and ttl > 0 else _LOCAL_CACHE_DEFAULT_TTL
+    async with _local_cache_lock:
+        _local_cache[key] = (time.time() + ttl_seconds, value)
+
+
+async def local_cache_evict(
+    *,
+    keys: Sequence[str] | None = None,
+    prefixes: Sequence[str] | None = None,
+    prefix_substring_filters: dict[str, Sequence[str]] | None = None,
+) -> None:
+    """Remove cached entries that match explicit keys or prefixed filters.
+
+    Parameters
+    ----------
+    keys:
+        Explicit cache keys that should be removed unconditionally.
+    prefixes:
+        Cache key prefixes whose entire namespaces should be purged.
+    prefix_substring_filters:
+        Mapping of cache key prefixes to substrings that must also appear within the key
+        for the entry to be evicted. This is useful for comparison caches where fighter
+        identifiers are embedded in the key signature.
+    """
+
+    async with _local_cache_lock:
+        if keys:
+            for exact_key in keys:
+                _local_cache.pop(exact_key, None)
+
+        if prefixes:
+            matching_keys = [
+                existing_key
+                for existing_key in _local_cache
+                if any(existing_key.startswith(prefix) for prefix in prefixes)
+            ]
+            for matching_key in matching_keys:
+                _local_cache.pop(matching_key, None)
+
+        if prefix_substring_filters:
+            for prefix, substrings in prefix_substring_filters.items():
+                if not substrings:
+                    continue
+                matching_keys = [
+                    existing_key
+                    for existing_key in _local_cache
+                    if existing_key.startswith(prefix)
+                    and any(substring in existing_key for substring in substrings)
+                ]
+                for matching_key in matching_keys:
+                    _local_cache.pop(matching_key, None)
+
+
+async def local_cache_clear_all() -> None:
+    """Remove every entry from the in-process cache.
+
+    This helper is primarily intended for test isolation while still being available to
+    callers that need to aggressively reset the fallback cache state.
+    """
+
+    async with _local_cache_lock:
+        _local_cache.clear()
 
 
 def _redis_url() -> str:
@@ -55,9 +143,7 @@ def list_key(
     streak_window: int | None = None,
 ) -> str:
     streak_part = "1" if include_streak else "0"
-    window_part = (
-        str(streak_window) if include_streak and streak_window is not None else ""
-    )
+    window_part = str(streak_window) if include_streak and streak_window is not None else ""
     return f"{_LIST_PREFIX}:{limit}:{offset}:{streak_part}:{window_part}"
 
 
@@ -154,9 +240,7 @@ async def get_redis() -> RedisClient | None:
             return _redis_client
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
-                logger.warning(
-                    f"Redis connection failed: {exc}. Caching will be disabled."
-                )
+                logger.warning(f"Redis connection failed: {exc}. Caching will be disabled.")
                 _redis_client = None
                 _redis_disabled = True
                 return None
@@ -168,13 +252,12 @@ def _load_redis_components() -> tuple[RedisClient | None, type[BaseException]]:
     """Return the Redis asyncio client class and connection error type."""
 
     try:  # pragma: no cover - optional dependency import
-        from redis.asyncio import Redis as redis_class  # type: ignore
-        from redis.exceptions import ConnectionError as real_error
+        from redis.asyncio import Redis as RedisClientType  # type: ignore
+        from redis.exceptions import ConnectionError as RedisConnectionErrorType
     except ModuleNotFoundError:  # pragma: no cover - optional dependency
         return None, RedisConnectionError
 
-    globals()["RedisConnectionError"] = real_error  # type: ignore[assignment]
-    return redis_class, real_error
+    return RedisClientType, RedisConnectionErrorType
 
 
 def _is_redis_connection_error(exc: BaseException) -> bool:
@@ -184,10 +267,7 @@ def _is_redis_connection_error(exc: BaseException) -> bool:
         return True
 
     error_type = type(exc)
-    return (
-        error_type.__name__ == "ConnectionError"
-        and error_type.__module__.startswith("redis")
-    )
+    return error_type.__name__ == "ConnectionError" and error_type.__module__.startswith("redis")
 
 
 class CacheClient:
@@ -265,8 +345,16 @@ async def close_redis() -> None:
 
 async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
     """Invalidate all caches related to a fighter."""
+
     await cache.delete(detail_key(fighter_id))
     await cache.delete_pattern(f"{_COMPARISON_PREFIX}:*{fighter_id}*")
+
+    # Ensure the local fallback cache mirrors the remote invalidation semantics.
+    await local_cache_evict(
+        keys=[detail_key(fighter_id), "fighters:count"],
+        prefixes=[_LIST_PREFIX, _SEARCH_PREFIX],
+        prefix_substring_filters={_COMPARISON_PREFIX: [fighter_id]},
+    )
 
     # Also invalidate search and list caches (fighter data changed)
     await cache.delete_pattern(f"{_SEARCH_PREFIX}:*")
@@ -279,6 +367,7 @@ async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
 async def invalidate_collections(cache: CacheClient) -> None:
     await cache.delete_pattern(f"{_LIST_PREFIX}:*")
     await cache.delete_pattern(f"{_SEARCH_PREFIX}:*")
+    await local_cache_evict(prefixes=[_LIST_PREFIX, _SEARCH_PREFIX])
 
 
 __all__ = [
@@ -291,5 +380,9 @@ __all__ = [
     "invalidate_collections",
     "invalidate_fighter",
     "list_key",
+    "local_cache_clear_all",
+    "local_cache_evict",
+    "local_cache_get",
+    "local_cache_set",
     "search_key",
 ]
