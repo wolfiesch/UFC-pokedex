@@ -398,31 +398,53 @@ GET /rankings/Lightweight
 
 ## Code Review Fixes Applied ✅
 
-All code review issues have been addressed:
+All code review issues have been addressed (2 review passes):
 
-1. **✅ UNIQUE constraint added**
-   - Migration: `0ff38dee59d4_add_unique_constraint_fighter_rankings.py`
+### First Review Pass
+1. **✅ UNIQUE constraint added to initial migration**
+   - Migration: `f143b7233ba8_add_fighter_rankings_table.py`
    - Constraint: `uq_fighter_rankings_natural_key` on (fighter_id, division, rank_date, source)
+   - DB now enforces natural key uniqueness (prevents duplicate snapshots)
 
 2. **✅ FighterRanking.id auto-generation**
+   - Added: `import uuid` to `backend/db/models/__init__.py`
    - Added: `default=lambda: str(uuid.uuid4())`
    - No longer requires manual ID generation
 
 3. **✅ Name matcher duplicate handling**
    - Changed: Dict → List of tuples `[(name, fighter)]`
    - All fighters with duplicate names preserved for matching
+   - Processor function extracts name from tuple for rapidfuzz
 
-4. **✅ Division mismatch threshold**
+4. **✅ Division mismatch threshold check**
    - Added: Re-check threshold after 0.9x penalty
    - Rejects match if adjusted confidence < min_confidence
+   - Prevents same-name-different-division mismatches
 
-5. **✅ Record similarity documentation**
-   - Updated: Honest WARNING in docstring
-   - Clarified: NO actual record comparison happens
+5. **✅ Record tiebreaker removed**
+   - Removed: False 70-79% "tiebreaker" logic
+   - Removed: `_boost_confidence_with_record()` method
+   - Now honest: Matches <80% are rejected (manual review required)
+   - Rankings don't include records, so no validation possible
 
 6. **✅ Division name normalization**
    - Applied: `normalize_division_name()` in UFC parser
    - Ensures consistent DB storage and lookups
+
+### Second Review Pass (Critical Fixes)
+1. **✅ UNIQUE constraint in initial migration** (moved from separate migration)
+   - Deleted: Redundant `0ff38dee59d4_add_unique_constraint_fighter_rankings.py`
+   - Added: Constraint directly to `f143b7233ba8_add_fighter_rankings_table.py`
+   - Prevents concurrent scrapes from inserting duplicates
+
+2. **✅ uuid import added**
+   - File: `backend/db/models/__init__.py:3`
+   - Prevents NameError when inserting first ranking
+
+3. **✅ False record tiebreaker removed**
+   - Removed: Misleading 70-79% confidence boost logic
+   - Removed: Unused `_boost_confidence_with_record()` method
+   - Clear communication: No record validation available
 
 ---
 

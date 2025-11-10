@@ -1,5 +1,6 @@
 """Fuzzy matching utilities for matching UFC fighters to Sherdog profiles."""
 
+import unicodedata
 from typing import Any
 
 from rapidfuzz import fuzz
@@ -8,13 +9,47 @@ from rapidfuzz import fuzz
 def normalize_name(name: str) -> str:
     """Normalize fighter name for comparison.
 
+    Strips accents/diacritics and normalizes to ASCII for fuzzy matching.
+    Examples:
+        - "Jiří Procházka" → "jiri prochazka"
+        - "Benoît Saint Denis" → "benoit saint denis"
+        - "Jéssica Andrade" → "jessica andrade"
+        - "Jan Błachowicz" → "jan blachowicz"
+
     Args:
         name: Fighter name to normalize
 
     Returns:
-        Normalized name (lowercase, stripped, no extra spaces)
+        Normalized name (lowercase, ASCII, stripped, no extra spaces)
     """
-    return " ".join(name.lower().strip().split())
+    # Manual transliterations for special characters that don't decompose
+    # (e.g., Polish Ł, Scandinavian Ø, etc.)
+    transliterations = {
+        "ł": "l", "Ł": "l",  # Polish L with stroke
+        "ø": "o", "Ø": "o",  # Scandinavian O with stroke
+        "đ": "d", "Đ": "d",  # Croatian D with stroke
+        "þ": "th", "Þ": "th",  # Icelandic thorn
+        "ð": "d", "Ð": "d",  # Icelandic eth
+        "ß": "ss",  # German sharp S
+    }
+
+    # Apply manual transliterations
+    for original, replacement in transliterations.items():
+        name = name.replace(original, replacement)
+
+    # Decompose Unicode characters (NFD = Canonical Decomposition)
+    # e.g., "é" becomes "e" + combining acute accent
+    nfd = unicodedata.normalize("NFD", name)
+
+    # Filter out combining characters (diacritics/accents)
+    # Keep only base characters
+    ascii_name = "".join(
+        char for char in nfd
+        if unicodedata.category(char) != "Mn"  # Mn = Mark, Nonspacing (diacritics)
+    )
+
+    # Lowercase and normalize whitespace
+    return " ".join(ascii_name.lower().strip().split())
 
 
 def normalize_division(division: str | None) -> str:
