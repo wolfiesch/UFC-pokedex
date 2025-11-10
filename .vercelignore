@@ -1,0 +1,44 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Data
+data/
+*.jsonl
+*.db
+*.sqlite
+
+# Backend
+backend/
+
+# Scraper
+scraper/
+
+# Node modules (outside frontend)
+/node_modules/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Railway
+railway.json
+nixpacks.toml
+
+# Documentation (not needed for deployment)
+DEPLOYMENT.md
+DEPLOY_NOW.md
+README.md
+CLAUDE.md
