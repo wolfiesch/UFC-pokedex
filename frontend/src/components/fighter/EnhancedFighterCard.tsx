@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { FighterListItem } from "@/lib/types";
 import { useFighterDetails } from "@/hooks/useFighterDetails";
+import { RankFlagBadge } from "@/components/rankings/RankFlagBadge";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useComparison } from "@/hooks/useComparison";
 import { resolveImageUrl, getInitials } from "@/lib/utils";
@@ -216,13 +217,14 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
               </div>
             )}
 
-            {/* Division and Champion Badges */}
+            {/* Division, Ranking, and Champion Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {fighter.division && (
-                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                  {fighter.division}
-                </span>
-              )}
+              <RankFlagBadge
+                currentRank={fighter.current_rank}
+                peakRank={fighter.peak_rank}
+                isChampion={fighter.is_current_champion}
+                isInterimChampion={fighter.was_interim}
+              />
               {fighter.is_current_champion && (
                 <span className="rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1">
                   <svg
@@ -248,6 +250,14 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                 </span>
               )}
             </div>
+
+            {fighter.division && (
+              <div className="absolute top-3 right-3">
+                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                  {fighter.division}
+                </span>
+              </div>
+            )}
 
             {/* Record Badge */}
             {fighter.record && (

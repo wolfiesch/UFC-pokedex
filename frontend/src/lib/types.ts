@@ -19,6 +19,14 @@ export type FighterListItem = {
   /** Lightweight current streak summary provided by the list endpoint. */
   current_streak_type?: "win" | "loss" | "draw" | "none";
   current_streak_count?: number;
+  current_rank?: number | null;
+  current_rank_source?: string | null;
+  current_rank_division?: string | null;
+  current_rank_date?: string | null;
+  peak_rank?: number | null;
+  peak_rank_source?: string | null;
+  peak_rank_division?: string | null;
+  peak_rank_date?: string | null;
 };
 
 export type FightHistoryEntry = {

@@ -1,16 +1,22 @@
-# UFC Pokedex - Bug Investigation Report
+# UFC Pokedex - Comprehensive Bug Report
 
-**Investigation Date:** 2025-11-07
-**Investigation Method:** Playwright Web Automation
+**Latest Testing Date:** 2025-11-10
+**Investigation Method:** Automated Playwright Browser Testing
 **Environment:** Local development (make dev-local)
+**Previous Report:** 2025-11-07
 
 ---
 
 ## Executive Summary
 
-A critical configuration issue was identified that prevents the application from functioning correctly in local development mode. All API calls fail because the frontend is configured to use Cloudflare tunnel URLs instead of localhost.
+**UPDATED:** After fixing the critical configuration issue from 2025-11-07, comprehensive testing reveals the application's **core functionality is working well**. Identified 4 high-priority bugs related to React hydration, missing fighter images, rankings API failures, and 2 medium-priority warnings.
 
-**Total Bugs Found:** 1 Critical, 0 High, 0 Medium, 0 Low
+**Total Bugs Found:** 0 Critical, 4 High, 2 Medium, 0 Low
+
+### Status Changes from Previous Report:
+- ✅ **FIXED:** Frontend API configuration (was Critical, now resolved)
+- ✅ **Working:** Search, Fighter Details, Events, Favorites all functional
+- 🆕 **New Issues:** React hydration errors, missing images, rankings API errors
 
 ---
 

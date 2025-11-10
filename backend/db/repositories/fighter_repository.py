@@ -12,6 +12,7 @@ This repository handles:
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -22,7 +23,7 @@ from sqlalchemy import func, literal, select, true, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
-from backend.db.models import Fight, Fighter, fighter_stats
+from backend.db.models import Fight, Fighter, FighterRanking, fighter_stats
 from backend.db.repositories.base import (
     BaseRepository,
     _calculate_age,
@@ -63,6 +64,20 @@ class FighterSearchFilters:
     champion_statuses: tuple[str, ...] | None
     streak_type: StreakType | None
     min_streak_count: int | None
+
+
+@dataclass
+class FighterRankingSummary:
+    """Lightweight bundle of ranking metadata for a fighter."""
+
+    current_rank: int | None = None
+    current_rank_date: date | None = None
+    current_rank_division: str | None = None
+    current_rank_source: str | None = None
+    peak_rank: int | None = None
+    peak_rank_date: date | None = None
+    peak_rank_division: str | None = None
+    peak_rank_source: str | None = None
 
 
 def normalize_search_filters(
@@ -203,6 +218,13 @@ def paginate_roster_entries(
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+_DEFAULT_RANKING_SOURCE = (
+    os.getenv("FIGHTER_RANKING_SOURCE")
+    or os.getenv("DEFAULT_RANKING_SOURCE")
+    or "fightmatrix"
+)
+_DEFAULT_RANKING_SOURCE = (_DEFAULT_RANKING_SOURCE or "").strip() or None
+
 
 def _validate_streak_type(value: str | None) -> StreakType | None:
     """Validate streak type matches allowed values.
@@ -278,6 +300,104 @@ class FighterRepository(BaseRepository):
             Fighter.is_former_champion,
         ]
 
+    def _ranking_source(self) -> str | None:
+        """Return the preferred ranking source for roster adornments."""
+
+        return _DEFAULT_RANKING_SOURCE
+
+    async def _fetch_ranking_summaries(
+        self, fighter_ids: Sequence[str]
+    ) -> dict[str, FighterRankingSummary]:
+        """Lookup current and peak rankings for the provided fighters."""
+
+        ranking_source = self._ranking_source()
+        if not ranking_source:
+            return {}
+
+        deduped_ids = [fid for fid in dict.fromkeys(fighter_ids) if fid]
+        if not deduped_ids:
+            return {}
+
+        # Latest ranking snapshot per fighter for the configured source.
+        current_subquery = (
+            select(
+                FighterRanking.fighter_id.label("fighter_id"),
+                FighterRanking.rank.label("rank"),
+                FighterRanking.rank_date.label("rank_date"),
+                FighterRanking.division.label("division"),
+                FighterRanking.source.label("source"),
+                func.row_number()
+                .over(
+                    partition_by=FighterRanking.fighter_id,
+                    order_by=FighterRanking.rank_date.desc(),
+                )
+                .label("row_number"),
+            )
+            .where(FighterRanking.fighter_id.in_(deduped_ids))
+            .where(FighterRanking.source == ranking_source)
+        ).subquery()
+
+        current_rows = await self._session.execute(
+            select(
+                current_subquery.c.fighter_id,
+                current_subquery.c.rank,
+                current_subquery.c.rank_date,
+                current_subquery.c.division,
+                current_subquery.c.source,
+            ).where(current_subquery.c.row_number == 1)
+        )
+
+        # Best (lowest numeric) rank ever achieved for the configured source.
+        peak_subquery = (
+            select(
+                FighterRanking.fighter_id.label("fighter_id"),
+                FighterRanking.rank.label("rank"),
+                FighterRanking.rank_date.label("rank_date"),
+                FighterRanking.division.label("division"),
+                FighterRanking.source.label("source"),
+                func.row_number()
+                .over(
+                    partition_by=FighterRanking.fighter_id,
+                    order_by=(
+                        FighterRanking.rank.asc(),
+                        FighterRanking.rank_date.desc(),
+                    ),
+                )
+                .label("row_number"),
+            )
+            .where(FighterRanking.fighter_id.in_(deduped_ids))
+            .where(FighterRanking.source == ranking_source)
+            .where(FighterRanking.rank.isnot(None))
+        ).subquery()
+
+        peak_rows = await self._session.execute(
+            select(
+                peak_subquery.c.fighter_id,
+                peak_subquery.c.rank,
+                peak_subquery.c.rank_date,
+                peak_subquery.c.division,
+                peak_subquery.c.source,
+            ).where(peak_subquery.c.row_number == 1)
+        )
+
+        summaries: dict[str, FighterRankingSummary] = {}
+
+        for row in current_rows:
+            summary = summaries.setdefault(row.fighter_id, FighterRankingSummary())
+            summary.current_rank = row.rank
+            summary.current_rank_date = row.rank_date
+            summary.current_rank_division = row.division
+            summary.current_rank_source = row.source
+
+        for row in peak_rows:
+            summary = summaries.setdefault(row.fighter_id, FighterRankingSummary())
+            summary.peak_rank = row.rank
+            summary.peak_rank_date = row.rank_date
+            summary.peak_rank_division = row.division
+            summary.peak_rank_source = row.source
+
+        return summaries
+
     async def list_fighters(
         self,
         *,
@@ -310,64 +430,76 @@ class FighterRepository(BaseRepository):
 
         result = await self._session.execute(query)
         fighters = result.scalars().all()
+        fighter_ids = [f.id for f in fighters]
 
         # Optionally compute current streaks for the returned fighters only
         streak_by_fighter: dict[
             str, dict[str, int | Literal["win", "loss", "draw", "none"]]
         ] = {}
         if include_streak and fighters:
-            fighter_ids = [f.id for f in fighters]
             streak_by_fighter = await self._batch_compute_streaks(
                 fighter_ids, window=streak_window
             )
+
+        ranking_summaries = (
+            await self._fetch_ranking_summaries(fighter_ids) if fighters else {}
+        )
 
         # Cache a single "today" value in UTC so every fighter on the page uses
         # the same reference point for age calculations.
         today_utc: date = datetime.now(tz=UTC).date()
 
-        return [
-            FighterListItem(
-                fighter_id=fighter.id,
-                detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                name=fighter.name,
-                nickname=fighter.nickname,
-                record=fighter.record,
-                division=fighter.division,
-                height=fighter.height,
-                weight=fighter.weight,
-                reach=fighter.reach,
-                stance=fighter.stance,
-                dob=fighter.dob,
-                image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                age=_calculate_age(
+        roster_entries: list[FighterListItem] = []
+        for fighter in fighters:
+            streak_bundle = streak_by_fighter.get(fighter.id, {})
+            ranking = ranking_summaries.get(fighter.id)
+            roster_entries.append(
+                FighterListItem(
+                    fighter_id=fighter.id,
+                    detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
+                    name=fighter.name,
+                    nickname=fighter.nickname,
+                    record=fighter.record,
+                    division=fighter.division,
+                    height=fighter.height,
+                    weight=fighter.weight,
+                    reach=fighter.reach,
+                    stance=fighter.stance,
                     dob=fighter.dob,
-                    reference_date=today_utc,
-                ),
-                is_current_champion=fighter.is_current_champion,
-                is_former_champion=fighter.is_former_champion,
-                was_interim=fighter.was_interim if supports_was_interim else False,
-                current_streak_type=typing_cast(
-                    Literal["win", "loss", "draw", "none"],
-                    (
-                        streak_by_fighter.get(fighter.id, {}).get(
-                            "current_streak_type", "none"
-                        )
-                        if include_streak
-                        else "none"
+                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                    age=_calculate_age(
+                        dob=fighter.dob,
+                        reference_date=today_utc,
                     ),
-                ),
-                current_streak_count=(
-                    int(
-                        streak_by_fighter.get(fighter.id, {}).get(
-                            "current_streak_count", 0
-                        )
-                    )
-                    if include_streak
-                    else 0
-                ),
+                    is_current_champion=fighter.is_current_champion,
+                    is_former_champion=fighter.is_former_champion,
+                    was_interim=fighter.was_interim if supports_was_interim else False,
+                    current_streak_type=typing_cast(
+                        Literal["win", "loss", "draw", "none"],
+                        (
+                            streak_bundle.get("current_streak_type", "none")
+                            if include_streak
+                            else "none"
+                        ),
+                    ),
+                    current_streak_count=(
+                        int(streak_bundle.get("current_streak_count", 0))
+                        if include_streak
+                        else 0
+                    ),
+                    current_rank=ranking.current_rank if ranking else None,
+                    current_rank_date=ranking.current_rank_date if ranking else None,
+                    current_rank_division=ranking.current_rank_division
+                    if ranking
+                    else None,
+                    current_rank_source=ranking.current_rank_source if ranking else None,
+                    peak_rank=ranking.peak_rank if ranking else None,
+                    peak_rank_date=ranking.peak_rank_date if ranking else None,
+                    peak_rank_division=ranking.peak_rank_division if ranking else None,
+                    peak_rank_source=ranking.peak_rank_source if ranking else None,
+                )
             )
-            for fighter in fighters
-        ]
+        return roster_entries
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Get detailed fighter information by ID with optimized single-query fetch.
@@ -563,6 +695,8 @@ class FighterRepository(BaseRepository):
             reference_date=today_utc,
         )
 
+        summary = (await self._fetch_ranking_summaries([fighter.id])).get(fighter.id)
+
         return FighterDetail(
             fighter_id=fighter.id,
             detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
@@ -588,6 +722,14 @@ class FighterRepository(BaseRepository):
             is_former_champion=fighter.is_former_champion,
             was_interim=fighter.was_interim if supports_was_interim else False,
             championship_history=fighter.championship_history or {},
+            current_rank=summary.current_rank if summary else None,
+            current_rank_date=summary.current_rank_date if summary else None,
+            current_rank_division=summary.current_rank_division if summary else None,
+            current_rank_source=summary.current_rank_source if summary else None,
+            peak_rank=summary.peak_rank if summary else None,
+            peak_rank_date=summary.peak_rank_date if summary else None,
+            peak_rank_division=summary.peak_rank_division if summary else None,
+            peak_rank_source=summary.peak_rank_source if summary else None,
         )
 
     async def search_fighters(
@@ -684,6 +826,10 @@ class FighterRepository(BaseRepository):
         # Execute query
         result = await self._session.execute(stmt)
         fighters = result.scalars().all()
+        fighter_ids = [f.id for f in fighters]
+        ranking_summaries = (
+            await self._fetch_ranking_summaries(fighter_ids) if fighter_ids else {}
+        )
 
         # Use a single "today" snapshot so every returned card displays the same
         # age even if the request straddles midnight in UTC.
@@ -692,8 +838,10 @@ class FighterRepository(BaseRepository):
         # Phase 2: Streak data now comes from pre-computed database columns
         # No need to compute streaks - they're already in the Fighter model!
 
-        return (
-            [
+        roster_entries: list[FighterListItem] = []
+        for fighter in fighters:
+            ranking = ranking_summaries.get(fighter.id)
+            roster_entries.append(
                 FighterListItem(
                     fighter_id=fighter.id,
                     detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
@@ -714,7 +862,6 @@ class FighterRepository(BaseRepository):
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
                     was_interim=fighter.was_interim if supports_was_interim else False,
-                    # Phase 2: Use pre-computed streak columns from database
                     current_streak_type=(
                         (_validate_streak_type(fighter.current_streak_type) or "none")
                         if include_streak
@@ -723,11 +870,20 @@ class FighterRepository(BaseRepository):
                     current_streak_count=(
                         fighter.current_streak_count if include_streak else 0
                     ),
+                    current_rank=ranking.current_rank if ranking else None,
+                    current_rank_date=ranking.current_rank_date if ranking else None,
+                    current_rank_division=ranking.current_rank_division
+                    if ranking
+                    else None,
+                    current_rank_source=ranking.current_rank_source if ranking else None,
+                    peak_rank=ranking.peak_rank if ranking else None,
+                    peak_rank_date=ranking.peak_rank_date if ranking else None,
+                    peak_rank_division=ranking.peak_rank_division if ranking else None,
+                    peak_rank_source=ranking.peak_rank_source if ranking else None,
                 )
-                for fighter in fighters
-            ],
-            total,
-        )
+            )
+
+        return (roster_entries, total)
 
     async def get_fighters_for_comparison(
         self, fighter_ids: Sequence[str]
@@ -839,6 +995,8 @@ class FighterRepository(BaseRepository):
         if fighter is None:
             return None
 
+        ranking = (await self._fetch_ranking_summaries([fighter.id])).get(fighter.id)
+
         return FighterListItem(
             fighter_id=fighter.id,
             detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
@@ -851,6 +1009,14 @@ class FighterRepository(BaseRepository):
             stance=fighter.stance,
             dob=fighter.dob,
             image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+            current_rank=ranking.current_rank if ranking else None,
+            current_rank_date=ranking.current_rank_date if ranking else None,
+            current_rank_division=ranking.current_rank_division if ranking else None,
+            current_rank_source=ranking.current_rank_source if ranking else None,
+            peak_rank=ranking.peak_rank if ranking else None,
+            peak_rank_date=ranking.peak_rank_date if ranking else None,
+            peak_rank_division=ranking.peak_rank_division if ranking else None,
+            peak_rank_source=ranking.peak_rank_source if ranking else None,
         )
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:

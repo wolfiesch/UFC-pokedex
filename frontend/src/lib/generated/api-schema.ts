@@ -1297,6 +1297,22 @@ export interface components {
              * @default 0
              */
             current_streak_count: number;
+            /** Current Rank */
+            current_rank?: number | null;
+            /** Current Rank Source */
+            current_rank_source?: string | null;
+            /** Current Rank Division */
+            current_rank_division?: string | null;
+            /** Current Rank Date */
+            current_rank_date?: string | null;
+            /** Peak Rank */
+            peak_rank?: number | null;
+            /** Peak Rank Source */
+            peak_rank_source?: string | null;
+            /** Peak Rank Division */
+            peak_rank_division?: string | null;
+            /** Peak Rank Date */
+            peak_rank_date?: string | null;
             /** Leg Reach */
             leg_reach?: string | null;
             /** Striking */
@@ -1371,6 +1387,22 @@ export interface components {
              * @default 0
              */
             current_streak_count: number;
+            /** Current Rank */
+            current_rank?: number | null;
+            /** Current Rank Source */
+            current_rank_source?: string | null;
+            /** Current Rank Division */
+            current_rank_division?: string | null;
+            /** Current Rank Date */
+            current_rank_date?: string | null;
+            /** Peak Rank */
+            peak_rank?: number | null;
+            /** Peak Rank Source */
+            peak_rank_source?: string | null;
+            /** Peak Rank Division */
+            peak_rank_division?: string | null;
+            /** Peak Rank Date */
+            peak_rank_date?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

@@ -42,6 +42,15 @@ class FighterListItem(BaseModel):
     # compatibility).
     current_streak_type: Literal["win", "loss", "draw", "none"] = "none"
     current_streak_count: int = 0
+    # Ranking summary fields (optional, populated when rankings data exists)
+    current_rank: int | None = None
+    current_rank_source: str | None = None
+    current_rank_division: str | None = None
+    current_rank_date: date | None = None
+    peak_rank: int | None = None
+    peak_rank_source: str | None = None
+    peak_rank_division: str | None = None
+    peak_rank_date: date | None = None
 
 
 class FighterDetail(FighterListItem):
