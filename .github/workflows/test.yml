@@ -46,7 +46,7 @@ jobs:
         with:
           path: |
             .venv
-            .uv
+            ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-uv-
