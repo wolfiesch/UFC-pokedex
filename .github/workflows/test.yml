@@ -7,7 +7,41 @@ on:
     branches: [master, main, develop]
 
 jobs:
+  lint-and-type:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    env:
+      MYPY_CACHE_DIR: .mypy_cache
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Run Ruff
+        run: |
+          uv run ruff check backend scraper
+
+      - name: Run mypy
+        run: |
+          uv run mypy backend scraper
+
   test:
+    needs: lint-and-type
     name: Tests (${{ matrix.db }})
     runs-on: ubuntu-latest
 
