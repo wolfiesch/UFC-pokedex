@@ -46,8 +46,8 @@ fi
 
 # Use the configured URLs (they're static based on DNS routes)
 FRONTEND_URL="https://${FRONTEND_SUBDOMAIN}"
-# Use frontend proxy for API to avoid SSL issues with API subdomain
-API_URL="https://${FRONTEND_SUBDOMAIN}/api"
+# Use direct API subdomain (no proxy needed - API tunnel works perfectly)
+API_URL="https://${API_SUBDOMAIN}"
 
 # Output URLs in machine-readable format (for Make to parse)
 echo "FRONTEND_URL=$FRONTEND_URL"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime
 from typing import Any
 
@@ -185,6 +186,59 @@ class Fight(Base):
     event: Mapped[Event | None] = relationship("Event", back_populates="fights")
 
 
+class FighterRanking(Base):
+    """Fighter rankings from various sources (UFC, Fight Matrix, etc.)."""
+
+    __tablename__ = "fighter_rankings"
+    __table_args__ = (
+        Index("ix_fighter_rankings_fighter_date", "fighter_id", "rank_date"),
+        Index("ix_fighter_rankings_division_date_source", "division", "rank_date", "source"),
+        Index("ix_fighter_rankings_fighter_source", "fighter_id", "source"),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    fighter_id: Mapped[str] = mapped_column(
+        ForeignKey("fighters.id"),
+        nullable=False,
+        doc="Foreign key to fighters table",
+    )
+    division: Mapped[str] = mapped_column(
+        String(50), nullable=False, doc="Weight class (e.g., 'Lightweight')"
+    )
+    rank: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked (NR)",
+    )
+    previous_rank: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Previous rank for movement tracking (e.g., ↑2, ↓1)",
+    )
+    rank_date: Mapped[date] = mapped_column(
+        Date, nullable=False, doc="Date of this ranking snapshot"
+    )
+    source: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        doc="Ranking source: 'ufc', 'fightmatrix', 'tapology'",
+    )
+    is_interim: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, doc="Whether this is an interim championship"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+        doc="Timestamp when ranking was recorded",
+    )
+
+    # Relationship
+    fighter: Mapped[Fighter] = relationship("Fighter")
+
+
 fighter_stats = Table(
     "fighter_stats",
     Base.metadata,
@@ -203,6 +257,7 @@ __all__ = [
     "Event",
     "Fight",
     "Fighter",
+    "FighterRanking",
     "FavoriteCollection",
     "FavoriteEntry",
     "fighter_stats",

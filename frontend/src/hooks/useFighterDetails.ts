@@ -67,6 +67,8 @@ export function useFighterDetails(
     queryKey,
     queryFn: () => fetchFighterDetails(fighterId),
     enabled: Boolean(fighterId) && enabled,
+    retry: 1,
+    retryDelay: 500,
     ...fighterDetailQueryOptions,
   });
 

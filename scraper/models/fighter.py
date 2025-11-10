@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
@@ -96,5 +96,76 @@ class SherdogFighterDetail(BaseModel):
         """Ensure confidence is between 0 and 100."""
         if value is None:
             return 0.0
+        confidence = float(value)
+        return max(0.0, min(100.0, confidence))
+
+
+class FighterRankingItem(BaseModel):
+    """Fighter ranking data from various sources (UFC, Fight Matrix, etc.).
+
+    This model represents a single fighter's ranking snapshot at a specific date.
+    It includes rank position, division, movement indicators, and metadata.
+    """
+
+    # Fighter identification
+    fighter_name: str = Field(description="Fighter name from rankings source")
+    fighter_id: str | None = Field(
+        None, description="Matched fighter UUID (populated after name matching)"
+    )
+    match_confidence: float | None = Field(
+        None, description="Name match confidence score (0-100)"
+    )
+
+    # Ranking data
+    division: str = Field(description="Weight class (e.g., 'Lightweight')")
+    rank: int | None = Field(
+        None, description="Rank position: 0=Champion, 1-15=Ranked, None=Not Ranked (NR)"
+    )
+    previous_rank: int | None = Field(
+        None, description="Previous rank for movement tracking"
+    )
+    is_interim: bool = Field(
+        default=False, description="Whether this is an interim championship"
+    )
+
+    # Metadata
+    rank_date: date = Field(description="Date of this ranking snapshot")
+    source: Literal["ufc", "fightmatrix", "tapology"] = Field(
+        description="Ranking source"
+    )
+    scrape_timestamp: date | None = Field(
+        None, description="Timestamp when data was scraped"
+    )
+    item_type: str = Field(
+        default="fighter_ranking", description="Item type identifier for pipeline routing"
+    )
+
+    @field_validator("rank", mode="before")
+    @classmethod
+    def _parse_rank(cls, value: Any) -> int | None:
+        """Parse rank from various formats."""
+        if value is None or value == "NR" or value == "":
+            return None
+
+        # Handle "C" for champion
+        if isinstance(value, str) and value.upper() == "C":
+            return 0
+
+        # Try to parse as integer
+        try:
+            rank_int = int(value)
+            # Validate range
+            if rank_int < 0 or rank_int > 15:
+                return None
+            return rank_int
+        except (ValueError, TypeError):
+            return None
+
+    @field_validator("match_confidence", mode="before")
+    @classmethod
+    def _validate_match_confidence(cls, value: Any) -> float | None:
+        """Ensure confidence is between 0 and 100."""
+        if value is None:
+            return None
         confidence = float(value)
         return max(0.0, min(100.0, confidence))

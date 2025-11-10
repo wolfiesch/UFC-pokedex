@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,14 +35,39 @@ interface EnhancedFighterCardProps {
 function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Hooks
   const { favorites, toggleFavorite } = useFavorites({ autoInitialize: false });
   const { addToComparison, isInComparison } = useComparison();
-  const { details, isLoading: isLoadingDetails } = useFighterDetails(
+  const { details, isLoading: isLoadingDetails, error: detailsError } = useFighterDetails(
     fighter.fighter_id,
     isHovered
   );
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Debounced hover handlers (300ms delay to prevent unnecessary API calls)
+  const handleHoverStart = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 300);
+  };
+
+  const handleHoverEnd = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(false);
+  };
 
   // Computed values
   const isFavorited = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
@@ -98,8 +123,8 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   return (
     <motion.div
       className="group relative h-full"
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+      onHoverStart={handleHoverStart}
+      onHoverEnd={handleHoverEnd}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -270,6 +295,24 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                       <div className="flex items-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                         <span className="text-sm text-white/60">Loading stats...</span>
+                      </div>
+                    ) : detailsError ? (
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <svg
+                          className="h-8 w-8 text-white/40"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="text-sm text-white/60">Failed to load stats</span>
+                        <span className="text-xs text-white/40">Click for full profile</span>
                       </div>
                     ) : (
                       <>

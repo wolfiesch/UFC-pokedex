@@ -11,6 +11,7 @@ This repository handles:
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
@@ -45,6 +46,9 @@ from backend.services.image_resolver import (
 
 # Type alias for valid streak types
 StreakType = Literal["win", "loss", "draw", "none"]
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 
 def _validate_streak_type(value: str | None) -> StreakType | None:
@@ -213,22 +217,22 @@ class FighterRepository(BaseRepository):
         ]
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
-        """Get detailed fighter information by ID with optimized single-query fetch."""
-        from sqlalchemy.orm import selectinload
+        """Get detailed fighter information by ID with optimized single-query fetch.
 
-        # Query fighter details with eager-loaded fights using selectinload
-        # This uses a single JOIN query to load fighter + all fights (no N+1)
+        Performance optimization: Uses a single CTE UNION query to fetch all fights
+        (both as primary fighter and opponent) with opponent names in one database round trip.
+        """
+        import time
+
+        start_time = time.time()
+
+        # Get fighter basic info
         base_columns = self._fighter_detail_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        fighter_query = (
-            select(Fighter)
-            .options(
-                load_only(*load_columns),
-                selectinload(Fighter.fights),  # Eager load fights to prevent N+1
-            )
-            .where(Fighter.id == fighter_id)
+        fighter_query = select(Fighter).options(load_only(*load_columns)).where(
+            Fighter.id == fighter_id
         )
         fighter_result = await self._session.execute(fighter_query)
         fighter = fighter_result.scalar_one_or_none()
@@ -241,73 +245,65 @@ class FighterRepository(BaseRepository):
         # Stats fields (striking, grappling, etc.) will be empty until scraper is updated.
         stats_map: dict[str, dict[str, str]] = {}
 
-        # Get fights from relationship (already loaded via selectinload - no additional query!)
-        primary_fights = [f for f in fighter.fights]
+        # OPTIMIZED: Single query to get ALL fights (primary + opponent) with opponent names
+        # Uses CTE (Common Table Expression) with UNION to combine results
 
-        # Query fights from opponent's perspective (where this fighter is opponent_id)
-        # Join with Fighter table to get opponent names in a single query
-        opponent_fights_result = await self._session.execute(
-            select(Fight, Fighter.name.label("fighter_name"))
-            .join(Fighter, Fight.fighter_id == Fighter.id, isouter=True)
+        # CTE 1: Primary fights (where fighter is fighter_id)
+        primary_fights_cte = (
+            select(
+                Fight.id.label("fight_id"),
+                Fight.event_name,
+                Fight.event_date,
+                Fight.opponent_id,
+                Fight.opponent_name,
+                Fight.result,
+                Fight.method,
+                Fight.round,
+                Fight.time,
+                Fight.fight_card_url,
+                Fight.stats,
+                literal(True).label("is_primary"),  # Mark as primary fight
+                literal(None).label("inverted_opponent_id"),  # Placeholder
+            )
+            .where(Fight.fighter_id == fighter_id)
+        ).cte("primary_fights")
+
+        # CTE 2: Opponent fights (where fighter is opponent_id) with opponent names via JOIN
+        opponent_fights_cte = (
+            select(
+                Fight.id.label("fight_id"),
+                Fight.event_name,
+                Fight.event_date,
+                literal(None).label("opponent_id"),  # Will use inverted_opponent_id instead
+                literal(None).label("opponent_name"),  # Will fetch from JOIN
+                Fight.result,
+                Fight.method,
+                Fight.round,
+                Fight.time,
+                Fight.fight_card_url,
+                Fight.stats,
+                literal(False).label("is_primary"),  # Mark as opponent fight
+                Fight.fighter_id.label("inverted_opponent_id"),  # Fighter is opponent
+            )
             .where(Fight.opponent_id == fighter_id)
-            .order_by(Fight.event_date.desc().nulls_last(), Fight.id)
-        )
-        opponent_fights_with_names = opponent_fights_result.all()
-        opponent_fights = [row[0] for row in opponent_fights_with_names]
-        # Build a lookup for opponent names from the joined query
-        opponent_fights_names_lookup = {
-            row[0].id: row[1] or "Unknown" for row in opponent_fights_with_names
-        }
+        ).cte("opponent_fights")
 
-        all_fights = list(primary_fights) + list(opponent_fights)
+        # UNION ALL: Combine both CTEs
+        combined_query = select(primary_fights_cte).union_all(select(opponent_fights_cte))
 
-        # Build fight history, deduplicating by fight metadata (not database ID)
-        # This prevents duplicate entries when both fighters have Fight records for the same bout
-        # Prioritize fights where fighter_id matches (fighter's own perspective)
-        # Also prioritize fights with actual results (win/loss/draw) over "N/A"
-        fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
+        # Execute single query to get all fights
+        all_fights_result = await self._session.execute(combined_query)
+        all_fights_rows = all_fights_result.all()
 
-        # First pass: Process fights where this fighter is the primary fighter_id
-        for fight in all_fights:
-            if fight.fighter_id == fighter_id:
-                fight_key = create_fight_key(
-                    fight.event_name,
-                    fight.event_date,
-                    fight.opponent_id,
-                    fight.opponent_name,
-                )
-
-                new_entry = FightHistoryEntry(
-                    fight_id=fight.id,
-                    event_name=fight.event_name,
-                    event_date=fight.event_date,
-                    opponent=fight.opponent_name,
-                    opponent_id=fight.opponent_id,
-                    result=fight.result,
-                    method=fight.method or "",
-                    round=fight.round,
-                    time=fight.time,
-                    fight_card_url=fight.fight_card_url,
-                    stats=fight.stats,
-                )
-
-                if fight_key not in fight_dict:
-                    fight_dict[fight_key] = new_entry
-                elif should_replace_fight(fight_dict[fight_key].result, fight.result):
-                    # Replace with better result
-                    fight_dict[fight_key] = new_entry
-
-        # Collect unique opponent identifiers for primary fights only
-        # (opponent fights already have names from the JOIN above)
+        # Collect unique opponent IDs for name lookup (single query)
         opponent_ids: set[str] = set()
-        for fight in primary_fights:
-            if fight.opponent_id:
-                opponent_ids.add(fight.opponent_id)
+        for row in all_fights_rows:
+            if row.is_primary and row.opponent_id:
+                opponent_ids.add(row.opponent_id)
+            elif not row.is_primary and row.inverted_opponent_id:
+                opponent_ids.add(row.inverted_opponent_id)
 
-        # Also collect fighter_ids from opponent fights for name lookup
-        for fight in opponent_fights:
-            opponent_ids.add(fight.fighter_id)
-
+        # Single query to get all opponent names
         opponent_lookup: dict[str, str] = {}
         if opponent_ids:
             opponent_rows = await self._session.execute(
@@ -315,34 +311,69 @@ class FighterRepository(BaseRepository):
             )
             opponent_lookup = {row.id: row.name for row in opponent_rows.all()}
 
-        # Merge with opponent fights names from JOIN
-        opponent_lookup.update(opponent_fights_names_lookup)
+        # Build fight history, deduplicating by fight metadata (not database ID)
+        # This prevents duplicate entries when both fighters have Fight records for the same bout
+        # Prioritize fights where fighter_id matches (fighter's own perspective)
+        # Also prioritize fights with actual results (win/loss/draw) over "N/A"
+        fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
 
-        # Second pass: Process fights from opponent's perspective (only if not already seen)
-        for fight in all_fights:
-            if fight.fighter_id != fighter_id:
-                opponent_name = opponent_lookup.get(fight.fighter_id, "Unknown")
-                opponent_id = fight.fighter_id
+        # Process all fights
+        for row in all_fights_rows:
+            if row.is_primary:
+                # Primary fight (fighter is fighter_id)
+                opponent_name = row.opponent_name or opponent_lookup.get(
+                    row.opponent_id, "Unknown"
+                )
+                fight_key = create_fight_key(
+                    row.event_name,
+                    row.event_date,
+                    row.opponent_id,
+                    opponent_name,
+                )
+
+                new_entry = FightHistoryEntry(
+                    fight_id=row.fight_id,
+                    event_name=row.event_name,
+                    event_date=row.event_date,
+                    opponent=opponent_name,
+                    opponent_id=row.opponent_id,
+                    result=row.result,
+                    method=row.method or "",
+                    round=row.round,
+                    time=row.time,
+                    fight_card_url=row.fight_card_url,
+                    stats=row.stats,
+                )
+
+                if fight_key not in fight_dict:
+                    fight_dict[fight_key] = new_entry
+                elif should_replace_fight(fight_dict[fight_key].result, row.result):
+                    # Replace with better result
+                    fight_dict[fight_key] = new_entry
+            else:
+                # Opponent fight (fighter is opponent_id) - invert result
+                opponent_id = row.inverted_opponent_id
+                opponent_name = opponent_lookup.get(opponent_id, "Unknown")
 
                 fight_key = create_fight_key(
-                    fight.event_name, fight.event_date, opponent_id, opponent_name
+                    row.event_name, row.event_date, opponent_id, opponent_name
                 )
 
                 # Invert the result
-                inverted_result = _invert_fight_result(fight.result)
+                inverted_result = _invert_fight_result(row.result)
 
                 new_entry = FightHistoryEntry(
-                    fight_id=fight.id,
-                    event_name=fight.event_name,
-                    event_date=fight.event_date,
+                    fight_id=row.fight_id,
+                    event_name=row.event_name,
+                    event_date=row.event_date,
                     opponent=opponent_name,
-                    opponent_id=opponent_id,  # The original fighter_id is now the opponent
+                    opponent_id=opponent_id,
                     result=inverted_result,
-                    method=fight.method or "",
-                    round=fight.round,
-                    time=fight.time,
-                    fight_card_url=fight.fight_card_url,
-                    stats=fight.stats,
+                    method=row.method or "",
+                    round=row.round,
+                    time=row.time,
+                    fight_card_url=row.fight_card_url,
+                    stats=row.stats,
                 )
 
                 if fight_key not in fight_dict:
@@ -354,6 +385,13 @@ class FighterRepository(BaseRepository):
         # Convert dict to list and sort
         fight_history: list[FightHistoryEntry] = list(fight_dict.values())
         fight_history = sort_fight_history(fight_history)
+
+        # Log query performance
+        query_time = time.time() - start_time
+        if query_time > 0.1:  # Log slow queries (>100ms)
+            logger.warning(
+                f"Slow fighter query: {fighter_id} took {query_time:.3f}s"
+            )
 
         # Compute record from fight_history if not already populated
         computed_record = fighter.record
