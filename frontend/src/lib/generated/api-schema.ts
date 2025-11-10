@@ -642,23 +642,6 @@ export interface components {
             total_fighters: number;
         };
         /**
-         * DivisionRankDate
-         * @description Summary of the latest snapshot date for a specific division.
-         */
-        DivisionRankDate: {
-            /**
-             * Division
-             * @description Weight class name
-             */
-            division: string;
-            /**
-             * Rank Date
-             * Format: date
-             * @description Date of the most recent ranking snapshot
-             */
-            rank_date: string;
-        };
-        /**
          * CurrentRankingsResponse
          * @description Current rankings for a specific division.
          */
@@ -710,6 +693,23 @@ export interface components {
              * @description Total number of divisions
              */
             total_divisions: number;
+        };
+        /**
+         * DivisionRankDate
+         * @description Summary of the latest snapshot date for a specific division.
+         */
+        DivisionRankDate: {
+            /**
+             * Division
+             * @description Weight class name
+             */
+            division: string;
+            /**
+             * Rank Date
+             * Format: date
+             * @description Date of the most recent ranking snapshot
+             */
+            rank_date: string;
         };
         /**
          * EventDetail
