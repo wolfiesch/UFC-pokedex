@@ -13,8 +13,7 @@ declare global {
 class MockWorker {
   private listeners = new Map<string, Set<(event: MessageEvent) => void>>();
 
-  constructor(url: URL) {
-    void url;
+  constructor(_url: URL) {
   }
 
   postMessage(data: unknown) {
