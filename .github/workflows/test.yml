@@ -7,8 +7,8 @@ on:
     branches: [master, main, develop]
 
 jobs:
-  test:
-    name: Tests (${{ matrix.db }})
+  tests-postgresql:
+    name: Tests (postgresql)
     runs-on: ubuntu-latest
     env:
       POSTGRES_USER: ufc_pokedex
@@ -16,15 +16,9 @@ jobs:
       POSTGRES_DB: ufc_pokedex
       REDIS_URL: redis://localhost:6379/0
 
-    strategy:
-      fail-fast: false
-      matrix:
-        db: [postgresql, sqlite]
-
     services:
       postgres:
-        # Only create PostgreSQL service for PostgreSQL matrix job
-        image: ${{ matrix.db == 'postgresql' && 'postgres:15' || '' }}
+        image: postgres:15
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -60,6 +54,16 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Cache uv environment
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
       - name: Install uv
         if: matrix.db == 'sqlite'
         run: |
@@ -73,6 +77,16 @@ jobs:
 
       - name: Run database migrations in container
         if: matrix.db == 'postgresql'
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure PostgreSQL database
         env:
           DATABASE_URL: postgresql+psycopg://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
         run: |
@@ -82,8 +96,48 @@ jobs:
             ufc-pokedex-api:ci \
             alembic upgrade head
 
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+        run: |
+          uv run pytest --cov=backend --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: postgresql
+          name: coverage-postgresql
+        continue-on-error: true
+
+      - name: Verify PostgreSQL database mode
+        run: |
+          echo "✓ PostgreSQL tests completed"
+          echo "✓ Migrations applied successfully"
+
+  tests-sqlite:
+    name: Tests (sqlite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
       - name: Configure SQLite database
-        if: matrix.db == 'sqlite'
         run: |
           echo "USE_SQLITE=1" >> $GITHUB_ENV
           echo "🗄️ SQLite mode - tables will auto-create"
@@ -111,17 +165,32 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
-          flags: ${{ matrix.db }}
-          name: coverage-${{ matrix.db }}
+          flags: sqlite
+          name: coverage-sqlite
         continue-on-error: true
 
-      - name: Verify database mode
+      - name: Verify SQLite database mode
         run: |
-          if [ "${{ matrix.db }}" = "sqlite" ]; then
-            echo "✓ SQLite tests completed"
-            echo "✓ Tables auto-created via create_all()"
-            echo "✓ Migrations skipped (expected)"
-          else
-            echo "✓ PostgreSQL tests completed"
-            echo "✓ Migrations applied successfully"
+          echo "✓ SQLite tests completed"
+          echo "✓ Tables auto-created via create_all()"
+          echo "✓ Migrations skipped (expected)"
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs:
+      - tests-postgresql
+      - tests-sqlite
+    if: ${{ always() }}
+    steps:
+      - name: Check upstream job results
+        run: |
+          if [ "${{ needs.tests-postgresql.result }}" != "success" ]; then
+            echo "tests-postgresql job did not succeed"
+            exit 1
           fi
+          if [ "${{ needs.tests-sqlite.result }}" != "success" ]; then
+            echo "tests-sqlite job did not succeed"
+            exit 1
+          fi
+          echo "All database test jobs succeeded"

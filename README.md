@@ -23,6 +23,7 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
    ```bash
    make dev
    ```
+   The command now configures Cloudflare tunnel URLs through environment variable overrides at runtime, keeping your `.env` files untouched. If you choose to work with temporary `.env.dev` files for the backend or frontend, remember to clean them up after you stop the processes.
 
 Refer to `Plans/Initial_Plan.md` for the full project roadmap.
 

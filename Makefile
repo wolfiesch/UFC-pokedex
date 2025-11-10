@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +46,10 @@ test: ## Run unit tests across the repo
 	pytest
 	cd frontend && pnpm test || npm test
 
+check: ## Run linting and test suites together
+	$(MAKE) lint
+	$(MAKE) test
+
 scrape-sample: ## Run sample scrape to populate data/samples
 	python -m scripts.scrape_sample
 
@@ -61,14 +65,16 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	@TUNNEL_OUTPUT=$$(bash scripts/start_tunnels.sh); \
 	FRONTEND_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "FRONTEND_URL=" | cut -d'=' -f2); \
 	API_URL=$$(echo "$$TUNNEL_OUTPUT" | grep "API_URL=" | cut -d'=' -f2); \
-	echo ""; \
-	echo "📝 Updating configuration files..."; \
-	sed -i.bak "s|CORS_ALLOW_ORIGINS=.*|CORS_ALLOW_ORIGINS=$$FRONTEND_URL|" .env && rm .env.bak; \
-	sed -i.bak "s|NEXT_PUBLIC_API_BASE_URL=.*|NEXT_PUBLIC_API_BASE_URL=$$API_URL|" frontend/.env.local && rm frontend/.env.local.bak; \
-	echo ""; \
-	echo "🚀 Starting services..."; \
+	echo ""; \\
+	echo "📝 Configuring runtime environment overrides..."; \\
+	CORS_ALLOW_ORIGINS="$$FRONTEND_URL"; \
+	NEXT_PUBLIC_API_BASE_URL="$$API_URL"; \
+	echo "   CORS_ALLOW_ORIGINS=$$CORS_ALLOW_ORIGINS"; \
+	echo "   NEXT_PUBLIC_API_BASE_URL=$$NEXT_PUBLIC_API_BASE_URL"; \
+	echo ""; \\
+	echo "🚀 Starting services..."; \\
 	trap 'pkill cloudflared 2>/dev/null || true; kill 0' INT TERM EXIT; \
-	.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
+	CORS_ALLOW_ORIGINS="$$FRONTEND_URL" .venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000} > /tmp/backend.log 2>&1 & \
 	sleep 2; \
 	echo "🔧 Generating TypeScript types from OpenAPI (background)..."; \
 	mkdir -p frontend/src/lib/generated; \
@@ -85,8 +91,8 @@ dev: ensure-docker ## Start backend, frontend, and Cloudflare tunnels with auto-
 	  done; \
 	  echo "⚠️  Backend not ready after 5s, skipping type generation"; \
 	) & \
-	DEV_CMD=$${NEXT_DEV_CMD:-dev}; \
-	cd frontend && pnpm run "$$DEV_CMD" > /tmp/frontend.log 2>&1 & \
+	DEV_CMD=$${NEXT_DEV_CMD:-dev}; \\
+	cd frontend && NEXT_PUBLIC_API_BASE_URL="$$API_URL" pnpm run "$$DEV_CMD" > /tmp/frontend.log 2>&1 & \
 	sleep 3; \
 	echo ""; \
 	echo "✅ All services started!"; \

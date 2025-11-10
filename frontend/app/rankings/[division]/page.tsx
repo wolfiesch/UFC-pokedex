@@ -45,9 +45,9 @@ export default async function DivisionRankingsPage({
   const { rankings, rank_date, total_fighters } = data;
 
   // Separate champion from ranked fighters
-  const champion = rankings.find(r => r.rank === 0);
-  const rankedFighters = rankings.filter(r => r.rank !== null && r.rank > 0).sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
-  const unrankedFighters = rankings.filter(r => r.rank === null);
+  const champion = (rankings ?? []).find(r => r.rank === 0);
+  const rankedFighters = (rankings ?? []).filter(r => r.rank !== null && r.rank > 0).sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+  const unrankedFighters = (rankings ?? []).filter(r => r.rank === null);
 
   return (
     <section className="container flex flex-col gap-8 py-12">
@@ -102,8 +102,8 @@ export default async function DivisionRankingsPage({
               </div>
               {champion.rank_movement !== 0 && (
                 <Badge
-                  variant={champion.rank_movement > 0 ? "default" : "destructive"}
-                  className="text-sm"
+                  variant="default"
+                  className={champion.rank_movement > 0 ? "text-sm bg-green-600" : "text-sm bg-red-600"}
                 >
                   {champion.rank_movement > 0 ? "↑" : "↓"}
                   {Math.abs(champion.rank_movement)}
@@ -146,8 +146,8 @@ export default async function DivisionRankingsPage({
                     </div>
                     {entry.rank_movement !== 0 && (
                       <Badge
-                        variant={entry.rank_movement > 0 ? "default" : "destructive"}
-                        className="text-xs flex-shrink-0"
+                        variant="default"
+                        className={entry.rank_movement > 0 ? "text-xs flex-shrink-0 bg-green-600" : "text-xs flex-shrink-0 bg-red-600"}
                       >
                         {entry.rank_movement > 0 ? "↑" : "↓"}
                         {Math.abs(entry.rank_movement)}
