@@ -10,14 +10,19 @@ jobs:
   tests-postgresql:
     name: Tests (postgresql)
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ufc_pokedex
+      POSTGRES_PASSWORD: ufc_pokedex
+      POSTGRES_DB: ufc_pokedex
+      REDIS_URL: redis://localhost:6379/0
 
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ufc_pokedex
-          POSTGRES_PASSWORD: ufc_pokedex
-          POSTGRES_DB: ufc_pokedex
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -25,12 +30,26 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Build backend container image
+        if: matrix.db == 'postgresql'
+        run: docker build -f backend/Dockerfile -t ufc-pokedex-api:ci .
+
       - name: Set up Python
+        if: matrix.db == 'sqlite'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -46,14 +65,18 @@ jobs:
             ${{ runner.os }}-uv-
 
       - name: Install uv
+        if: matrix.db == 'sqlite'
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
+        if: matrix.db == 'sqlite'
         run: |
           uv sync --all-extras
 
+      - name: Run database migrations in container
+        if: matrix.db == 'postgresql'
       - name: Set up pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -65,11 +88,13 @@ jobs:
 
       - name: Configure PostgreSQL database
         env:
-          DATABASE_URL: postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+          DATABASE_URL: postgresql+psycopg://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
         run: |
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-          echo "🗄️ PostgreSQL mode - running migrations"
-          uv run python -m alembic upgrade head
+          set -euo pipefail
+          docker run --rm --network host \
+            -e DATABASE_URL="$DATABASE_URL" \
+            ufc-pokedex-api:ci \
+            alembic upgrade head
 
       - name: Run tests with coverage
         env:
@@ -117,9 +142,24 @@ jobs:
           echo "USE_SQLITE=1" >> $GITHUB_ENV
           echo "🗄️ SQLite mode - tables will auto-create"
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (SQLite)
+        if: matrix.db == 'sqlite'
         run: |
           uv run pytest --cov=backend --cov-report=xml --cov-report=term-missing
+
+      - name: Run tests in container
+        if: matrix.db == 'postgresql'
+        env:
+          DATABASE_URL: postgresql+psycopg://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f api-tests >/dev/null 2>&1 || true' EXIT
+          docker run --name api-tests --network host \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e REDIS_URL="$REDIS_URL" \
+            ufc-pokedex-api:ci \
+            pytest --cov=backend --cov-report=xml:coverage.xml --cov-report=term-missing
+          docker cp api-tests:/app/coverage.xml coverage.xml
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
