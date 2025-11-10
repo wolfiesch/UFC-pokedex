@@ -11,8 +11,6 @@ from typing import Any
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
-
 from backend.db.models import Fighter, FighterRanking
 
 
@@ -149,7 +147,7 @@ class RankingRepository:
             .where(FighterRanking.fighter_id == fighter_id)
             .where(FighterRanking.source == source)
             .where(FighterRanking.rank.isnot(None))  # Exclude "Not Ranked"
-            .order_by(FighterRanking.rank.asc())
+            .order_by(FighterRanking.rank.asc(), FighterRanking.rank_date.desc())
             .limit(1)
         )
 

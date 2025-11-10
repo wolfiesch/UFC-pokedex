@@ -56,82 +56,47 @@ def load_division_codes() -> Dict:
         return json.load(f)
 
 
-def get_latest_issues(count: int = 12) -> List[Dict]:
+def load_issue_mapping() -> Dict:
+    """Load complete issue mapping from JSON file."""
+    with open(ISSUE_MAPPING_FILE, 'r') as f:
+        return json.load(f)
+
+
+def get_issues_for_phase(phase: str = None, months: int = None) -> List[Dict]:
     """
-    Fetch the latest N issue numbers from the dropdown.
+    Get issue list for specified phase or month count.
+
+    Args:
+        phase: Phase identifier ('3A', '3B', '3C', 'all')
+        months: Custom month count (overrides phase)
 
     Returns:
-        List of dicts with 'date' and 'issue_number' keys
+        List of dicts with 'date' and 'issue' keys
     """
-    print(f"🔍 Fetching latest {count} issue numbers...")
+    mapping = load_issue_mapping()
+    all_issues = mapping['issues']
 
-    try:
-        response = requests.get(BASE_URL, timeout=30)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Find the Issue dropdown (first select element)
-        issue_select = soup.find_all('select')[0]
-        if not issue_select:
-            raise ValueError("Could not find Issue dropdown")
-
-        # Extract issue options (skip "- Select Issue -")
-        issues = []
-        for option in issue_select.find_all('option')[1:count+1]:
-            date_str = option.text.strip()
-            # Issue number is extracted from URL or value attribute
-            # For now, we'll need to test with known issue=996 and work backwards
-            issues.append({
-                'date': date_str,
-                'issue_number': None,  # Will be filled in by testing
-                'raw_option': option
-            })
-
-        print(f"✓ Found {len(issues)} recent issues")
-        return issues
-
-    except Exception as e:
-        print(f"❌ Failed to fetch issue numbers: {e}")
-        raise
-
-
-def discover_issue_numbers(dates: List[str], test_division: int = 1) -> Dict[str, int]:
-    """
-    Discover issue numbers by testing sequential URLs.
-
-    Strategy: Issue numbers appear to be sequential. We'll start from a known
-    good issue (996 for 11/02/2025) and increment/decrement to find others.
-    """
-    print(f"🔍 Discovering issue numbers for {len(dates)} dates...")
-
-    # Known reference point from testing
-    KNOWN_DATE = "11/02/2025"
-    KNOWN_ISSUE = 996
-
-    date_to_issue = {}
-
-    # Find the known date in our list
-    if KNOWN_DATE in dates:
-        known_index = dates.index(KNOWN_DATE)
-        date_to_issue[KNOWN_DATE] = KNOWN_ISSUE
-
-        # Work backwards from known issue
-        for i in range(known_index + 1, len(dates)):
-            issue_number = KNOWN_ISSUE - (i - known_index)
-            date_to_issue[dates[i]] = issue_number
-
-        # Work forwards from known issue
-        for i in range(known_index - 1, -1, -1):
-            issue_number = KNOWN_ISSUE + (known_index - i)
-            date_to_issue[dates[i]] = issue_number
+    # Determine how many months to scrape
+    if months is not None:
+        count = months
+        source = f"custom {months} months"
+    elif phase and phase in PHASE_DEFINITIONS:
+        count = PHASE_DEFINITIONS[phase]['months']
+        source = f"Phase {phase} ({PHASE_DEFINITIONS[phase]['description']})"
     else:
-        # Fallback: assume sequential numbering from 996 backwards
-        print(f"⚠️  Known date {KNOWN_DATE} not found, using fallback strategy")
-        for i, date in enumerate(dates):
-            date_to_issue[date] = KNOWN_ISSUE - i
+        # Default to Phase 3A
+        count = PHASE_DEFINITIONS['3A']['months']
+        source = "Phase 3A (default)"
 
-    print(f"✓ Mapped {len(date_to_issue)} dates to issue numbers")
-    return date_to_issue
+    # Get first N issues (most recent)
+    issues = all_issues[:count]
+
+    print(f"📋 Loading issues: {source}")
+    print(f"   Total issues: {len(issues)}")
+    print(f"   Date range: {issues[-1]['date']} to {issues[0]['date']}")
+    print()
+
+    return issues
 
 
 def scrape_rankings_page(issue: int, division: int, page: int = 1) -> Optional[Dict]:
@@ -303,20 +268,25 @@ def scrape_division_snapshot(issue: int, division: int, division_name: str,
     }
 
 
-def scrape_historical_rankings(months: int = 12,
+def scrape_historical_rankings(phase: str = None,
+                               months: int = None,
                                division_codes: Optional[List[int]] = None,
-                               max_fighters: int = 50) -> None:
+                               max_fighters: int = 50,
+                               force: bool = False) -> None:
     """
-    Main scraper function.
+    Main scraper function with resume capability.
 
     Args:
-        months: Number of recent months to scrape
+        phase: Phase identifier ('3A', '3B', '3C', 'all')
+        months: Custom number of months (overrides phase)
         division_codes: Specific divisions to scrape (None = all major divisions)
         max_fighters: Max fighters per division (default 50 = 2 pages)
+        force: Re-scrape existing files (default False)
     """
     print(f"🚀 Fight Matrix Historical Rankings Scraper")
-    print(f"   Months: {months}")
+    print(f"   Phase: {phase or 'custom'}")
     print(f"   Max fighters/division: {max_fighters}")
+    print(f"   Force re-scrape: {force}")
     print()
 
     # Load division codes
@@ -341,32 +311,59 @@ def scrape_historical_rankings(months: int = 12,
     # Calculate pages needed
     max_pages = (max_fighters + 24) // 25  # Round up to nearest 25
 
-    # Get recent issue dates (will need issue numbers)
-    print(f"🔍 Finding last {months} monthly snapshots...")
-    # Hardcode recent dates based on reconnaissance
-    recent_dates = [
-        "11/02/2025", "10/05/2025", "09/07/2025", "08/03/2025",
-        "07/06/2025", "06/01/2025", "05/04/2025", "04/06/2025",
-        "03/02/2025", "02/02/2025", "01/05/2025", "12/01/2024"
-    ][:months]
-
-    # Map dates to issue numbers
-    date_to_issue = discover_issue_numbers(recent_dates)
-
-    print(f"✓ Found {len(date_to_issue)} issues to scrape")
-    print()
+    # Get issues from mapping
+    issues = get_issues_for_phase(phase, months)
 
     # Create output directory
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Check for existing files (resume capability)
+    existing_files = set()
+    if not force:
+        for file in OUTPUT_DIR.glob("issue_*.json"):
+            existing_files.add(file.name)
+
+        if existing_files:
+            print(f"📂 Found {len(existing_files)} existing files")
+            print(f"   Use --force to re-scrape them")
+            print()
+
+    # Filter issues to scrape
+    issues_to_scrape = []
+    issues_skipped = 0
+
+    for issue_item in issues:
+        issue_num = issue_item['issue']
+        issue_date = issue_item['date']
+        output_filename = f"issue_{issue_num}_{issue_date.replace('/', '-')}.json"
+
+        if not force and output_filename in existing_files:
+            issues_skipped += 1
+            continue
+
+        issues_to_scrape.append(issue_item)
+
+    print(f"📊 Scrape summary:")
+    print(f"   Total issues available: {len(issues)}")
+    print(f"   Issues to scrape: {len(issues_to_scrape)}")
+    print(f"   Issues skipped (existing): {issues_skipped}")
+    print()
+
+    if not issues_to_scrape:
+        print(f"✅ All issues already scraped! Use --force to re-scrape.")
+        return
+
     # Scrape each combination
-    total_requests = len(divisions_to_scrape) * len(date_to_issue) * max_pages
+    total_requests = len(divisions_to_scrape) * len(issues_to_scrape) * max_pages
     completed = 0
 
     print(f"📦 Starting scrape ({total_requests} total requests)")
     print()
 
-    for issue_date, issue_num in date_to_issue.items():
+    for issue_item in issues_to_scrape:
+        issue_num = issue_item['issue']
+        issue_date = issue_item['date']
+
         print(f"📅 Issue: {issue_date} (#{issue_num})")
 
         issue_results = {
@@ -407,13 +404,34 @@ def scrape_historical_rankings(months: int = 12,
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Scrape Fight Matrix historical rankings')
-    parser.add_argument('--months', type=int, default=12,
-                       help='Number of recent months to scrape (default: 12)')
+    parser = argparse.ArgumentParser(
+        description='Scrape Fight Matrix historical rankings',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Phase options:
+  3A    Last 24 months (Nov 2023 - Nov 2025) - ~13 min, ~9,600 rankings
+  3B    2020-2025 (72 months) - ~39 min, ~28,800 rankings
+  3C    2008-2025 (216 months) - ~2-3 hours, ~86,400 rankings
+  all   Complete archive (same as 3C)
+
+Examples:
+  python scripts/scrape_fightmatrix_historical.py --phase 3A
+  python scripts/scrape_fightmatrix_historical.py --phase all
+  python scripts/scrape_fightmatrix_historical.py --months 6 --force
+        """
+    )
+
+    parser.add_argument('--phase', type=str, default=None,
+                       choices=['3A', '3B', '3C', 'all'],
+                       help='Phase to execute (default: 3A)')
+    parser.add_argument('--months', type=int, default=None,
+                       help='Custom number of recent months (overrides --phase)')
     parser.add_argument('--divisions', type=str, default=None,
                        help='Comma-separated division codes (e.g., "1,5,7")')
     parser.add_argument('--max-fighters', type=int, default=50,
                        help='Max fighters per division (default: 50)')
+    parser.add_argument('--force', action='store_true',
+                       help='Re-scrape existing files')
 
     args = parser.parse_args()
 
@@ -422,10 +440,15 @@ def main():
     if args.divisions:
         division_codes = [int(x.strip()) for x in args.divisions.split(',')]
 
+    # Default to Phase 3A if neither phase nor months specified
+    phase = args.phase if args.phase or args.months else '3A'
+
     scrape_historical_rankings(
+        phase=phase,
         months=args.months,
         division_codes=division_codes,
-        max_fighters=args.max_fighters
+        max_fighters=args.max_fighters,
+        force=args.force
     )
 
 

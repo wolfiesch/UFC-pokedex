@@ -1,9 +1,11 @@
 """API endpoints for fighter rankings."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.repositories.fighter_repository import FighterRepository
 from backend.db.connection import get_db
+from backend.db.models import Fighter
 from backend.schemas.ranking import (
     AllRankingsResponse,
     CurrentRankingsResponse,
@@ -12,9 +14,17 @@ from backend.schemas.ranking import (
     RankingHistoryResponse,
 )
 from backend.services.ranking_service import RankingService, get_ranking_service
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
+
+
+async def _get_fighter_name(session: AsyncSession, fighter_id: str) -> str | None:
+    """Return the fighter's display name without loading the full roster payload."""
+
+    result = await session.execute(
+        select(Fighter.name).where(Fighter.id == fighter_id)
+    )
+    return result.scalar_one_or_none()
 
 
 @router.get("/", response_model=AllRankingsResponse)
@@ -128,21 +138,19 @@ async def get_fighter_ranking_history(
     Returns:
         Fighter's ranking history
     """
-    # Fetch fighter name from database
-    fighter_repo = FighterRepository(session)
-    fighter = await fighter_repo.get_fighter(fighter_id)
+    fighter_name = await _get_fighter_name(session, fighter_id)
 
-    if not fighter:
+    if not fighter_name:
         raise HTTPException(status_code=404, detail="Fighter not found")
 
     response = await service.get_fighter_ranking_history(
-        fighter_id, fighter.name, source, limit
+        fighter_id, fighter_name, source, limit
     )
 
     if not response.history:
         raise HTTPException(
             status_code=404,
-            detail=f"No ranking history found for fighter '{fighter.name}' from source '{source}'",
+            detail=f"No ranking history found for fighter '{fighter_name}' from source '{source}'",
         )
 
     return response
@@ -173,19 +181,17 @@ async def get_fighter_peak_ranking(
     Returns:
         Fighter's peak ranking
     """
-    # Fetch fighter name from database
-    fighter_repo = FighterRepository(session)
-    fighter = await fighter_repo.get_fighter(fighter_id)
+    fighter_name = await _get_fighter_name(session, fighter_id)
 
-    if not fighter:
+    if not fighter_name:
         raise HTTPException(status_code=404, detail="Fighter not found")
 
-    peak = await service.get_peak_ranking(fighter_id, fighter.name, source)
+    peak = await service.get_peak_ranking(fighter_id, fighter_name, source)
 
     if not peak:
         raise HTTPException(
             status_code=404,
-            detail=f"No ranking history found for fighter '{fighter.name}' from source '{source}'",
+            detail=f"No ranking history found for fighter '{fighter_name}' from source '{source}'",
         )
 
     return peak

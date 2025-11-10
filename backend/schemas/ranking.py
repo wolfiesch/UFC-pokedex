@@ -92,11 +92,21 @@ class DivisionListResponse(BaseModel):
     total_divisions: int = Field(description="Total number of divisions")
 
 
+class DivisionRankDate(BaseModel):
+    """Summary of the latest snapshot date for a specific division."""
+
+    division: str = Field(description="Weight class name")
+    rank_date: date = Field(description="Date of the most recent ranking snapshot")
+
+
 class AllRankingsResponse(BaseModel):
     """All current rankings across all divisions."""
 
     source: str = Field(description="Ranking source")
-    rank_date: date = Field(description="Date of rankings snapshot")
+    division_rank_dates: list[DivisionRankDate] = Field(
+        default_factory=list,
+        description="Latest snapshot date per division",
+    )
     divisions: list[CurrentRankingsResponse] = Field(
         default_factory=list, description="Rankings for each division"
     )

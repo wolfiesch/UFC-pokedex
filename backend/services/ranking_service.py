@@ -14,6 +14,7 @@ from backend.schemas.ranking import (
     AllRankingsResponse,
     CurrentRankingsResponse,
     DivisionListResponse,
+    DivisionRankDate,
     PeakRankingResponse,
     RankingEntry,
     RankingHistoryEntry,
@@ -188,26 +189,33 @@ class RankingService:
         if not latest_date:
             return AllRankingsResponse(
                 source=source,
-                rank_date=date.today(),
+                division_rank_dates=[],
                 divisions=[],
                 total_divisions=0,
                 total_fighters=0,
             )
 
         # Fetch rankings for each division
-        division_rankings = []
+        division_rankings: list[CurrentRankingsResponse] = []
+        division_rank_dates: list[DivisionRankDate] = []
         total_fighters = 0
 
         for division in divisions:
             division_response = await self.get_current_rankings(division, source)
             division_rankings.append(division_response)
+            division_rank_dates.append(
+                DivisionRankDate(
+                    division=division_response.division,
+                    rank_date=division_response.rank_date,
+                )
+            )
             total_fighters += division_response.total_fighters
 
         return AllRankingsResponse(
             source=source,
-            rank_date=latest_date,
             divisions=division_rankings,
-            total_divisions=len(divisions),
+            division_rank_dates=division_rank_dates,
+            total_divisions=len(division_rankings),
             total_fighters=total_fighters,
         )
 

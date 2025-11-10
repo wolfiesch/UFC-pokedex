@@ -10,6 +10,7 @@ from backend.schemas.ranking import (  # noqa: F401
     AllRankingsResponse,
     CurrentRankingsResponse,
     DivisionListResponse,
+    DivisionRankDate,
     PeakRankingResponse,
     RankingEntry,
     RankingHistoryEntry,
