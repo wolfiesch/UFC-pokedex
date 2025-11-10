@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { cn, getColorFromString, getInitials } from "@/lib/utils";
 
 type Props = {
@@ -6,7 +8,7 @@ type Props = {
   className?: string;
 };
 
-export default function FighterImagePlaceholder({ name, division, className }: Props) {
+function FighterImagePlaceholderComponent({ name, division, className }: Props) {
   const initials = getInitials(name);
   const colorClasses = getColorFromString(name);
 
@@ -23,3 +25,7 @@ export default function FighterImagePlaceholder({ name, division, className }: P
     </div>
   );
 }
+
+FighterImagePlaceholderComponent.displayName = "FighterImagePlaceholder";
+
+export default memo(FighterImagePlaceholderComponent);

@@ -38,20 +38,29 @@ export function getInitials(name: string) {
 /**
  * Maps a string to a deterministic Tailwind background + border combo.
  */
+const COLOR_CLASSES = [
+  "bg-blue-500/90 border-blue-500/50",
+  "bg-purple-500/90 border-purple-500/50",
+  "bg-amber-500/90 border-amber-500/50",
+  "bg-emerald-500/90 border-emerald-500/50",
+  "bg-rose-500/90 border-rose-500/50",
+  "bg-sky-500/90 border-sky-500/50",
+  "bg-indigo-500/90 border-indigo-500/50",
+  "bg-orange-500/90 border-orange-500/50",
+] as const;
+const COLOR_CLASS_CACHE = new Map<string, string>();
+
 export function getColorFromString(str: string) {
-  const colorClasses = [
-    "bg-blue-500/90 border-blue-500/50",
-    "bg-purple-500/90 border-purple-500/50",
-    "bg-amber-500/90 border-amber-500/50",
-    "bg-emerald-500/90 border-emerald-500/50",
-    "bg-rose-500/90 border-rose-500/50",
-    "bg-sky-500/90 border-sky-500/50",
-    "bg-indigo-500/90 border-indigo-500/50",
-    "bg-orange-500/90 border-orange-500/50",
-  ] as const;
+  const CACHE_LIMIT = 512;
+  const cacheKey = str?.toLowerCase() ?? "";
+  const cached = COLOR_CLASS_CACHE.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
 
   if (!str) {
-    return colorClasses[0];
+    COLOR_CLASS_CACHE.set(cacheKey, COLOR_CLASSES[0]);
+    return COLOR_CLASSES[0];
   }
 
   let hash = 0;
@@ -60,8 +69,16 @@ export function getColorFromString(str: string) {
     hash |= 0; // Convert to 32bit integer
   }
 
-  const colorIndex = Math.abs(hash) % colorClasses.length;
-  return colorClasses[colorIndex];
+  const colorIndex = Math.abs(hash) % COLOR_CLASSES.length;
+  const computed = COLOR_CLASSES[colorIndex];
+
+  if (COLOR_CLASS_CACHE.size >= CACHE_LIMIT) {
+    const oldestKey = COLOR_CLASS_CACHE.keys().next().value;
+    COLOR_CLASS_CACHE.delete(oldestKey);
+  }
+
+  COLOR_CLASS_CACHE.set(cacheKey, computed);
+  return computed;
 }
 
 /**

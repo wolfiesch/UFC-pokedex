@@ -1,6 +1,6 @@
 "use client";
 
-import type { PropsWithChildren } from "react";
+import { memo, type PropsWithChildren } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ type FighterImageFrameProps = PropsWithChildren<{
  * Tailwind group so that children (the actual image element or placeholder) can react
  * with subtle scale and lighting transitions.
  */
-export default function FighterImageFrame({
+function FighterImageFrameComponent({
   size = "md",
   className,
   children,
@@ -56,3 +56,7 @@ export default function FighterImageFrame({
     </div>
   );
 }
+
+FighterImageFrameComponent.displayName = "FighterImageFrame";
+
+export default memo(FighterImageFrameComponent);

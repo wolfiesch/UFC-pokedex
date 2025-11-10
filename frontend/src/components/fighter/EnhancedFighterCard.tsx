@@ -38,7 +38,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Hooks
-  const { favorites, toggleFavorite } = useFavorites({ autoInitialize: false });
+  const { isFavorite, toggleFavorite } = useFavorites({ autoInitialize: false });
   const { addToComparison, isInComparison } = useComparison();
   const { details, isLoading: isLoadingDetails, error: detailsError } = useFighterDetails(
     fighter.fighter_id,
@@ -70,7 +70,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
   };
 
   // Computed values
-  const isFavorited = favorites.some((fav) => fav.fighter_id === fighter.fighter_id);
+  const isFavorited = isFavorite(fighter.fighter_id);
   const isInComparisonList = isInComparison(fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
@@ -93,11 +93,6 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
     ? calculateStreak(details.fight_history)
     : listStreak;
   const lastFight = details ? getLastFight(details.fight_history) : null;
-
-  // Debug: Log streak info
-  if (details && streak) {
-    console.log(`[${fighter.name}] Streak:`, streak, `Fight history:`, details.fight_history?.length || 0);
-  }
 
   // Division color coding
   const getDivisionColor = (division?: string | null) => {

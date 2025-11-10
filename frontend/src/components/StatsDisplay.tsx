@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { formatMetricLabel } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -8,7 +10,7 @@ type StatsDisplayProps = {
   stats: Record<string, string | number | null | undefined>;
 };
 
-export default function StatsDisplay({ title, stats }: StatsDisplayProps) {
+function StatsDisplayComponent({ title, stats }: StatsDisplayProps) {
   return (
     <Card className="bg-card/80">
       <CardHeader className="space-y-1">
@@ -29,3 +31,7 @@ export default function StatsDisplay({ title, stats }: StatsDisplayProps) {
     </Card>
   );
 }
+
+StatsDisplayComponent.displayName = "StatsDisplay";
+
+export default memo(StatsDisplayComponent);

@@ -335,10 +335,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   isFavorite: (fighterId: string) => get().favoriteIds.has(fighterId),
 
   // Get all favorited fighters
-  getFavorites: () => {
-    const { favoriteListCache } = get();
-    return favoriteListCache.slice();
-  },
+  getFavorites: () => get().favoriteListCache,
 
   // Filter setters
   setSearchTerm: (term) => set({ searchTerm: term }),

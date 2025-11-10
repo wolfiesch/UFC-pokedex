@@ -28,18 +28,54 @@ const CATEGORY_LABEL_OVERRIDES: Record<string, string> = {
   career: "Career Overview",
 };
 
+const CACHE_LIMIT = 256;
+const TITLE_CASE_CACHE = new Map<string, string>();
+const METRIC_LABEL_CACHE = new Map<string, string>();
+const CATEGORY_LABEL_CACHE = new Map<string, string>();
+
+function cacheWithLimit(map: Map<string, string>, key: string, value: string) {
+  if (map.size >= CACHE_LIMIT) {
+    const oldestKey = map.keys().next().value;
+    map.delete(oldestKey);
+  }
+  map.set(key, value);
+}
+
 function toTitleCase(value: string): string {
-  return value
+  const normalized = value ?? "";
+  const cached = TITLE_CASE_CACHE.get(normalized);
+  if (cached) {
+    return cached;
+  }
+
+  const computed = normalized
     .split(/[_\-]+/)
     .filter(Boolean)
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(" ");
+
+  cacheWithLimit(TITLE_CASE_CACHE, normalized, computed);
+  return computed;
 }
 
 export function formatMetricLabel(metricKey: string): string {
-  return METRIC_LABEL_OVERRIDES[metricKey] ?? toTitleCase(metricKey);
+  const cached = METRIC_LABEL_CACHE.get(metricKey);
+  if (cached) {
+    return cached;
+  }
+
+  const label = METRIC_LABEL_OVERRIDES[metricKey] ?? toTitleCase(metricKey);
+  cacheWithLimit(METRIC_LABEL_CACHE, metricKey, label);
+  return label;
 }
 
 export function formatCategoryLabel(categoryKey: string): string {
-  return CATEGORY_LABEL_OVERRIDES[categoryKey] ?? toTitleCase(categoryKey);
+  const cached = CATEGORY_LABEL_CACHE.get(categoryKey);
+  if (cached) {
+    return cached;
+  }
+
+  const label = CATEGORY_LABEL_OVERRIDES[categoryKey] ?? toTitleCase(categoryKey);
+  cacheWithLimit(CATEGORY_LABEL_CACHE, categoryKey, label);
+  return label;
 }

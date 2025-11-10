@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useFavoritesStore } from "@/store/favoritesStore";
 
@@ -19,14 +20,19 @@ type UseFavoritesOptions = {
  * while using the new backend-connected store
  */
 export function useFavorites(options?: UseFavoritesOptions) {
+  const favorites = useFavoritesStore((state) => state.favoriteListCache);
+  const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+  const isFavorite = useFavoritesStore((state) => state.isFavorite);
+  const { initialize, isInitialized, isLoading, error } = useFavoritesStore(
+    (state) => ({
+      initialize: state.initialize,
+      isInitialized: state.isInitialized,
+      isLoading: state.isLoading,
+      error: state.error,
+    }),
+    shallow
+  );
   const {
-    initialize,
-    isInitialized,
-    isLoading,
-    getFavorites,
-    toggleFavorite,
-    isFavorite,
-    error,
     searchTerm,
     stanceFilter,
     divisionFilter,
@@ -35,7 +41,19 @@ export function useFavorites(options?: UseFavoritesOptions) {
     setStanceFilter,
     setDivisionFilter,
     toggleChampionStatusFilter,
-  } = useFavoritesStore();
+  } = useFavoritesStore(
+    (state) => ({
+      searchTerm: state.searchTerm,
+      stanceFilter: state.stanceFilter,
+      divisionFilter: state.divisionFilter,
+      championStatusFilters: state.championStatusFilters,
+      setSearchTerm: state.setSearchTerm,
+      setStanceFilter: state.setStanceFilter,
+      setDivisionFilter: state.setDivisionFilter,
+      toggleChampionStatusFilter: state.toggleChampionStatusFilter,
+    }),
+    shallow
+  );
   const autoInitialize = options?.autoInitialize ?? false;
 
   useEffect(() => {
@@ -50,7 +68,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
 
   // Return backward-compatible API
   return {
-    favorites: getFavorites(), // Get favorites array
+    favorites,
     toggleFavorite, // Async toggle function
     isFavorite, // Helper to check if favorited
     isLoading,
