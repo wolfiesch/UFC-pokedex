@@ -28,8 +28,10 @@ target_metadata = Base.metadata
 # Get DATABASE_URL from environment variable
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    # Replace postgresql+psycopg:// with postgresql+psycopg://  for migrations compatibility
-    # Alembic works with both sync and async drivers
+    # Auto-convert standard PostgreSQL URL to async psycopg format
+    # Railway and other platforms provide postgresql:// but we need postgresql+psycopg://
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     config.set_main_option("sqlalchemy.url", database_url)
 
 
