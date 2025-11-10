@@ -78,8 +78,6 @@ This checklist captures the reproducible steps for establishing local tooling re
 1. `make check` (runs lint and tests across backend + scraper).
 2. `make scrape-sample` (scrapes a small fighter subset and writes to `data/samples`).
 3. `make dev` (starts API + frontend concurrently).
-4. After cloning or whenever `.pre-commit-config.yaml` changes, rerun:
+4. After cloning or whenever `.pre-commit-config.yaml` changes, install the hooks:
    ```bash
    pre-commit install
-   ```
-
