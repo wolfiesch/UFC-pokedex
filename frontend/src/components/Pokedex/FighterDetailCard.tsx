@@ -91,10 +91,58 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
   });
   const isFavorited = fighter ? isFavorite(fighter.fighter_id) : false;
 
+  const [rankingHistory, setRankingHistory] = useState<any>(null);
+  const [peakRanking, setPeakRanking] = useState<any>(null);
+  const [rankingsLoading, setRankingsLoading] = useState(true);
+
   const fightHistory =
     fighter?.fight_history?.filter((fight) => fight.event_name !== null) ?? [];
   const imageSrc = resolveImageUrl(fighter?.image_url);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
+
+  // Fetch ranking data
+  useEffect(() => {
+    async function fetchRankings() {
+      if (!fighter?.fighter_id) {
+        setRankingsLoading(false);
+        return;
+      }
+
+      try {
+        setRankingsLoading(true);
+
+        // Fetch history and peak in parallel
+        const [historyRes, peakRes] = await Promise.all([
+          client.GET("/rankings/fighter/{fighter_id}/history", {
+            params: {
+              path: { fighter_id: fighter.fighter_id },
+              query: { source: "fightmatrix", limit: 50 }
+            }
+          }),
+          client.GET("/rankings/fighter/{fighter_id}/peak", {
+            params: {
+              path: { fighter_id: fighter.fighter_id },
+              query: { source: "fightmatrix" }
+            }
+          })
+        ]);
+
+        if (historyRes.data && historyRes.data.history && historyRes.data.history.length > 0) {
+          setRankingHistory(historyRes.data);
+        }
+
+        if (peakRes.data) {
+          setPeakRanking(peakRes.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch rankings:", error);
+      } finally {
+        setRankingsLoading(false);
+      }
+    }
+
+    fetchRankings();
+  }, [fighter?.fighter_id]);
 
   const handleFavoriteClick = () => {
     if (!fighter) return;
@@ -508,6 +556,33 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
             </div>
           </section>
         ) : null}
+
+        {/* Rankings Section */}
+        {!rankingsLoading && (rankingHistory || peakRanking) && (
+          <section className="space-y-6">
+            <h3 className="text-xl font-semibold">Rankings</h3>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {peakRanking && (
+                <PeakRanking
+                  fighterName={fighter.name}
+                  division={peakRanking.division}
+                  peakRank={peakRanking.peak_rank}
+                  rankDate={peakRanking.rank_date}
+                  isInterim={peakRanking.is_interim}
+                  source={peakRanking.source}
+                />
+              )}
+              {rankingHistory && rankingHistory.history.length > 0 && (
+                <div className="lg:col-span-2">
+                  <RankingHistoryChart
+                    fighterName={fighter.name}
+                    history={rankingHistory.history}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </CardContent>
     </Card>
   );
