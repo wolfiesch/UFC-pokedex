@@ -113,7 +113,7 @@ class FakeComparisonRepository:
         stance: str | None = None,
         division: str | None = None,
         champion_statuses: list[str] | None = None,
-        streak_type: Literal["win", "loss", "draw", "none"] | None = None,
+        streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
         include_streak: bool = False,
         *,
