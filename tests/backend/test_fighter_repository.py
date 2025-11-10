@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from datetime import UTC, date, timezone
 from datetime import datetime as dt_datetime
+from typing import Literal
 
 import pytest
 
@@ -29,6 +30,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
 
 from backend.db.models import Base, Fighter
 from backend.db.repositories import PostgreSQLFighterRepository
+from backend.db.repositories.fighter_repository import serialize_fighter_list_item
 
 
 @pytest_asyncio.fixture
@@ -88,6 +90,7 @@ async def test_list_fighters_orders_results_by_name_then_id(
     charlie = Fighter(id="c-id", name="Charlie")
     session.add_all([alpha, bravo, charlie])
     await session.flush()
+    await session.commit()
 
     repo = PostgreSQLFighterRepository(session)
 
@@ -182,3 +185,86 @@ async def test_get_fighters_for_comparison_surfaces_age(
     comparison = await repo.get_fighters_for_comparison(["comparison-age"])
 
     assert comparison and comparison[0].age == 34
+
+
+def test_serialize_fighter_list_item_prefers_streak_metadata() -> None:
+    """Mapper should honor freshly computed streak metadata when provided."""
+
+    fighter = Fighter(
+        id="streak-meta",
+        name="Metadata Maestro",
+        dob=date(1995, 1, 1),
+        record="10-2-0",
+        division="Lightweight",
+        current_streak_type="loss",
+        current_streak_count=1,
+        was_interim=True,
+    )
+
+    streak_meta: dict[str, int | Literal["win", "loss", "draw", "none"]] = {
+        "current_streak_type": "win",
+        "current_streak_count": 4,
+    }
+
+    item = serialize_fighter_list_item(
+        fighter,
+        reference_date=date(2024, 6, 16),
+        include_streak=True,
+        supports_was_interim=False,
+        streak_meta=streak_meta,
+    )
+
+    assert item.current_streak_type == "win"
+    assert item.current_streak_count == 4
+    assert item.was_interim is False
+
+
+def test_serialize_fighter_list_item_falls_back_to_model_columns() -> None:
+    """Model columns should drive streak data when explicit metadata is absent."""
+
+    fighter = Fighter(
+        id="streak-model",
+        name="Model Driven",
+        dob=date(1990, 7, 4),
+        record="12-1-1",
+        division="Featherweight",
+        current_streak_type="draw",
+        current_streak_count=2,
+        was_interim=True,
+    )
+
+    item = serialize_fighter_list_item(
+        fighter,
+        reference_date=date(2024, 6, 16),
+        include_streak=True,
+        supports_was_interim=True,
+    )
+
+    assert item.current_streak_type == "draw"
+    assert item.current_streak_count == 2
+    assert item.was_interim is True
+
+
+def test_serialize_fighter_list_item_omits_streak_when_not_requested() -> None:
+    """Streak fields should collapse to defaults when not requested by caller."""
+
+    fighter = Fighter(
+        id="streak-none",
+        name="Neutral Ground",
+        dob=date(1985, 12, 31),
+        record="20-5-0",
+        division="Welterweight",
+        current_streak_type="win",
+        current_streak_count=6,
+    )
+
+    item = serialize_fighter_list_item(
+        fighter,
+        reference_date=date(2024, 6, 16),
+        include_streak=False,
+        supports_was_interim=True,
+    )
+
+    assert item.current_streak_type == "none"
+    assert item.current_streak_count == 0
+    assert item.age == 38
