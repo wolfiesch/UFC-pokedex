@@ -12,6 +12,8 @@ TUNNEL_NAME="ufc-pokedex"
 DOMAIN="wolfgangschoenberger.com"
 FRONTEND_SUBDOMAIN="ufc.${DOMAIN}"
 API_SUBDOMAIN="api.ufc.${DOMAIN}"
+LOCAL_FRONTEND_URL="http://localhost:3000"
+LOCAL_API_URL="http://localhost:8000"
 
 echo -e "${BLUE}Starting Cloudflare tunnel...${NC}"
 
@@ -45,14 +47,23 @@ if ! ps -p $TUNNEL_PID > /dev/null 2>&1; then
 fi
 
 # Use the configured URLs (they're static based on DNS routes)
-FRONTEND_URL="https://${FRONTEND_SUBDOMAIN}"
-# Use direct API subdomain (no proxy needed - API tunnel works perfectly)
-API_URL="https://${API_SUBDOMAIN}"
+REMOTE_FRONTEND_URL="https://${FRONTEND_SUBDOMAIN}"
+REMOTE_API_URL="https://${API_SUBDOMAIN}"
+
+# Check whether the remote URLs are actually reachable (e.g., network or DNS
+# restrictions inside the runtime sandbox). If we cannot reach Cloudflare,
+# fall back to local loopback addresses so that `make dev` still works.
+if curl -sS --connect-timeout 2 --max-time 5 -o /dev/null "$REMOTE_API_URL"; then
+    FRONTEND_URL="$REMOTE_FRONTEND_URL"
+    API_URL="$REMOTE_API_URL"
+    echo -e "${GREEN}✓ Tunnel started successfully!${NC}"
+    echo -e "${GREEN}  Tunnel PID: $TUNNEL_PID${NC}"
+else
+    FRONTEND_URL="$LOCAL_FRONTEND_URL"
+    API_URL="$LOCAL_API_URL"
+    echo -e "${YELLOW}⚠️  Unable to reach ${REMOTE_API_URL}. Falling back to local URLs.${NC}"
+fi
 
 # Output URLs in machine-readable format (for Make to parse)
 echo "FRONTEND_URL=$FRONTEND_URL"
 echo "API_URL=$API_URL"
-
-# Output human-readable success message
-echo -e "${GREEN}✓ Tunnel started successfully!${NC}"
-echo -e "${GREEN}  Tunnel PID: $TUNNEL_PID${NC}"
