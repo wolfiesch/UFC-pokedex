@@ -5,6 +5,8 @@ scraper/
 data/
 scripts/
 .scrapy/
+.venv/
+venv/
 
 # Ignore config files
 .env.example
@@ -17,4 +19,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.uv_cache/
+.playwright-mcp/
 *.pyc
