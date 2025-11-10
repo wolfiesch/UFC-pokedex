@@ -27,7 +27,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.4.29 /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
 RUN uv venv /opt/venv \
-    && uv pip sync --python /opt/venv/bin/python --no-dev \
+    && uv pip sync --python /opt/venv/bin/python \
     && rm -rf ${UV_CACHE_DIR}
 
 FROM python:3.11-slim AS runtime
