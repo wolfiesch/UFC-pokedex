@@ -631,8 +631,8 @@ class FighterRepository(BaseRepository):
         if normalized_filters.division:
             filters.append(Fighter.division == normalized_filters.division)
 
-        supports_was_interim = await self._supports_was_interim()
         if normalized_filters.champion_statuses:
+            supports_was_interim = await self._supports_was_interim()
             # Build OR conditions for multiple champion statuses
             champion_conditions = []
             for status in normalized_filters.champion_statuses:
