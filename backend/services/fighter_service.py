@@ -7,7 +7,7 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
 import time
-from typing import Any, Literal
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from fastapi import Depends
 from pydantic import ValidationError
@@ -24,6 +24,12 @@ from backend.cache import (
 )
 from backend.db.connection import get_db
 from backend.db.repositories import PostgreSQLFighterRepository
+from backend.db.repositories.fighter_repository import (
+    FighterSearchFilters,
+    filter_roster_entries,
+    normalize_search_filters,
+    paginate_roster_entries,
+)
 from backend.schemas.fight_graph import (
     FightGraphLink,
     FightGraphNode,
@@ -73,7 +79,8 @@ async def _local_cache_set(key: str, value: Any, ttl: int | None = None) -> None
         _local_cache[key] = (time.time() + ttl_seconds, value)
 
 
-class FighterRepositoryProtocol:
+@runtime_checkable
+class FighterRepositoryProtocol(Protocol):
     async def list_fighters(
         self,
         *,
@@ -111,10 +118,31 @@ class FighterRepositoryProtocol:
     ) -> TrendsResponse:
         """Summarize longitudinal streaks and fight duration trends within the roster."""
 
+    async def search_fighters(
+        self,
+        query: str | None = None,
+        stance: str | None = None,
+        division: str | None = None,
+        champion_statuses: list[str] | None = None,
+        streak_type: Literal["win", "loss"] | None = None,
+        min_streak_count: int | None = None,
+        include_streak: bool = False,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[list[FighterListItem], int]:
+        """Search roster entries using optional fighter metadata filters."""
+
     async def get_fighters_for_comparison(
         self, fighter_ids: Sequence[str]
     ) -> list[FighterComparisonEntry]:
         """Return stat snapshots for the provided fighter identifiers."""
+
+    async def count_fighters(self) -> int:
+        """Return the total number of indexed fighters."""
+
+    async def get_random_fighter(self) -> FighterListItem | None:
+        """Return a random fighter suitable for roster teasers."""
 
     async def get_fight_graph(
         self,
@@ -150,6 +178,11 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             )
         }
 
+    def _list_item_from_detail(self, detail: FighterDetail) -> FighterListItem:
+        """Convert a stored fighter detail into a lightweight list item."""
+
+        return FighterListItem.model_validate(detail.model_dump())
+
     async def list_fighters(
         self,
         *,
@@ -160,11 +193,14 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
     ) -> Iterable[FighterListItem]:
         """Return fighters in insertion order while honoring pagination hints."""
 
-        fighters = list(self._fighters.values())
-        start = 0 if offset is None or offset < 0 else offset
-        if limit is None or limit < 0:
-            return fighters[start:]
-        return fighters[start : start + limit]
+        roster: list[FighterListItem] = [
+            self._list_item_from_detail(detail) for detail in self._fighters.values()
+        ]
+        return paginate_roster_entries(
+            roster,
+            limit=limit,
+            offset=offset,
+        )
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         return self._fighters.get(fighter_id)
@@ -267,69 +303,51 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         stance: str | None = None,
         division: str | None = None,
         champion_statuses: list[str] | None = None,
+        streak_type: Literal["win", "loss"] | None = None,
+        min_streak_count: int | None = None,
+        include_streak: bool = False,
         *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
         """Filter in-memory fighters using roster-style constraints."""
 
-        fighters = list(self._fighters.values())
-
-        # Normalize all optional filters once so comparisons stay consistent with
-        # the service-layer fallback branch and remain case-insensitive.
-        query_lower = ((query or "").strip().lower()) or None
-        stance_lower = ((stance or "").strip().lower()) or None
-        division_lower = ((division or "").strip().lower()) or None
-        normalized_champion_statuses = (
-            {
-                status.strip().lower()
-                for status in champion_statuses
-                if status and status.strip()
-            }
-            if champion_statuses
-            else None
+        roster: list[FighterListItem] = [
+            self._list_item_from_detail(detail) for detail in self._fighters.values()
+        ]
+        filters: FighterSearchFilters = normalize_search_filters(
+            query=query,
+            stance=stance,
+            division=division,
+            champion_statuses=champion_statuses,
+            streak_type=streak_type,
+            min_streak_count=min_streak_count,
         )
-
-        filtered: list[FighterListItem] = []
-        for fighter in fighters:
-            name_match = True
-            if query_lower:
-                name_parts = [fighter.name, fighter.nickname or ""]
-                haystack = " ".join(part for part in name_parts if part).lower()
-                name_match = query_lower in haystack
-
-            stance_match = True
-            if stance_lower:
-                fighter_stance = (fighter.stance or "").lower()
-                stance_match = fighter_stance == stance_lower
-
-            division_match = True
-            if division_lower:
-                fighter_division = (fighter.division or "").lower()
-                division_match = fighter_division == division_lower
-
-            champion_match = True
-            if normalized_champion_statuses:
-                # Explicitly map champion status lookups so fallbacks stay
-                # resilient if new flags appear on the schema.
-                status_flags: dict[str, bool] = {
-                    "current": bool(getattr(fighter, "is_current_champion", False)),
-                    "former": bool(getattr(fighter, "is_former_champion", False)),
-                    "interim": bool(getattr(fighter, "was_interim", False)),
-                }
-                champion_match = any(
-                    status_flags.get(status, False)
-                    for status in normalized_champion_statuses
-                )
-
-            if name_match and stance_match and division_match and champion_match:
-                filtered.append(fighter)
-
+        filtered = filter_roster_entries(
+            roster,
+            filters=filters,
+        )
         total = len(filtered)
-        start = 0 if offset is None or offset < 0 else offset
-        end = start + limit if limit is not None and limit > 0 else total
+        paginated = paginate_roster_entries(
+            filtered,
+            limit=limit,
+            offset=offset,
+        )
+        return paginated, total
 
-        return filtered[start:end], total
+    async def count_fighters(self) -> int:
+        """Return the total number of in-memory fighters."""
+
+        return len(self._fighters)
+
+    async def get_random_fighter(self) -> FighterListItem | None:
+        """Return a random fighter from the in-memory store."""
+
+        if not self._fighters:
+            return None
+        return self._list_item_from_detail(
+            secrets.choice(list(self._fighters.values()))
+        )
 
 
 def _calculate_network_density(node_count: int, link_count: int) -> float:
@@ -581,12 +599,7 @@ class FighterService:
             return int(cached)
 
         # Compute count from repository
-        if hasattr(self._repository, "count_fighters"):
-            count = await self._repository.count_fighters()
-        else:
-            # Fallback for repositories without count
-            fighters = await self._repository.list_fighters()
-            count = len(list(fighters))
+        count = await self._repository.count_fighters()
 
         # Cache for 10 minutes (count rarely changes)
         await self._cache_set(cache_key, count, ttl=600)
@@ -594,14 +607,7 @@ class FighterService:
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter."""
-        if hasattr(self._repository, "get_random_fighter"):
-            return await self._repository.get_random_fighter()
-        # Fallback for repositories without native random selection
-        fighters = await self._repository.list_fighters()
-        fighter_list = list(fighters)
-        if not fighter_list:
-            return None
-        return secrets.choice(fighter_list)
+        return await self._repository.get_random_fighter()
 
     async def search_fighters(
         self,
@@ -621,39 +627,34 @@ class FighterService:
         resolved_limit = limit if limit is not None and limit > 0 else 20
         resolved_offset = offset if offset is not None and offset >= 0 else 0
 
-        normalized_query = (query or "").strip()
-        normalized_stance = (stance or "").strip()
-        normalized_division = (division or "").strip()
-        normalized_champion_statuses = champion_statuses if champion_statuses else None
-
-        query_param = normalized_query or None
-        stance_param = normalized_stance or None
-        division_param = normalized_division or None
-        champion_statuses_param = normalized_champion_statuses
-        streak_type_param = streak_type
-        min_streak_count_param = min_streak_count
+        filters: FighterSearchFilters = normalize_search_filters(
+            query=query,
+            stance=stance,
+            division=division,
+            champion_statuses=champion_statuses,
+            streak_type=streak_type,
+            min_streak_count=min_streak_count,
+        )
 
         use_cache = self._cache is not None and (
-            normalized_query
-            or normalized_stance
-            or normalized_division
-            or normalized_champion_statuses
-            or streak_type
+            filters.query
+            or filters.stance
+            or filters.division
+            or filters.champion_statuses
+            or filters.streak_type
         )
         cache_key = (
             search_key(
-                query=normalized_query,
-                stance=normalized_stance if normalized_stance else None,
-                division=normalized_division if normalized_division else None,
+                query=filters.query or "",
+                stance=filters.stance,
+                division=filters.division,
                 champion_statuses=(
-                    ",".join(sorted(normalized_champion_statuses))
-                    if normalized_champion_statuses
+                    ",".join(filters.champion_statuses)
+                    if filters.champion_statuses
                     else None
                 ),
-                streak_type=streak_type if streak_type else None,
-                min_streak_count=(
-                    min_streak_count if min_streak_count is not None else None
-                ),
+                streak_type=filters.streak_type,
+                min_streak_count=filters.min_streak_count,
                 limit=resolved_limit,
                 offset=resolved_offset,
             )
@@ -673,59 +674,19 @@ class FighterService:
                         exc,
                     )
 
-        if hasattr(self._repository, "search_fighters"):
-            fighters, total = await self._repository.search_fighters(
-                query=query_param,
-                stance=stance_param,
-                division=division_param,
-                champion_statuses=champion_statuses_param,
-                streak_type=streak_type_param,
-                min_streak_count=min_streak_count_param,
-                include_streak=include_streak,
-                limit=resolved_limit,
-                offset=resolved_offset,
-            )
-        else:
-            fighters_iterable = await self._repository.list_fighters(
-                include_streak=include_streak
-            )
-            query_lower = query_param.lower() if query_param else None
-            stance_lower = stance_param.lower() if stance_param else None
-            division_lower = division_param.lower() if division_param else None
-            filtered: list[FighterListItem] = []
-            for fighter in fighters_iterable:
-                name_match = True
-                if query_lower:
-                    name_parts = [
-                        getattr(fighter, "name", "") or "",
-                        getattr(fighter, "nickname", "") or "",
-                    ]
-                    haystack = " ".join(part for part in name_parts if part).lower()
-                    name_match = query_lower in haystack
-                stance_match = True
-                if stance_lower:
-                    fighter_stance = (getattr(fighter, "stance", None) or "").lower()
-                    stance_match = fighter_stance == stance_lower
-                division_match = True
-                if division_lower:
-                    fighter_division = (
-                        getattr(fighter, "division", None) or ""
-                    ).lower()
-                    division_match = fighter_division == division_lower
-                streak_match = True
-                if streak_type_param and min_streak_count_param:
-                    fighter_streak_type = getattr(fighter, "current_streak_type", None)
-                    fighter_streak_count = getattr(fighter, "current_streak_count", 0)
-                    streak_match = (
-                        fighter_streak_type == streak_type_param
-                        and fighter_streak_count >= min_streak_count_param
-                    )
-                if name_match and stance_match and division_match and streak_match:
-                    filtered.append(fighter)
-
-            total = len(filtered)
-            end_index = resolved_offset + resolved_limit
-            fighters = filtered[resolved_offset:end_index]
+        fighters, total = await self._repository.search_fighters(
+            query=filters.query,
+            stance=filters.stance,
+            division=filters.division,
+            champion_statuses=(
+                list(filters.champion_statuses) if filters.champion_statuses else None
+            ),
+            streak_type=filters.streak_type,
+            min_streak_count=filters.min_streak_count,
+            include_streak=include_streak,
+            limit=resolved_limit,
+            offset=resolved_offset,
+        )
 
         has_more = resolved_offset + len(fighters) < total
         response = PaginatedFightersResponse(
@@ -763,27 +724,7 @@ class FighterService:
                         exc,
                     )
 
-        if hasattr(self._repository, "get_fighters_for_comparison"):
-            fighters = await self._repository.get_fighters_for_comparison(fighter_ids)
-        else:
-            fighters = []
-            for fighter_id in fighter_ids:
-                detail = await self._repository.get_fighter(fighter_id)
-                if detail is None:
-                    continue
-                fighters.append(
-                    FighterComparisonEntry(
-                        fighter_id=detail.fighter_id,
-                        name=detail.name,
-                        record=detail.record,
-                        division=detail.division,
-                        striking=detail.striking,
-                        grappling=detail.grappling,
-                        significant_strikes=detail.significant_strikes,
-                        takedown_stats=detail.takedown_stats,
-                        career=getattr(detail, "career", {}),
-                    )
-                )
+        fighters = await self._repository.get_fighters_for_comparison(fighter_ids)
 
         if cache_key is not None and fighters:
             await self._cache_set(
