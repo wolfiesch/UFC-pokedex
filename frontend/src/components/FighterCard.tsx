@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -20,11 +20,11 @@ import FighterImagePlaceholder from "@/components/FighterImagePlaceholder";
 import FighterImageFrame from "@/components/FighterImageFrame";
 import { cn, resolveImageUrl } from "@/lib/utils";
 
-type Props = {
+type FighterCardProps = {
   fighter: FighterListItem;
 };
 
-export default function FighterCard({ fighter }: Props) {
+function FighterCardComponent({ fighter }: FighterCardProps) {
   const { isFavorite: isFavoriteFn, toggleFavorite } = useFavorites({ autoInitialize: false });
   const isFavorite = isFavoriteFn(fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
@@ -216,3 +216,22 @@ export default function FighterCard({ fighter }: Props) {
     </Link>
   );
 }
+
+const fighterCardEqualityKeys: Array<keyof FighterListItem> = [
+  "fighter_id",
+  "name",
+  "nickname",
+  "record",
+  "division",
+  "image_url",
+  "is_current_champion",
+  "is_former_champion",
+  "was_interim",
+];
+
+const areFighterCardPropsEqual = (
+  prev: Readonly<FighterCardProps>,
+  next: Readonly<FighterCardProps>
+) => fighterCardEqualityKeys.every((key) => prev.fighter[key] === next.fighter[key]);
+
+export default memo(FighterCardComponent, areFighterCardPropsEqual);

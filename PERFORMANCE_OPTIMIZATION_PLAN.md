@@ -360,6 +360,20 @@ function deriveFavoritesSnapshot(collection: FavoriteCollectionDetail | null) {
 
 ---
 
+### Fix #11: Fighter Card Memoization
+
+**File**: `frontend/src/components/FighterCard.tsx`
+**Status**: ✅ Completed
+
+**Details**:
+- Wrapped the list card component in `React.memo` with a curated equality check so roster rerenders only fire when visible fighter properties change, while still responding instantly to favorites state via the hook.
+- Keeps the placeholder/image logic untouched but stops large grids from repainting just because other entries update their store state.
+
+**Impact**:
+- Scrolling and filtering large fighter lists now generate fewer React commits, reducing main-thread work especially on lower-end devices.
+
+---
+
 ## Performance Monitoring
 
 ### Metrics to Track
