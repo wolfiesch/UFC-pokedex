@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -30,6 +30,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFavorites } from "@/hooks/useFavorites";
+import RankingHistoryChart from "@/components/rankings/RankingHistoryChart";
+import PeakRanking from "@/components/rankings/PeakRanking";
+import client from "@/lib/api-client";
 
 const ChartSkeleton = ({ title }: { title: string }) => (
   <Card className="bg-card/60">

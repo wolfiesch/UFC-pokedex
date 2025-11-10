@@ -336,7 +336,7 @@
   <div class="container">
     <header>
       <h1>⚡ Ceviz Performance Report</h1>
-      <p class="subtitle">Generated on 11/10/2025, 3:47:26 AM</p>
+      <p class="subtitle">Generated on 11/10/2025, 3:47:16 AM</p>
     </header>
 
     <div class="summary-cards">
@@ -363,7 +363,7 @@
 
       <div class="card">
         <div class="card-title">Analysis Time</div>
-        <div class="card-value">116ms</div>
+        <div class="card-value">110ms</div>
         <div class="card-label">Blazing fast ⚡</div>
       </div>
     </div>
@@ -1470,34 +1470,6 @@
               </td>
             </tr>
           
-            <tr data-severity="warning" data-category="io">
-              <td>
-                <span class="severity-badge severity-warning">warning</span>
-              </td>
-              <td>
-                <span class="category-icon">📡</span>
-                io
-              </td>
-              <td>
-                <div class="issue-message">3 sequential await calls create waterfall</div>
-                
-                <div class="issue-suggestion">Impact: 3x slower than necessary</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/favorites/FavoritesDashboardClient.tsx"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/favorites/FavoritesDashboardClient.tsx:0:0">
-                    .../frontend/app/favorites/FavoritesDashboardClient.tsx
-                  </a>
-                </div>
-                
-              </td>
-              <td>
-                <div class="issue-suggestion">Use Promise.all() to run these operations in parallel</div>
-              </td>
-            </tr>
-          
             <tr data-severity="critical" data-category="cpu">
               <td>
                 <span class="severity-badge severity-critical">critical</span>
@@ -1579,6 +1551,34 @@
               </td>
               <td>
                 <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="warning" data-category="io">
+              <td>
+                <span class="severity-badge severity-warning">warning</span>
+              </td>
+              <td>
+                <span class="category-icon">📡</span>
+                io
+              </td>
+              <td>
+                <div class="issue-message">3 sequential await calls create waterfall</div>
+                
+                <div class="issue-suggestion">Impact: 3x slower than necessary</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/favorites/FavoritesDashboardClient.tsx"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/favorites/FavoritesDashboardClient.tsx:0:0">
+                    .../frontend/app/favorites/FavoritesDashboardClient.tsx
+                  </a>
+                </div>
+                
+              </td>
+              <td>
+                <div class="issue-suggestion">Use Promise.all() to run these operations in parallel</div>
               </td>
             </tr>
           
@@ -2683,90 +2683,6 @@
                 cpu
               </td>
               <td>
-                <div class="issue-message">Array.includes() inside loop creates O(n*m) complexity</div>
-                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
-                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/filters/ChampionStatusFilter.tsx:24:28"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/filters/ChampionStatusFilter.tsx:24:28">
-                    .../src/components/filters/ChampionStatusFilter.tsx
-                  </a>
-                </div>
-                <div class="issue-suggestion">Line 24:28</div>
-              </td>
-              <td>
-                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
-              </td>
-            </tr>
-          
-            <tr data-severity="critical" data-category="cpu">
-              <td>
-                <span class="severity-badge severity-critical">critical</span>
-              </td>
-              <td>
-                <span class="category-icon">⚡</span>
-                cpu
-              </td>
-              <td>
-                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
-                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
-                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/RelatedEventsWidget.tsx:35:17"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/RelatedEventsWidget.tsx:35:17">
-                    .../src/components/events/RelatedEventsWidget.tsx
-                  </a>
-                </div>
-                <div class="issue-suggestion">Line 35:17</div>
-              </td>
-              <td>
-                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
-              </td>
-            </tr>
-          
-            <tr data-severity="critical" data-category="cpu">
-              <td>
-                <span class="severity-badge severity-critical">critical</span>
-              </td>
-              <td>
-                <span class="category-icon">⚡</span>
-                cpu
-              </td>
-              <td>
-                <div class="issue-message">Nested loop detected (O(n²) complexity)</div>
-                <div class="issue-suggestion">Complexity: <strong>O(n²)</strong></div>
-                <div class="issue-suggestion">Impact: 100ms → 10s for 1000 items</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/EventTimeline.tsx:52:13"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/EventTimeline.tsx:52:13">
-                    .../src/components/events/EventTimeline.tsx
-                  </a>
-                </div>
-                <div class="issue-suggestion">Line 52:13</div>
-              </td>
-              <td>
-                <div class="issue-suggestion">Use Map/Set for O(1) lookups instead of nested loops</div>
-              </td>
-            </tr>
-          
-            <tr data-severity="critical" data-category="cpu">
-              <td>
-                <span class="severity-badge severity-critical">critical</span>
-              </td>
-              <td>
-                <span class="category-icon">⚡</span>
-                cpu
-              </td>
-              <td>
                 <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
                 <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
                 <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
@@ -2923,6 +2839,62 @@
               </td>
               <td>
                 <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="critical" data-category="cpu">
+              <td>
+                <span class="severity-badge severity-critical">critical</span>
+              </td>
+              <td>
+                <span class="category-icon">⚡</span>
+                cpu
+              </td>
+              <td>
+                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
+                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
+                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/RelatedEventsWidget.tsx:35:17"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/RelatedEventsWidget.tsx:35:17">
+                    .../src/components/events/RelatedEventsWidget.tsx
+                  </a>
+                </div>
+                <div class="issue-suggestion">Line 35:17</div>
+              </td>
+              <td>
+                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="critical" data-category="cpu">
+              <td>
+                <span class="severity-badge severity-critical">critical</span>
+              </td>
+              <td>
+                <span class="category-icon">⚡</span>
+                cpu
+              </td>
+              <td>
+                <div class="issue-message">Nested loop detected (O(n²) complexity)</div>
+                <div class="issue-suggestion">Complexity: <strong>O(n²)</strong></div>
+                <div class="issue-suggestion">Impact: 100ms → 10s for 1000 items</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/EventTimeline.tsx:52:13"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/events/EventTimeline.tsx:52:13">
+                    .../src/components/events/EventTimeline.tsx
+                  </a>
+                </div>
+                <div class="issue-suggestion">Line 52:13</div>
+              </td>
+              <td>
+                <div class="issue-suggestion">Use Map/Set for O(1) lookups instead of nested loops</div>
               </td>
             </tr>
           
@@ -3284,6 +3256,34 @@
                   </a>
                 </div>
                 <div class="issue-suggestion">Line 119:6</div>
+              </td>
+              <td>
+                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="critical" data-category="cpu">
+              <td>
+                <span class="severity-badge severity-critical">critical</span>
+              </td>
+              <td>
+                <span class="category-icon">⚡</span>
+                cpu
+              </td>
+              <td>
+                <div class="issue-message">Array.includes() inside loop creates O(n*m) complexity</div>
+                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
+                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/filters/ChampionStatusFilter.tsx:24:28"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/src/components/filters/ChampionStatusFilter.tsx:24:28">
+                    .../src/components/filters/ChampionStatusFilter.tsx
+                  </a>
+                </div>
+                <div class="issue-suggestion">Line 24:28</div>
               </td>
               <td>
                 <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
@@ -3943,6 +3943,62 @@
                 cpu
               </td>
               <td>
+                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
+                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
+                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:49:25"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:49:25">
+                    .../app/rankings/[division]/page.tsx
+                  </a>
+                </div>
+                <div class="issue-suggestion">Line 49:25</div>
+              </td>
+              <td>
+                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="critical" data-category="cpu">
+              <td>
+                <span class="severity-badge severity-critical">critical</span>
+              </td>
+              <td>
+                <span class="category-icon">⚡</span>
+                cpu
+              </td>
+              <td>
+                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
+                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
+                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
+              </td>
+              <td>
+                <div class="file-path">
+                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:50:27"
+                     class="vscode-link"
+                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:50:27">
+                    .../app/rankings/[division]/page.tsx
+                  </a>
+                </div>
+                <div class="issue-suggestion">Line 50:27</div>
+              </td>
+              <td>
+                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
+              </td>
+            </tr>
+          
+            <tr data-severity="critical" data-category="cpu">
+              <td>
+                <span class="severity-badge severity-critical">critical</span>
+              </td>
+              <td>
+                <span class="category-icon">⚡</span>
+                cpu
+              </td>
+              <td>
                 <div class="issue-message">Nested loop detected (O(n²) complexity)</div>
                 <div class="issue-suggestion">Complexity: <strong>O(n²)</strong></div>
                 <div class="issue-suggestion">Impact: 100ms → 10s for 1000 items</div>
@@ -4043,62 +4099,6 @@
               </td>
               <td>
                 <div class="issue-suggestion">Use Promise.all() to run these operations in parallel</div>
-              </td>
-            </tr>
-          
-            <tr data-severity="critical" data-category="cpu">
-              <td>
-                <span class="severity-badge severity-critical">critical</span>
-              </td>
-              <td>
-                <span class="category-icon">⚡</span>
-                cpu
-              </td>
-              <td>
-                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
-                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
-                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:49:25"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:49:25">
-                    .../app/rankings/[division]/page.tsx
-                  </a>
-                </div>
-                <div class="issue-suggestion">Line 49:25</div>
-              </td>
-              <td>
-                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
-              </td>
-            </tr>
-          
-            <tr data-severity="critical" data-category="cpu">
-              <td>
-                <span class="severity-badge severity-critical">critical</span>
-              </td>
-              <td>
-                <span class="category-icon">⚡</span>
-                cpu
-              </td>
-              <td>
-                <div class="issue-message">Array.filter() inside loop creates O(n*m) complexity</div>
-                <div class="issue-suggestion">Complexity: <strong>O(n*m)</strong></div>
-                <div class="issue-suggestion">Impact: 10ms → 5s for 1000x1000 items</div>
-              </td>
-              <td>
-                <div class="file-path">
-                  <a href="vscode://file/Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:50:27"
-                     class="vscode-link"
-                     title="Open in VSCode: /Users/wolfgangschoenberger/Projects/UFC-pokedex/frontend/app/rankings/[division]/page.tsx:50:27">
-                    .../app/rankings/[division]/page.tsx
-                  </a>
-                </div>
-                <div class="issue-suggestion">Line 50:27</div>
-              </td>
-              <td>
-                <div class="issue-suggestion">Convert array to Map/Set before the loop for O(1) lookups</div>
               </td>
             </tr>
           
