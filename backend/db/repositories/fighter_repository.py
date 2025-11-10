@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 from typing import cast as typing_cast
 
 from sqlalchemy import func, literal, select, true, union_all
@@ -46,6 +47,158 @@ from backend.services.image_resolver import (
 
 # Type alias for valid streak types
 StreakType = Literal["win", "loss", "draw", "none"]
+
+# Generic roster entry used by helper utilities that can operate on
+# ``FighterListItem`` instances or richer ``FighterDetail`` records.
+RosterEntry = TypeVar("RosterEntry")
+
+
+@dataclass(frozen=True)
+class FighterSearchFilters:
+    """Normalized roster search filters shared by multiple repositories."""
+
+    query: str | None
+    stance: str | None
+    division: str | None
+    champion_statuses: tuple[str, ...] | None
+    streak_type: StreakType | None
+    min_streak_count: int | None
+
+
+def normalize_search_filters(
+    *,
+    query: str | None,
+    stance: str | None,
+    division: str | None,
+    champion_statuses: Iterable[str] | None,
+    streak_type: str | None,
+    min_streak_count: int | None,
+) -> FighterSearchFilters:
+    """Return sanitized search inputs for consistent roster filtering.
+
+    The normalization step trims whitespace, deduplicates champion status flags,
+    coerces streak metadata into canonical literals, and ensures streak counts
+    are only considered when meaningful.
+    """
+
+    normalized_query = (query or "").strip()
+    normalized_stance = (stance or "").strip()
+    normalized_division = (division or "").strip()
+
+    champion_tuple: tuple[str, ...] | None = None
+    if champion_statuses:
+        champion_set = {
+            status.strip().lower()
+            for status in champion_statuses
+            if status and status.strip()
+        }
+        if champion_set:
+            champion_tuple = tuple(sorted(champion_set))
+
+    normalized_streak: StreakType | None = None
+    if streak_type:
+        candidate = streak_type.strip().lower()
+        normalized_streak = _validate_streak_type(candidate)
+        if normalized_streak not in ("win", "loss"):
+            raise ValueError(
+                "streak_type must be either 'win' or 'loss' when searching fighters",
+            )
+
+    normalized_count = (
+        min_streak_count
+        if (min_streak_count is not None and min_streak_count > 0)
+        else None
+    )
+
+    return FighterSearchFilters(
+        query=normalized_query or None,
+        stance=normalized_stance or None,
+        division=normalized_division or None,
+        champion_statuses=champion_tuple,
+        streak_type=normalized_streak,
+        min_streak_count=normalized_count,
+    )
+
+
+def filter_roster_entries(
+    roster: Iterable[RosterEntry],
+    *,
+    filters: FighterSearchFilters,
+) -> list[RosterEntry]:
+    """Return roster entries that satisfy the provided filters."""
+
+    query_lower = filters.query.lower() if filters.query else None
+    stance_lower = filters.stance.lower() if filters.stance else None
+    division_lower = filters.division.lower() if filters.division else None
+
+    filtered: list[RosterEntry] = []
+    for fighter in roster:
+        name_value = getattr(fighter, "name", "") or ""
+        nickname_value = getattr(fighter, "nickname", "") or ""
+        stance_value = getattr(fighter, "stance", "") or ""
+        division_value = getattr(fighter, "division", "") or ""
+
+        matches_query = True
+        if query_lower:
+            haystack = " ".join(
+                part for part in (name_value, nickname_value) if part
+            ).lower()
+            matches_query = query_lower in haystack
+
+        matches_stance = True
+        if stance_lower:
+            matches_stance = stance_value.lower() == stance_lower
+
+        matches_division = True
+        if division_lower:
+            matches_division = division_value.lower() == division_lower
+
+        matches_champion = True
+        if filters.champion_statuses:
+            status_flags: dict[str, bool] = {
+                "current": bool(getattr(fighter, "is_current_champion", False)),
+                "former": bool(getattr(fighter, "is_former_champion", False)),
+                "interim": bool(getattr(fighter, "was_interim", False)),
+            }
+            matches_champion = any(
+                status_flags.get(status, False) for status in filters.champion_statuses
+            )
+
+        matches_streak = True
+        if filters.streak_type and filters.min_streak_count:
+            streak_type = getattr(fighter, "current_streak_type", "none") or "none"
+            streak_count = int(getattr(fighter, "current_streak_count", 0) or 0)
+            matches_streak = (
+                streak_type == filters.streak_type
+                and streak_count >= filters.min_streak_count
+            )
+
+        if (
+            matches_query
+            and matches_stance
+            and matches_division
+            and matches_champion
+            and matches_streak
+        ):
+            filtered.append(fighter)
+
+    return filtered
+
+
+def paginate_roster_entries(
+    roster: Iterable[RosterEntry],
+    *,
+    limit: int | None,
+    offset: int | None,
+) -> list[RosterEntry]:
+    """Apply simple limit/offset pagination to roster data sets."""
+
+    entries = list(roster)
+    start_index = offset if (offset is not None and offset >= 0) else 0
+    if limit is None or limit <= 0:
+        return entries[start_index:]
+    return entries[start_index : start_index + limit]
+
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -231,8 +384,10 @@ class FighterRepository(BaseRepository):
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        fighter_query = select(Fighter).options(load_only(*load_columns)).where(
-            Fighter.id == fighter_id
+        fighter_query = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .where(Fighter.id == fighter_id)
         )
         fighter_result = await self._session.execute(fighter_query)
         fighter = fighter_result.scalar_one_or_none()
@@ -264,8 +419,7 @@ class FighterRepository(BaseRepository):
                 Fight.stats,
                 literal(True).label("is_primary"),  # Mark as primary fight
                 literal(None).label("inverted_opponent_id"),  # Placeholder
-            )
-            .where(Fight.fighter_id == fighter_id)
+            ).where(Fight.fighter_id == fighter_id)
         ).cte("primary_fights")
 
         # CTE 2: Opponent fights (where fighter is opponent_id) with opponent names via JOIN
@@ -274,7 +428,9 @@ class FighterRepository(BaseRepository):
                 Fight.id.label("fight_id"),
                 Fight.event_name,
                 Fight.event_date,
-                literal(None).label("opponent_id"),  # Will use inverted_opponent_id instead
+                literal(None).label(
+                    "opponent_id"
+                ),  # Will use inverted_opponent_id instead
                 literal(None).label("opponent_name"),  # Will fetch from JOIN
                 Fight.result,
                 Fight.method,
@@ -284,12 +440,13 @@ class FighterRepository(BaseRepository):
                 Fight.stats,
                 literal(False).label("is_primary"),  # Mark as opponent fight
                 Fight.fighter_id.label("inverted_opponent_id"),  # Fighter is opponent
-            )
-            .where(Fight.opponent_id == fighter_id)
+            ).where(Fight.opponent_id == fighter_id)
         ).cte("opponent_fights")
 
         # UNION ALL: Combine both CTEs
-        combined_query = select(primary_fights_cte).union_all(select(opponent_fights_cte))
+        combined_query = select(primary_fights_cte).union_all(
+            select(opponent_fights_cte)
+        )
 
         # Execute single query to get all fights
         all_fights_result = await self._session.execute(combined_query)
@@ -378,7 +535,9 @@ class FighterRepository(BaseRepository):
 
                 if fight_key not in fight_dict:
                     fight_dict[fight_key] = new_entry
-                elif should_replace_fight(fight_dict[fight_key].result, inverted_result):
+                elif should_replace_fight(
+                    fight_dict[fight_key].result, inverted_result
+                ):
                     # Replace with better result
                     fight_dict[fight_key] = new_entry
 
@@ -389,9 +548,7 @@ class FighterRepository(BaseRepository):
         # Log query performance
         query_time = time.time() - start_time
         if query_time > 0.1:  # Log slow queries (>100ms)
-            logger.warning(
-                f"Slow fighter query: {fighter_id} took {query_time:.3f}s"
-            )
+            logger.warning(f"Slow fighter query: {fighter_id} took {query_time:.3f}s")
 
         # Compute record from fight_history if not already populated
         computed_record = fighter.record
@@ -452,24 +609,39 @@ class FighterRepository(BaseRepository):
         """
 
         filters = []
-        if query:
+        normalized_filters = normalize_search_filters(
+            query=query,
+            stance=stance,
+            division=division,
+            champion_statuses=champion_statuses,
+            streak_type=streak_type,
+            min_streak_count=min_streak_count,
+        )
+
+        if normalized_filters.query:
             # Use ILIKE for case-insensitive search
             # This works with PostgreSQL trigram indexes (pg_trgm) for 10x speedup
             # Falls back to standard LIKE behavior in SQLite
-            pattern = f"%{query}%"
-            filters.append((Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern)))
-        if stance:
-            filters.append(Fighter.stance == stance)
-        if division:
-            filters.append(Fighter.division == division)
-        if champion_statuses:
+            pattern = f"%{normalized_filters.query}%"
+            filters.append(
+                (Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern))
+            )
+        if normalized_filters.stance:
+            filters.append(Fighter.stance == normalized_filters.stance)
+        if normalized_filters.division:
+            filters.append(Fighter.division == normalized_filters.division)
+
+        supports_was_interim = await self._supports_was_interim()
+        if normalized_filters.champion_statuses:
             # Build OR conditions for multiple champion statuses
             champion_conditions = []
-            for status in champion_statuses:
+            for status in normalized_filters.champion_statuses:
                 if status == "current":
                     champion_conditions.append(Fighter.is_current_champion.is_(True))
                 elif status == "former":
                     champion_conditions.append(Fighter.is_former_champion.is_(True))
+                elif status == "interim" and supports_was_interim:
+                    champion_conditions.append(Fighter.was_interim.is_(True))
             if champion_conditions:
                 # Use OR to combine conditions (show fighters matching ANY status)
                 from sqlalchemy import or_
@@ -477,19 +649,22 @@ class FighterRepository(BaseRepository):
                 filters.append(or_(*champion_conditions))
 
         # Streak filtering using pre-computed columns (Phase 2 optimization)
-        if streak_type and min_streak_count:
-            filters.append(Fighter.current_streak_type == streak_type)
-            filters.append(Fighter.current_streak_count >= min_streak_count)
+        if (
+            normalized_filters.streak_type
+            and normalized_filters.min_streak_count is not None
+        ):
+            filters.append(
+                Fighter.current_streak_type == normalized_filters.streak_type
+            )
+            filters.append(
+                Fighter.current_streak_count >= normalized_filters.min_streak_count
+            )
 
         base_columns = self._fighter_summary_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        stmt = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .order_by(Fighter.name)
-        )
+        stmt = select(Fighter).options(load_only(*load_columns)).order_by(Fighter.name)
         count_stmt = select(func.count()).select_from(Fighter)
 
         for condition in filters:
@@ -631,7 +806,9 @@ class FighterRepository(BaseRepository):
                     ),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
-                    was_interim=(fighter.was_interim if supports_was_interim else False),
+                    was_interim=(
+                        fighter.was_interim if supports_was_interim else False
+                    ),
                 )
             )
 
@@ -688,7 +865,9 @@ class FighterRepository(BaseRepository):
 
         # Check if fighter exists
         query = (
-            select(Fighter).options(load_only(Fighter.id)).where(Fighter.id == fighter_id)
+            select(Fighter)
+            .options(load_only(Fighter.id))
+            .where(Fighter.id == fighter_id)
         )
         result = await self._session.execute(query)
         existing_fighter = result.scalar_one_or_none()
@@ -779,21 +958,18 @@ class FighterRepository(BaseRepository):
         # Apply window limit to total combined fights per fighter
         if effective_window is not None:
             # Use window function to limit total fights per fighter
-            stmt = (
-                select(
-                    combined.c.subject_id,
-                    combined.c.event_date,
-                    combined.c.result,
-                    combined.c.is_primary,
-                    func.row_number()
-                    .over(
-                        partition_by=combined.c.subject_id,
-                        order_by=combined.c.event_date.desc().nulls_last(),
-                    )
-                    .label("row_num"),
+            stmt = select(
+                combined.c.subject_id,
+                combined.c.event_date,
+                combined.c.result,
+                combined.c.is_primary,
+                func.row_number()
+                .over(
+                    partition_by=combined.c.subject_id,
+                    order_by=combined.c.event_date.desc().nulls_last(),
                 )
-                .order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
-            )
+                .label("row_num"),
+            ).order_by(combined.c.subject_id, combined.c.event_date.desc().nulls_last())
             # Filter to only the first N fights per fighter
             stmt = select(
                 stmt.c.subject_id,
