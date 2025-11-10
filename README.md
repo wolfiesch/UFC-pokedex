@@ -30,6 +30,12 @@ Refer to `Plans/Initial_Plan.md` for the full project roadmap.
 
 Container builds use a multi-stage `uv` pipeline so dependency resolution stays consistent with local development.
 
+```bash
+cp .env.example .env
+```
+
+Copy the sample environment file before running any container commands and adjust the PostgreSQL credentials as needed.
+
 ### Build the backend image
 
 ```bash
@@ -44,7 +50,7 @@ The builder stage provisions a reusable virtual environment via `uv`, compiles w
 docker compose up --build
 ```
 
-The `api` service exposes `http://localhost:8000`, connects to PostgreSQL via `DATABASE_URL`, and caches responses through Redis using `REDIS_URL`. Health-checked dependencies ensure the FastAPI container starts only after the database is ready.
+The `api` service exposes `http://localhost:8000`, connects to PostgreSQL via `DATABASE_URL`, and caches responses through Redis using `REDIS_URL`. These variables come from the root `.env` file so secrets stay out of version control. Health-checked dependencies ensure the FastAPI container starts only after Redis and the database are ready.
 
 To rebuild only the backend image after code changes:
 
