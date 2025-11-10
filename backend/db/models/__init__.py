@@ -17,6 +17,7 @@ from sqlalchemy import (
     Table,
     Index,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -195,6 +196,20 @@ class FighterRanking(Base):
         Index("ix_fighter_rankings_fighter_date", "fighter_id", "rank_date"),
         Index("ix_fighter_rankings_division_date_source", "division", "rank_date", "source"),
         Index("ix_fighter_rankings_fighter_source", "fighter_id", "source"),
+        Index(
+            "ix_fighter_rankings_fighter_source_rankdate",
+            "fighter_id",
+            "source",
+            "rank_date",
+        ),
+        Index(
+            "ix_fighter_rankings_fighter_source_rank_rankdate",
+            "fighter_id",
+            "source",
+            "rank",
+            "rank_date",
+            postgresql_where=text("rank IS NOT NULL"),
+        ),
         UniqueConstraint(
             "fighter_id",
             "division",

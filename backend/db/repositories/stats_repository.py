@@ -261,7 +261,11 @@ class StatsRepository(BaseRepository):
         start_date: date | None,
         end_date: date | None,
     ) -> list[LeaderboardEntry]:
-        """Collect leaderboard entries for a specific metric using window functions."""
+        """Collect leaderboard entries for a specific metric using window functions.
+
+        This method deduplicates fighters by taking the maximum value for each fighter
+        when multiple stat entries exist for the same metric.
+        """
 
         numeric_value = self._numeric_stat_value()
 
@@ -273,32 +277,70 @@ class StatsRepository(BaseRepository):
         if end_date is not None:
             fight_exists = fight_exists.where(Fight.event_date <= end_date)
 
-        ranked = (
+        # First, aggregate by fighter to handle duplicates (take max value per fighter)
+        # Also count fights for data quality indicator
+        fight_count_cte = (
+            select(
+                Fight.fighter_id,
+                func.count(Fight.id).label("fight_count")
+            )
+            .where(Fight.event_date.isnot(None))
+        )
+        if start_date is not None:
+            fight_count_cte = fight_count_cte.where(Fight.event_date >= start_date)
+        if end_date is not None:
+            fight_count_cte = fight_count_cte.where(Fight.event_date <= end_date)
+        fight_count_cte = fight_count_cte.group_by(Fight.fighter_id).cte("fight_counts")
+
+        aggregated = (
             select(
                 fighter_stats.c.fighter_id.label("fighter_id"),
                 Fighter.name.label("fighter_name"),
                 Fighter.division.label("division"),
-                numeric_value.label("numeric_value"),
-                func.row_number().over(order_by=numeric_value.desc()).label("rank"),
+                func.max(numeric_value).label("numeric_value"),
+                func.max(fight_count_cte.c.fight_count).label("fight_count"),
             )
             .join(Fighter, Fighter.id == fighter_stats.c.fighter_id)
+            .outerjoin(
+                fight_count_cte,
+                fight_count_cte.c.fighter_id == fighter_stats.c.fighter_id
+            )
             .where(fighter_stats.c.metric == metric_name)
             .where(numeric_value.isnot(None))
+            .group_by(
+                fighter_stats.c.fighter_id,
+                Fighter.name,
+                Fighter.division
+            )
         )
 
         if start_date is not None or end_date is not None:
-            ranked = ranked.where(fight_exists.exists())
+            aggregated = aggregated.where(fight_exists.exists())
 
-        ranked_subquery = ranked.subquery()
+        aggregated_subquery = aggregated.subquery()
+
+        # Then rank the aggregated results
+        ranked = (
+            select(
+                aggregated_subquery.c.fighter_id,
+                aggregated_subquery.c.fighter_name,
+                aggregated_subquery.c.numeric_value,
+                aggregated_subquery.c.fight_count,
+                func.row_number()
+                .over(order_by=aggregated_subquery.c.numeric_value.desc())
+                .label("rank"),
+            )
+        ).subquery()
 
         stmt = (
             select(
-                ranked_subquery.c.fighter_id,
-                ranked_subquery.c.fighter_name,
-                ranked_subquery.c.numeric_value,
+                ranked.c.fighter_id,
+                ranked.c.fighter_name,
+                ranked.c.numeric_value,
+                ranked.c.fight_count,
             )
-            .where(ranked_subquery.c.rank <= limit)
-            .order_by(ranked_subquery.c.rank)
+            .where(ranked.c.rank <= limit)
+            .order_by(ranked.c.rank)
         )
 
         result = await self._session.execute(stmt)
@@ -308,6 +350,7 @@ class StatsRepository(BaseRepository):
                 fighter_name=row.fighter_name,
                 metric_value=float(row.numeric_value),
                 detail_url=f"/fighters/{row.fighter_id}",
+                fight_count=int(row.fight_count) if row.fight_count else None,
             )
             for row in result.fetchall()
         ]
