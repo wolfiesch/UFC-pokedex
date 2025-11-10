@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd frontend && pnpm run build",
-  "outputDirectory": "frontend/.next",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "cd frontend && corepack enable && pnpm install",
-  "devCommand": "cd frontend && pnpm run dev",
+  "installCommand": "corepack enable && pnpm install",
+  "devCommand": "pnpm run dev",
   "regions": ["iad1"],
   "env": {
-    "NEXT_PUBLIC_API_BASE_URL": "https://your-railway-backend.railway.app"
+    "NEXT_PUBLIC_API_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app"
   }
 }

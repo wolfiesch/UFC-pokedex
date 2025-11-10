@@ -5,9 +5,9 @@
     "buildCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync"
   },
   "deploy": {
-    "startCommand": "export PATH=\"$HOME/.cargo/bin:$PATH\" && uv run python -m alembic upgrade head && uv run uvicorn backend.main:app --host 0.0.0.0 --port 8080",
+    "startCommand": "export PATH=\"$HOME/.cargo/bin:$PATH\" && uv run alembic upgrade head && uv run uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 100,
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
