@@ -8,33 +8,31 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.db.connection import begin_engine_transaction
 
 logger = logging.getLogger(__name__)
 
 
-async def warmup_database() -> None:
+async def warmup_database(
+    resolve_db_type: Callable[[], str] | None = None,
+    resolve_engine: Callable[[], AsyncEngine] | None = None,
+) -> None:
     """Warm up database connection pool.
 
     Executes a simple query to initialize the connection pool and ORM machinery.
     Gracefully degrades if warmup fails.
     """
     try:
-        try:
-            # Prefer the wrappers exposed in ``backend.main`` so test doubles
-            # patched at the API layer are honoured here as well.
-            from backend.main import get_database_type as resolve_db_type
-            from backend.main import get_engine as resolve_engine
-        except ImportError:
-            from backend.db.connection import (  # type: ignore[no-redef]
-                get_database_type as resolve_db_type,
-            )
-            from backend.db.connection import (
-                get_engine as resolve_engine,
-            )
+        if resolve_db_type is None:
+            from backend.db.connection import get_database_type as resolve_db_type
+
+        if resolve_engine is None:
+            from backend.db.connection import get_engine as resolve_engine
 
         start = time.time()
         db_type = resolve_db_type()
@@ -82,7 +80,9 @@ async def warmup_redis() -> None:
         logger.warning(f"Redis warmup failed: {e}")
 
 
-async def warmup_repository_queries() -> None:
+async def warmup_repository_queries(
+    resolve_db_type: Callable[[], str] | None = None,
+) -> None:
     """Warm up common repository queries.
 
     Executes lightweight queries to initialize ORM mappers and relationship loaders.
@@ -95,12 +95,8 @@ async def warmup_repository_queries() -> None:
     try:
         start = time.time()
 
-        try:
-            from backend.main import get_database_type as resolve_db_type
-        except ImportError:
-            from backend.db.connection import (  # type: ignore[no-redef]
-                get_database_type as resolve_db_type,
-            )
+        if resolve_db_type is None:
+            from backend.db.connection import get_database_type as resolve_db_type
 
         db_type = resolve_db_type()
 
@@ -131,7 +127,10 @@ async def warmup_repository_queries() -> None:
         logger.warning(f"Repository warmup failed: {e}")
 
 
-async def warmup_all() -> None:
+async def warmup_all(
+    resolve_db_type: Callable[[], str] | None = None,
+    resolve_engine: Callable[[], AsyncEngine] | None = None,
+) -> None:
     """Warm up all backend connections and caches.
 
     Executes all warmup functions in sequence and logs total warmup time.
@@ -142,9 +141,12 @@ async def warmup_all() -> None:
 
     start = time.time()
 
-    await warmup_database()
+    await warmup_database(
+        resolve_db_type=resolve_db_type,
+        resolve_engine=resolve_engine,
+    )
     await warmup_redis()
-    await warmup_repository_queries()
+    await warmup_repository_queries(resolve_db_type=resolve_db_type)
 
     total_elapsed = (time.time() - start) * 1000
     logger.info("=" * 60)

@@ -19,6 +19,7 @@ import {
 
 interface EnhancedFighterCardProps {
   fighter: FighterListItem;
+  priority?: boolean; // For LCP optimization - set to true for first card
 }
 
 /**
@@ -33,7 +34,7 @@ interface EnhancedFighterCardProps {
  * - Smooth animations
  * - Better visual hierarchy
  */
-function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
+function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFighterCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -203,6 +204,7 @@ function EnhancedFighterCardComponent({ fighter }: EnhancedFighterCardProps) {
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                priority={priority}
                 onError={() => setImageError(true)}
               />
             ) : (

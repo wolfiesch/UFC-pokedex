@@ -127,15 +127,17 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           })
         ]);
 
-        if (historyRes.data && historyRes.data.history && historyRes.data.history.length > 0) {
+        // Only set data if the response was successful and contains actual data
+        if (!historyRes.error && historyRes.data && historyRes.data.history && historyRes.data.history.length > 0) {
           setRankingHistory(historyRes.data);
         }
 
-        if (peakRes.data) {
+        if (!peakRes.error && peakRes.data && peakRes.data.peak_rank !== undefined) {
           setPeakRanking(peakRes.data);
         }
       } catch (error) {
-        console.error("Failed to fetch rankings:", error);
+        // Silently handle errors - rankings data is optional
+        // Most fighters won't have FightMatrix rankings
       } finally {
         setRankingsLoading(false);
       }

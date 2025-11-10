@@ -16,7 +16,7 @@ const EnhancedFighterCard = dynamic(
     loading: () => <SkeletonFighterCard />,
     ssr: false,
   }
-) as (props: { fighter: FighterListItem }) => JSX.Element;
+) as (props: { fighter: FighterListItem; priority?: boolean }) => JSX.Element;
 
 type Props = {
   fighters: FighterListItem[];
@@ -215,8 +215,12 @@ export default function FighterGrid({
   return (
     <div className="space-y-8">
       <div className="grid auto-rows-fr grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {fighters.map((fighter) => (
-          <EnhancedFighterCard key={fighter.fighter_id} fighter={fighter} />
+        {fighters.map((fighter, index) => (
+          <EnhancedFighterCard
+            key={fighter.fighter_id}
+            fighter={fighter}
+            priority={index === 0}
+          />
         ))}
       </div>
 

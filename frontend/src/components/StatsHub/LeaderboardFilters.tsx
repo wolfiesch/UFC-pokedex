@@ -1,13 +1,6 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
 export interface LeaderboardFiltersProps {
@@ -54,22 +47,22 @@ export default function LeaderboardFilters({
           <Label htmlFor="division-filter" className="text-sm font-medium">
             Weight Division
           </Label>
-          <Select
-            value={division || "all"}
-            onValueChange={(value) => onDivisionChange(value === "all" ? null : value)}
+          <select
+            id="division-filter"
+            value={division ?? "all"}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              onDivisionChange(nextValue === "all" ? null : nextValue);
+            }}
+            className="w-full rounded-xl border border-border bg-background/80 px-3 py-2 text-sm font-medium text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger id="division-filter" className="w-full">
-              <SelectValue placeholder="All Divisions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Divisions</SelectItem>
-              {DIVISIONS.map((div) => (
-                <SelectItem key={div} value={div}>
-                  {div}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="all">All Divisions</option>
+            {DIVISIONS.map((div) => (
+              <option key={div} value={div}>
+                {div}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Minimum Fights Filter */}

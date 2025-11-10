@@ -189,7 +189,10 @@ async def lifespan(app: FastAPI):
     # NEW: Warmup connections
     from backend.warmup import warmup_all
 
-    await warmup_all()
+    await warmup_all(
+        resolve_db_type=get_database_type,
+        resolve_engine=get_engine,
+    )
 
     yield
 
