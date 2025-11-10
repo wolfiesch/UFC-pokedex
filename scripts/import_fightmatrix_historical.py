@@ -38,7 +38,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 # Import database connection
-from backend.db.connection import get_engine, get_async_session
+from backend.db.connection import get_database_url
 
 
 HISTORICAL_DIR = Path("data/processed/fightmatrix_historical")
@@ -65,9 +65,47 @@ def create_historical_rankings_table(engine):
     """
     Create historical_rankings table if it doesn't exist.
     """
-    create_table_sql = """
-    CREATE TABLE IF NOT EXISTS historical_rankings (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    # Check database type from engine URL
+    is_sqlite = 'sqlite' in str(engine.url)
+
+    if is_sqlite:
+        # SQLite version (no UUID support)
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS historical_rankings (
+            id TEXT PRIMARY KEY,
+            issue_number INTEGER NOT NULL,
+            issue_date DATE NOT NULL,
+            division_code INTEGER NOT NULL,
+            division_name VARCHAR(50) NOT NULL,
+            fighter_name VARCHAR(255) NOT NULL,
+            rank INTEGER NOT NULL,
+            points INTEGER NOT NULL,
+            movement VARCHAR(10),
+            profile_url VARCHAR(500),
+            scraped_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            -- Indexes for common queries
+            CONSTRAINT unique_ranking UNIQUE (issue_number, division_code, rank)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_historical_rankings_fighter
+            ON historical_rankings(fighter_name);
+
+        CREATE INDEX IF NOT EXISTS idx_historical_rankings_division
+            ON historical_rankings(division_code);
+
+        CREATE INDEX IF NOT EXISTS idx_historical_rankings_issue
+            ON historical_rankings(issue_number);
+
+        CREATE INDEX IF NOT EXISTS idx_historical_rankings_date
+            ON historical_rankings(issue_date DESC);
+        """
+    else:
+        # PostgreSQL version (with UUID support)
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS historical_rankings (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         issue_number INTEGER NOT NULL,
         issue_date DATE NOT NULL,
         division_code INTEGER NOT NULL,
@@ -273,22 +311,23 @@ def main():
     print("🚀 Fight Matrix Historical Rankings Importer")
     print()
 
-    # Get database engine (sync)
-    # For imports, we'll use a synchronous connection
-    import os
-    database_url = os.getenv("DATABASE_URL")
+    # Get database URL and convert from async to sync
+    database_url = get_database_url()
 
-    if not database_url:
-        print("❌ DATABASE_URL environment variable not set")
-        print("   Export DATABASE_URL or update .env file")
-        return
-
-    # Convert async URL to sync if needed
+    # Convert async URLs to sync versions for import script
     if database_url.startswith("postgresql+psycopg://"):
         database_url = database_url.replace(
             "postgresql+psycopg://",
             "postgresql+psycopg2://"
         )
+    elif database_url.startswith("sqlite+aiosqlite://"):
+        database_url = database_url.replace(
+            "sqlite+aiosqlite://",
+            "sqlite://"
+        )
+
+    print(f"📊 Database: {database_url.split('@')[-1] if '@' in database_url else database_url.split(':///')[-1]}")
+    print()
 
     engine = create_engine(database_url)
 
