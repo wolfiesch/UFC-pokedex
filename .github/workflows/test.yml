@@ -135,12 +135,47 @@ jobs:
           echo "✓ Tables auto-created via create_all()"
           echo "✓ Migrations skipped (expected)"
 
+  frontend-tests:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: pnpm test --run
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
+
   test:
     name: Tests
     runs-on: ubuntu-latest
     needs:
       - tests-postgresql
       - tests-sqlite
+      - frontend-tests
     if: ${{ always() }}
     steps:
       - name: Check upstream job results
@@ -153,4 +188,8 @@ jobs:
             echo "tests-sqlite job did not succeed"
             exit 1
           fi
-          echo "All database test jobs succeeded"
+          if [ "${{ needs.frontend-tests.result }}" != "success" ]; then
+            echo "frontend-tests job did not succeed"
+            exit 1
+          fi
+          echo "All required test jobs succeeded"
