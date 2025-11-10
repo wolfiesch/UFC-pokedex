@@ -24,7 +24,8 @@ async def stats_summary(
 
 @router.get("/leaderboards", response_model=LeaderboardsResponse)
 async def stats_leaderboards(
-    limit: int = Query(10, ge=1, le=50, description="Maximum entries per leaderboard."),
+    limit: int = Query(10, ge=1, le=100, description="Maximum entries per leaderboard."),
+    offset: int = Query(0, ge=0, description="Pagination offset for leaderboard entries."),
     accuracy_metric: Annotated[
         LeaderboardMetricId,
         Query(description="fighter_stats.metric name representing accuracy to rank."),
@@ -35,6 +36,12 @@ async def stats_leaderboards(
             description="fighter_stats.metric name representing submissions to rank."
         ),
     ] = "avg_submissions",
+    division: str | None = Query(
+        None, description="Filter by weight division (e.g., 'Lightweight', 'Heavyweight')."
+    ),
+    min_fights: int | None = Query(
+        None, ge=1, le=50, description="Minimum number of UFC fights required."
+    ),
     start_date: date | None = Query(
         None, description="Optional inclusive lower bound on fight event dates."
     ),
@@ -43,12 +50,15 @@ async def stats_leaderboards(
     ),
     service: FighterService = Depends(get_fighter_service),
 ) -> LeaderboardsResponse:
-    """Expose fighter leaderboards for accuracy- and submission-oriented metrics."""
+    """Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering."""
 
     return await service.get_leaderboards(
         limit=limit,
+        offset=offset,
         accuracy_metric=accuracy_metric,
         submissions_metric=submissions_metric,
+        division=division,
+        min_fights=min_fights,
         start_date=start_date,
         end_date=end_date,
     )

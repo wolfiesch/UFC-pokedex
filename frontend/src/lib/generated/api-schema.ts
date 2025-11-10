@@ -267,7 +267,7 @@ export interface paths {
         };
         /**
          * Stats Leaderboards
-         * @description Expose fighter leaderboards for accuracy- and submission-oriented metrics.
+         * @description Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering.
          */
         get: operations["stats_leaderboards_stats_leaderboards_get"];
         put?: never;
@@ -1407,6 +1407,11 @@ export interface components {
             metric_value: number;
             /** Detail Url */
             detail_url?: string | null;
+            /**
+             * Fight Count
+             * @description Number of UFC fights used to calculate this metric (data quality indicator)
+             */
+            fight_count?: number | null;
         };
         /**
          * LeaderboardsResponse
@@ -2096,10 +2101,16 @@ export interface operations {
             query?: {
                 /** @description Maximum entries per leaderboard. */
                 limit?: number;
+                /** @description Pagination offset for leaderboard entries. */
+                offset?: number;
                 /** @description fighter_stats.metric name representing accuracy to rank. */
                 accuracy_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
                 /** @description fighter_stats.metric name representing submissions to rank. */
                 submissions_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
+                /** @description Filter by weight division (e.g., 'Lightweight', 'Heavyweight'). */
+                division?: string | null;
+                /** @description Minimum number of UFC fights required. */
+                min_fights?: number | null;
                 /** @description Optional inclusive lower bound on fight event dates. */
                 start_date?: string | null;
                 /** @description Optional inclusive upper bound on fight event dates. */

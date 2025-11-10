@@ -137,18 +137,24 @@ class StatsRepository(BaseRepository):
         self,
         *,
         limit: int,
+        offset: int,
         accuracy_metric: LeaderboardMetricId,
         submissions_metric: LeaderboardMetricId,
+        division: str | None,
+        min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Compute leaderboard slices for accuracy and submission metrics via SQL windows."""
+        """Compute leaderboard slices for accuracy and submission metrics with filtering and pagination."""
 
         leaderboards: list[_LeaderboardPayload] = []
 
         accuracy_entries = await self._collect_leaderboard_entries(
             metric_name=accuracy_metric,
             limit=limit,
+            offset=offset,
+            division=division,
+            min_fights=min_fights,
             start_date=start_date,
             end_date=end_date,
         )
@@ -167,6 +173,9 @@ class StatsRepository(BaseRepository):
         submissions_entries = await self._collect_leaderboard_entries(
             metric_name=submissions_metric,
             limit=limit,
+            offset=offset,
+            division=division,
+            min_fights=min_fights,
             start_date=start_date,
             end_date=end_date,
         )
@@ -258,13 +267,21 @@ class StatsRepository(BaseRepository):
         *,
         metric_name: LeaderboardMetricId,
         limit: int,
+        offset: int,
+        division: str | None,
+        min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> list[LeaderboardEntry]:
-        """Collect leaderboard entries for a specific metric using window functions.
+        """Collect leaderboard entries for a specific metric with filtering and pagination.
 
         This method deduplicates fighters by taking the maximum value for each fighter
         when multiple stat entries exist for the same metric.
+
+        Supports filtering by:
+        - division: Weight class filter
+        - min_fights: Minimum number of UFC fights
+        - start_date/end_date: Time range for fight filtering
         """
 
         numeric_value = self._numeric_stat_value()
@@ -277,15 +294,13 @@ class StatsRepository(BaseRepository):
         if end_date is not None:
             fight_exists = fight_exists.where(Fight.event_date <= end_date)
 
-        # Count all UFC fights for each fighter for data quality indicator
-        fight_count_cte = (
-            select(
-                Fight.fighter_id,
-                func.count(Fight.id).label("fight_count")
-            )
+        # Correlated scalar subquery to count fights for each fighter
+        fight_count_subq = (
+            select(func.count(Fight.id))
+            .where(Fight.fighter_id == fighter_stats.c.fighter_id)
             .where(Fight.event_date.isnot(None))
-            .group_by(Fight.fighter_id)
-        ).cte("fight_counts")
+            .scalar_subquery()
+        )
 
         # First, aggregate by fighter to handle duplicates (take max value per fighter)
         aggregated = (
@@ -294,13 +309,9 @@ class StatsRepository(BaseRepository):
                 Fighter.name.label("fighter_name"),
                 Fighter.division.label("division"),
                 func.max(numeric_value).label("numeric_value"),
-                func.max(fight_count_cte.c.fight_count).label("fight_count"),
+                func.max(fight_count_subq).label("fight_count"),
             )
             .join(Fighter, Fighter.id == fighter_stats.c.fighter_id)
-            .outerjoin(
-                fight_count_cte,
-                fight_count_cte.c.fighter_id == fighter_stats.c.fighter_id
-            )
             .where(fighter_stats.c.metric == metric_name)
             .where(numeric_value.isnot(None))
             .group_by(
@@ -310,6 +321,11 @@ class StatsRepository(BaseRepository):
             )
         )
 
+        # Apply division filter
+        if division is not None and division.strip():
+            aggregated = aggregated.where(Fighter.division == division.strip())
+
+        # Apply date range filter
         if start_date is not None or end_date is not None:
             aggregated = aggregated.where(fight_exists.exists())
 
@@ -328,14 +344,22 @@ class StatsRepository(BaseRepository):
             )
         ).subquery()
 
+        # Apply min_fights filter after aggregation
+        stmt = select(
+            ranked.c.fighter_id,
+            ranked.c.fighter_name,
+            ranked.c.numeric_value,
+            ranked.c.fight_count,
+            ranked.c.rank,
+        )
+
+        if min_fights is not None and min_fights > 0:
+            stmt = stmt.where(ranked.c.fight_count >= min_fights)
+
+        # Apply pagination
         stmt = (
-            select(
-                ranked.c.fighter_id,
-                ranked.c.fighter_name,
-                ranked.c.numeric_value,
-                ranked.c.fight_count,
-            )
-            .where(ranked.c.rank <= limit)
+            stmt.where(ranked.c.rank > offset)
+            .where(ranked.c.rank <= offset + limit)
             .order_by(ranked.c.rank)
         )
 

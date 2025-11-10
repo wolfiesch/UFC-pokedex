@@ -101,12 +101,15 @@ class FighterRepositoryProtocol(Protocol):
         self,
         *,
         limit: int,
+        offset: int,
         accuracy_metric: LeaderboardMetricId,
         submissions_metric: LeaderboardMetricId,
+        division: str | None,
+        min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Generate leaderboard slices for accuracy- and submission-oriented metrics."""
+        """Generate leaderboard slices for accuracy- and submission-oriented metrics with filtering."""
 
     async def get_trends(
         self,
@@ -221,8 +224,11 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         self,
         *,
         limit: int,
+        offset: int,
         accuracy_metric: LeaderboardMetricId,
         submissions_metric: LeaderboardMetricId,
+        division: str | None,
+        min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
@@ -793,20 +799,26 @@ class FighterService:
         self,
         *,
         limit: int = 10,
+        offset: int = 0,
         accuracy_metric: LeaderboardMetricId = "sig_strikes_accuracy_pct",
         submissions_metric: LeaderboardMetricId = "avg_submissions",
+        division: str | None = None,
+        min_fights: int | None = None,
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> LeaderboardsResponse:
-        """Surface aggregated leaderboards for accuracy- and submission-based metrics."""
+        """Surface aggregated leaderboards for accuracy- and submission-based metrics with filtering."""
 
         cache_key = ":".join(
             [
                 "stats",
                 "leaderboards",
                 str(limit),
+                str(offset),
                 accuracy_metric,
                 submissions_metric,
+                division or "*",
+                str(min_fights) if min_fights else "*",
                 start_date.isoformat() if start_date else "*",
                 end_date.isoformat() if end_date else "*",
             ]
@@ -825,8 +837,11 @@ class FighterService:
 
         response = await self._repository.get_leaderboards(
             limit=limit,
+            offset=offset,
             accuracy_metric=accuracy_metric,
             submissions_metric=submissions_metric,
+            division=division,
+            min_fights=min_fights,
             start_date=start_date,
             end_date=end_date,
         )

@@ -40,6 +40,12 @@ export interface LeaderboardTableProps {
   isLoading?: boolean;
   /** Optional error message displayed when data retrieval fails. */
   error?: string | null;
+  /** Current pagination offset (used to display correct rank numbers). */
+  offset?: number;
+  /** Indicates if there are more entries available. */
+  hasMore?: boolean;
+  /** Callback to load more entries. */
+  onLoadMore?: () => void;
 }
 
 /**
@@ -49,7 +55,13 @@ export interface LeaderboardTableProps {
 function renderLeaderboardBody({
   entries,
   metricLabel,
-}: Pick<LeaderboardTableProps, "entries" | "metricLabel">) {
+  offset = 0,
+  hasMore = false,
+  onLoadMore,
+}: Pick<
+  LeaderboardTableProps,
+  "entries" | "metricLabel" | "offset" | "hasMore" | "onLoadMore"
+>) {
   if (entries.length === 0) {
     return (
       <div className="py-6 text-center text-sm text-muted-foreground" role="status">
@@ -60,40 +72,63 @@ function renderLeaderboardBody({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-16">Rank</TableHead>
-          <TableHead>Fighter</TableHead>
-          <TableHead className="text-right">{metricLabel ?? "Score"}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {entries.map((entry, index) => (
-          <TableRow key={`${entry.fighter_id}-${index}`}>
-            <TableCell className="text-sm font-semibold">{index + 1}</TableCell>
-            <TableCell>
-              {entry.detail_url ? (
-                <Link
-                  href={entry.detail_url}
-                  className="font-medium text-foreground transition hover:text-foreground/70"
-                >
-                  <span className="sr-only">View fighter profile:</span>
-                  {entry.fighter_name}
-                </Link>
-              ) : (
-                <span>{entry.fighter_name}</span>
-              )}
-            </TableCell>
-            <TableCell className="text-right font-mono text-sm font-semibold">
-              {entry.metric_value.toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-              })}
-            </TableCell>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-16">Rank</TableHead>
+            <TableHead>Fighter</TableHead>
+            <TableHead className="text-right">{metricLabel ?? "Score"}</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {entries.map((entry, index) => {
+            const rank = offset + index + 1;
+            return (
+              <TableRow key={`${entry.fighter_id}-${index}`}>
+                <TableCell className="text-sm font-semibold">{rank}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {entry.detail_url ? (
+                      <Link
+                        href={entry.detail_url}
+                        className="font-medium text-foreground transition hover:text-foreground/70"
+                      >
+                        <span className="sr-only">View fighter profile:</span>
+                        {entry.fighter_name}
+                      </Link>
+                    ) : (
+                      <span>{entry.fighter_name}</span>
+                    )}
+                    {entry.fight_count != null && entry.fight_count < 5 && (
+                      <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                        {entry.fight_count} {entry.fight_count === 1 ? "fight" : "fights"}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm font-semibold">
+                  {entry.metric_value.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      {hasMore && onLoadMore && (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={onLoadMore}
+            className="rounded-full border border-border bg-card px-6 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Show More
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -109,6 +144,9 @@ export default function LeaderboardTable({
   metricLabel,
   isLoading = false,
   error,
+  offset = 0,
+  hasMore = false,
+  onLoadMore,
 }: LeaderboardTableProps) {
   return (
     <Card className="rounded-3xl border-border bg-card/80">
@@ -129,7 +167,7 @@ export default function LeaderboardTable({
             Loading leaderboard…
           </div>
         ) : (
-          renderLeaderboardBody({ entries, metricLabel })
+          renderLeaderboardBody({ entries, metricLabel, offset, hasMore, onLoadMore })
         )}
       </CardContent>
     </Card>
