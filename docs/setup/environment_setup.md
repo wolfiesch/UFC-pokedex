@@ -71,7 +71,7 @@ This checklist captures the reproducible steps for establishing local tooling re
 
 ## Verification
 
-1. `make check` (runs lint and tests across backend + scraper).
+1. `make check` (runs linting and full test suites for the backend, scraper, and frontend).
 2. `make scrape-sample` (scrapes a small fighter subset and writes to `data/samples`).
 3. `make dev` (starts API + frontend concurrently).
 
