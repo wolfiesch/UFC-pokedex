@@ -267,6 +267,14 @@ class FighterRepository(BaseRepository):
             Fighter.current_streak_type,
             Fighter.current_streak_count,
             Fighter.last_fight_date,
+            Fighter.birthplace,
+            Fighter.birthplace_city,
+            Fighter.birthplace_country,
+            Fighter.nationality,
+            Fighter.fighting_out_of,
+            Fighter.training_gym,
+            Fighter.training_city,
+            Fighter.training_country,
         ]
 
     def _fighter_detail_columns(self) -> list[Any]:
@@ -287,6 +295,14 @@ class FighterRepository(BaseRepository):
             Fighter.is_current_champion,
             Fighter.is_former_champion,
             Fighter.championship_history,
+            Fighter.birthplace,
+            Fighter.birthplace_city,
+            Fighter.birthplace_country,
+            Fighter.nationality,
+            Fighter.fighting_out_of,
+            Fighter.training_gym,
+            Fighter.training_city,
+            Fighter.training_country,
         ]
 
     def _fighter_comparison_columns(self) -> list[Any]:
@@ -498,6 +514,14 @@ class FighterRepository(BaseRepository):
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
                     peak_rank_source=ranking.peak_rank_source if ranking else None,
+                    birthplace=fighter.birthplace,
+                    birthplace_city=fighter.birthplace_city,
+                    birthplace_country=fighter.birthplace_country,
+                    nationality=fighter.nationality,
+                    fighting_out_of=fighter.fighting_out_of,
+                    training_gym=fighter.training_gym,
+                    training_city=fighter.training_city,
+                    training_country=fighter.training_country,
                 )
             )
         return roster_entries
@@ -731,6 +755,14 @@ class FighterRepository(BaseRepository):
             peak_rank_date=summary.peak_rank_date if summary else None,
             peak_rank_division=summary.peak_rank_division if summary else None,
             peak_rank_source=summary.peak_rank_source if summary else None,
+            birthplace=fighter.birthplace,
+            birthplace_city=fighter.birthplace_city,
+            birthplace_country=fighter.birthplace_country,
+            nationality=fighter.nationality,
+            fighting_out_of=fighter.fighting_out_of,
+            training_gym=fighter.training_gym,
+            training_city=fighter.training_city,
+            training_country=fighter.training_country,
         )
 
     async def search_fighters(
@@ -881,6 +913,14 @@ class FighterRepository(BaseRepository):
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
                     peak_rank_source=ranking.peak_rank_source if ranking else None,
+                    birthplace=fighter.birthplace,
+                    birthplace_city=fighter.birthplace_city,
+                    birthplace_country=fighter.birthplace_country,
+                    nationality=fighter.nationality,
+                    fighting_out_of=fighter.fighting_out_of,
+                    training_gym=fighter.training_gym,
+                    training_city=fighter.training_city,
+                    training_country=fighter.training_country,
                 )
             )
 
@@ -1018,6 +1058,14 @@ class FighterRepository(BaseRepository):
             peak_rank_date=ranking.peak_rank_date if ranking else None,
             peak_rank_division=ranking.peak_rank_division if ranking else None,
             peak_rank_source=ranking.peak_rank_source if ranking else None,
+            birthplace=fighter.birthplace,
+            birthplace_city=fighter.birthplace_city,
+            birthplace_country=fighter.birthplace_country,
+            nationality=fighter.nationality,
+            fighting_out_of=fighter.fighting_out_of,
+            training_gym=fighter.training_gym,
+            training_city=fighter.training_city,
+            training_country=fighter.training_country,
         )
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:
@@ -1241,3 +1289,91 @@ class FighterRepository(BaseRepository):
         return result.get(
             fighter_id, {"current_streak_type": "none", "current_streak_count": 0}
         )
+
+    async def update_fighter_location(
+        self,
+        fighter_id: str,
+        *,
+        birthplace: str | None = None,
+        birthplace_city: str | None = None,
+        birthplace_country: str | None = None,
+        nationality: str | None = None,
+        training_gym: str | None = None,
+        training_city: str | None = None,
+        training_country: str | None = None,
+        ufc_com_slug: str | None = None,
+        ufc_com_match_confidence: float | None = None,
+        ufc_com_match_method: str | None = None,
+        ufc_com_scraped_at: datetime | None = None,
+        needs_manual_review: bool | None = None,
+    ) -> None:
+        """Update fighter location and UFC.com metadata fields.
+
+        Args:
+            fighter_id: UFCStats fighter ID
+            birthplace: Full birthplace string (e.g., "Dublin, Ireland")
+            birthplace_city: Extracted city (e.g., "Dublin")
+            birthplace_country: Extracted country (e.g., "Ireland")
+            nationality: Nationality from Sherdog (e.g., "Irish")
+            training_gym: Gym name (e.g., "SBG Ireland")
+            training_city: Training city (from gym lookup)
+            training_country: Training country (from gym lookup)
+            ufc_com_slug: UFC.com athlete slug
+            ufc_com_match_confidence: Match confidence score (0-100)
+            ufc_com_match_method: Match method ('auto_high', 'auto_medium', 'manual', 'verified')
+            ufc_com_scraped_at: Timestamp of UFC.com data fetch
+            needs_manual_review: Flag for manual verification
+        """
+        from sqlalchemy import update
+
+        stmt = (
+            update(Fighter)
+            .where(Fighter.id == fighter_id)
+            .values(
+                birthplace=birthplace,
+                birthplace_city=birthplace_city,
+                birthplace_country=birthplace_country,
+                nationality=nationality,
+                training_gym=training_gym,
+                training_city=training_city,
+                training_country=training_country,
+                ufc_com_slug=ufc_com_slug,
+                ufc_com_match_confidence=ufc_com_match_confidence,
+                ufc_com_match_method=ufc_com_match_method,
+                ufc_com_scraped_at=ufc_com_scraped_at,
+                needs_manual_review=needs_manual_review
+                if needs_manual_review is not None
+                else False,
+            )
+        )
+        await self._session.execute(stmt)
+
+    async def update_fighter_nationality(
+        self,
+        fighter_id: str,
+        nationality: str,
+    ) -> None:
+        """Update fighter nationality from Sherdog data.
+
+        Args:
+            fighter_id: UFCStats fighter ID
+            nationality: Nationality string (e.g., "Irish", "Brazilian")
+        """
+        from sqlalchemy import update
+
+        stmt = (
+            update(Fighter)
+            .where(Fighter.id == fighter_id)
+            .values(nationality=nationality)
+        )
+        await self._session.execute(stmt)
+
+    async def get_fighters_without_ufc_com_data(self) -> Sequence[Fighter]:
+        """Get fighters without UFC.com data (for Sherdog nationality loading).
+
+        Returns:
+            List of Fighter objects where ufc_com_slug is NULL
+        """
+        stmt = select(Fighter).where(Fighter.ufc_com_slug.is_(None))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()

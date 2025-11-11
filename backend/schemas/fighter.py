@@ -56,6 +56,7 @@ class FighterListItem(BaseModel):
     birthplace_city: str | None = None
     birthplace_country: str | None = None
     nationality: str | None = None
+    fighting_out_of: str | None = None
     training_gym: str | None = None
     training_city: str | None = None
     training_country: str | None = None
