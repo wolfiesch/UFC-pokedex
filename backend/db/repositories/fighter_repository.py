@@ -421,6 +421,12 @@ class FighterRepository(BaseRepository):
         limit: int | None = None,
         offset: int | None = None,
         nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -441,9 +447,36 @@ class FighterRepository(BaseRepository):
             .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id)
         )
 
-        # Apply nationality filter if specified
+        # Apply location filters
         if nationality:
+            logger.debug(f"Applying nationality filter: {nationality}")
             query = query.where(Fighter.nationality == nationality)
+        if birthplace_country:
+            query = query.where(Fighter.birthplace_country == birthplace_country)
+        if birthplace_city:
+            query = query.where(Fighter.birthplace_city == birthplace_city)
+        if training_country:
+            query = query.where(Fighter.training_country == training_country)
+        if training_city:
+            query = query.where(Fighter.training_city == training_city)
+        if training_gym:
+            # Partial match for gym name
+            query = query.where(Fighter.training_gym.ilike(f"%{training_gym}%"))
+        if has_location_data is not None:
+            from sqlalchemy import or_
+
+            if has_location_data:
+                query = query.where(
+                    or_(
+                        Fighter.birthplace.isnot(None),
+                        Fighter.training_gym.isnot(None),
+                    )
+                )
+            else:
+                query = query.where(
+                    Fighter.birthplace.is_(None),
+                    Fighter.training_gym.is_(None),
+                )
 
         if offset is not None:
             query = query.offset(offset)
@@ -778,6 +811,7 @@ class FighterRepository(BaseRepository):
         champion_statuses: list[str] | None = None,
         streak_type: str | None = None,
         min_streak_count: int | None = None,
+        include_locations: bool = True,
         include_streak: bool = False,
         *,
         limit: int | None = None,
@@ -803,9 +837,30 @@ class FighterRepository(BaseRepository):
             # This works with PostgreSQL trigram indexes (pg_trgm) for 10x speedup
             # Falls back to standard LIKE behavior in SQLite
             pattern = f"%{normalized_filters.query}%"
-            filters.append(
-                (Fighter.name.ilike(pattern)) | (Fighter.nickname.ilike(pattern))
-            )
+
+            # Base search conditions (name and nickname)
+            search_conditions = [
+                Fighter.name.ilike(pattern),
+                Fighter.nickname.ilike(pattern),
+            ]
+
+            # Add location search if enabled
+            if include_locations:
+                search_conditions.extend(
+                    [
+                        Fighter.birthplace.ilike(pattern),
+                        Fighter.birthplace_city.ilike(pattern),
+                        Fighter.birthplace_country.ilike(pattern),
+                        Fighter.nationality.ilike(pattern),
+                        Fighter.training_gym.ilike(pattern),
+                        Fighter.training_city.ilike(pattern),
+                        Fighter.training_country.ilike(pattern),
+                    ]
+                )
+
+            from sqlalchemy import or_
+
+            filters.append(or_(*search_conditions))
         if normalized_filters.stance:
             filters.append(Fighter.stance == normalized_filters.stance)
         if normalized_filters.division:
@@ -1016,11 +1071,49 @@ class FighterRepository(BaseRepository):
 
         return comparison
 
-    async def count_fighters(self, nationality: str | None = None) -> int:
-        """Get the total count of fighters in the database (optionally filtered by nationality)."""
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
+        """Get the total count of fighters in the database with optional filters."""
         query = select(func.count()).select_from(Fighter)
+
+        # Apply location filters
         if nationality:
+            logger.debug(f"Applying nationality filter for count: {nationality}")
             query = query.where(Fighter.nationality == nationality)
+        if birthplace_country:
+            query = query.where(Fighter.birthplace_country == birthplace_country)
+        if birthplace_city:
+            query = query.where(Fighter.birthplace_city == birthplace_city)
+        if training_country:
+            query = query.where(Fighter.training_country == training_country)
+        if training_city:
+            query = query.where(Fighter.training_city == training_city)
+        if training_gym:
+            query = query.where(Fighter.training_gym.ilike(f"%{training_gym}%"))
+        if has_location_data is not None:
+            from sqlalchemy import or_
+
+            if has_location_data:
+                query = query.where(
+                    or_(
+                        Fighter.birthplace.isnot(None),
+                        Fighter.training_gym.isnot(None),
+                    )
+                )
+            else:
+                query = query.where(
+                    Fighter.birthplace.is_(None),
+                    Fighter.training_gym.is_(None),
+                )
+
         result = await self._session.execute(query)
         count = result.scalar_one_or_none()
         return count if count is not None else 0
@@ -1384,3 +1477,173 @@ class FighterRepository(BaseRepository):
         stmt = select(Fighter).where(Fighter.ufc_com_slug.is_(None))
         result = await self._session.execute(stmt)
         return result.scalars().all()
+
+    async def get_country_stats(
+        self, group_by: str
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Get fighter count by country.
+
+        Args:
+            group_by: Field to group by ('birthplace', 'training', or 'nationality')
+
+        Returns:
+            Tuple of (list of country stats, total fighters)
+        """
+        # Determine which column to use
+        if group_by == "birthplace":
+            column = Fighter.birthplace_country
+        elif group_by == "training":
+            column = Fighter.training_country
+        elif group_by == "nationality":
+            column = Fighter.nationality
+        else:
+            raise ValueError(f"Invalid group_by value: {group_by}")
+
+        # Query for country counts
+        query = (
+            select(column.label("country"), func.count().label("count"))
+            .where(column.isnot(None))
+            .group_by(column)
+            .order_by(func.count().desc())
+        )
+
+        result = await self._session.execute(query)
+        rows = result.all()
+
+        # Get total fighters with non-null country data
+        total_query = select(func.count()).select_from(Fighter).where(column.isnot(None))
+        total_result = await self._session.execute(total_query)
+        total = total_result.scalar_one_or_none() or 0
+
+        # Format results with percentage
+        stats = []
+        for row in rows:
+            percentage = round((row.count / total * 100), 1) if total > 0 else 0.0
+            stats.append(
+                {"country": row.country, "count": row.count, "percentage": percentage}
+            )
+
+        return stats, total
+
+    async def get_city_stats(
+        self, group_by: str, country: str | None = None
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Get fighter count by city.
+
+        Args:
+            group_by: Field to group by ('birthplace' or 'training')
+            country: Optional country filter
+
+        Returns:
+            Tuple of (list of city stats, total fighters)
+        """
+        # Determine which columns to use
+        if group_by == "birthplace":
+            city_column = Fighter.birthplace_city
+            country_column = Fighter.birthplace_country
+        elif group_by == "training":
+            city_column = Fighter.training_city
+            country_column = Fighter.training_country
+        else:
+            raise ValueError(f"Invalid group_by value: {group_by}")
+
+        # Query for city counts
+        query = (
+            select(
+                city_column.label("city"),
+                country_column.label("country"),
+                func.count().label("count"),
+            )
+            .where(city_column.isnot(None))
+            .group_by(city_column, country_column)
+            .order_by(func.count().desc())
+        )
+
+        # Apply country filter if specified
+        if country:
+            query = query.where(country_column == country)
+
+        result = await self._session.execute(query)
+        rows = result.all()
+
+        # Get total fighters with non-null city data
+        total_query = (
+            select(func.count()).select_from(Fighter).where(city_column.isnot(None))
+        )
+        if country:
+            total_query = total_query.where(country_column == country)
+        total_result = await self._session.execute(total_query)
+        total = total_result.scalar_one_or_none() or 0
+
+        # Format results with percentage
+        stats = []
+        for row in rows:
+            percentage = round((row.count / total * 100), 1) if total > 0 else 0.0
+            stats.append(
+                {
+                    "city": row.city,
+                    "country": row.country,
+                    "count": row.count,
+                    "percentage": percentage,
+                }
+            )
+
+        return stats, total
+
+    async def get_gym_stats(
+        self, country: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Get fighter count by gym.
+
+        Args:
+            country: Optional country filter
+
+        Returns:
+            List of gym stats with fighter counts and notable fighters
+        """
+        # Query for gym counts
+        query = (
+            select(
+                Fighter.training_gym.label("gym"),
+                Fighter.training_city.label("city"),
+                Fighter.training_country.label("country"),
+                func.count().label("fighter_count"),
+            )
+            .where(Fighter.training_gym.isnot(None))
+            .group_by(
+                Fighter.training_gym, Fighter.training_city, Fighter.training_country
+            )
+            .order_by(func.count().desc())
+        )
+
+        # Apply country filter if specified
+        if country:
+            query = query.where(Fighter.training_country == country)
+
+        result = await self._session.execute(query)
+        rows = result.all()
+
+        # For each gym, get top 2 fighters by last_fight_date
+        stats = []
+        for row in rows:
+            # Query for notable fighters from this gym
+            notable_query = (
+                select(Fighter.name)
+                .where(Fighter.training_gym == row.gym)
+                .order_by(Fighter.last_fight_date.desc().nulls_last())
+                .limit(2)
+            )
+            notable_result = await self._session.execute(notable_query)
+            notable_fighters = [name for (name,) in notable_result.all()]
+
+            stats.append(
+                {
+                    "gym": row.gym,
+                    "city": row.city,
+                    "country": row.country,
+                    "fighter_count": row.fighter_count,
+                    "notable_fighters": notable_fighters,
+                }
+            )
+
+        return stats

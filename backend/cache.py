@@ -274,8 +274,9 @@ async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
     await cache.delete_pattern(f"{_SEARCH_PREFIX}:*")
     await cache.delete_pattern(f"{_LIST_PREFIX}:*")
 
-    # Invalidate count cache
-    await cache.delete("fighters:count")
+    # Invalidate all count caches (including nationality-filtered counts)
+    # Pattern matches: fighters:count, fighters:count:all, fighters:count:US, etc.
+    await cache.delete_pattern("fighters:count*")
 
 
 async def invalidate_collections(cache: CacheClient) -> None:

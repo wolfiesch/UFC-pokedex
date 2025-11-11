@@ -48,6 +48,13 @@ class PostgreSQLFighterRepository:
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -55,6 +62,13 @@ class PostgreSQLFighterRepository:
         return await self._fighter_repo.list_fighters(
             limit=limit,
             offset=offset,
+            nationality=nationality,
+            birthplace_country=birthplace_country,
+            birthplace_city=birthplace_city,
+            training_country=training_country,
+            training_city=training_city,
+            training_gym=training_gym,
+            has_location_data=has_location_data,
             include_streak=include_streak,
             streak_window=streak_window,
         )
@@ -95,9 +109,26 @@ class PostgreSQLFighterRepository:
         """Return stats snapshots for the requested fighters."""
         return await self._fighter_repo.get_fighters_for_comparison(fighter_ids)
 
-    async def count_fighters(self) -> int:
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
         """Get the total count of fighters."""
-        return await self._fighter_repo.count_fighters()
+        return await self._fighter_repo.count_fighters(
+            nationality=nationality,
+            birthplace_country=birthplace_country,
+            birthplace_city=birthplace_city,
+            training_country=training_country,
+            training_city=training_city,
+            training_gym=training_gym,
+            has_location_data=has_location_data,
+        )
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter."""
