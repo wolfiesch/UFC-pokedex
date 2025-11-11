@@ -419,6 +419,16 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         selector.css("div.b-fight-details__person i::text").get()
     )
 
+    # Extract geography fields from bio_map
+    birthplace = bio_map.get("BIRTHPLACE")
+    fighting_out_of = bio_map.get("TRAINS AT") or bio_map.get("FIGHTING OUT OF")
+
+    # Clean up location strings (remove extra whitespace)
+    if birthplace:
+        birthplace = " ".join(birthplace.split())
+    if fighting_out_of:
+        fighting_out_of = " ".join(fighting_out_of.split())
+
     detail = {
         "item_type": "fighter_detail",
         "fighter_id": fighter_id,
@@ -433,6 +443,8 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         "stance": bio_map.get("STANCE"),
         "age": _parse_int(bio_map.get("AGE")),
         "dob": parse_date(bio_map.get("DOB")),
+        "birthplace": birthplace,
+        "fighting_out_of": fighting_out_of,
         "division": scraped_division or weight_to_division(weight),
         "striking": (
             stat_sections.get("striking", {})
