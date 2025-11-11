@@ -39,7 +39,7 @@ class Event(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    location: Mapped[str | None]
+    location: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     status: Mapped[str] = mapped_column(
         String, nullable=False, index=True
     )  # 'upcoming' or 'completed'
