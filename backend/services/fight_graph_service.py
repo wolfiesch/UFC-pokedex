@@ -39,7 +39,7 @@ def _derive_division_breakdown(nodes: list[FightGraphNode]) -> list[dict[str, An
 
     counter: Counter[str] = Counter()
     for node in nodes:
-        division = (node.division or "Unknown").strip() or "Unknown"
+        division = (node.division and node.division.strip()) or "Unknown"
         counter[division] += 1
 
     total = sum(counter.values()) or 1
