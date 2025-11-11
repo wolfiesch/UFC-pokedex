@@ -51,14 +51,16 @@ def list_key(
     limit: int,
     offset: int,
     *,
+    nationality: str | None = None,
     include_streak: bool = False,
     streak_window: int | None = None,
 ) -> str:
+    nationality_part = nationality if nationality else ""
     streak_part = "1" if include_streak else "0"
     window_part = (
         str(streak_window) if include_streak and streak_window is not None else ""
     )
-    return f"{_LIST_PREFIX}:{limit}:{offset}:{streak_part}:{window_part}"
+    return f"{_LIST_PREFIX}:{limit}:{offset}:{nationality_part}:{streak_part}:{window_part}"
 
 
 def search_key(

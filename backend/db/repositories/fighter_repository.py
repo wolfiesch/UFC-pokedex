@@ -420,6 +420,7 @@ class FighterRepository(BaseRepository):
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -439,6 +440,10 @@ class FighterRepository(BaseRepository):
             .options(load_only(*load_columns))
             .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id)
         )
+
+        # Apply nationality filter if specified
+        if nationality:
+            query = query.where(Fighter.nationality == nationality)
 
         if offset is not None:
             query = query.offset(offset)
@@ -1011,9 +1016,11 @@ class FighterRepository(BaseRepository):
 
         return comparison
 
-    async def count_fighters(self) -> int:
-        """Get the total count of fighters in the database."""
+    async def count_fighters(self, nationality: str | None = None) -> int:
+        """Get the total count of fighters in the database (optionally filtered by nationality)."""
         query = select(func.count()).select_from(Fighter)
+        if nationality:
+            query = query.where(Fighter.nationality == nationality)
         result = await self._session.execute(query)
         count = result.scalar_one_or_none()
         return count if count is not None else 0

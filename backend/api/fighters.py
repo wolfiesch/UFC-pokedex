@@ -19,6 +19,7 @@ router = APIRouter()
 async def list_fighters(
     limit: int = Query(20, ge=1, le=100, description="Number of fighters to return"),
     offset: int = Query(0, ge=0, description="Number of fighters to skip"),
+    nationality: str | None = Query(None, description="Filter by ISO country code (e.g., US, BR, IE)"),
     include_streak: bool = Query(
         False,
         description=(
@@ -37,10 +38,15 @@ async def list_fighters(
     fighters = await service.list_fighters(
         limit=limit,
         offset=offset,
+        nationality=nationality,
         include_streak=include_streak,
         streak_window=streak_window,
     )
-    total = await service.count_fighters()
+    # When filtering by nationality, count only matching fighters
+    if nationality:
+        total = await service.count_fighters(nationality=nationality)
+    else:
+        total = await service.count_fighters()
     return PaginatedFightersResponse(
         fighters=fighters,
         total=total,

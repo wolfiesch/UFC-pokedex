@@ -43,6 +43,7 @@ def _list_cache_key(
     *,
     limit: int | None,
     offset: int | None,
+    nationality: str | None,
     include_streak: bool,
     streak_window: int,
 ) -> str | None:
@@ -53,6 +54,7 @@ def _list_cache_key(
     return list_key(
         limit,
         offset,
+        nationality=nationality,
         include_streak=include_streak,
         streak_window=streak_window,
     )
@@ -117,6 +119,7 @@ class FighterRepositoryProtocol(Protocol):
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -145,8 +148,8 @@ class FighterRepositoryProtocol(Protocol):
     ) -> list[FighterComparisonEntry]:
         """Return stat snapshots for the provided fighter identifiers."""
 
-    async def count_fighters(self) -> int:
-        """Return the total number of indexed fighters."""
+    async def count_fighters(self, nationality: str | None = None) -> int:
+        """Return the total number of indexed fighters (optionally filtered by nationality)."""
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Return a random fighter suitable for roster teasers."""
@@ -165,9 +168,10 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, include_streak=False, streak_window=6: _list_cache_key(
+        lambda _self, *, limit=None, offset=None, nationality=None, include_streak=False, streak_window=6: _list_cache_key(
             limit=limit,
             offset=offset,
+            nationality=nationality,
             include_streak=include_streak,
             streak_window=streak_window,
         ),
@@ -183,6 +187,7 @@ class FighterQueryService(CacheableService):
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> list[FighterListItem]:
@@ -191,6 +196,7 @@ class FighterQueryService(CacheableService):
         fighters = await self._repository.list_fighters(
             limit=limit,
             offset=offset,
+            nationality=nationality,
             include_streak=include_streak,
             streak_window=streak_window,
         )
@@ -211,13 +217,13 @@ class FighterQueryService(CacheableService):
         return await self._repository.get_fighter(fighter_id)
 
     @cached(
-        lambda _self: "fighters:count",
+        lambda _self, nationality=None: f"fighters:count:{nationality if nationality else 'all'}",
         ttl=600,
     )
-    async def count_fighters(self) -> int:
-        """Return the total number of indexed fighters with caching."""
+    async def count_fighters(self, nationality: str | None = None) -> int:
+        """Return the total number of indexed fighters with caching (optionally filtered by nationality)."""
 
-        return await self._repository.count_fighters()
+        return await self._repository.count_fighters(nationality=nationality)
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Return a random fighter without caching (high variance by design)."""
@@ -358,6 +364,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -366,6 +373,9 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         roster: list[FighterListItem] = [
             self._list_item_from_detail(detail) for detail in self._fighters.values()
         ]
+        # Apply nationality filter if specified
+        if nationality:
+            roster = [f for f in roster if f.nationality == nationality]
         return paginate_roster_entries(
             roster,
             limit=limit,
@@ -433,7 +443,10 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             )
         return fighters
 
-    async def count_fighters(self) -> int:
+    async def count_fighters(self, nationality: str | None = None) -> int:
+        if nationality:
+            return sum(1 for detail in self._fighters.values()
+                      if getattr(detail, 'nationality', None) == nationality)
         return len(self._fighters)
 
     async def get_random_fighter(self) -> FighterListItem | None:
