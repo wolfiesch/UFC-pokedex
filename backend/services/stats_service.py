@@ -11,8 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
+from backend.db.repositories.fighter_repository import FighterRepository
 from backend.db.repositories.stats_repository import StatsRepository
 from backend.schemas.stats import (
+    CityStat,
+    CityStatsResponse,
+    CountryStat,
+    CountryStatsResponse,
+    GymStat,
+    GymStatsResponse,
     LeaderboardMetricId,
     LeaderboardsResponse,
     StatsSummaryResponse,
@@ -104,11 +111,13 @@ class StatsService(CacheableService):
     def __init__(
         self,
         repository: StatsRepository,
+        fighter_repository: FighterRepository,
         *,
         cache: CacheClient | None = None,
     ) -> None:
         super().__init__(cache=cache)
         self._repository = repository
+        self._fighter_repository = fighter_repository
 
     @cached(
         lambda _self: "stats:summary",
@@ -202,6 +211,94 @@ class StatsService(CacheableService):
             streak_limit=streak_limit,
         )
 
+    @cached(
+        lambda _self, *, group_by, min_fighters: f"stats:countries:{group_by}:{min_fighters}",
+        ttl=600,
+        serializer=lambda response: response.model_dump(mode="json"),
+        deserializer=lambda payload: (
+            CountryStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
+        ),
+        deserialize_error_message=(
+            "Failed to deserialize cached country stats for key {key}: {error}"
+        ),
+    )
+    async def get_country_stats(
+        self, *, group_by: str, min_fighters: int
+    ) -> CountryStatsResponse:
+        """Get fighter count by country."""
+        stats, total = await self._fighter_repository.get_country_stats(group_by)
+
+        # Filter by min_fighters
+        filtered_stats = [stat for stat in stats if stat["count"] >= min_fighters]
+
+        return CountryStatsResponse(
+            group_by=group_by,  # type: ignore
+            countries=[CountryStat(**stat) for stat in filtered_stats],
+            total_fighters=total,
+        )
+
+    @cached(
+        lambda _self, *, group_by, country, min_fighters: f"stats:cities:{group_by}:{country or 'all'}:{min_fighters}",
+        ttl=600,
+        serializer=lambda response: response.model_dump(mode="json"),
+        deserializer=lambda payload: (
+            CityStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
+        ),
+        deserialize_error_message=(
+            "Failed to deserialize cached city stats for key {key}: {error}"
+        ),
+    )
+    async def get_city_stats(
+        self, *, group_by: str, country: str | None, min_fighters: int
+    ) -> CityStatsResponse:
+        """Get fighter count by city."""
+        stats, total = await self._fighter_repository.get_city_stats(group_by, country)
+
+        # Filter by min_fighters
+        filtered_stats = [stat for stat in stats if stat["count"] >= min_fighters]
+
+        return CityStatsResponse(
+            group_by=group_by,  # type: ignore
+            cities=[CityStat(**stat) for stat in filtered_stats],
+            total_fighters=total,
+        )
+
+    @cached(
+        lambda _self, *, country, min_fighters, sort_by: f"stats:gyms:{country or 'all'}:{min_fighters}:{sort_by}",
+        ttl=600,
+        serializer=lambda response: response.model_dump(mode="json"),
+        deserializer=lambda payload: (
+            GymStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
+        ),
+        deserialize_error_message=(
+            "Failed to deserialize cached gym stats for key {key}: {error}"
+        ),
+    )
+    async def get_gym_stats(
+        self, *, country: str | None, min_fighters: int, sort_by: str
+    ) -> GymStatsResponse:
+        """Get fighter count by gym."""
+        stats = await self._fighter_repository.get_gym_stats(country)
+
+        # Filter by min_fighters
+        filtered_stats = [stat for stat in stats if stat["fighter_count"] >= min_fighters]
+
+        # Sort based on sort_by parameter
+        if sort_by == "name":
+            filtered_stats.sort(key=lambda x: x["gym"])
+        # Default is already sorted by fighter count (descending)
+
+        return GymStatsResponse(
+            gyms=[GymStat(**stat) for stat in filtered_stats],
+            total_gyms=len(filtered_stats),
+        )
+
 
 def get_stats_service(
     session: AsyncSession = Depends(get_db),
@@ -210,7 +307,8 @@ def get_stats_service(
     """FastAPI dependency wiring the stats repository and cache layer."""
 
     repository = StatsRepository(session)
-    return StatsService(repository, cache=cache)
+    fighter_repository = FighterRepository(session)
+    return StatsService(repository, fighter_repository, cache=cache)
 
 
 __all__ = ["StatsService", "get_stats_service"]

@@ -20,6 +20,14 @@ async def list_fighters(
     limit: int = Query(20, ge=1, le=100, description="Number of fighters to return"),
     offset: int = Query(0, ge=0, description="Number of fighters to skip"),
     nationality: str | None = Query(None, description="Filter by ISO country code (e.g., US, BR, IE)"),
+    birthplace_country: str | None = Query(None, description="Filter by birthplace country"),
+    birthplace_city: str | None = Query(None, description="Filter by birthplace city"),
+    training_country: str | None = Query(None, description="Filter by training country"),
+    training_city: str | None = Query(None, description="Filter by training city"),
+    training_gym: str | None = Query(None, description="Filter by training gym (partial match)"),
+    has_location_data: bool | None = Query(
+        None, description="Filter by presence of location data (birthplace or training gym)"
+    ),
     include_streak: bool = Query(
         False,
         description=(
@@ -34,19 +42,36 @@ async def list_fighters(
     ),
     service: FighterQueryService = Depends(get_fighter_query_service),
 ) -> PaginatedFightersResponse:
-    """List fighters with pagination."""
+    """List fighters with pagination and location filtering.
+
+    Examples:
+        /fighters/?birthplace_country=Ireland
+        /fighters/?training_gym=American Kickboxing Academy
+        /fighters/?nationality=Brazilian&division=Lightweight
+    """
     fighters = await service.list_fighters(
         limit=limit,
         offset=offset,
         nationality=nationality,
+        birthplace_country=birthplace_country,
+        birthplace_city=birthplace_city,
+        training_country=training_country,
+        training_city=training_city,
+        training_gym=training_gym,
+        has_location_data=has_location_data,
         include_streak=include_streak,
         streak_window=streak_window,
     )
-    # When filtering by nationality, count only matching fighters
-    if nationality:
-        total = await service.count_fighters(nationality=nationality)
-    else:
-        total = await service.count_fighters()
+    # When filtering, count only matching fighters
+    total = await service.count_fighters(
+        nationality=nationality,
+        birthplace_country=birthplace_country,
+        birthplace_city=birthplace_city,
+        training_country=training_country,
+        training_city=training_city,
+        training_gym=training_gym,
+        has_location_data=has_location_data,
+    )
     return PaginatedFightersResponse(
         fighters=fighters,
         total=total,

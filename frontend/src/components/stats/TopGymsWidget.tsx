@@ -1,0 +1,139 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dumbbell, Loader2 } from "lucide-react";
+import client from "@/lib/api-client";
+
+interface GymStat {
+  gym: string;
+  city?: string | null;
+  country?: string | null;
+  fighter_count: number;
+  notable_fighters?: string[];
+}
+
+interface TopGymsWidgetProps {
+  minFighters?: number;
+  sortBy?: "fighters" | "name";
+  limit?: number;
+}
+
+export function TopGymsWidget({
+  minFighters = 10,
+  sortBy = "fighters",
+  limit = 5,
+}: TopGymsWidgetProps) {
+  const [gyms, setGyms] = useState<GymStat[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchGyms() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const { data, error: apiError } = await client.GET("/stats/gyms", {
+          params: {
+            query: {
+              min_fighters: minFighters,
+              sort_by: sortBy,
+            },
+          },
+        });
+
+        if (apiError) {
+          setError("Failed to load gym statistics");
+          return;
+        }
+
+        if (data && data.gyms) {
+          // Limit to top N gyms
+          setGyms(data.gyms.slice(0, limit));
+        }
+      } catch (err) {
+        console.error("Error fetching gym stats:", err);
+        setError("An error occurred while loading data");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchGyms();
+  }, [minFighters, sortBy, limit]);
+
+  const getGymInitials = (gymName: string): string => {
+    const words = gymName.split(" ");
+    if (words.length === 1) {
+      return gymName.substring(0, 2).toUpperCase();
+    }
+    return words
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Dumbbell className="h-5 w-5" />
+          Elite Training Gyms
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading gyms...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </div>
+        ) : gyms && gyms.length > 0 ? (
+          <div className="space-y-4">
+            {gyms.map((gym) => (
+              <Link
+                key={gym.gym}
+                href={`/?training_gym=${encodeURIComponent(gym.gym)}`}
+                className="flex items-start gap-3 p-2 rounded-md hover:bg-accent transition-colors"
+              >
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold">
+                    {getGymInitials(gym.gym)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold truncate">{gym.gym}</div>
+                  {(gym.city || gym.country) && (
+                    <div className="text-sm text-muted-foreground">
+                      {[gym.city, gym.country].filter(Boolean).join(", ")}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {gym.fighter_count} fighter{gym.fighter_count !== 1 ? "s" : ""}
+                  </div>
+                  {gym.notable_fighters && gym.notable_fighters.length > 0 && (
+                    <div className="text-xs text-primary mt-1 truncate">
+                      {gym.notable_fighters.slice(0, 2).join(", ")}
+                      {gym.notable_fighters.length > 2 && ` +${gym.notable_fighters.length - 2} more`}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">No gyms found</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

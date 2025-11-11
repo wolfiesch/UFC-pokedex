@@ -33,7 +33,12 @@ export interface paths {
         };
         /**
          * List Fighters
-         * @description List fighters with pagination.
+         * @description List fighters with pagination and location filtering.
+         *
+         *     Examples:
+         *         /fighters/?birthplace_country=Ireland
+         *         /fighters/?training_gym=American Kickboxing Academy
+         *         /fighters/?nationality=Brazilian&division=Lightweight
          */
         get: operations["list_fighters_fighters__get"];
         put?: never;
@@ -230,7 +235,12 @@ export interface paths {
         };
         /**
          * Search Fighters
-         * @description Search fighters with validation.
+         * @description Search fighters by name, nickname, or location.
+         *
+         *     Examples:
+         *         /search/?q=dublin      # Finds fighters from Dublin
+         *         /search/?q=aka         # Finds fighters from AKA gym
+         *         /search/?q=brazilian   # Finds Brazilian fighters
          */
         get: operations["search_fighters_search__get"];
         put?: never;
@@ -290,6 +300,78 @@ export interface paths {
          * @description Return historical streaks and fight duration aggregations for dashboards.
          */
         get: operations["stats_trends_stats_trends_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Country Stats
+         * @description Get fighter count by country.
+         *
+         *     Examples:
+         *         /stats/countries?group_by=birthplace
+         *         /stats/countries?group_by=nationality&min_fighters=10
+         */
+        get: operations["get_country_stats_stats_countries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/cities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get City Stats
+         * @description Get fighter count by city.
+         *
+         *     Examples:
+         *         /stats/cities?group_by=training&min_fighters=10
+         *         /stats/cities?group_by=birthplace&country=United States
+         */
+        get: operations["get_city_stats_stats_cities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats/gyms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gym Stats
+         * @description Get fighter count by training gym.
+         *
+         *     Examples:
+         *         /stats/gyms?min_fighters=10
+         *         /stats/gyms?country=United States&sort_by=fighters
+         */
+        get: operations["get_gym_stats_stats_gyms_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -810,6 +892,72 @@ export interface components {
              * @description Total ranked fighters across all divisions
              */
             total_fighters: number;
+        };
+        /**
+         * CityStat
+         * @description Fighter count by city.
+         */
+        CityStat: {
+            /** City */
+            city: string;
+            /** Country */
+            country?: string | null;
+            /** Count */
+            count: number;
+            /**
+             * Percentage
+             * @description Percentage of total fighters (rounded to 1 decimal place)
+             */
+            percentage: number;
+        };
+        /**
+         * CityStatsResponse
+         * @description City statistics response.
+         */
+        CityStatsResponse: {
+            /**
+             * Group By
+             * @enum {string}
+             */
+            group_by: "birthplace" | "training";
+            /** Cities */
+            cities?: components["schemas"]["CityStat"][];
+            /** Total Fighters */
+            total_fighters: number;
+            /** Generated At */
+            generated_at?: string;
+        };
+        /**
+         * CountryStat
+         * @description Fighter count by country.
+         */
+        CountryStat: {
+            /** Country */
+            country: string;
+            /** Count */
+            count: number;
+            /**
+             * Percentage
+             * @description Percentage of total fighters (rounded to 1 decimal place)
+             */
+            percentage: number;
+        };
+        /**
+         * CountryStatsResponse
+         * @description Country statistics response.
+         */
+        CountryStatsResponse: {
+            /**
+             * Group By
+             * @enum {string}
+             */
+            group_by: "birthplace" | "training" | "nationality";
+            /** Countries */
+            countries?: components["schemas"]["CountryStat"][];
+            /** Total Fighters */
+            total_fighters: number;
+            /** Generated At */
+            generated_at?: string;
         };
         /**
          * CurrentRankingsResponse
@@ -1483,6 +1631,22 @@ export interface components {
             peak_rank_division?: string | null;
             /** Peak Rank Date */
             peak_rank_date?: string | null;
+            /** Birthplace */
+            birthplace?: string | null;
+            /** Birthplace City */
+            birthplace_city?: string | null;
+            /** Birthplace Country */
+            birthplace_country?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Fighting Out Of */
+            fighting_out_of?: string | null;
+            /** Training Gym */
+            training_gym?: string | null;
+            /** Training City */
+            training_city?: string | null;
+            /** Training Country */
+            training_country?: string | null;
             /** Leg Reach */
             leg_reach?: string | null;
             /** Striking */
@@ -1573,6 +1737,53 @@ export interface components {
             peak_rank_division?: string | null;
             /** Peak Rank Date */
             peak_rank_date?: string | null;
+            /** Birthplace */
+            birthplace?: string | null;
+            /** Birthplace City */
+            birthplace_city?: string | null;
+            /** Birthplace Country */
+            birthplace_country?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Fighting Out Of */
+            fighting_out_of?: string | null;
+            /** Training Gym */
+            training_gym?: string | null;
+            /** Training City */
+            training_city?: string | null;
+            /** Training Country */
+            training_country?: string | null;
+        };
+        /**
+         * GymStat
+         * @description Fighter count by training gym.
+         */
+        GymStat: {
+            /** Gym */
+            gym: string;
+            /** City */
+            city?: string | null;
+            /** Country */
+            country?: string | null;
+            /** Fighter Count */
+            fighter_count: number;
+            /**
+             * Notable Fighters
+             * @description Top 2 fighters from this gym (by last fight date)
+             */
+            notable_fighters?: string[];
+        };
+        /**
+         * GymStatsResponse
+         * @description Gym statistics response.
+         */
+        GymStatsResponse: {
+            /** Gyms */
+            gyms?: components["schemas"]["GymStat"][];
+            /** Total Gyms */
+            total_gyms: number;
+            /** Generated At */
+            generated_at?: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1933,6 +2144,20 @@ export interface operations {
                 limit?: number;
                 /** @description Number of fighters to skip */
                 offset?: number;
+                /** @description Filter by ISO country code (e.g., US, BR, IE) */
+                nationality?: string | null;
+                /** @description Filter by birthplace country */
+                birthplace_country?: string | null;
+                /** @description Filter by birthplace city */
+                birthplace_city?: string | null;
+                /** @description Filter by training country */
+                training_country?: string | null;
+                /** @description Filter by training city */
+                training_city?: string | null;
+                /** @description Filter by training gym (partial match) */
+                training_gym?: string | null;
+                /** @description Filter by presence of location data (birthplace or training gym) */
+                has_location_data?: boolean | null;
                 /** @description When true, include lightweight current streak fields in list payloads. */
                 include_streak?: boolean;
                 /** @description How many recent fights to examine when computing a current streak. */
@@ -2235,7 +2460,7 @@ export interface operations {
     search_fighters_search__get: {
         parameters: {
             query?: {
-                /** @description Fighter name or nickname query. */
+                /** @description Fighter name, nickname, or location query. */
                 q?: string;
                 /** @description Optional stance filter. */
                 stance?: string | null;
@@ -2247,6 +2472,8 @@ export interface operations {
                 streak_type?: ("win" | "loss") | null;
                 /** @description Minimum streak count (only used when streak_type is specified). */
                 min_streak_count?: number | null;
+                /** @description Include location fields in search (birthplace, nationality, training gym). */
+                include_locations?: boolean;
                 /** @description Number of results to return. */
                 limit?: number;
                 /** @description Number of matches to skip. */
@@ -2369,6 +2596,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrendsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_country_stats_stats_countries_get: {
+        parameters: {
+            query?: {
+                /** @description Group by birthplace, training country, or nationality */
+                group_by?: string;
+                /** @description Minimum number of fighters */
+                min_fighters?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryStatsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_city_stats_stats_cities_get: {
+        parameters: {
+            query?: {
+                /** @description Group by birthplace or training city */
+                group_by?: string;
+                /** @description Filter by country */
+                country?: string | null;
+                /** @description Minimum number of fighters */
+                min_fighters?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CityStatsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_gym_stats_stats_gyms_get: {
+        parameters: {
+            query?: {
+                /** @description Filter by country */
+                country?: string | null;
+                /** @description Minimum number of fighters */
+                min_fighters?: number;
+                /** @description Sort by fighter count or gym name */
+                sort_by?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymStatsResponse"];
                 };
             };
             /** @description Validation Error */

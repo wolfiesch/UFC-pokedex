@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/", response_model=PaginatedFightersResponse)
 async def search_fighters(
-    q: str = Query("", description="Fighter name or nickname query."),
+    q: str = Query("", description="Fighter name, nickname, or location query."),
     stance: str | None = Query(None, description="Optional stance filter."),
     division: str | None = Query(None, description="Optional division filter."),
     champion_statuses: list[str] | None = Query(
@@ -30,11 +30,21 @@ async def search_fighters(
         le=20,
         description="Minimum streak count (only used when streak_type is specified)."
     ),
+    include_locations: bool = Query(
+        True,
+        description="Include location fields in search (birthplace, nationality, training gym)."
+    ),
     limit: int = Query(20, ge=1, le=100, description="Number of results to return."),
     offset: int = Query(0, ge=0, description="Number of matches to skip."),
     service: SearchService = Depends(get_search_service),
 ) -> PaginatedFightersResponse:
-    """Search fighters with validation."""
+    """Search fighters by name, nickname, or location.
+
+    Examples:
+        /search/?q=dublin      # Finds fighters from Dublin
+        /search/?q=aka         # Finds fighters from AKA gym
+        /search/?q=brazilian   # Finds Brazilian fighters
+    """
 
     # Validate streak parameters are used together
     if (streak_type is None) != (min_streak_count is None):
@@ -50,6 +60,7 @@ async def search_fighters(
         champion_statuses=champion_statuses,
         streak_type=streak_type,
         min_streak_count=min_streak_count,
+        include_locations=include_locations,
         limit=limit,
         offset=offset,
     )

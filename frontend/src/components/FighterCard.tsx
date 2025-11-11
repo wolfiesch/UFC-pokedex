@@ -3,6 +3,7 @@
 import { memo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { MapPin, Globe, Dumbbell } from "lucide-react";
 
 import type { FighterListItem } from "@/lib/types";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -191,6 +192,59 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
               <dd className="text-base">{fighter.stance ?? "—"}</dd>
             </div>
           </dl>
+
+          {/* Location Information - Desktop */}
+          {((fighter as any).birthplace || (fighter as any).training_gym || (fighter as any).nationality) && (
+            <div className="hidden md:flex flex-col gap-2 pt-2 border-t border-border/50">
+              {(fighter as any).birthplace && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Badge variant="outline" className="text-xs">
+                    <span className="text-muted-foreground">Born:</span>
+                    <span className="ml-1 font-medium">{(fighter as any).birthplace}</span>
+                  </Badge>
+                </div>
+              )}
+              {(fighter as any).training_gym && (
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Badge variant="secondary" className="text-xs">
+                    <span className="text-muted-foreground">Trains:</span>
+                    <span className="ml-1 font-medium">{(fighter as any).training_gym}</span>
+                  </Badge>
+                </div>
+              )}
+              {!(fighter as any).birthplace && (fighter as any).nationality && (
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Badge variant="outline" className="text-xs">
+                    <span className="font-medium">{(fighter as any).nationality}</span>
+                  </Badge>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Location Information - Mobile Compact */}
+          {((fighter as any).birthplace || (fighter as any).training_gym || (fighter as any).nationality) && (
+            <div className="flex md:hidden flex-wrap gap-1.5 pt-2 border-t border-border/50">
+              {(fighter as any).birthplace && (
+                <Badge variant="outline" className="text-xs">
+                  📍 {(fighter as any).birthplace_city || (fighter as any).birthplace_country || (fighter as any).birthplace}
+                </Badge>
+              )}
+              {(fighter as any).training_gym && (
+                <Badge variant="secondary" className="text-xs">
+                  💪 {(fighter as any).training_gym}
+                </Badge>
+              )}
+              {!(fighter as any).birthplace && (fighter as any).nationality && (
+                <Badge variant="outline" className="text-xs">
+                  🌍 {(fighter as any).nationality}
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="flex-wrap items-center justify-between gap-2 pt-0">

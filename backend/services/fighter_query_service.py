@@ -120,6 +120,12 @@ class FighterRepositoryProtocol(Protocol):
         limit: int | None = None,
         offset: int | None = None,
         nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -137,6 +143,7 @@ class FighterRepositoryProtocol(Protocol):
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
+        include_locations: bool = True,
         include_streak: bool = False,
         limit: int | None = None,
         offset: int | None = None,
@@ -148,8 +155,17 @@ class FighterRepositoryProtocol(Protocol):
     ) -> list[FighterComparisonEntry]:
         """Return stat snapshots for the provided fighter identifiers."""
 
-    async def count_fighters(self, nationality: str | None = None) -> int:
-        """Return the total number of indexed fighters (optionally filtered by nationality)."""
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
+        """Return the total number of indexed fighters (optionally filtered)."""
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Return a random fighter suitable for roster teasers."""
@@ -168,13 +184,24 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, include_streak=False, streak_window=6: _list_cache_key(
+        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: _list_cache_key(
             limit=limit,
             offset=offset,
             nationality=nationality,
             include_streak=include_streak,
             streak_window=streak_window,
-        ),
+        )
+        if not any(
+            [
+                birthplace_country,
+                birthplace_city,
+                training_country,
+                training_city,
+                training_gym,
+                has_location_data,
+            ]
+        )
+        else None,  # Don't cache location-filtered queries for now
         ttl=300,
         serializer=lambda fighters: [fighter.model_dump() for fighter in fighters],
         deserializer=_deserialize_fighter_list,
@@ -188,6 +215,12 @@ class FighterQueryService(CacheableService):
         limit: int | None = None,
         offset: int | None = None,
         nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> list[FighterListItem]:
@@ -197,6 +230,12 @@ class FighterQueryService(CacheableService):
             limit=limit,
             offset=offset,
             nationality=nationality,
+            birthplace_country=birthplace_country,
+            birthplace_city=birthplace_city,
+            training_country=training_country,
+            training_city=training_city,
+            training_gym=training_gym,
+            has_location_data=has_location_data,
             include_streak=include_streak,
             streak_window=streak_window,
         )
@@ -217,13 +256,41 @@ class FighterQueryService(CacheableService):
         return await self._repository.get_fighter(fighter_id)
 
     @cached(
-        lambda _self, nationality=None: f"fighters:count:{nationality if nationality else 'all'}",
+        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: f"fighters:count:{nationality if nationality else 'all'}"
+        if not any(
+            [
+                birthplace_country,
+                birthplace_city,
+                training_country,
+                training_city,
+                training_gym,
+                has_location_data,
+            ]
+        )
+        else None,  # Don't cache location-filtered counts
         ttl=600,
     )
-    async def count_fighters(self, nationality: str | None = None) -> int:
-        """Return the total number of indexed fighters with caching (optionally filtered by nationality)."""
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
+        """Return the total number of indexed fighters with caching (optionally filtered)."""
 
-        return await self._repository.count_fighters(nationality=nationality)
+        return await self._repository.count_fighters(
+            nationality=nationality,
+            birthplace_country=birthplace_country,
+            birthplace_city=birthplace_city,
+            training_country=training_country,
+            training_city=training_city,
+            training_gym=training_gym,
+            has_location_data=has_location_data,
+        )
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Return a random fighter without caching (high variance by design)."""
@@ -239,6 +306,7 @@ class FighterQueryService(CacheableService):
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
+        include_locations: bool = True,
         include_streak: bool = False,
         limit: int | None = None,
         offset: int | None = None,
@@ -294,6 +362,7 @@ class FighterQueryService(CacheableService):
             ),
             streak_type=filters.streak_type,
             min_streak_count=filters.min_streak_count,
+            include_locations=include_locations,
             include_streak=include_streak,
             limit=resolved_limit,
             offset=resolved_offset,
@@ -365,6 +434,12 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         limit: int | None = None,
         offset: int | None = None,
         nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
@@ -376,6 +451,17 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         # Apply nationality filter if specified
         if nationality:
             roster = [f for f in roster if f.nationality == nationality]
+        # Add location filters (simple implementation for in-memory)
+        if birthplace_country:
+            roster = [
+                f for f in roster if f.birthplace_country == birthplace_country
+            ]
+        if training_gym:
+            roster = [
+                f
+                for f in roster
+                if f.training_gym and training_gym.lower() in f.training_gym.lower()
+            ]
         return paginate_roster_entries(
             roster,
             limit=limit,
@@ -394,6 +480,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
+        include_locations: bool = True,
         include_streak: bool = False,
         limit: int | None = None,
         offset: int | None = None,
@@ -443,10 +530,23 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             )
         return fighters
 
-    async def count_fighters(self, nationality: str | None = None) -> int:
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
+        # Simple implementation for in-memory repository
         if nationality:
-            return sum(1 for detail in self._fighters.values()
-                      if getattr(detail, 'nationality', None) == nationality)
+            return sum(
+                1
+                for detail in self._fighters.values()
+                if getattr(detail, "nationality", None) == nationality
+            )
         return len(self._fighters)
 
     async def get_random_fighter(self) -> FighterListItem | None:

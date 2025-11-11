@@ -1,0 +1,47 @@
+{
+  "overrides": [
+    {
+      "fighter_id": "example_id_123",
+      "fighter_name": "Example Fighter",
+      "override_reason": "UFC.com data incorrect, verified via Wikipedia",
+      "fields": {
+        "birthplace": "City, Country",
+        "birthplace_city": "City",
+        "birthplace_country": "Country",
+        "nationality": "Nationality",
+        "training_gym": "Gym Name",
+        "training_city": "Training City",
+        "training_country": "Training Country",
+        "fighting_out_of": "City, State/Province, Country"
+      },
+      "do_not_auto_update": true,
+      "verified_by": "admin",
+      "verified_at": "2025-11-11",
+      "notes": "This is an example template. Remove this entry and add your actual overrides."
+    }
+  ],
+  "_documentation": {
+    "purpose": "Manual location data overrides for fighters where automated scraping is incorrect or unavailable",
+    "fields_description": {
+      "fighter_id": "Required: UFCStats fighter ID (hex string from database)",
+      "fighter_name": "Optional but recommended: Fighter name for verification",
+      "override_reason": "Required: Explanation of why manual override is needed",
+      "fields": "Required: Object with location fields to override",
+      "do_not_auto_update": "Optional (default: true): Prevent future auto-scraper from overwriting",
+      "verified_by": "Optional: Name/username of person who verified the data",
+      "verified_at": "Optional: Date when data was verified (YYYY-MM-DD)",
+      "notes": "Optional: Additional notes about this override"
+    },
+    "available_fields": [
+      "birthplace",
+      "birthplace_city",
+      "birthplace_country",
+      "nationality",
+      "training_gym",
+      "training_city",
+      "training_country",
+      "fighting_out_of"
+    ],
+    "usage": "python scripts/apply_manual_overrides.py --file data/manual/location_overrides.json"
+  }
+}

@@ -145,3 +145,66 @@ class AverageFightDuration(BaseModel):
     bucket_label: str
     average_duration_seconds: float
     average_duration_minutes: float
+
+
+# Location Statistics Models ------------------------------------------------------------------
+
+
+class CountryStat(BaseModel):
+    """Fighter count by country."""
+
+    country: str
+    count: int
+    percentage: float = Field(
+        description="Percentage of total fighters (rounded to 1 decimal place)"
+    )
+
+
+class CountryStatsResponse(BaseModel):
+    """Country statistics response."""
+
+    group_by: Literal["birthplace", "training", "nationality"]
+    countries: list[CountryStat] = Field(default_factory=list)
+    total_fighters: int
+    generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+
+class CityStat(BaseModel):
+    """Fighter count by city."""
+
+    city: str
+    country: str | None = None
+    count: int
+    percentage: float = Field(
+        description="Percentage of total fighters (rounded to 1 decimal place)"
+    )
+
+
+class CityStatsResponse(BaseModel):
+    """City statistics response."""
+
+    group_by: Literal["birthplace", "training"]
+    cities: list[CityStat] = Field(default_factory=list)
+    total_fighters: int
+    generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+
+class GymStat(BaseModel):
+    """Fighter count by training gym."""
+
+    gym: str
+    city: str | None = None
+    country: str | None = None
+    fighter_count: int
+    notable_fighters: list[str] = Field(
+        default_factory=list,
+        description="Top 2 fighters from this gym (by last fight date)",
+    )
+
+
+class GymStatsResponse(BaseModel):
+    """Gym statistics response."""
+
+    gyms: list[GymStat] = Field(default_factory=list)
+    total_gyms: int
+    generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())

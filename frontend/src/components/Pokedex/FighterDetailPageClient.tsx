@@ -2,6 +2,7 @@
 
 import FighterComparisonPanel from "@/components/Pokedex/FighterComparisonPanel";
 import FighterDetailCard from "@/components/Pokedex/FighterDetailCard";
+import { FighterLocationCard } from "@/components/fighter/FighterLocationCard";
 import { useFighter } from "@/hooks/useFighter";
 import type { FighterDetail } from "@/lib/types";
 
@@ -28,6 +29,7 @@ export default function FighterDetailPageClient({
         error={error}
         onRetry={retry}
       />
+      {fighter && <FighterLocationCard fighter={fighter} />}
       {fighter ? (
         <FighterComparisonPanel
           primaryFighterId={fighterId}
