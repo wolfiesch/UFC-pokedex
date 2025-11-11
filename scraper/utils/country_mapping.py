@@ -90,6 +90,10 @@ def normalize_nationality(country_name: str | None) -> str | None:
     # Clean and normalize
     country_name = country_name.strip()
 
+    # Return None if empty string after strip
+    if not country_name:
+        return None
+
     # Try exact match first
     if country_name in COUNTRY_NAME_TO_ISO:
         return COUNTRY_NAME_TO_ISO[country_name]

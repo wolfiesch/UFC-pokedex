@@ -17,7 +17,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency gua
         allow_module_level=True,
     )
 
-from backend.db.models import Base, Fight, Fighter, FighterStats, fighter_stats
+from backend.db.models import Base, Fight, Fighter, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
 from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (

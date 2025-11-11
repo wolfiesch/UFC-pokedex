@@ -79,7 +79,7 @@ class SherdogFighterDetail(BaseModel):
     reach: str | None = Field(None, description="Reach in inches (e.g., 84\")")
     reach_cm: float | None = Field(None, description="Reach in centimeters")
     stance: str | None = Field(None, description="Fighting stance (Orthodox, Southpaw, etc.)")
-    nationality: str | None = Field(None, description="Fighter nationality")
+    nationality: str | None = Field(None, description="ISO 3166-1 alpha-2 country code (e.g., US, BR, IE)")
 
     # Metadata
     item_type: str = Field(default="sherdog_fighter_detail", description="Item type identifier")
