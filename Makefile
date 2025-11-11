@@ -548,30 +548,30 @@ deploy-ssh-test: ## Test SSH connection to cPanel
 
 refresh-locations-high-priority: ## Refresh high-priority fighters (active with winning streak, limit 100)
 	@echo "🔄 Refreshing high-priority fighters..."
-	.venv/bin/python scripts/refresh_fighter_locations.py --priority high --limit 100
+	PYTHONPATH=. .venv/bin/python scripts/refresh_fighter_locations.py --priority high --limit 100
 
 refresh-locations-medium-priority: ## Refresh medium-priority fighters (recent but not active, limit 200)
 	@echo "🔄 Refreshing medium-priority fighters..."
-	.venv/bin/python scripts/refresh_fighter_locations.py --priority medium --limit 200
+	PYTHONPATH=. .venv/bin/python scripts/refresh_fighter_locations.py --priority medium --limit 200
 
 refresh-locations-all: ## Refresh all stale location data (>90 days old)
 	@echo "🔄 Refreshing all stale location data..."
-	.venv/bin/python scripts/refresh_fighter_locations.py --priority all
+	PYTHONPATH=. .venv/bin/python scripts/refresh_fighter_locations.py --priority all
 
 refresh-locations-dry-run: ## Preview what would be refreshed (high priority)
 	@echo "🔍 Dry run - previewing refresh candidates..."
-	.venv/bin/python scripts/refresh_fighter_locations.py --priority high --dry-run --limit 20
+	PYTHONPATH=. .venv/bin/python scripts/refresh_fighter_locations.py --priority high --dry-run --limit 20
 
 apply-location-overrides: ## Apply manual location overrides from JSON file
 	@echo "📝 Applying manual location overrides..."
-	.venv/bin/python scripts/apply_manual_overrides.py --file data/manual/location_overrides.json
+	PYTHONPATH=. .venv/bin/python scripts/apply_manual_overrides.py --file data/manual/location_overrides.json
 
 apply-location-overrides-dry-run: ## Preview manual overrides without applying
 	@echo "🔍 Dry run - previewing manual overrides..."
-	.venv/bin/python scripts/apply_manual_overrides.py --file data/manual/location_overrides.json --dry-run
+	PYTHONPATH=. .venv/bin/python scripts/apply_manual_overrides.py --file data/manual/location_overrides.json --dry-run
 
 monitor-location-health: ## Check location data health and coverage
-	@.venv/bin/python scripts/monitor_location_data_health.py
+	@PYTHONPATH=. .venv/bin/python scripts/monitor_location_data_health.py
 
 monitor-location-health-json: ## Check location data health (JSON output)
-	@.venv/bin/python scripts/monitor_location_data_health.py --json
+	@PYTHONPATH=. .venv/bin/python scripts/monitor_location_data_health.py --json
