@@ -37,6 +37,10 @@ class FighterDetail(FighterListItem):
     record: str | None = None
     leg_reach: str | None = None
     age: int | None = None
+    # Geography fields
+    birthplace: str | None = None
+    nationality: str | None = None  # ISO 3166-1 alpha-2 code
+    fighting_out_of: str | None = None
     striking: dict[str, Any] = Field(default_factory=dict)
     grappling: dict[str, Any] = Field(default_factory=dict)
     significant_strikes: dict[str, Any] = Field(default_factory=dict)
