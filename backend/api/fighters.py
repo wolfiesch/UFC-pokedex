@@ -6,7 +6,10 @@ from backend.schemas.fighter import (
     FighterListItem,
     PaginatedFightersResponse,
 )
-from backend.services.fighter_service import FighterService, get_fighter_service
+from backend.services.fighter_query_service import (
+    FighterQueryService,
+    get_fighter_query_service,
+)
 
 router = APIRouter()
 
@@ -28,11 +31,14 @@ async def list_fighters(
         le=20,
         description="How many recent fights to examine when computing a current streak.",
     ),
-    service: FighterService = Depends(get_fighter_service),
+    service: FighterQueryService = Depends(get_fighter_query_service),
 ) -> PaginatedFightersResponse:
     """List fighters with pagination."""
     fighters = await service.list_fighters(
-        limit=limit, offset=offset, include_streak=include_streak, streak_window=streak_window
+        limit=limit,
+        offset=offset,
+        include_streak=include_streak,
+        streak_window=streak_window,
     )
     total = await service.count_fighters()
     return PaginatedFightersResponse(
@@ -46,7 +52,7 @@ async def list_fighters(
 
 @router.get("/random", response_model=FighterListItem)
 async def get_random_fighter(
-    service: FighterService = Depends(get_fighter_service),
+    service: FighterQueryService = Depends(get_fighter_query_service),
 ) -> FighterListItem:
     """Get a random fighter from the database."""
     fighter = await service.get_random_fighter()
@@ -60,7 +66,7 @@ async def compare_fighters(
     fighter_ids: list[str] = Query(
         ..., description="Repeated or comma-separated fighter IDs to compare"
     ),
-    service: FighterService = Depends(get_fighter_service),
+    service: FighterQueryService = Depends(get_fighter_query_service),
 ) -> FighterComparisonResponse:
     """Return side-by-side stat snapshots for the requested fighters."""
 
@@ -87,7 +93,7 @@ async def compare_fighters(
 @router.get("/{fighter_id}", response_model=FighterDetail)
 async def get_fighter(
     fighter_id: str,
-    service: FighterService = Depends(get_fighter_service),
+    service: FighterQueryService = Depends(get_fighter_query_service),
 ) -> FighterDetail:
     fighter = await service.get_fighter(fighter_id)
     if not fighter:

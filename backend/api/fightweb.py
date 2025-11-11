@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.schemas.fight_graph import FightGraphResponse
-from backend.services.fighter_service import FighterService, get_fighter_service
+from backend.services.fight_graph_service import (
+    FightGraphService,
+    get_fight_graph_service,
+)
 
 router = APIRouter()
 
@@ -34,7 +37,7 @@ async def get_fight_graph(
         default=False,
         description="Include bouts marked as upcoming (result='Next').",
     ),
-    service: FighterService = Depends(get_fighter_service),
+    service: FightGraphService = Depends(get_fight_graph_service),
 ) -> FightGraphResponse:
     """Return a graph-friendly representation of fighters and their shared bouts."""
 

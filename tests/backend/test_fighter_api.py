@@ -59,10 +59,12 @@ sys.modules.setdefault("redis.exceptions", redis_exceptions_module)
 # Import backend modules after the Redis stubs are registered to avoid optional dependency errors.
 from backend.main import app  # noqa: E402
 from backend.schemas.fighter import FighterDetail  # noqa: E402
-from backend.services.fighter_service import get_fighter_service  # noqa: E402
+from backend.services.fighter_query_service import (  # noqa: E402
+    get_fighter_query_service,
+)
 
 
-class StubFighterService:
+class StubFighterQueryService:
     """Lightweight stand-in exposing only the ``get_fighter`` contract."""
 
     def __init__(self, detail: FighterDetail) -> None:
@@ -100,16 +102,16 @@ def override_fighter_service() -> Iterator[None]:
         career={},
         fight_history=[],
     )
-    stub_service = StubFighterService(fighter_detail)
+    stub_service = StubFighterQueryService(fighter_detail)
 
-    async def dependency_override() -> StubFighterService:
+    async def dependency_override() -> StubFighterQueryService:
         return stub_service
 
-    app.dependency_overrides[get_fighter_service] = dependency_override
+    app.dependency_overrides[get_fighter_query_service] = dependency_override
     try:
         yield
     finally:
-        app.dependency_overrides.pop(get_fighter_service, None)
+        app.dependency_overrides.pop(get_fighter_query_service, None)
 
 
 @pytest.fixture

@@ -10,22 +10,26 @@ from backend.schemas.stats import (
     TrendTimeBucket,
     TrendsResponse,
 )
-from backend.services.fighter_service import FighterService, get_fighter_service
+from backend.services.stats_service import StatsService, get_stats_service
 
 router = APIRouter()
 
 
 @router.get("/summary", response_model=StatsSummaryResponse)
 async def stats_summary(
-    service: FighterService = Depends(get_fighter_service),
+    service: StatsService = Depends(get_stats_service),
 ) -> StatsSummaryResponse:
     return await service.get_stats_summary()
 
 
 @router.get("/leaderboards", response_model=LeaderboardsResponse)
 async def stats_leaderboards(
-    limit: int = Query(10, ge=1, le=100, description="Maximum entries per leaderboard."),
-    offset: int = Query(0, ge=0, description="Pagination offset for leaderboard entries."),
+    limit: int = Query(
+        10, ge=1, le=100, description="Maximum entries per leaderboard."
+    ),
+    offset: int = Query(
+        0, ge=0, description="Pagination offset for leaderboard entries."
+    ),
     accuracy_metric: Annotated[
         LeaderboardMetricId,
         Query(description="fighter_stats.metric name representing accuracy to rank."),
@@ -37,7 +41,8 @@ async def stats_leaderboards(
         ),
     ] = "avg_submissions",
     division: str | None = Query(
-        None, description="Filter by weight division (e.g., 'Lightweight', 'Heavyweight')."
+        None,
+        description="Filter by weight division (e.g., 'Lightweight', 'Heavyweight').",
     ),
     min_fights: int | None = Query(
         None, ge=1, le=50, description="Minimum number of UFC fights required."
@@ -48,7 +53,7 @@ async def stats_leaderboards(
     end_date: date | None = Query(
         None, description="Optional inclusive upper bound on fight event dates."
     ),
-    service: FighterService = Depends(get_fighter_service),
+    service: StatsService = Depends(get_stats_service),
 ) -> LeaderboardsResponse:
     """Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering."""
 
@@ -79,7 +84,7 @@ async def stats_trends(
     streak_limit: int = Query(
         5, ge=1, le=50, description="Maximum fighters returned for win streak trends."
     ),
-    service: FighterService = Depends(get_fighter_service),
+    service: StatsService = Depends(get_stats_service),
 ) -> TrendsResponse:
     """Return historical streaks and fight duration aggregations for dashboards."""
 
