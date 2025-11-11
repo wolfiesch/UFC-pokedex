@@ -72,6 +72,8 @@ def test_parse_fighter_detail_page():
           <li><i>STANCE:</i><span>Orthodox</span></li>
           <li><i>DOB:</i><span>Jun 15, 1990</span></li>
           <li><i>AGE:</i><span>33</span></li>
+          <li><i>BIRTHPLACE:</i><span>Albuquerque, New Mexico, USA</span></li>
+          <li><i>TRAINS AT:</i><span>Jackson Wink MMA</span></li>
         </ul>
         <div class="b-list__info-box b-list__info-box_style_middle-width js-guide clearfix">
           <div class="b-list__info-box-left clearfix">
@@ -254,6 +256,8 @@ def test_parse_fighter_detail_page():
     assert detail["dob"] == "1990-06-15"
     assert detail["age"] == 33
     assert detail["division"] == "Middleweight"
+    assert detail["birthplace"] == "Albuquerque, New Mexico, USA"
+    assert detail["fighting_out_of"] == "Jackson Wink MMA"
     assert detail["striking"]["slpm"] == "5.35"
     assert detail["striking"]["str_acc"] == "50%"
     assert detail["grappling"]["td_avg"] == "2.00"
@@ -299,6 +303,60 @@ def test_parse_fighter_detail_page_prefers_scraped_division():
 
     assert detail["division"] == "Featherweight"
     assert detail["weight"] == "155 lbs."
+
+
+def test_parse_fighter_detail_page_fallback_fighting_out_of():
+    """Test that 'FIGHTING OUT OF' is used as fallback when 'TRAINS AT' is missing."""
+    html = """
+    <html>
+      <body>
+        <div class="b-content__banner">
+          <span class="b-content__title-highlight">Jane Smith</span>
+        </div>
+        <ul class="b-list__box-list">
+          <li><i>Weight:</i><span>135 lbs.</span></li>
+          <li><i>BIRTHPLACE:</i><span>Rio de Janeiro, Brazil</span></li>
+          <li><i>FIGHTING OUT OF:</i><span>American Top Team</span></li>
+        </ul>
+      </body>
+    </html>
+    """
+    response = HtmlResponse(
+        url="http://ufcstats.com/fighter-details/dddddddd-eeee-ffff-0000-111111111111",
+        body=html,
+        encoding="utf-8",
+    )
+
+    detail = parser.parse_fighter_detail_page(response)
+
+    assert detail["birthplace"] == "Rio de Janeiro, Brazil"
+    assert detail["fighting_out_of"] == "American Top Team"
+
+
+def test_parse_fighter_detail_page_geography_fields_missing():
+    """Test that geography fields are None when not present in the HTML."""
+    html = """
+    <html>
+      <body>
+        <div class="b-content__banner">
+          <span class="b-content__title-highlight">Unknown Fighter</span>
+        </div>
+        <ul class="b-list__box-list">
+          <li><i>Weight:</i><span>170 lbs.</span></li>
+        </ul>
+      </body>
+    </html>
+    """
+    response = HtmlResponse(
+        url="http://ufcstats.com/fighter-details/eeeeeeee-ffff-0000-1111-222222222222",
+        body=html,
+        encoding="utf-8",
+    )
+
+    detail = parser.parse_fighter_detail_page(response)
+
+    assert detail["birthplace"] is None
+    assert detail["fighting_out_of"] is None
 
 
 def test_parse_fight_history_stats_handles_missing_values():
