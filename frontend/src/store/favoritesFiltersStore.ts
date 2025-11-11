@@ -6,12 +6,14 @@ type FavoritesFiltersState = {
   searchTerm: string;
   stanceFilter: string | null;
   divisionFilter: string | null;
+  nationalityFilter: string | null;
   championStatusFilters: string[];
   winStreakCount: number | null;
   lossStreakCount: number | null;
   setSearchTerm: (term: string) => void;
   setStanceFilter: (stance: string | null) => void;
   setDivisionFilter: (division: string | null) => void;
+  setNationalityFilter: (nationality: string | null) => void;
   toggleChampionStatusFilter: (status: string) => void;
   setWinStreakCount: (count: number | null) => void;
   setLossStreakCount: (count: number | null) => void;
@@ -23,6 +25,7 @@ const defaultFilters = {
   searchTerm: "",
   stanceFilter: null,
   divisionFilter: null,
+  nationalityFilter: null,
   championStatusFilters: [] as string[],
   winStreakCount: null as number | null,
   lossStreakCount: null as number | null,
@@ -33,6 +36,7 @@ export const useFavoritesFiltersStore = create<FavoritesFiltersState>((set, get)
   setSearchTerm: (term) => set({ searchTerm: term }),
   setStanceFilter: (stance) => set({ stanceFilter: stance }),
   setDivisionFilter: (division) => set({ divisionFilter: division }),
+  setNationalityFilter: (nationality) => set({ nationalityFilter: nationality }),
   toggleChampionStatusFilter: (status) =>
     set((state) => {
       const exists = state.championStatusFilters.includes(status);

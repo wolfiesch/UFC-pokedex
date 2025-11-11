@@ -13,6 +13,9 @@ type FilterPanelProps = {
   divisions: string[];
   selectedDivision: string | null;
   onDivisionChange: (division: string | null) => void;
+  nationalities?: Array<{ code: string; label: string }>;
+  selectedNationality: string | null;
+  onNationalityChange: (nationality: string | null) => void;
   championStatusFilters: string[];
   onToggleChampionStatus: (status: string) => void;
   winStreakCount: number | null;
@@ -28,6 +31,9 @@ export default function FilterPanel({
   divisions,
   selectedDivision,
   onDivisionChange,
+  nationalities = [],
+  selectedNationality,
+  onNationalityChange,
   championStatusFilters,
   onToggleChampionStatus,
   winStreakCount,
@@ -45,9 +51,15 @@ export default function FilterPanel({
     onDivisionChange(value === "all" ? null : value);
   };
 
+  const handleNationalityChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    onNationalityChange(value === "all" ? null : value);
+  };
+
   const hasActiveFilters =
     selectedStance ||
     selectedDivision ||
+    selectedNationality ||
     championStatusFilters.length > 0 ||
     winStreakCount !== null ||
     lossStreakCount !== null;
@@ -55,6 +67,7 @@ export default function FilterPanel({
   const handleClearFilters = () => {
     onStanceChange(null);
     onDivisionChange(null);
+    onNationalityChange(null);
     // Clear all champion status filters
     championStatusFilters.forEach((status) => onToggleChampionStatus(status));
     // Clear streak filters
@@ -101,6 +114,26 @@ export default function FilterPanel({
             ))}
           </select>
         </div>
+        {nationalities.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="nationality-filter" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Nationality
+            </label>
+            <select
+              id="nationality-filter"
+              value={selectedNationality ?? "all"}
+              onChange={handleNationalityChange}
+              className="h-10 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-48"
+            >
+              <option value="all">All Nationalities</option>
+              {nationalities.map(({ code, label }) => (
+                <option key={code} value={code}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <ChampionStatusFilter
           selectedStatuses={championStatusFilters}
           onToggleStatus={onToggleChampionStatus}

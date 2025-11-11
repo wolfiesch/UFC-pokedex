@@ -34,6 +34,8 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
     setStanceFilter,
     divisionFilter,
     setDivisionFilter,
+    nationalityFilter,
+    setNationalityFilter,
     championStatusFilters,
     toggleChampionStatusFilter,
     winStreakCount,
@@ -53,6 +55,20 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
     "Strawweight",
     "Super Heavyweight",
     "Welterweight",
+  ];
+  const nationalities = [
+    { code: "US", label: "United States" },
+    { code: "BR", label: "Brazil" },
+    { code: "IE", label: "Ireland" },
+    { code: "RU", label: "Russia" },
+    { code: "CA", label: "Canada" },
+    { code: "GB", label: "United Kingdom" },
+    { code: "MX", label: "Mexico" },
+    { code: "AU", label: "Australia" },
+    { code: "PL", label: "Poland" },
+    { code: "FR", label: "France" },
+    { code: "NL", label: "Netherlands" },
+    { code: "SE", label: "Sweden" },
   ];
 
   const handleRandomFighter = async () => {
@@ -97,6 +113,9 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
         divisions={divisions}
         selectedDivision={divisionFilter}
         onDivisionChange={setDivisionFilter}
+        nationalities={nationalities}
+        selectedNationality={nationalityFilter}
+        onNationalityChange={setNationalityFilter}
         championStatusFilters={championStatusFilters}
         onToggleChampionStatus={toggleChampionStatusFilter}
         winStreakCount={winStreakCount}
@@ -120,6 +139,7 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
           setSearchTerm("");
           setStanceFilter(null);
           setDivisionFilter(null);
+          setNationalityFilter(null);
         }}
       />
     </section>

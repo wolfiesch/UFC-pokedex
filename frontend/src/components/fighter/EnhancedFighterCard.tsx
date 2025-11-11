@@ -10,6 +10,7 @@ import { RankFlagBadge } from "@/components/rankings/RankFlagBadge";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useComparison } from "@/hooks/useComparison";
 import { resolveImageUrl, getInitials } from "@/lib/utils";
+import CountryFlag from "@/components/CountryFlag";
 import {
   calculateStreak,
   getLastFight,
@@ -549,8 +550,28 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
             {/* Compact Stats Row */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{fighter.record}</span>
-              {fighter.stance && <span>{fighter.stance}</span>}
+              <div className="flex items-center gap-2">
+                {fighter.stance && <span>{fighter.stance}</span>}
+                {fighter.nationality && (
+                  <div className="flex items-center gap-1">
+                    <CountryFlag countryCode={fighter.nationality} width={16} height={12} />
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Fighting Out Of Section */}
+            {fighter.fighting_out_of && (
+              <div className="pt-3 mt-3 border-t border-border/50">
+                <div className="text-xs text-muted-foreground mb-1">Fighting Out Of</div>
+                <div className="text-sm text-foreground flex items-center gap-2">
+                  {fighter.nationality && (
+                    <CountryFlag countryCode={fighter.nationality} width={20} height={14} />
+                  )}
+                  {fighter.fighting_out_of}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* View Profile Footer */}

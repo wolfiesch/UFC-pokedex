@@ -37,6 +37,7 @@ export function useFighters(
   const searchTerm = useFavoritesFiltersStore((state) => state.searchTerm);
   const stance = useFavoritesFiltersStore((state) => state.stanceFilter);
   const division = useFavoritesFiltersStore((state) => state.divisionFilter);
+  const nationality = useFavoritesFiltersStore((state) => state.nationalityFilter);
   const championStatusFilters = useFavoritesFiltersStore((state) => state.championStatusFilters);
   const winStreakCount = useFavoritesFiltersStore((state) => state.winStreakCount);
   const lossStreakCount = useFavoritesFiltersStore((state) => state.lossStreakCount);
@@ -54,7 +55,7 @@ export function useFighters(
   const minStreakCount = winStreakCount !== null ? winStreakCount : lossStreakCount;
 
   const isFiltering = Boolean(
-    normalizedSearch || stance || division || championStatusFilters.length > 0 || streakType
+    normalizedSearch || stance || division || nationality || championStatusFilters.length > 0 || streakType
   );
 
   const queryKey = useMemo(
@@ -64,13 +65,14 @@ export function useFighters(
         search: normalizedSearch,
         stance: stance ?? null,
         division: division ?? null,
+        nationality: nationality ?? null,
         championStatusFilters: championStatusFilters.length > 0 ? championStatusFilters : null,
         streakType: streakType ?? null,
         minStreakCount: minStreakCount ?? null,
         limit: pageSize,
       },
     ],
-    [normalizedSearch, stance, division, championStatusFilters, streakType, minStreakCount, pageSize]
+    [normalizedSearch, stance, division, nationality, championStatusFilters, streakType, minStreakCount, pageSize]
   );
 
   const {
@@ -103,6 +105,7 @@ export function useFighters(
           normalizedSearch,
           stance,
           division,
+          nationality,
           championStatusFilters,
           streakType,
           minStreakCount,

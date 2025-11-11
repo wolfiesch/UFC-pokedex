@@ -208,6 +208,7 @@ export async function searchFighters(
   query: string,
   stance: string | null = null,
   division: string | null = null,
+  nationality: string | null = null,
   championStatusFilters: string[] = [],
   streakType: "win" | "loss" | null = null,
   minStreakCount: number | null = null,
@@ -230,6 +231,9 @@ export async function searchFighters(
   }
   if (division && division.length > 0) {
     queryParams.division = division;
+  }
+  if (nationality && nationality.length > 0) {
+    queryParams.nationality = nationality;
   }
   if (championStatusFilters.length > 0) {
     queryParams.champion_statuses = championStatusFilters;

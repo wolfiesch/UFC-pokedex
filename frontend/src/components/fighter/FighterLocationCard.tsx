@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Dumbbell, Globe, ArrowRight } from "lucide-react";
 import type { FighterDetail } from "@/lib/types";
+import CountryFlag from "@/components/CountryFlag";
 
 interface FighterLocationCardProps {
   fighter: FighterDetail;
@@ -40,9 +41,14 @@ export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
               Birthplace
             </div>
             <div className="pl-6 space-y-2">
-              <Badge variant="outline" className="text-base">
-                {birthplace}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {nationality && (
+                  <CountryFlag countryCode={nationality} width={24} height={16} />
+                )}
+                <Badge variant="outline" className="text-base">
+                  {birthplace}
+                </Badge>
+              </div>
               {birthplaceCountry && (
                 <div className="flex items-center gap-2">
                   <Link
@@ -90,15 +96,20 @@ export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
               Training
             </div>
             <div className="pl-6 space-y-2">
-              <div className="flex flex-col gap-1">
-                <Badge variant="secondary" className="text-base w-fit">
-                  {trainingGym}
-                </Badge>
-                {(trainingCity || trainingCountry) && (
-                  <span className="text-sm text-muted-foreground">
-                    {[trainingCity, trainingCountry].filter(Boolean).join(", ")}
-                  </span>
+              <div className="flex items-center gap-2">
+                {nationality && (
+                  <CountryFlag countryCode={nationality} width={24} height={16} />
                 )}
+                <div className="flex flex-col gap-1">
+                  <Badge variant="secondary" className="text-base w-fit">
+                    {trainingGym}
+                  </Badge>
+                  {(trainingCity || trainingCountry) && (
+                    <span className="text-sm text-muted-foreground">
+                      {[trainingCity, trainingCountry].filter(Boolean).join(", ")}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Link
