@@ -219,14 +219,8 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               </div>
             )}
 
-            {/* Division, Ranking, and Champion Badges */}
+            {/* Champion Badges - Stay at top left */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              <RankFlagBadge
-                currentRank={fighter.current_rank}
-                peakRank={fighter.peak_rank}
-                isChampion={fighter.is_current_champion}
-                isInterimChampion={fighter.was_interim}
-              />
               {fighter.is_current_champion && (
                 <span className="rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1">
                   <svg
@@ -253,26 +247,10 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               )}
             </div>
 
-            {fighter.division && (
-              <div className="absolute top-3 right-3">
-                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                  {fighter.division}
-                </span>
-              </div>
-            )}
-
-            {/* Record Badge */}
-            {fighter.record && (
-              <div className="absolute bottom-3 left-3">
-                <span className="rounded-full bg-gray-700/90 px-2 py-1 text-xs font-semibold text-gray-200 backdrop-blur-sm">
-                  {fighter.record}
-                </span>
-              </div>
-            )}
-
-            {/* Streak Badge */}
-            {streak && streak.count >= 2 && (
-              <div className="absolute bottom-3 right-3 z-20">
+            {/* Bottom Left Stack: Streak (top) → Record (bottom) */}
+            <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
+              {/* Streak Badge - Centered above record */}
+              {streak && streak.count >= 2 && (
                 <div
                   className={`flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur-sm ${
                     streak.type === "win"
@@ -284,8 +262,33 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                 >
                   <span className="text-xs font-bold text-white">{streak.label}</span>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Record Badge */}
+              {fighter.record && (
+                <span className="rounded-full bg-gray-700/90 px-2 py-1 text-xs font-semibold text-gray-200 backdrop-blur-sm">
+                  {fighter.record}
+                </span>
+              )}
+            </div>
+
+            {/* Bottom Right Stack: Division (top) → RankFlagBadge (bottom) */}
+            <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5">
+              {/* Division Badge */}
+              {fighter.division && (
+                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                  {fighter.division}
+                </span>
+              )}
+
+              {/* RankFlagBadge - Flipped layout */}
+              <RankFlagBadge
+                currentRank={fighter.current_rank}
+                peakRank={fighter.peak_rank}
+                isChampion={fighter.is_current_champion}
+                isInterimChampion={fighter.was_interim}
+              />
+            </div>
 
             {/* Quick Stats Overlay on Hover */}
             <AnimatePresence>

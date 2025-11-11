@@ -39,22 +39,22 @@ export function RankFlagBadge({
         className,
       )}
     >
-      <span
-        aria-hidden="true"
-        className="h-7 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-600 shadow-inner shadow-black/30"
-      />
       <div className="flex items-center gap-2">
-        {hasCurrentRank && (
-          <span className="rounded-full bg-gradient-to-r from-amber-300 to-amber-600 px-3 py-1 text-[0.65rem] font-black uppercase tracking-tight text-black shadow-inner shadow-white/40">
-            {championLabel}
-          </span>
-        )}
         {hasPeakRank && (
           <span className="rounded-full border border-dashed border-amber-200/70 bg-black/40 px-3 py-1 text-[0.65rem] font-semibold tracking-tight text-amber-100">
             Peak {peakRank === 0 ? "C" : `#${peakRank}`}
           </span>
         )}
+        {hasCurrentRank && (
+          <span className="rounded-full bg-gradient-to-r from-amber-300 to-amber-600 px-3 py-1 text-[0.65rem] font-black uppercase tracking-tight text-black shadow-inner shadow-white/40">
+            {championLabel}
+          </span>
+        )}
       </div>
+      <span
+        aria-hidden="true"
+        className="h-7 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-600 shadow-inner shadow-black/30"
+      />
     </div>
   );
 }
