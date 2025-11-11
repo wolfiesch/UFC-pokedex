@@ -3,7 +3,7 @@
 import { memo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 import type { FighterListItem } from "@/lib/types";
 import { useFighterDetails } from "@/hooks/useFighterDetails";
 import { RankFlagBadge } from "@/components/rankings/RankFlagBadge";
@@ -36,15 +36,26 @@ interface EnhancedFighterCardProps {
  */
 function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFighterCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [imageError, setImageError] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // 3D Parallax Motion Values
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Spring animation for smooth movement
+  const springConfig = { stiffness: 150, damping: 20 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), springConfig);
 
   // Hooks
   const { isFavorite, toggleFavorite } = useFavorites({ autoInitialize: false });
   const { addToComparison, isInComparison } = useComparison();
   const { details, isLoading: isLoadingDetails, error: detailsError } = useFighterDetails(
     fighter.fighter_id,
-    isHovered
+    detailsEnabled
   );
 
   // Cleanup timeout on unmount
@@ -56,10 +67,33 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
     };
   }, []);
 
-  // Debounced hover handlers (300ms delay to prevent unnecessary API calls)
+  // Mouse move handler for 3D parallax effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // Calculate normalized position (-0.5 to 0.5)
+    const x = (e.clientX - centerX) / (rect.width / 2);
+    const y = (e.clientY - centerY) / (rect.height / 2);
+
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  // Reset position when mouse leaves
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  // Debounce API calls without delaying the hover animation
   const handleHoverStart = () => {
+    setIsHovered(true);
     hoverTimeoutRef.current = setTimeout(() => {
-      setIsHovered(true);
+      setDetailsEnabled(true);
     }, 300);
   };
 
@@ -68,7 +102,9 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+    setDetailsEnabled(false);
     setIsHovered(false);
+    handleMouseLeave();
   };
 
   // Computed values
@@ -119,15 +155,29 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
   return (
     <motion.div
+      ref={cardRef}
       className="group relative h-full"
       onHoverStart={handleHoverStart}
       onHoverEnd={handleHoverEnd}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      style={{
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
+      }}
     >
       <Link href={`/fighters/${fighter.fighter_id}`} className="h-full flex flex-col">
-        <div className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 ${championGlowClass}`}>
+        <motion.div
+          className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm transition-colors transition-shadow duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 ${championGlowClass}`}
+          style={{
+            rotateX,
+            rotateY,
+            transformStyle: "preserve-3d",
+          }}
+        >
           {/* Quick Actions Toolbar */}
           <AnimatePresence>
             {isHovered && (
@@ -137,6 +187,10 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
+                style={{
+                  transform: "translateZ(40px)",
+                  transformStyle: "preserve-3d",
+                }}
               >
                 <button
                   onClick={(e) => {
@@ -196,7 +250,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
           </AnimatePresence>
 
           {/* Fighter Image/Avatar Section */}
-          <div className="relative flex-shrink-0 aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+          <div
+            className="relative flex-shrink-0 aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
+            style={{
+              transform: "translateZ(-20px)",
+              transformStyle: "preserve-3d",
+            }}
+          >
             {shouldShowImage ? (
               <Image
                 src={imageSrc!}
@@ -220,7 +280,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
             )}
 
             {/* Champion Badges - Stay at top left */}
-            <div className="absolute top-3 left-3 flex flex-col gap-2">
+            <div
+              className="absolute top-3 left-3 flex flex-col gap-2"
+              style={{
+                transform: "translateZ(30px)",
+                transformStyle: "preserve-3d",
+              }}
+            >
               {fighter.is_current_champion && (
                 <span className="rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1">
                   <svg
@@ -247,9 +313,15 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               )}
             </div>
 
-            {/* Bottom Left Stack: Streak (top) → Record (bottom) */}
-            <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
-              {/* Streak Badge - Centered above record */}
+            {/* Bottom Left Stack: Streak only */}
+            <div
+              className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5"
+              style={{
+                transform: "translateZ(25px)",
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* Streak Badge */}
               {streak && streak.count >= 2 && (
                 <div
                   className={`flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur-sm ${
@@ -263,25 +335,17 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                   <span className="text-xs font-bold text-white">{streak.label}</span>
                 </div>
               )}
-
-              {/* Record Badge */}
-              {fighter.record && (
-                <span className="rounded-full bg-gray-700/90 px-2 py-1 text-xs font-semibold text-gray-200 backdrop-blur-sm">
-                  {fighter.record}
-                </span>
-              )}
             </div>
 
-            {/* Bottom Right Stack: Division (top) → RankFlagBadge (bottom) */}
-            <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5">
-              {/* Division Badge */}
-              {fighter.division && (
-                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                  {fighter.division}
-                </span>
-              )}
-
-              {/* RankFlagBadge - Flipped layout */}
+            {/* Bottom Right Stack: RankFlagBadge only */}
+            <div
+              className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5"
+              style={{
+                transform: "translateZ(25px)",
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* RankFlagBadge */}
               <RankFlagBadge
                 currentRank={fighter.current_rank}
                 peakRank={fighter.peak_rank}
@@ -417,7 +481,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
           </div>
 
           {/* Fighter Info Section */}
-          <div className="flex flex-1 flex-col p-4">
+          <div
+            className="flex flex-1 flex-col p-4"
+            style={{
+              transform: "translateZ(10px)",
+              transformStyle: "preserve-3d",
+            }}
+          >
             <div className="mb-2 min-h-[3rem]">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
@@ -446,7 +516,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
           </div>
 
           {/* View Profile Footer */}
-          <div className="flex-shrink-0 border-t border-border/50 bg-muted/30 px-4 py-2">
+          <div
+            className="flex-shrink-0 border-t border-border/50 bg-muted/30 px-4 py-2"
+            style={{
+              transform: "translateZ(15px)",
+              transformStyle: "preserve-3d",
+            }}
+          >
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">{fighter.division}</span>
               <span className="flex items-center gap-1 font-medium text-primary transition-all group-hover:gap-2">
@@ -467,7 +543,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </Link>
     </motion.div>
   );

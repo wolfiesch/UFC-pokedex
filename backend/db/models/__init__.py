@@ -127,6 +127,12 @@ class Fighter(Base):
         index=True,
         doc="Count of current streak (computed from recent fight history)",
     )
+    last_fight_date: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+        index=True,
+        doc="Date of fighter's most recent fight (for sorting by recent activity)",
+    )
 
     fights: Mapped[list[Fight]] = relationship("Fight", back_populates="fighter")
 

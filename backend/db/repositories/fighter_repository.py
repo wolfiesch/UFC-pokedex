@@ -266,6 +266,7 @@ class FighterRepository(BaseRepository):
             Fighter.is_former_champion,
             Fighter.current_streak_type,
             Fighter.current_streak_count,
+            Fighter.last_fight_date,
         ]
 
     def _fighter_detail_columns(self) -> list[Any]:
@@ -420,7 +421,7 @@ class FighterRepository(BaseRepository):
         query = (
             select(Fighter)
             .options(load_only(*load_columns))
-            .order_by(Fighter.name, Fighter.id)
+            .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id)
         )
 
         if offset is not None:
@@ -806,7 +807,7 @@ class FighterRepository(BaseRepository):
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        stmt = select(Fighter).options(load_only(*load_columns)).order_by(Fighter.name)
+        stmt = select(Fighter).options(load_only(*load_columns)).order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name)
         count_stmt = select(func.count()).select_from(Fighter)
 
         for condition in filters:
