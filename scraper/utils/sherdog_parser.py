@@ -9,6 +9,8 @@ from typing import Any
 
 from parsel import Selector
 
+from scraper.utils.country_mapping import normalize_nationality
+
 logger = logging.getLogger(__name__)
 
 
@@ -260,12 +262,14 @@ def parse_sherdog_fighter_detail(response: Selector) -> dict[str, Any] | None:
             data["weight"] = weight_data["value"]
             data["weight_kg"] = weight_data["kg"]
 
-        # Extract nationality
+        # Extract nationality (convert to ISO code)
         nationality_text = clean_text(
             response.css("strong[itemprop='nationality']::text").get()
         )
         if nationality_text:
-            data["nationality"] = nationality_text
+            nationality = normalize_nationality(nationality_text)
+            if nationality:
+                data["nationality"] = nationality
 
         # Try to find reach - look in table rows for "REACH" label
         # Sherdog sometimes has this field, sometimes doesn't
