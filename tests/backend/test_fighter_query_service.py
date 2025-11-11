@@ -1,27 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from datetime import date
 from typing import Any, Literal
 
 import pytest
 
-from backend.schemas.fight_graph import FightGraphResponse
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
     FighterListItem,
 )
-from backend.schemas.stats import (
-    LeaderboardMetricId,
-    LeaderboardsResponse,
-    StatsSummaryResponse,
-    TrendTimeBucket,
-    TrendsResponse,
-)
-from backend.services.fighter_service import (
+from backend.services.fighter_query_service import (
+    FighterQueryService,
     FighterRepositoryProtocol,
-    FighterService,
     InMemoryFighterRepository,
 )
 
@@ -77,36 +68,6 @@ class FakeComparisonRepository:
 
         raise NotImplementedError
 
-    async def stats_summary(self) -> StatsSummaryResponse:
-        """Not used in this test double."""
-
-        raise NotImplementedError
-
-    async def get_leaderboards(
-        self,
-        *,
-        limit: int,
-        accuracy_metric: LeaderboardMetricId,
-        submissions_metric: LeaderboardMetricId,
-        start_date: date | None,
-        end_date: date | None,
-    ) -> LeaderboardsResponse:
-        """Not used in this test double."""
-
-        raise NotImplementedError
-
-    async def get_trends(
-        self,
-        *,
-        start_date: date | None,
-        end_date: date | None,
-        time_bucket: TrendTimeBucket,
-        streak_limit: int,
-    ) -> TrendsResponse:
-        """Not used in this test double."""
-
-        raise NotImplementedError
-
     async def search_fighters(
         self,
         query: str | None = None,
@@ -134,25 +95,12 @@ class FakeComparisonRepository:
 
         raise NotImplementedError
 
-    async def get_fight_graph(
-        self,
-        *,
-        division: str | None = None,
-        start_year: int | None = None,
-        end_year: int | None = None,
-        limit: int = 200,
-        include_upcoming: bool = False,
-    ) -> FightGraphResponse:
-        """Not used in this test double."""
-
-        raise NotImplementedError
-
 
 @pytest.mark.asyncio
 async def test_compare_fighters_preserves_requested_order() -> None:
     repository = FakeComparisonRepository()
     cache = FakeCache()
-    service = FighterService(repository, cache=cache)
+    service = FighterQueryService(repository, cache=cache)
 
     first = await service.compare_fighters(["alpha", "beta"])
     assert [entry.fighter_id for entry in first] == ["alpha", "beta"]
