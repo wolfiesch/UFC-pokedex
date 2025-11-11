@@ -281,6 +281,18 @@ validate-images: ## Validate all fighter images using basic checks
 validate-images-from-file: ## Validate specific fighter IDs from file
 	PYTHONPATH=. .venv/bin/python scripts/validate_fighter_images.py --ids-file data/placeholder_fighter_ids.txt
 
+validate-images-facial: ## Validate images with facial detection and quality analysis
+	cd backend && ../.venv/bin/python -m scripts.validate_images
+
+validate-images-facial-test: ## Test facial validation on 10 images
+	cd backend && ../.venv/bin/python -m scripts.validate_images --limit 10
+
+validate-images-facial-stats: ## Show facial validation statistics
+	cd backend && ../.venv/bin/python -m scripts.validate_images --stats
+
+validate-images-facial-force: ## Re-validate all images (including already validated)
+	cd backend && ../.venv/bin/python -m scripts.validate_images --force
+
 verify-replacement: ## Verify recently replaced placeholder images (last 2 hours)
 	@echo "🔍 Verifying recently replaced images..."
 	@PYTHONPATH=. .venv/bin/python scripts/verify_replacement.py

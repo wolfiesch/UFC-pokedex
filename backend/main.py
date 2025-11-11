@@ -36,7 +36,16 @@ from backend.db.connection import (
     get_engine as _connection_get_engine,
 )
 
-from .api import events, favorites, fighters, fightweb, rankings, search, stats
+from .api import (
+    events,
+    favorites,
+    fighters,
+    fightweb,
+    image_validation,
+    rankings,
+    search,
+    stats,
+)
 from .schemas.error import (
     ErrorResponse,
     ErrorType,
@@ -510,3 +519,6 @@ app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(rankings.router, prefix="/rankings", tags=["rankings"])
 app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])
+app.include_router(
+    image_validation.router, prefix="/image-validation", tags=["image-validation"]
+)

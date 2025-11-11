@@ -13,6 +13,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Table,
     Index,
@@ -98,6 +99,40 @@ class Fighter(Base):
         Float, nullable=True
     )
     crop_processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Image validation fields
+    image_quality_score: Mapped[float | None] = mapped_column(
+        Float, nullable=True, doc="Overall image quality score (0-100)"
+    )
+    image_resolution_width: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, doc="Image width in pixels"
+    )
+    image_resolution_height: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, doc="Image height in pixels"
+    )
+    has_face_detected: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        index=True,
+        doc="Whether facial detection found a human face",
+    )
+    face_count: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, doc="Number of faces detected in image"
+    )
+    image_validated_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+        index=True,
+        doc="Timestamp of last image validation",
+    )
+    image_validation_flags: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        doc="Validation flags: low_resolution, no_face_detected, multiple_faces, potential_duplicate",
+    )
+    face_encoding: Mapped[bytes | None] = mapped_column(
+        LargeBinary, nullable=True, doc="128-dimensional face encoding for duplicate detection"
+    )
 
     # Champion status fields
     is_current_champion: Mapped[bool] = mapped_column(

@@ -257,16 +257,54 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               transformStyle: "preserve-3d",
             }}
           >
+            {/* Depth Layer 1: Deep background glow (moves most) */}
+            <div
+              className="absolute inset-0 bg-gradient-radial from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{
+                transform: "translateZ(-40px) scale(1.2)",
+                transformStyle: "preserve-3d",
+                filter: "blur(40px)",
+              }}
+            />
+
+            {/* Depth Layer 2: Mid-ground glow */}
+            <div
+              className="absolute inset-0 bg-gradient-radial from-primary/20 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{
+                transform: "translateZ(-25px) scale(1.1)",
+                transformStyle: "preserve-3d",
+                filter: "blur(20px)",
+              }}
+            />
+
+            {/* Fighter Image (foreground) */}
             {shouldShowImage ? (
-              <Image
-                src={imageSrc!}
-                alt={fighter.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                priority={priority}
-                onError={() => setImageError(true)}
-              />
+              <div
+                className="relative w-full h-full"
+                style={{
+                  transform: "translateZ(5px)",
+                  transformStyle: "preserve-3d",
+                }}
+              >
+                <Image
+                  src={imageSrc!}
+                  alt={fighter.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  priority={priority}
+                  onError={() => setImageError(true)}
+                />
+
+                {/* Rim light effect - subtle edge glow on hover */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{
+                    background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)",
+                    mixBlendMode: "overlay",
+                  }}
+                />
+              </div>
             ) : (
               <div
                 className={`flex h-full items-center justify-center bg-gradient-to-br ${getDivisionColor(
