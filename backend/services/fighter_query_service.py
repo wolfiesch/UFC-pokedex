@@ -422,6 +422,13 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
                 FighterComparisonEntry(
                     fighter_id=fighter_id,
                     name=detail.name,
+                    record=detail.record,
+                    division=detail.division,
+                    striking=detail.striking,
+                    grappling=detail.grappling,
+                    significant_strikes=getattr(detail, "significant_strikes", {}),
+                    takedown_stats=getattr(detail, "takedown_stats", {}),
+                    career={},
                 )
             )
         return fighters
