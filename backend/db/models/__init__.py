@@ -192,6 +192,12 @@ class Fighter(Base):
         index=True,
         doc="Nationality from Sherdog (e.g., 'Irish'). May differ from birthplace_country.",
     )
+    fighting_out_of: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+        doc="Fighting location from UFC.com (e.g., 'Las Vegas, Nevada, USA')",
+    )
     training_gym: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
