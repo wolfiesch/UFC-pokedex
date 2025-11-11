@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class FavoriteEntryBase(BaseModel):
@@ -86,8 +86,7 @@ class FavoriteEntry(FavoriteEntryBase):
     )
     updated_at: datetime = Field(..., description="Last mutation timestamp")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FavoriteCollectionBase(BaseModel):
@@ -170,8 +169,7 @@ class FavoriteCollectionSummary(FavoriteCollectionBase):
     updated_at: datetime
     stats: FavoriteCollectionStats | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FavoriteCollectionDetail(FavoriteCollectionSummary):

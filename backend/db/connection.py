@@ -125,8 +125,9 @@ async def begin_engine_transaction(engine: AsyncEngine) -> AsyncIterator[Any]:
         yield connection
 
 
-# Global engine instance for FastAPI dependency injection
+# Global engine/session instances for FastAPI dependency injection
 _engine: AsyncEngine | None = None
+_session_factory: sessionmaker[AsyncSession] | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -137,20 +138,58 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
+def get_session_factory() -> sessionmaker[AsyncSession]:
+    """Lazily create a session factory bound to the shared engine."""
+    global _session_factory
+    if _session_factory is None:
+        _session_factory = create_session_factory(get_engine())
+    return _session_factory
+
+
 async def get_db() -> AsyncSession:
     """
     Dependency to provide database session.
 
     Yields async session and ensures proper cleanup even on errors.
     """
-    engine = get_engine()
-    session_factory = create_session_factory(engine)
-    async with session_factory() as session:
+    async with get_session_factory()() as session:
         try:
             yield session
             await session.commit()
         except Exception:
             await session.rollback()
             raise
+
+
+async def get_async_session() -> AsyncIterator[AsyncSession]:
+    """
+    FastAPI dependency that mirrors ``get_db`` but keeps the legacy name.
+
+    Exists for backwards compatibility with routers/scripts that still import
+    ``get_async_session``. Automatically commits on success and rolls back on
+    error before closing the session.
+    """
+    async with get_session_factory()() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+
+@asynccontextmanager
+async def get_async_session_context() -> AsyncIterator[AsyncSession]:
+    """
+    Async context manager for scripts/CLI tasks that need manual session control.
+    """
+    async with get_session_factory()() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
         finally:
-            await session.close()
+            # Ensure no dangling transactions remain open
+            if session.in_transaction():
+                await session.rollback()
