@@ -606,6 +606,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/image-validation/validation/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Validation Stats
+         * @description Get overall image validation statistics.
+         *
+         *     Returns:
+         *         Dictionary with validation statistics including:
+         *         - total_fighters: Total number of fighters
+         *         - validated: Number of fighters with validated images
+         *         - with_faces: Number with detected faces
+         *         - without_faces: Number without detected faces
+         *         - low_quality: Number with quality score < 50
+         *         - with_flags: Number with validation flags
+         *         - flag_breakdown: Count of each flag type
+         */
+        get: operations["get_validation_stats_image_validation_validation_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/image-validation/validation/low-quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Low Quality Images
+         * @description Get fighters with low-quality images.
+         *
+         *     Args:
+         *         min_score: Quality score threshold (return fighters below this score)
+         *         limit: Maximum number of results
+         *         offset: Number of results to skip
+         *
+         *     Returns:
+         *         Dictionary with fighters list and metadata
+         */
+        get: operations["get_low_quality_images_image_validation_validation_low_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/image-validation/validation/no-face": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fighters Without Faces
+         * @description Get fighters where no face was detected.
+         *
+         *     These images may be:
+         *     - Not actual fighter photos
+         *     - Poor quality or corrupted
+         *     - Action shots without clear face
+         *     - Placeholder images
+         *
+         *     Returns:
+         *         Dictionary with fighters list and metadata
+         */
+        get: operations["get_fighters_without_faces_image_validation_validation_no_face_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/image-validation/validation/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Duplicate Images
+         * @description Get fighters with potential duplicate images.
+         *
+         *     Uses perceptual hashing to identify visually similar images.
+         *     Duplicates may indicate:
+         *     - Same fighter with multiple IDs
+         *     - Incorrectly assigned images
+         *     - Stock placeholder photos
+         *
+         *     Returns:
+         *         Dictionary with fighters and their duplicate matches
+         */
+        get: operations["get_duplicate_images_image_validation_validation_duplicates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/image-validation/validation/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fighters By Flag
+         * @description Get fighters with a specific validation flag.
+         *
+         *     Args:
+         *         flag: Flag type to filter by
+         *         limit: Maximum number of results
+         *         offset: Number of results to skip
+         *
+         *     Returns:
+         *         Dictionary with fighters list and metadata
+         */
+        get: operations["get_fighters_by_flag_image_validation_validation_flags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/image-validation/validation/{fighter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fighter Validation
+         * @description Get validation details for a specific fighter.
+         *
+         *     Args:
+         *         fighter_id: Fighter ID
+         *
+         *     Returns:
+         *         Dictionary with complete validation data
+         */
+        get: operations["get_fighter_validation_image_validation_validation__fighter_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2751,6 +2921,189 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FightGraphResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_validation_stats_image_validation_validation_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    get_low_quality_images_image_validation_validation_low_quality_get: {
+        parameters: {
+            query?: {
+                /** @description Minimum quality score threshold */
+                min_score?: number;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighters_without_faces_image_validation_validation_no_face_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_duplicate_images_image_validation_validation_duplicates_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighters_by_flag_image_validation_validation_flags_get: {
+        parameters: {
+            query: {
+                /** @description Flag type: low_resolution, no_face_detected, multiple_faces, blurry_image, too_dark, too_bright */
+                flag: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighter_validation_image_validation_validation__fighter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Validation Error */

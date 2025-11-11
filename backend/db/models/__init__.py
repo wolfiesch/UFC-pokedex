@@ -169,6 +169,78 @@ class Fighter(Base):
         doc="Date of fighter's most recent fight (for sorting by recent activity)",
     )
 
+    # Location data fields (from UFC.com and Sherdog)
+    birthplace_city: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="City extracted from birthplace (e.g., 'Dublin')",
+    )
+    birthplace_country: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+        doc="Country extracted from birthplace (e.g., 'Ireland'). Indexed for country filters.",
+    )
+    birthplace: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Full birthplace string from UFC.com (e.g., 'Dublin, Ireland')",
+    )
+    nationality: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+        doc="Nationality from Sherdog (e.g., 'Irish'). May differ from birthplace_country.",
+    )
+    training_gym: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Training gym name from UFC.com (e.g., 'SBG Ireland')",
+    )
+    training_city: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+        doc="Training city derived from gym location lookup",
+    )
+    training_country: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+        doc="Training country derived from gym location lookup",
+    )
+
+    # UFC.com cross-reference and matching metadata
+    ufc_com_slug: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        unique=True,
+        index=True,
+        doc="UFC.com athlete slug (e.g., 'conor-mcgregor') for future updates",
+    )
+    ufc_com_scraped_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+        doc="Timestamp of last UFC.com data fetch for refresh scheduling",
+    )
+    ufc_com_match_confidence: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        doc="Fuzzy match confidence score (0-100) for UFC.com fighter matching",
+    )
+    ufc_com_match_method: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Match method: 'auto_high', 'auto_medium', 'manual', or 'verified'",
+    )
+    needs_manual_review: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        doc="Flag for ambiguous matches or conflicting data requiring human verification",
+    )
+
     fights: Mapped[list[Fight]] = relationship("Fight", back_populates="fighter")
 
     @validates("current_streak_type")

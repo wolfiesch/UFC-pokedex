@@ -19,13 +19,25 @@ class FighterNameMatcher:
         """Initialize the name matcher with a fighter database.
 
         Args:
-            fighters_db: List of fighter dicts with keys: id, name, record, division
+            fighters_db: List of fighter dicts with keys: id, name, nickname, record, division
         """
         self.fighters_db = fighters_db
         # Build normalized name lookup for faster matching
         self.name_lookup = {
             normalize_name(f["name"]): f for f in fighters_db
         }
+
+        # Build additional lookups for nickname-based matching
+        # This handles cases like "Patricio Pitbull" -> "Patricio Freire" (nickname: "Pitbull")
+        self.nickname_lookup = {}
+        for f in fighters_db:
+            if f.get("nickname"):
+                # Try "FirstName Nickname" pattern (e.g., "Patricio Pitbull")
+                name_parts = f["name"].split()
+                if name_parts:
+                    first_name = name_parts[0]
+                    nickname_combo = f"{first_name} {f['nickname']}"
+                    self.nickname_lookup[normalize_name(nickname_combo)] = f
 
     def match_fighter(
         self,
@@ -54,18 +66,35 @@ class FighterNameMatcher:
             fighter = self.name_lookup[normalized_input]
             return (fighter["id"], 100.0, "exact_name_match")
 
-        # Fuzzy match against all fighter names
+        # Try nickname-based match (e.g., "Patricio Pitbull")
+        if normalized_input in self.nickname_lookup:
+            fighter = self.nickname_lookup[normalized_input]
+            return (fighter["id"], 100.0, "exact_nickname_match")
+
+        # Fuzzy match against all fighter names and nickname variations
         # Use list of (choice, context) tuples to preserve all candidates with duplicate names
-        name_choices = [
-            (normalize_name(f["name"]), f) for f in self.fighters_db
-        ]
+        name_choices = []
+        for f in self.fighters_db:
+            # Add primary name
+            name_choices.append((normalize_name(f["name"]), f))
+
+            # Add nickname variations if available
+            if f.get("nickname"):
+                name_parts = f["name"].split()
+                if name_parts:
+                    # "FirstName Nickname" pattern (e.g., "Patricio Pitbull")
+                    first_name = name_parts[0]
+                    nickname_combo = f"{first_name} {f['nickname']}"
+                    name_choices.append((normalize_name(nickname_combo), f))
 
         # Use rapidfuzz's process.extractOne with processor to handle tuples
+        # score_cutoff ensures we don't get extremely low matches that might cause issues
         match_result = process.extractOne(
             normalized_input,
             name_choices,
             scorer=fuzz.token_set_ratio,
-            processor=lambda x: x[0],  # Extract normalized name from tuple
+            processor=lambda x: x[0] if isinstance(x, tuple) else x,  # Extract normalized name from tuple
+            score_cutoff=50.0,  # Minimum score to consider
         )
 
         if not match_result:

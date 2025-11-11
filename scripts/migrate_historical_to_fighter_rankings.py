@@ -18,6 +18,7 @@ Usage:
 """
 
 import argparse
+import asyncio
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -26,11 +27,15 @@ from uuid import uuid4
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, select
 from sqlalchemy.orm import Session
 
-# Import database connection
-from backend.db.connection import get_database_url
+# Import database connection and models
+from backend.db.connection import get_database_url, get_session
+from backend.db.models import Fighter
+
+# Import name matcher
+from scraper.utils.name_matcher import FighterNameMatcher
 
 
 # Division name standardization mapping
@@ -58,7 +63,32 @@ def standardize_division_name(division_name: str) -> str:
     return DIVISION_MAPPING.get(division_name, division_name)
 
 
-def migrate_historical_rankings(
+async def load_fighters_for_matching():
+    """Load all fighters from database for name matching.
+
+    Returns:
+        List of dicts with keys: id, name, nickname, record, division
+    """
+    async with get_session() as session:
+        result = await session.execute(
+            select(Fighter.id, Fighter.name, Fighter.nickname, Fighter.record, Fighter.division)
+        )
+        rows = result.all()
+
+        fighters_db = []
+        for row in rows:
+            fighters_db.append({
+                "id": row.id,
+                "name": row.name,
+                "nickname": row.nickname,
+                "record": row.record,
+                "division": row.division,
+            })
+
+        return fighters_db
+
+
+async def migrate_historical_rankings_async(
     engine,
     dry_run: bool = False,
     limit: int | None = None,
@@ -83,6 +113,17 @@ def migrate_historical_rankings(
         'errors': 0,
     }
 
+    # Load fighters for name matching
+    print("📋 Loading fighters from database for name matching...")
+    fighters_db = await load_fighters_for_matching()
+    print(f"   Loaded {len(fighters_db):,} fighters")
+    print()
+
+    # Initialize name matcher with enhanced nickname support
+    matcher = FighterNameMatcher(fighters_db)
+    print("✓ Name matcher initialized with nickname support")
+    print()
+
     with engine.connect() as conn:
         # Count total historical rankings
         count_query = text("SELECT COUNT(*) FROM historical_rankings")
@@ -92,17 +133,15 @@ def migrate_historical_rankings(
         print(f"📊 Total historical rankings: {stats['total_historical']:,}")
         print()
 
-        # Build query to fetch historical rankings with fighter IDs
+        # Fetch historical rankings (WITHOUT joining to fighters table)
         query = text("""
             SELECT
                 hr.fighter_name,
                 hr.division_code,
                 hr.division_name,
                 hr.rank,
-                hr.issue_date,
-                f.id as fighter_id
+                hr.issue_date
             FROM historical_rankings hr
-            LEFT JOIN fighters f ON hr.fighter_name = f.name
             ORDER BY hr.issue_date, hr.division_code, hr.rank
             {limit_clause}
         """.format(
@@ -112,7 +151,7 @@ def migrate_historical_rankings(
         result = conn.execute(query)
         rows = result.fetchall()
 
-        print(f"📦 Processing {len(rows):,} ranking records...")
+        print(f"📦 Processing {len(rows):,} ranking records with fuzzy name matching...")
         print()
 
         # Process each ranking
@@ -121,7 +160,14 @@ def migrate_historical_rankings(
             division_name = row[2]
             rank = row[3]
             issue_date = row[4]
-            fighter_id = row[5]  # Will be None if no match
+
+            # Use enhanced name matcher (with nickname support and fuzzy matching)
+            standard_division = standardize_division_name(division_name)
+            fighter_id, confidence, reason = matcher.match_fighter(
+                fighter_name,
+                division=standard_division,
+                min_confidence=75.0  # Slightly lower threshold for historical data
+            )
 
             # Track matched vs unmatched
             if fighter_id:
@@ -130,9 +176,6 @@ def migrate_historical_rankings(
                 stats['unmatched_fighters'] += 1
                 # Skip fighters we can't match
                 continue
-
-            # Standardize division name
-            standard_division = standardize_division_name(division_name)
 
             if dry_run:
                 if i <= 5:  # Show first 5 for dry run
@@ -248,9 +291,9 @@ def main():
 
     engine = create_engine(database_url)
 
-    # Run migration
+    # Run migration (async to use name matcher)
     start_time = datetime.now()
-    stats = migrate_historical_rankings(engine, args.dry_run, args.limit)
+    stats = asyncio.run(migrate_historical_rankings_async(engine, args.dry_run, args.limit))
     duration = (datetime.now() - start_time).total_seconds()
 
     # Print results

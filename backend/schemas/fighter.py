@@ -51,6 +51,14 @@ class FighterListItem(BaseModel):
     peak_rank_source: str | None = None
     peak_rank_division: str | None = None
     peak_rank_date: date | None = None
+    # Location data fields (from UFC.com and Sherdog)
+    birthplace: str | None = None
+    birthplace_city: str | None = None
+    birthplace_country: str | None = None
+    nationality: str | None = None
+    training_gym: str | None = None
+    training_city: str | None = None
+    training_country: str | None = None
 
 
 class FighterDetail(FighterListItem):

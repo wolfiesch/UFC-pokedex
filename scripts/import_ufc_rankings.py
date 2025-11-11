@@ -26,10 +26,10 @@ async def load_fighters_for_matching(session):
     """Load all fighters from database for name matching.
 
     Returns:
-        List of dicts with keys: id, name, record, division
+        List of dicts with keys: id, name, nickname, record, division
     """
     result = await session.execute(
-        select(Fighter.id, Fighter.name, Fighter.record, Fighter.division)
+        select(Fighter.id, Fighter.name, Fighter.nickname, Fighter.record, Fighter.division)
     )
     rows = result.all()
 
@@ -38,6 +38,7 @@ async def load_fighters_for_matching(session):
         fighters_db.append({
             "id": row.id,
             "name": row.name,
+            "nickname": row.nickname,
             "record": row.record,
             "division": row.division,
         })
