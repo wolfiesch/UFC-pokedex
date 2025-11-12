@@ -238,9 +238,7 @@ async def get_duplicate_images(
             fighters_with_duplicates.append((fighter, duplicate_ids))
             referenced_duplicate_ids.update(duplicate_ids)
 
-    # Build a lookup of fighter_id -> fighter_name for every duplicate referenced.
-    # Fetching everything in one query keeps database load predictable regardless of
-    # how many duplicates we encounter.
+    # Batch-fetch fighter names for all duplicate IDs.
     duplicate_lookup: dict[str, str] = {}
     if referenced_duplicate_ids:
         dup_query = select(Fighter.id, Fighter.name).where(
