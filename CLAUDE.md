@@ -43,6 +43,69 @@ make scraper        # Run Scrapy spider (fighters_list)
 
 **Troubleshooting dev build crashes:** If you encounter webpack cache issues, MODULE_NOT_FOUND errors, or chunk 404s, run `make dev-clean` to clear all frontend build caches and restart cleanly.
 
+## Database Setup: PostgreSQL vs SQLite
+
+### Quick Decision Guide
+
+**Use PostgreSQL when:**
+- ✅ Working on production-ready features
+- ✅ Testing with full dataset (10,000+ fighters)
+- ✅ Testing concurrent requests or write-heavy operations
+- ✅ Creating or testing database migrations (Alembic)
+- ✅ Developing features that require advanced SQL features (full-text search, complex joins)
+
+**Use SQLite when:**
+- ✅ Quick prototyping or testing UI changes
+- ✅ Docker is not available or not desired
+- ✅ Working with small sample datasets (< 100 fighters)
+- ✅ Running CI/CD tests that need fast database setup
+- ✅ No database schema changes are needed
+
+### Key Differences
+
+| Feature | PostgreSQL | SQLite |
+|---------|-----------|---------|
+| **Setup Complexity** | Requires Docker or manual PostgreSQL install | Zero setup - just run the app |
+| **Database Migrations** | Uses Alembic migrations (version-controlled) | Uses SQLAlchemy `create_all()` (no migrations) |
+| **Schema Changes** | Must create migration files manually | Tables auto-created from models |
+| **Data Persistence** | Persists in Docker volume | Single file: `data/app.db` |
+| **Performance** | Optimized for large datasets & concurrency | Fast for small datasets, single-threaded |
+| **Production Use** | ✅ Production-ready | ❌ Development/testing only |
+| **Full Dataset Support** | ✅ Handles 10K+ fighters easily | ⚠️ Possible but not recommended (blocked by default) |
+| **Concurrent Writes** | ✅ Multiple connections supported | ❌ Single writer at a time |
+| **Advanced SQL Features** | ✅ Full PostgreSQL features | ⚠️ Limited (no full-text search, simpler query planner) |
+
+### PostgreSQL Setup (Recommended for Regular Development)
+
+```bash
+# 1. Install dependencies
+make bootstrap
+
+# 2. Start PostgreSQL + Redis containers
+docker-compose up -d
+
+# 3. Run database migrations (creates schema)
+make db-upgrade
+
+# 4. Load data into database
+make load-data              # Load fighter list only
+make load-data-details      # Load fighter details from JSON files
+# OR
+make reload-data            # Load both list + details (full refresh)
+
+# 5. Start backend (connects to PostgreSQL automatically)
+make api
+
+# 6. Start frontend (separate terminal)
+make frontend
+```
+
+**Environment configuration:**
+```bash
+# .env file (use this for PostgreSQL)
+DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+```
+
 ### SQLite Development Mode (Docker-Free)
 
 The backend can run without Docker using SQLite as a lightweight alternative to PostgreSQL. This is ideal for quick local development, testing, or when Docker isn't available.
@@ -99,6 +162,45 @@ USE_SQLITE=1
   ALLOW_SQLITE_PROD_SEED=1 make api:seed-full
   ```
 - This safety check prevents accidentally seeding large datasets into SQLite, which is not designed for production workloads
+
+### Switching Between Databases
+
+**From SQLite to PostgreSQL:**
+```bash
+# 1. Start PostgreSQL container
+docker-compose up -d
+
+# 2. Set DATABASE_URL in .env
+echo "DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" >> .env
+
+# 3. Run Alembic migrations to create schema
+make db-upgrade
+
+# 4. Load your data
+make reload-data            # If you have scraped data
+# OR
+make api:seed               # For sample data
+
+# 5. Restart backend
+make api
+```
+
+**From PostgreSQL to SQLite:**
+```bash
+# 1. Remove or comment out DATABASE_URL in .env
+# DATABASE_URL=postgresql+psycopg://...
+
+# 2. (Optional) Remove USE_SQLITE if set
+# USE_SQLITE=1
+
+# 3. Backend will automatically create SQLite database on startup
+make api:dev
+
+# 4. Seed with sample data
+make api:seed
+```
+
+**Important:** When switching databases, your data does NOT automatically transfer. You need to re-seed or re-load scraped data after switching.
 
 ### Cloudflare Tunnel (Public Access)
 

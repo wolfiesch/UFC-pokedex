@@ -13,17 +13,59 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
 
 ## Getting Started
 
-1. Follow `docs/setup/environment_setup.md`.
-2. Copy `.env.example` to `.env` and update secrets.
-3. Bootstrap databases and dependencies:
-   ```bash
-   make bootstrap
-   ```
-4. Run all services locally:
-   ```bash
-   make dev
-   ```
-   The command now configures Cloudflare tunnel URLs through environment variable overrides at runtime, keeping your `.env` files untouched. If you choose to work with temporary `.env.dev` files for the backend or frontend, remember to clean them up after you stop the processes.
+### Quick Start (SQLite - No Docker Required)
+
+Perfect for quick testing or when Docker is unavailable:
+
+```bash
+# 1. Install dependencies
+make bootstrap
+
+# 2. Seed database with sample fighters (creates SQLite database automatically)
+make api:seed
+
+# 3. Start backend (in one terminal)
+make api:dev
+
+# 4. Start frontend (in another terminal)
+make frontend
+```
+
+Visit `http://localhost:3000` to see the application.
+
+### Full Setup (PostgreSQL - Recommended for Development)
+
+For production-like development with full dataset support:
+
+```bash
+# 1. Install dependencies
+make bootstrap
+
+# 2. Copy environment file and update if needed
+cp .env.example .env
+
+# 3. Start PostgreSQL + Redis containers
+docker-compose up -d
+
+# 4. Run database migrations
+make db-upgrade
+
+# 5. Load data (choose one)
+make api:seed              # 8 sample fighters
+make reload-data           # Full scraped dataset (if you have scraped data)
+
+# 6. Start all services
+make dev-local             # Backend + Frontend on localhost
+# OR
+make dev                   # Backend + Frontend with Cloudflare tunnels
+```
+
+### Database Choice
+
+- **SQLite**: Fast setup, no Docker needed, good for UI work and small datasets
+- **PostgreSQL**: Production-like, handles large datasets, required for migration testing
+
+See `CLAUDE.md` for detailed comparison and switching instructions.
 
 Refer to `Plans/Initial_Plan.md` for the full project roadmap.
 
