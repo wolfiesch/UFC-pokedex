@@ -86,14 +86,14 @@ export function useFighters(
   } = useInfiniteQuery<FightersPage, ApiError>({
     queryKey,
     initialPageParam: 0,
-    // Hydrate from SSG data (only when no filters applied)
-    initialData:
-      initialData && !isFiltering
-        ? {
-            pages: [initialData],
-            pageParams: [0],
-          }
-        : undefined,
+    // Disable SSG hydration to ensure fresh data with streak information
+    // initialData:
+    //   initialData && !isFiltering
+    //     ? {
+    //         pages: [initialData],
+    //         pageParams: [0],
+    //       }
+    //     : undefined,
     /**
      * The query function decides between the search endpoint and the general
      * roster endpoint. TanStack Query hands us the offset for the current page.
