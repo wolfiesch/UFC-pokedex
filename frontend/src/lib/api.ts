@@ -218,9 +218,11 @@ export async function searchFighters(
   const trimmed = query.trim();
 
   // Build query parameters dynamically
-  const queryParams: Record<string, string | number | string[]> = {
+  const queryParams: Record<string, string | number | string[] | boolean> = {
     limit,
     offset,
+    include_streak: true,
+    streak_window: 6,
   };
 
   if (trimmed.length > 0) {

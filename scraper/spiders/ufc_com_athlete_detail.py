@@ -29,16 +29,14 @@ class UFCComAthleteDetailSpider(scrapy.Spider):
     allowed_domains = ["ufc.com"]
 
     custom_settings = {
-        # Download delay: 15 seconds (required by robots.txt)
-        "DOWNLOAD_DELAY": 15.0,
-        # Randomize to appear human-like (11.25s - 18.75s)
-        "RANDOMIZE_DOWNLOAD_DELAY": True,
-        # Only 1 concurrent request to UFC.com
-        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
-        # AutoThrottle: Adapt to server speed
+        # OPTIMIZATION B: Remove fixed delay, let AutoThrottle handle rate limiting
+        # AutoThrottle will respect robots.txt crawl-delay automatically
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 3,
+        # AutoThrottle: Dynamic rate limiting (respects robots.txt 15s crawl-delay)
         "AUTOTHROTTLE_ENABLED": True,
-        "AUTOTHROTTLE_START_DELAY": 15.0,
+        "AUTOTHROTTLE_START_DELAY": 5.0,  # Start faster, will adapt to 15s from robots.txt
         "AUTOTHROTTLE_MAX_DELAY": 60.0,
+        "AUTOTHROTTLE_TARGET_CONCURRENCY": 3.0,  # Target 3 concurrent requests
         # User agent
         "USER_AGENT": "UFC-Pokedex-Bot/1.0 (+https://github.com/user/ufc-pokedex)",
         # Respect robots.txt

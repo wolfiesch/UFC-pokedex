@@ -662,8 +662,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               transformStyle: "preserve-3d",
             }}
           >
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{fighter.division}</span>
+            <div className="flex items-center justify-center text-xs">
               <span className="flex items-center gap-1 font-medium text-primary transition-all group-hover:gap-2">
                 View Profile
                 <svg
