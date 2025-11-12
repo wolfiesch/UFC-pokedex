@@ -22,6 +22,8 @@ class _AsyncResultWrapper:
     def __init__(self, result: Result[Any]) -> None:
         self._result = result
 
+    # The return type differs from the base class because this is a synchronous
+    # wrapper around SQLAlchemy's Result, not AsyncResult.
     def scalars(self):  # type: ignore[override]
         """Expose the scalar result helper from the wrapped synchronous result."""
 
