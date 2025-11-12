@@ -16,12 +16,60 @@ import {
   getLastFight,
   formatFightDate,
   getRelativeTime,
+  formatShortDate,
 } from "@/lib/fighter-utils";
 import { toCountryIsoCode } from "@/lib/countryCodes";
 
 interface EnhancedFighterCardProps {
   fighter: FighterListItem;
   priority?: boolean; // For LCP optimization - set to true for first card
+}
+
+/**
+ * Fight status badge component for displaying upcoming/recent fights
+ */
+interface FightBadgeProps {
+  fighter: FighterListItem;
+}
+
+function FightBadge({ fighter }: FightBadgeProps): JSX.Element | null {
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // Priority 1: Upcoming fight
+  if (fighter.next_fight_date) {
+    const nextDate = new Date(fighter.next_fight_date);
+    if (nextDate > today) {
+      return (
+        <span className="flex items-center gap-1 text-muted-foreground">
+          <span>⚔️</span>
+          <span>{formatShortDate(nextDate)}</span>
+        </span>
+      );
+    }
+  }
+
+  // Priority 2: Recent fight (last 30 days)
+  if (fighter.last_fight_date && fighter.last_fight_result) {
+    const lastDate = new Date(fighter.last_fight_date);
+    if (lastDate >= thirtyDaysAgo && lastDate <= today) {
+      const isWin = fighter.last_fight_result === "win";
+      const isLoss = fighter.last_fight_result === "loss";
+
+      if (isWin || isLoss) {
+        return (
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <span className={isWin ? "text-green-500" : "text-red-500"}>
+              {isWin ? "🟢" : "🔴"}
+            </span>
+            <span>{getRelativeTime(fighter.last_fight_date)}</span>
+          </span>
+        );
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -559,11 +607,19 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               )}
             </div>
 
-            {/* Compact Stats Row */}
+            {/* Compact Stats Row with Fight Badge */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{fighter.record}</span>
               <div className="flex items-center gap-2">
-                {fighter.stance && <span>{fighter.stance}</span>}
+                <span>{fighter.record}</span>
+                {fighter.stance && (
+                  <>
+                    <span>•</span>
+                    <span>{fighter.stance}</span>
+                  </>
+                )}
+                <FightBadge fighter={fighter} />
+              </div>
+              <div className="flex items-center gap-2">
                 {nationalityFlag && (
                   <div className="flex items-center gap-1">
                     <CountryFlag countryCode={nationalityFlag} width={16} height={12} />

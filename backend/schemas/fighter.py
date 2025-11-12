@@ -60,6 +60,10 @@ class FighterListItem(BaseModel):
     training_gym: str | None = None
     training_city: str | None = None
     training_country: str | None = None
+    # Lightweight fight status for default card display
+    next_fight_date: date | None = None
+    last_fight_date: date | None = None
+    last_fight_result: Literal["win", "loss", "draw", "nc"] | None = None
 
 
 class FighterDetail(FighterListItem):

@@ -23,7 +23,7 @@ from sqlalchemy import func, literal, select, true, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
-from backend.db.models import Fight, Fighter, FighterRanking, fighter_stats
+from backend.db.models import Event, Fight, Fighter, FighterRanking, fighter_stats
 from backend.db.repositories.base import (
     BaseRepository,
     _calculate_age,
@@ -322,6 +322,23 @@ class FighterRepository(BaseRepository):
 
         return _DEFAULT_RANKING_SOURCE
 
+    def _normalize_fight_result(
+        self, result: str | None
+    ) -> Literal["win", "loss", "draw", "nc"] | None:
+        """Normalize fight result to canonical form (reuses favorites_service pattern)."""
+        if result is None:
+            return None
+        normalized = result.strip().lower()
+        if normalized in {"w", "win"}:
+            return "win"
+        if normalized in {"l", "loss"}:
+            return "loss"
+        if normalized.startswith("draw"):
+            return "draw"
+        if normalized in {"nc", "no contest"}:
+            return "nc"
+        return None  # Ignore "next" and other values
+
     async def _fetch_ranking_summaries(
         self, fighter_ids: Sequence[str]
     ) -> dict[str, FighterRankingSummary]:
@@ -415,6 +432,88 @@ class FighterRepository(BaseRepository):
 
         return summaries
 
+    async def _fetch_fight_status(
+        self, fighter_ids: Sequence[str]
+    ) -> dict[str, dict[str, date | Literal["win", "loss", "draw", "nc"] | None]]:
+        """Fetch upcoming fight dates and last fight results for given fighters.
+
+        Returns a dict mapping fighter_id to a dict with:
+        - next_fight_date: date of next upcoming fight (or None)
+        - last_fight_result: normalized result of last fight (or None)
+        """
+        if not fighter_ids:
+            return {}
+
+        # Subquery: Get next upcoming fight date for each fighter
+        # Upcoming fights have result='next' and event_date > today
+        next_fight_subq = (
+            select(
+                Fight.fighter_id.label("fighter_id"),
+                func.min(Fight.event_date).label("next_fight_date"),
+            )
+            .join(Event, Fight.event_id == Event.id)
+            .where(Fight.fighter_id.in_(fighter_ids))
+            .where(Event.date > func.current_date())
+            .where(Fight.result == "next")
+            .group_by(Fight.fighter_id)
+        ).subquery()
+
+        # Subquery: Get last fight result for fighters with last_fight_date
+        # Match fights where event_date equals the fighter's last_fight_date
+        # Order by: prioritize valid results (W/L/win/loss) over N/A or other values
+        last_fight_subq = (
+            select(
+                Fight.fighter_id.label("fighter_id"),
+                Fight.result.label("last_result"),
+                func.row_number()
+                .over(
+                    partition_by=Fight.fighter_id,
+                    order_by=(
+                        # Prioritize rows with valid results (W, L, win, loss, draw, NC)
+                        func.case(
+                            (Fight.result.in_(["W", "L", "win", "loss", "draw", "nc", "NC", "no contest"]), 0),
+                            else_=1
+                        ),
+                        Fight.event_date.desc(),
+                    ),
+                )
+                .label("row_number"),
+            )
+            .join(Fighter, Fight.fighter_id == Fighter.id)
+            .where(Fight.fighter_id.in_(fighter_ids))
+            .where(Fight.event_date == Fighter.last_fight_date)
+        ).subquery()
+
+        # Execute both queries
+        next_fight_rows = await self._session.execute(
+            select(
+                next_fight_subq.c.fighter_id,
+                next_fight_subq.c.next_fight_date,
+            )
+        )
+
+        last_fight_rows = await self._session.execute(
+            select(
+                last_fight_subq.c.fighter_id,
+                last_fight_subq.c.last_result,
+            ).where(last_fight_subq.c.row_number == 1)
+        )
+
+        # Build result dict
+        status_by_fighter: dict[
+            str, dict[str, date | Literal["win", "loss", "draw", "nc"] | None]
+        ] = {}
+
+        for row in next_fight_rows:
+            status = status_by_fighter.setdefault(row.fighter_id, {})
+            status["next_fight_date"] = row.next_fight_date
+
+        for row in last_fight_rows:
+            status = status_by_fighter.setdefault(row.fighter_id, {})
+            status["last_fight_result"] = self._normalize_fight_result(row.last_result)
+
+        return status_by_fighter
+
     async def list_fighters(
         self,
         *,
@@ -496,6 +595,13 @@ class FighterRepository(BaseRepository):
                 fighter_ids, window=streak_window
             )
 
+        # Fetch fight status (upcoming and last fight result) for all fighters
+        fight_status_by_fighter: dict[
+            str, dict[str, date | Literal["win", "loss", "draw", "nc"] | None]
+        ] = {}
+        if fighters:
+            fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)
+
         ranking_summaries = (
             await self._fetch_ranking_summaries(fighter_ids) if fighters else {}
         )
@@ -507,6 +613,7 @@ class FighterRepository(BaseRepository):
         roster_entries: list[FighterListItem] = []
         for fighter in fighters:
             streak_bundle = streak_by_fighter.get(fighter.id, {})
+            fight_status = fight_status_by_fighter.get(fighter.id, {})
             ranking = ranking_summaries.get(fighter.id)
             roster_entries.append(
                 FighterListItem(
@@ -560,6 +667,14 @@ class FighterRepository(BaseRepository):
                     training_gym=fighter.training_gym,
                     training_city=fighter.training_city,
                     training_country=fighter.training_country,
+                    next_fight_date=typing_cast(
+                        date | None, fight_status.get("next_fight_date")
+                    ),
+                    last_fight_date=fighter.last_fight_date,
+                    last_fight_result=typing_cast(
+                        Literal["win", "loss", "draw", "nc"] | None,
+                        fight_status.get("last_fight_result"),
+                    ),
                 )
             )
         return roster_entries
@@ -924,6 +1039,13 @@ class FighterRepository(BaseRepository):
             await self._fetch_ranking_summaries(fighter_ids) if fighter_ids else {}
         )
 
+        # Fetch fight status (upcoming and last fight result) for all fighters
+        fight_status_by_fighter: dict[
+            str, dict[str, date | Literal["win", "loss", "draw", "nc"] | None]
+        ] = {}
+        if fighter_ids:
+            fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)
+
         # Use a single "today" snapshot so every returned card displays the same
         # age even if the request straddles midnight in UTC.
         today_utc: date = datetime.now(tz=UTC).date()
@@ -933,6 +1055,7 @@ class FighterRepository(BaseRepository):
 
         roster_entries: list[FighterListItem] = []
         for fighter in fighters:
+            fight_status = fight_status_by_fighter.get(fighter.id, {})
             ranking = ranking_summaries.get(fighter.id)
             roster_entries.append(
                 FighterListItem(
@@ -981,6 +1104,14 @@ class FighterRepository(BaseRepository):
                     training_gym=fighter.training_gym,
                     training_city=fighter.training_city,
                     training_country=fighter.training_country,
+                    next_fight_date=typing_cast(
+                        date | None, fight_status.get("next_fight_date")
+                    ),
+                    last_fight_date=fighter.last_fight_date,
+                    last_fight_result=typing_cast(
+                        Literal["win", "loss", "draw", "nc"] | None,
+                        fight_status.get("last_fight_result"),
+                    ),
                 )
             )
 

@@ -73,16 +73,16 @@ If you want to run tests manually:
 npm install -D @playwright/test
 
 # Run all tests
-npx playwright test
+npx playwright test -c frontend/tests/e2e/playwright.config.ts
 
 # Run specific test file
-npx playwright test frontend/tests/e2e/specs/example-homepage.spec.ts
+npx playwright test frontend/tests/e2e/specs/example-homepage.spec.ts -c frontend/tests/e2e/playwright.config.ts
 
 # Run in headed mode (see browser)
-npx playwright test --headed
+npx playwright test --headed -c frontend/tests/e2e/playwright.config.ts
 
 # Run with specific browser
-npx playwright test --project=chromium
+npx playwright test --project=chromium -c frontend/tests/e2e/playwright.config.ts
 
 # Open test report
 npx playwright show-report
@@ -94,13 +94,13 @@ npx playwright show-report
 
 ```bash
 # Test against localhost (default)
-npx playwright test
+npx playwright test -c frontend/tests/e2e/playwright.config.ts
 
 # Test against Cloudflare tunnel
-APP_URL=https://divine-floral-contributing-total.trycloudflare.com npx playwright test
+APP_URL=https://divine-floral-contributing-total.trycloudflare.com npx playwright test -c frontend/tests/e2e/playwright.config.ts
 
 # Test against production
-APP_URL=https://your-production-url.com npx playwright test
+APP_URL=https://your-production-url.com npx playwright test -c frontend/tests/e2e/playwright.config.ts
 ```
 
 ## Example Workflows

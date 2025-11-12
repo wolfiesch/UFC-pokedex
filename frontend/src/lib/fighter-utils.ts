@@ -183,6 +183,22 @@ export function formatFightDate(date: string | null): string {
 }
 
 /**
+ * Format date as abbreviated month and day (e.g., "Nov 15")
+ * Used for displaying upcoming fight dates in compact format
+ */
+export function formatShortDate(date: Date | string): string {
+  try {
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) {
+      return "";
+    }
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Get a relative time string like "2 months ago" or "In 3 days"
  */
 export function getRelativeTime(date: string | null): string {

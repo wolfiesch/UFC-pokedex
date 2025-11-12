@@ -688,7 +688,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/stats": {
+    "/image-validation/stats": {
         parameters: {
             query?: never;
             header?: never;
@@ -709,7 +709,7 @@ export interface paths {
          *         - with_flags: Number with validation flags
          *         - flag_breakdown: Count of each flag type
          */
-        get: operations["get_validation_stats_image_validation_validation_stats_get"];
+        get: operations["get_validation_stats_image_validation_stats_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -718,7 +718,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/low-quality": {
+    "/image-validation/low-quality": {
         parameters: {
             query?: never;
             header?: never;
@@ -737,7 +737,7 @@ export interface paths {
          *     Returns:
          *         Dictionary with fighters list and metadata
          */
-        get: operations["get_low_quality_images_image_validation_validation_low_quality_get"];
+        get: operations["get_low_quality_images_image_validation_low_quality_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -746,7 +746,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/no-face": {
+    "/image-validation/no-face": {
         parameters: {
             query?: never;
             header?: never;
@@ -766,7 +766,7 @@ export interface paths {
          *     Returns:
          *         Dictionary with fighters list and metadata
          */
-        get: operations["get_fighters_without_faces_image_validation_validation_no_face_get"];
+        get: operations["get_fighters_without_faces_image_validation_no_face_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -775,7 +775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/duplicates": {
+    "/image-validation/duplicates": {
         parameters: {
             query?: never;
             header?: never;
@@ -795,7 +795,7 @@ export interface paths {
          *     Returns:
          *         Dictionary with fighters and their duplicate matches
          */
-        get: operations["get_duplicate_images_image_validation_validation_duplicates_get"];
+        get: operations["get_duplicate_images_image_validation_duplicates_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -804,7 +804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/flags": {
+    "/image-validation/flags": {
         parameters: {
             query?: never;
             header?: never;
@@ -823,7 +823,7 @@ export interface paths {
          *     Returns:
          *         Dictionary with fighters list and metadata
          */
-        get: operations["get_fighters_by_flag_image_validation_validation_flags_get"];
+        get: operations["get_fighters_by_flag_image_validation_flags_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -832,7 +832,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/image-validation/validation/{fighter_id}": {
+    "/image-validation/{fighter_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -849,7 +849,7 @@ export interface paths {
          *     Returns:
          *         Dictionary with complete validation data
          */
-        get: operations["get_fighter_validation_image_validation_validation__fighter_id__get"];
+        get: operations["get_fighter_validation_image_validation__fighter_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1647,6 +1647,12 @@ export interface components {
             training_city?: string | null;
             /** Training Country */
             training_country?: string | null;
+            /** Next Fight Date */
+            next_fight_date?: string | null;
+            /** Last Fight Date */
+            last_fight_date?: string | null;
+            /** Last Fight Result */
+            last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
             /** Leg Reach */
             leg_reach?: string | null;
             /** Striking */
@@ -1753,6 +1759,12 @@ export interface components {
             training_city?: string | null;
             /** Training Country */
             training_country?: string | null;
+            /** Next Fight Date */
+            next_fight_date?: string | null;
+            /** Last Fight Date */
+            last_fight_date?: string | null;
+            /** Last Fight Result */
+            last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
         };
         /**
          * GymStat
@@ -3267,7 +3279,7 @@ export interface operations {
             };
         };
     };
-    get_validation_stats_image_validation_validation_stats_get: {
+    get_validation_stats_image_validation_stats_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3287,7 +3299,7 @@ export interface operations {
             };
         };
     };
-    get_low_quality_images_image_validation_validation_low_quality_get: {
+    get_low_quality_images_image_validation_low_quality_get: {
         parameters: {
             query?: {
                 /** @description Minimum quality score threshold */
@@ -3321,7 +3333,7 @@ export interface operations {
             };
         };
     };
-    get_fighters_without_faces_image_validation_validation_no_face_get: {
+    get_fighters_without_faces_image_validation_no_face_get: {
         parameters: {
             query?: {
                 limit?: number;
@@ -3353,7 +3365,7 @@ export interface operations {
             };
         };
     };
-    get_duplicate_images_image_validation_validation_duplicates_get: {
+    get_duplicate_images_image_validation_duplicates_get: {
         parameters: {
             query?: {
                 limit?: number;
@@ -3385,7 +3397,7 @@ export interface operations {
             };
         };
     };
-    get_fighters_by_flag_image_validation_validation_flags_get: {
+    get_fighters_by_flag_image_validation_flags_get: {
         parameters: {
             query: {
                 /** @description Flag type: low_resolution, no_face_detected, multiple_faces, blurry_image, too_dark, too_bright */
@@ -3419,7 +3431,7 @@ export interface operations {
             };
         };
     };
-    get_fighter_validation_image_validation_validation__fighter_id__get: {
+    get_fighter_validation_image_validation__fighter_id__get: {
         parameters: {
             query?: never;
             header?: never;
