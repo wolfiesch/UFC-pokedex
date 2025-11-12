@@ -34,12 +34,16 @@ class BatchOddsScraper:
         progress_file: str = "data/raw/.scrape_progress.json",
         organization: str = None,
         batch_size: int = 10,
+        download_delay: float = 3.0,
+        wait_timeout: int = 8000,
     ):
         self.archive_file = Path(archive_file)
         self.output_file = Path(output_file)
         self.progress_file = Path(progress_file)
         self.organization = organization
         self.batch_size = batch_size
+        self.download_delay = download_delay
+        self.wait_timeout = wait_timeout
 
         # Stats
         self.total_events = 0
@@ -129,15 +133,19 @@ class BatchOddsScraper:
             print(f"   URL: {event_url}")
 
             try:
-                # Run scrapy command
+                # Run scrapy command with configurable delay/timeout
                 cmd = [
                     ".venv/bin/scrapy",
                     "crawl",
                     "bestfightodds_odds_final",
                     "-a",
                     f"event_urls={event_url}",
+                    "-a",
+                    f"wait_timeout={self.wait_timeout}",
                     "-o",
                     str(self.output_file),
+                    "-s",
+                    f"DOWNLOAD_DELAY={self.download_delay}",
                     "--loglevel=ERROR",  # Quiet output
                 ]
 
@@ -314,6 +322,18 @@ def main():
         help="Output file path",
     )
     parser.add_argument(
+        "--download-delay",
+        type=float,
+        default=3.0,
+        help="Scrapy DOWNLOAD_DELAY in seconds (default: 3.0, recommended: 2.0)",
+    )
+    parser.add_argument(
+        "--wait-timeout",
+        type=int,
+        default=8000,
+        help="Playwright wait timeout in milliseconds (default: 8000, recommended: 6000)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be scraped without actually scraping",
@@ -331,6 +351,8 @@ def main():
         output_file=args.output_file,
         organization=args.organization,
         batch_size=args.batch_size,
+        download_delay=args.download_delay,
+        wait_timeout=args.wait_timeout,
     )
 
     scraper.run(dry_run=args.dry_run, resume=args.resume)

@@ -25,7 +25,7 @@ class BestFightOddsFinalSpider(scrapy.Spider):
     allowed_domains = ["bestfightodds.com"]
 
     custom_settings = {
-        "DOWNLOAD_DELAY": 3.0,
+        "DOWNLOAD_DELAY": 3.0,  # Can override with -s DOWNLOAD_DELAY=2.0
         "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
         "AUTOTHROTTLE_ENABLED": True,
         "AUTOTHROTTLE_START_DELAY": 2.0,
@@ -61,6 +61,10 @@ class BestFightOddsFinalSpider(scrapy.Spider):
             self.logger.error("No event URLs provided")
             return
 
+        # Allow configurable wait timeout via -a wait_timeout=6000
+        wait_timeout = int(getattr(self, "wait_timeout", 8000))
+        self.logger.info(f"Using wait_timeout: {wait_timeout}ms")
+
         for url in urls:
             yield scrapy.Request(
                 url,
@@ -71,7 +75,7 @@ class BestFightOddsFinalSpider(scrapy.Spider):
                     "playwright_include_page": True,
                     "playwright_page_methods": [
                         ("wait_for_load_state", "networkidle", {"timeout": 15000}),
-                        ("wait_for_timeout", 8000),  # Wait for odds to load
+                        ("wait_for_timeout", wait_timeout),  # Configurable wait time
                     ],
                 },
                 errback=self.errback_close_page,
