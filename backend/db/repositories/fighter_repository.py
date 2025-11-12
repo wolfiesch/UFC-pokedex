@@ -1,18 +1,25 @@
 """Fighter repository for CRUD operations and fighter-focused queries.
 
-This repository handles:
-- Fighter listing with pagination
-- Fighter detail retrieval
-- Fighter search with multiple filters
-- Fighter comparison
-- Streak computation (batch and individual)
-- Random fighter selection
+Responsibilities are intentionally scoped and documented so that calling
+services know where each concern lives:
+
+* **Roster listing** – pagination, filtering, and random sampling remain within
+  the repository because they are direct SQL queries.
+* **Ranking enrichment** – the raw SQL lives in
+  :mod:`backend.db.repositories.ranking_enrichment` and the repository simply
+  delegates to it when decorating payloads.
+* **Fight history assembly** – conversion of SQL rows into
+  :class:`~backend.schemas.fighter.FightHistoryEntry` objects is handled by
+  :mod:`backend.db.repositories.fight_history_builder` to keep this module
+  focused on fetching data.
+* **Media resolution** – image URLs are normalised via
+  :func:`backend.services.image_resolver.resolve_fighter_image` so caching logic
+  stays centralised.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -20,27 +27,28 @@ from typing import Any, Literal, TypeVar
 from typing import cast as typing_cast
 
 from sqlalchemy import case, func, literal, select, true, union_all
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
-from backend.db.models import Event, Fight, Fighter, FighterRanking, fighter_stats
+from backend.db.models import Event, Fight, Fighter, fighter_stats
 from backend.db.repositories.base import (
     BaseRepository,
     _calculate_age,
     _invert_fight_result,
     _normalize_result_category,
 )
-from backend.db.repositories.fight_utils import (
-    compute_record_from_fights,
-    create_fight_key,
-    should_replace_fight,
-    sort_fight_history,
+from backend.db.repositories.fight_history_builder import (
+    FightHistoryBuildResult,
+    build_fight_history,
+)
+from backend.db.repositories.ranking_enrichment import (
+    DEFAULT_RANKING_SOURCE,
+    FighterRankingSummary,
+    fetch_ranking_summaries,
 )
 from backend.schemas.fighter import (
     FighterComparisonEntry,
     FighterDetail,
     FighterListItem,
-    FightHistoryEntry,
 )
 from backend.services.image_resolver import (
     resolve_fighter_image,
@@ -64,20 +72,6 @@ class FighterSearchFilters:
     champion_statuses: tuple[str, ...] | None
     streak_type: StreakType | None
     min_streak_count: int | None
-
-
-@dataclass
-class FighterRankingSummary:
-    """Lightweight bundle of ranking metadata for a fighter."""
-
-    current_rank: int | None = None
-    current_rank_date: date | None = None
-    current_rank_division: str | None = None
-    current_rank_source: str | None = None
-    peak_rank: int | None = None
-    peak_rank_date: date | None = None
-    peak_rank_division: str | None = None
-    peak_rank_source: str | None = None
 
 
 def normalize_search_filters(
@@ -218,13 +212,6 @@ def paginate_roster_entries(
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-_DEFAULT_RANKING_SOURCE = (
-    os.getenv("FIGHTER_RANKING_SOURCE")
-    or os.getenv("DEFAULT_RANKING_SOURCE")
-    or "fightmatrix"
-)
-_DEFAULT_RANKING_SOURCE = (_DEFAULT_RANKING_SOURCE or "").strip() or None
-
 
 def _validate_streak_type(value: str | None) -> StreakType | None:
     """Validate streak type matches allowed values.
@@ -320,7 +307,7 @@ class FighterRepository(BaseRepository):
     def _ranking_source(self) -> str | None:
         """Return the preferred ranking source for roster adornments."""
 
-        return _DEFAULT_RANKING_SOURCE
+        return DEFAULT_RANKING_SOURCE
 
     def _normalize_fight_result(
         self, result: str | None
@@ -339,98 +326,16 @@ class FighterRepository(BaseRepository):
             return "nc"
         return None  # Ignore "next" and other values
 
-    async def _fetch_ranking_summaries(
+    async def _load_ranking_summaries(
         self, fighter_ids: Sequence[str]
     ) -> dict[str, FighterRankingSummary]:
-        """Lookup current and peak rankings for the provided fighters."""
+        """Delegate ranking enrichment to the dedicated helper module."""
 
-        ranking_source = self._ranking_source()
-        if not ranking_source:
-            return {}
-
-        deduped_ids = [fid for fid in dict.fromkeys(fighter_ids) if fid]
-        if not deduped_ids:
-            return {}
-
-        # Latest ranking snapshot per fighter for the configured source.
-        current_subquery = (
-            select(
-                FighterRanking.fighter_id.label("fighter_id"),
-                FighterRanking.rank.label("rank"),
-                FighterRanking.rank_date.label("rank_date"),
-                FighterRanking.division.label("division"),
-                FighterRanking.source.label("source"),
-                func.row_number()
-                .over(
-                    partition_by=FighterRanking.fighter_id,
-                    order_by=FighterRanking.rank_date.desc(),
-                )
-                .label("row_number"),
-            )
-            .where(FighterRanking.fighter_id.in_(deduped_ids))
-            .where(FighterRanking.source == ranking_source)
-        ).subquery()
-
-        current_rows = await self._session.execute(
-            select(
-                current_subquery.c.fighter_id,
-                current_subquery.c.rank,
-                current_subquery.c.rank_date,
-                current_subquery.c.division,
-                current_subquery.c.source,
-            ).where(current_subquery.c.row_number == 1)
+        return await fetch_ranking_summaries(
+            self._session,
+            fighter_ids,
+            ranking_source=self._ranking_source(),
         )
-
-        # Best (lowest numeric) rank ever achieved for the configured source.
-        peak_subquery = (
-            select(
-                FighterRanking.fighter_id.label("fighter_id"),
-                FighterRanking.rank.label("rank"),
-                FighterRanking.rank_date.label("rank_date"),
-                FighterRanking.division.label("division"),
-                FighterRanking.source.label("source"),
-                func.row_number()
-                .over(
-                    partition_by=FighterRanking.fighter_id,
-                    order_by=(
-                        FighterRanking.rank.asc(),
-                        FighterRanking.rank_date.desc(),
-                    ),
-                )
-                .label("row_number"),
-            )
-            .where(FighterRanking.fighter_id.in_(deduped_ids))
-            .where(FighterRanking.source == ranking_source)
-            .where(FighterRanking.rank.isnot(None))
-        ).subquery()
-
-        peak_rows = await self._session.execute(
-            select(
-                peak_subquery.c.fighter_id,
-                peak_subquery.c.rank,
-                peak_subquery.c.rank_date,
-                peak_subquery.c.division,
-                peak_subquery.c.source,
-            ).where(peak_subquery.c.row_number == 1)
-        )
-
-        summaries: dict[str, FighterRankingSummary] = {}
-
-        for row in current_rows:
-            summary = summaries.setdefault(row.fighter_id, FighterRankingSummary())
-            summary.current_rank = row.rank
-            summary.current_rank_date = row.rank_date
-            summary.current_rank_division = row.division
-            summary.current_rank_source = row.source
-
-        for row in peak_rows:
-            summary = summaries.setdefault(row.fighter_id, FighterRankingSummary())
-            summary.peak_rank = row.rank
-            summary.peak_rank_date = row.rank_date
-            summary.peak_rank_division = row.division
-            summary.peak_rank_source = row.source
-
-        return summaries
 
     async def _fetch_fight_status(
         self, fighter_ids: Sequence[str]
@@ -471,8 +376,22 @@ class FighterRepository(BaseRepository):
                     order_by=(
                         # Prioritize rows with valid results (W, L, win, loss, draw, NC)
                         case(
-                            (Fight.result.in_(["W", "L", "win", "loss", "draw", "nc", "NC", "no contest"]), 0),
-                            else_=1
+                            (
+                                Fight.result.in_(
+                                    [
+                                        "W",
+                                        "L",
+                                        "win",
+                                        "loss",
+                                        "draw",
+                                        "nc",
+                                        "NC",
+                                        "no contest",
+                                    ]
+                                ),
+                                0,
+                            ),
+                            else_=1,
                         ),
                         Fight.event_date.desc(),
                     ),
@@ -543,7 +462,9 @@ class FighterRepository(BaseRepository):
         query = (
             select(Fighter)
             .options(load_only(*load_columns))
-            .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id)
+            .order_by(
+                Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id
+            )
         )
 
         # Apply location filters
@@ -603,7 +524,7 @@ class FighterRepository(BaseRepository):
             fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)
 
         ranking_summaries = (
-            await self._fetch_ranking_summaries(fighter_ids) if fighters else {}
+            await self._load_ranking_summaries(fighter_ids) if fighters else {}
         )
 
         # Cache a single "today" value in UTC so every fighter on the page uses
@@ -651,10 +572,12 @@ class FighterRepository(BaseRepository):
                     ),
                     current_rank=ranking.current_rank if ranking else None,
                     current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=ranking.current_rank_division
-                    if ranking
-                    else None,
-                    current_rank_source=ranking.current_rank_source if ranking else None,
+                    current_rank_division=(
+                        ranking.current_rank_division if ranking else None
+                    ),
+                    current_rank_source=(
+                        ranking.current_rank_source if ranking else None
+                    ),
                     peak_rank=ranking.peak_rank if ranking else None,
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
@@ -778,82 +701,14 @@ class FighterRepository(BaseRepository):
             )
             opponent_lookup = {row.id: row.name for row in opponent_rows.all()}
 
-        # Build fight history, deduplicating by fight metadata (not database ID)
-        # This prevents duplicate entries when both fighters have Fight records for the same bout
-        # Prioritize fights where fighter_id matches (fighter's own perspective)
-        # Also prioritize fights with actual results (win/loss/draw) over "N/A"
-        fight_dict: dict[tuple[str, str | None, str], FightHistoryEntry] = {}
-
-        # Process all fights
-        for row in all_fights_rows:
-            if row.is_primary:
-                # Primary fight (fighter is fighter_id)
-                opponent_name = row.opponent_name or opponent_lookup.get(
-                    row.opponent_id, "Unknown"
-                )
-                fight_key = create_fight_key(
-                    row.event_name,
-                    row.event_date,
-                    row.opponent_id,
-                    opponent_name,
-                )
-
-                new_entry = FightHistoryEntry(
-                    fight_id=row.fight_id,
-                    event_name=row.event_name,
-                    event_date=row.event_date,
-                    opponent=opponent_name,
-                    opponent_id=row.opponent_id,
-                    result=row.result,
-                    method=row.method or "",
-                    round=row.round,
-                    time=row.time,
-                    fight_card_url=row.fight_card_url,
-                    stats=row.stats,
-                )
-
-                if fight_key not in fight_dict:
-                    fight_dict[fight_key] = new_entry
-                elif should_replace_fight(fight_dict[fight_key].result, row.result):
-                    # Replace with better result
-                    fight_dict[fight_key] = new_entry
-            else:
-                # Opponent fight (fighter is opponent_id) - invert result
-                opponent_id = row.inverted_opponent_id
-                opponent_name = opponent_lookup.get(opponent_id, "Unknown")
-
-                fight_key = create_fight_key(
-                    row.event_name, row.event_date, opponent_id, opponent_name
-                )
-
-                # Invert the result
-                inverted_result = _invert_fight_result(row.result)
-
-                new_entry = FightHistoryEntry(
-                    fight_id=row.fight_id,
-                    event_name=row.event_name,
-                    event_date=row.event_date,
-                    opponent=opponent_name,
-                    opponent_id=opponent_id,
-                    result=inverted_result,
-                    method=row.method or "",
-                    round=row.round,
-                    time=row.time,
-                    fight_card_url=row.fight_card_url,
-                    stats=row.stats,
-                )
-
-                if fight_key not in fight_dict:
-                    fight_dict[fight_key] = new_entry
-                elif should_replace_fight(
-                    fight_dict[fight_key].result, inverted_result
-                ):
-                    # Replace with better result
-                    fight_dict[fight_key] = new_entry
-
-        # Convert dict to list and sort
-        fight_history: list[FightHistoryEntry] = list(fight_dict.values())
-        fight_history = sort_fight_history(fight_history)
+        # Delegate to ``fight_history_builder`` so deduplication and result
+        # inversion stay reusable across repositories.
+        history_result: FightHistoryBuildResult = build_fight_history(
+            all_fights_rows,
+            opponent_lookup=opponent_lookup,
+            existing_record=fighter.record,
+        )
+        fight_history = history_result.fight_history
 
         # Log query performance
         query_time = time.time() - start_time
@@ -861,11 +716,7 @@ class FighterRepository(BaseRepository):
             logger.warning(f"Slow fighter query: {fighter_id} took {query_time:.3f}s")
 
         # Compute record from fight_history if not already populated
-        computed_record = fighter.record
-        if not computed_record:
-            computed_from_fights = compute_record_from_fights(fight_history)
-            if computed_from_fights:
-                computed_record = computed_from_fights
+        computed_record = history_result.computed_record
 
         today_utc: date = datetime.now(tz=UTC).date()
         fighter_age: int | None = _calculate_age(
@@ -873,7 +724,7 @@ class FighterRepository(BaseRepository):
             reference_date=today_utc,
         )
 
-        summary = (await self._fetch_ranking_summaries([fighter.id])).get(fighter.id)
+        summary = (await self._load_ranking_summaries([fighter.id])).get(fighter.id)
 
         return FighterDetail(
             fighter_id=fighter.id,
@@ -1014,7 +865,11 @@ class FighterRepository(BaseRepository):
         load_columns, supports_was_interim = await self._resolve_fighter_columns(
             base_columns
         )
-        stmt = select(Fighter).options(load_only(*load_columns)).order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name)
+        stmt = (
+            select(Fighter)
+            .options(load_only(*load_columns))
+            .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name)
+        )
         count_stmt = select(func.count()).select_from(Fighter)
 
         for condition in filters:
@@ -1036,7 +891,7 @@ class FighterRepository(BaseRepository):
         fighters = result.scalars().all()
         fighter_ids = [f.id for f in fighters]
         ranking_summaries = (
-            await self._fetch_ranking_summaries(fighter_ids) if fighter_ids else {}
+            await self._load_ranking_summaries(fighter_ids) if fighter_ids else {}
         )
 
         # Fetch fight status (upcoming and last fight result) for all fighters
@@ -1088,10 +943,12 @@ class FighterRepository(BaseRepository):
                     ),
                     current_rank=ranking.current_rank if ranking else None,
                     current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=ranking.current_rank_division
-                    if ranking
-                    else None,
-                    current_rank_source=ranking.current_rank_source if ranking else None,
+                    current_rank_division=(
+                        ranking.current_rank_division if ranking else None
+                    ),
+                    current_rank_source=(
+                        ranking.current_rank_source if ranking else None
+                    ),
                     peak_rank=ranking.peak_rank if ranking else None,
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
@@ -1267,7 +1124,7 @@ class FighterRepository(BaseRepository):
         if fighter is None:
             return None
 
-        ranking = (await self._fetch_ranking_summaries([fighter.id])).get(fighter.id)
+        ranking = (await self._load_ranking_summaries([fighter.id])).get(fighter.id)
 
         return FighterListItem(
             fighter_id=fighter.id,
@@ -1585,7 +1442,9 @@ class FighterRepository(BaseRepository):
             update_values["needs_manual_review"] = needs_manual_review
 
         if update_values:
-            stmt = update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
+            stmt = (
+                update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
+            )
             await self._session.execute(stmt)
 
     async def update_fighter_nationality(
@@ -1726,9 +1585,7 @@ class FighterRepository(BaseRepository):
 
         return stats, total
 
-    async def get_gym_stats(
-        self, country: str | None = None
-    ) -> list[dict[str, Any]]:
+    async def get_gym_stats(self, country: str | None = None) -> list[dict[str, Any]]:
         """Get fighter count by gym.
 
         Args:
