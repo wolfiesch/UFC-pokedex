@@ -11,6 +11,7 @@ interface PerformanceMetric {
 }
 
 const metrics: PerformanceMetric[] = [];
+let memoryIntervalId: number | null = null;
 
 /**
  * Track Core Web Vitals
@@ -91,8 +92,13 @@ export function initPerformanceMonitoring() {
   }
 
   // Track memory usage (if available)
+  // Clear existing interval before creating new one
+  if (memoryIntervalId !== null) {
+    clearInterval(memoryIntervalId);
+  }
+
   if ('memory' in performance) {
-    setInterval(() => {
+    memoryIntervalId = setInterval(() => {
       const mem = (performance as any).memory;
       const usedMB = mem.usedJSHeapSize / 1048576;
       const totalMB = mem.totalJSHeapSize / 1048576;
@@ -111,7 +117,7 @@ export function initPerformanceMonitoring() {
       if (rating === 'poor') {
         console.warn(`High memory usage: ${usedMB.toFixed(2)}MB / ${totalMB.toFixed(2)}MB`);
       }
-    }, 30000); // Check every 30 seconds
+    }, 30000) as unknown as number; // Check every 30 seconds
   }
 }
 
@@ -180,4 +186,14 @@ export async function measureAsyncOperation<T>(
   });
 
   return result;
+}
+
+/**
+ * Clean up performance monitoring (call on unmount if needed)
+ */
+export function cleanupPerformanceMonitoring() {
+  if (memoryIntervalId !== null) {
+    clearInterval(memoryIntervalId);
+    memoryIntervalId = null;
+  }
 }
