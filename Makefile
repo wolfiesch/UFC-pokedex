@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -561,6 +561,37 @@ load-events-details-sample: ## Load sample event details (first 10 events)
 
 load-events-details-dry-run: ## Validate event details without inserting
 	PYTHONPATH=. .venv/bin/python scripts/load_event_details.py --dry-run
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# BETTING ODDS SCRAPING (BestFightOdds.com)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+scrape-archive: ## Scrape BestFightOdds archive to get event list (recent ~20 events only)
+	@echo "🗂️  Scraping BestFightOdds archive..."
+	.venv/bin/scrapy crawl bestfightodds_archive
+
+scrape-archive-full: ## Scrape complete historical archive by crawling event IDs 1-4000
+	@echo "🏛️  Scraping complete BestFightOdds historical archive..."
+	@echo "   This will take ~30-60 minutes to discover all events from 2008-2025"
+	@echo ""
+	.venv/bin/scrapy crawl bestfightodds_archive_full -a organization=UFC -o data/raw/bfo_events_archive_full.jsonl
+
+scrape-archive-test: ## Test archive scraper with small ID range (1800-1850)
+	@echo "🧪 Testing archive scraper with ID range 1800-1850..."
+	.venv/bin/scrapy crawl bestfightodds_archive_full -a start_id=1800 -a end_id=1850 -a organization=UFC -o /tmp/archive_test.jsonl
+
+scrape-odds-batch: ## Batch scrape betting odds for all UFC events
+	@echo "📊 Starting batch odds scraping..."
+	@echo "   This will scrape odds for all events that haven't been scraped yet"
+	@python scripts/batch_scrape_odds.py --organization UFC --batch-size 10
+
+scrape-odds-dry-run: ## Preview what events would be scraped
+	@echo "🔍 Dry run - showing events to be scraped..."
+	@python scripts/batch_scrape_odds.py --organization UFC --dry-run
+
+scrape-odds-resume: ## Resume previous batch scraping session
+	@echo "▶️  Resuming odds scraping from last checkpoint..."
+	@python scripts/batch_scrape_odds.py --organization UFC --batch-size 10 --resume
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DEPLOYMENT (cPanel via SSH)

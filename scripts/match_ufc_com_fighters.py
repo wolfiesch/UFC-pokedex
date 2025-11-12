@@ -16,12 +16,21 @@ Output:
 """
 
 import json
-import sqlite3
+import os
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import click
+import psycopg
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code."""
+    if isinstance(obj, date):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
@@ -34,17 +43,19 @@ from scraper.utils.fuzzy_match import (
 )
 
 
-def load_ufcstats_fighters(db_path: str) -> list[dict[str, Any]]:
+def load_ufcstats_fighters(db_url: str | None = None) -> list[dict[str, Any]]:
     """Load all fighters from UFCStats database.
 
     Args:
-        db_path: Path to SQLite database
+        db_url: PostgreSQL database URL (defaults to DATABASE_URL env var)
 
     Returns:
         List of fighter dicts with id, name, division, record, dob, weight
     """
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
+    if db_url is None:
+        db_url = os.getenv("DATABASE_URL", "postgresql://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex")
+
+    conn = psycopg.connect(db_url)
     cursor = conn.cursor()
 
     cursor.execute(
@@ -55,7 +66,17 @@ def load_ufcstats_fighters(db_path: str) -> list[dict[str, Any]]:
         """
     )
 
-    fighters = [dict(row) for row in cursor.fetchall()]
+    fighters = [
+        {
+            "id": row[0],
+            "name": row[1],
+            "division": row[2],
+            "record": row[3],
+            "dob": row[4],
+            "weight": row[5],
+        }
+        for row in cursor.fetchall()
+    ]
     conn.close()
 
     click.echo(f"Loaded {len(fighters)} fighters from UFCStats database")
@@ -347,10 +368,10 @@ def match_fighters(
 
 @click.command()
 @click.option(
-    "--db",
-    default="data/app.db",
-    help="Path to UFCStats SQLite database",
-    type=click.Path(exists=True),
+    "--db-url",
+    default=None,
+    help="PostgreSQL database URL (defaults to DATABASE_URL env var)",
+    type=str,
 )
 @click.option(
     "--ufc-com-dir",
@@ -382,7 +403,7 @@ def match_fighters(
     help="Preview matches without writing output files",
 )
 def main(
-    db: str,
+    db_url: str | None,
     ufc_com_dir: str,
     output: str,
     manual_review_output: str,
@@ -396,7 +417,7 @@ def main(
     click.echo()
 
     # Load data
-    ufcstats_fighters = load_ufcstats_fighters(db)
+    ufcstats_fighters = load_ufcstats_fighters(db_url)
     ufc_com_fighters = load_ufc_com_fighters(Path(ufc_com_dir))
 
     if not ufc_com_fighters:
@@ -416,7 +437,7 @@ def main(
 
         with open(output_path, "w") as f:
             for match in all_matches:
-                f.write(json.dumps(match) + "\n")
+                f.write(json.dumps(match, default=json_serial) + "\n")
 
         click.echo(f"Wrote {len(all_matches)} matches to {output_path}")
 
@@ -425,7 +446,7 @@ def main(
             manual_review_path = Path(manual_review_output)
             with open(manual_review_path, "w") as f:
                 for match in manual_review_matches:
-                    f.write(json.dumps(match) + "\n")
+                    f.write(json.dumps(match, default=json_serial) + "\n")
 
             click.echo(
                 f"Wrote {len(manual_review_matches)} manual review cases to {manual_review_path}"
