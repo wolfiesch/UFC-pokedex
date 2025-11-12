@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-recent-first scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-chronological scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -594,22 +594,12 @@ scrape-odds-resume: ## Resume previous batch scraping session
 	@echo "▶️  Resuming odds scraping from last checkpoint..."
 	@.venv/bin/python scripts/batch_scrape_odds.py --archive-file data/raw/bfo_numbered_events.jsonl --organization UFC --batch-size 10 --resume
 
-scrape-odds-optimized: ## Scrape odds with optimized settings (537 events, ~1.6 hours, recommended)
-	@echo "⚡ Starting optimized batch odds scraping..."
-	@echo "   Settings: download-delay=2.0s, wait-timeout=6000ms"
-	@echo "   Estimated time: ~1.6 hours (vs 2.2 hours with default settings)"
-	@.venv/bin/python scripts/batch_scrape_odds.py \
-		--archive-file data/raw/bfo_numbered_events.jsonl \
-		--organization UFC \
-		--batch-size 10 \
-		--download-delay 2.0 \
-		--wait-timeout 6000
-
-scrape-odds-recent-first: ## Scrape recent events first (2024-2025), then work backward
-	@echo "⚡ Starting optimized odds scraping (RECENT EVENTS FIRST)..."
-	@echo "   📅 Strategy: Scrape 2024-2025 events first (with active odds)"
+scrape-odds-optimized: ## Scrape odds RECENT FIRST - optimized settings (537 events, ~1.6 hours, recommended)
+	@echo "⚡ Starting optimized batch odds scraping (RECENT EVENTS FIRST)..."
+	@echo "   📅 Strategy: Scrape 2024-2025 events first (with active odds), then work backward"
 	@echo "   ⏱️  Recent events (~21): ~5 minutes"
 	@echo "   ⏱️  All events (537): ~1.6 hours total"
+	@echo "   Settings: download-delay=2.0s, wait-timeout=6000ms"
 	@echo ""
 	@if [ ! -f data/raw/bfo_numbered_events_reversed.jsonl ]; then \
 		echo "🔄 Creating reversed event list..."; \
@@ -622,6 +612,17 @@ scrape-odds-recent-first: ## Scrape recent events first (2024-2025), then work b
 		--download-delay 2.0 \
 		--wait-timeout 6000 \
 		--resume
+
+scrape-odds-chronological: ## Scrape odds chronologically from 2007 to 2025 (537 events, ~1.6 hours)
+	@echo "⚡ Starting chronological odds scraping (2007→2025)..."
+	@echo "   Settings: download-delay=2.0s, wait-timeout=6000ms"
+	@echo "   Estimated time: ~1.6 hours"
+	@.venv/bin/python scripts/batch_scrape_odds.py \
+		--archive-file data/raw/bfo_numbered_events.jsonl \
+		--organization UFC \
+		--batch-size 10 \
+		--download-delay 2.0 \
+		--wait-timeout 6000
 
 scrape-odds-recent-only: ## Scrape ONLY recent events (2024-2025, ~5 min)
 	@echo "⚡ Scraping recent events only (2024-2025)..."

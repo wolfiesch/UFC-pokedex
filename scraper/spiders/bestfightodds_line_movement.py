@@ -155,8 +155,34 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
                             f"bookmaker={bookmaker_id}, fighter={fighter_num}"
                         )
 
-                        # Click the cell to open chart
-                        await cell.click()
+                        # Scroll cell into view and ensure visibility
+                        try:
+                            # Check if element is visible first (fast check)
+                            is_visible = await cell.is_visible()
+                            if not is_visible:
+                                # Try to scroll into view with short timeout
+                                try:
+                                    await cell.scroll_into_view_if_needed(timeout=3000)  # 3s timeout
+                                    await page.wait_for_timeout(200)  # Let scroll complete
+                                    is_visible = await cell.is_visible()
+                                except:
+                                    pass  # Scroll failed, check visibility below
+
+                            if not is_visible:
+                                self.logger.warning(f"  Cell {i+1} not visible, skipping")
+                                continue
+
+                        except Exception as scroll_err:
+                            self.logger.warning(f"  Error checking visibility for cell {i+1}, skipping")
+                            continue
+
+                        # Click the cell to open chart (with shorter timeout)
+                        try:
+                            await cell.click(timeout=10000)  # 10s timeout instead of 30s
+                        except Exception as click_err:
+                            self.logger.warning(f"  Click timeout on cell {i+1}: {click_err}, skipping")
+                            continue
+
                         await page.wait_for_timeout(2000)  # Wait for chart to load
 
                         # Extract line movement data from Highcharts
@@ -199,7 +225,15 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
             await page.close()
 
     async def _extract_highcharts_data(self, page) -> dict:
-        """Extract line movement data from Highcharts modal."""
+        """Extract line movement data from Highcharts modal.
+
+        Note: There are multiple charts on the page:
+        - Chart 0: Comparison bar chart (wrong)
+        - Chart 1: Expected outcome chart (wrong)
+        - Chart 2+: Line chart with datetime axis (correct!)
+
+        We need to find the line chart with datetime xAxis.
+        """
         try:
             chart_data = await page.evaluate("""
                 () => {
@@ -207,20 +241,41 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
                         return {error: 'Highcharts not found'};
                     }
 
-                    const charts = Highcharts.charts.filter(c => c !== undefined);
-                    if (charts.length === 0) {
+                    const allCharts = Highcharts.charts.filter(c => c !== undefined);
+                    if (allCharts.length === 0) {
                         return {error: 'No charts found'};
                     }
 
-                    const chart = charts[0];
+                    // Find the line chart with datetime xAxis (the correct one!)
+                    const lineChart = allCharts.find(c =>
+                        c.options.chart.type === 'line' &&
+                        c.options.xAxis &&
+                        c.options.xAxis[0] &&
+                        c.options.xAxis[0].type === 'datetime'
+                    );
+
+                    if (!lineChart) {
+                        return {
+                            error: 'No datetime line chart found',
+                            debug: {
+                                total_charts: allCharts.length,
+                                chart_types: allCharts.map(c => ({
+                                    type: c.options.chart.type,
+                                    xAxisType: c.options.xAxis && c.options.xAxis[0] ? c.options.xAxis[0].type : null
+                                }))
+                            }
+                        };
+                    }
+
                     const result = {
-                        title: chart.options.title ? chart.options.title.text : null,
-                        chart_type: chart.options.chart.type,
+                        title: lineChart.options.title ? lineChart.options.title.text : null,
+                        chart_type: lineChart.options.chart.type,
+                        xAxis_type: lineChart.options.xAxis[0].type,
                         series: []
                     };
 
-                    // Extract all series (typically one per bookmaker)
-                    chart.series.forEach(series => {
+                    // Extract all visible series (typically one per bookmaker)
+                    lineChart.series.forEach(series => {
                         if (!series.visible) return;  // Skip hidden series
 
                         const seriesData = {
