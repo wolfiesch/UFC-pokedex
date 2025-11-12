@@ -1,0 +1,20 @@
+# Build and config files (run at build time, not runtime)
+next.config.mjs
+next.config.js
+*.config.ts
+*.config.js
+
+# Test files (not production code)
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Benchmark scripts (not production code)
+scripts/benchmarks/**
+
+# Build artifacts
+.next/**
+node_modules/**
+out/**

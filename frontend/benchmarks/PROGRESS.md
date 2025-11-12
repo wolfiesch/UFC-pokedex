@@ -61,3 +61,27 @@ open frontend/ceviz-report.html
 # Or
 open frontend/benchmarks/reports/ceviz-report-TIMESTAMP.html
 ```
+
+## Ceviz Configuration (2025-11-12)
+
+Added `.cevizignore` and `ceviz.config.ts` (and `.js` fallback) to filter false positives:
+
+**Ignored Patterns:**
+- Build-time code (next.config.mjs, *.config.ts/js)
+- Test files (*.test.ts, __tests__/*)
+- Benchmark scripts (scripts/benchmarks/**)
+- Build artifacts (.next/**, node_modules/**, out/**)
+
+**Rule Adjustments:**
+- Nested loops: Warning severity, ignore optimal algorithms (trendWorker.ts, workers/**)
+- Array operations: Only flag on arrays >1000 items (threshold: 1000)
+
+**Performance Budget:**
+- Target score: 70/100 (realistic achievable target)
+- Hard limits: Max 5 critical issues, 0 memory leaks
+
+**Current Status (v0.1.0):**
+Configuration files created but ceviz v0.1.0 does not yet support ignore patterns. Files analyzed increased from 147 to 153 when config was present, indicating ignore patterns are not being applied. The configuration files are in place for when ceviz adds support in future versions.
+
+**Expected Result (when supported):**
+Score should improve from 0/100 (with false positives) to realistic 70-85/100 range by filtering out ~110+ false positive warnings from build-time code, test files, and optimal algorithms misidentified as performance issues.
