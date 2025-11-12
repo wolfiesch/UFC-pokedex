@@ -66,6 +66,12 @@ make dev                   # Backend + Frontend with Cloudflare tunnels
 - **SQLite**: Fast setup, no Docker needed, good for UI work and small datasets
 - **PostgreSQL**: Production-like, handles large datasets, required for migration testing
 
+Accepted `DATABASE_URL` prefixes for PostgreSQL are:
+
+- `postgresql+psycopg://` (preferred async driver)
+- `postgresql://` (auto-upgraded to `postgresql+psycopg://`)
+- `postgres://` (legacy alias that is auto-upgraded to `postgresql+psycopg://`)
+
 See `docs/ai-assistants/CLAUDE.md` for detailed comparison and switching instructions.
 
 Refer to `docs/plans/archive/Initial_Plan.md` for the full project roadmap.
