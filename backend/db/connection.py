@@ -30,10 +30,14 @@ def get_database_url() -> str:
         # Fallback to SQLite when DATABASE_URL is not set
         return "sqlite+aiosqlite:///./data/app.db"
 
-    # Auto-convert standard PostgreSQL URL to async psycopg format
-    if url.startswith("postgresql://"):
+    # Auto-convert standard PostgreSQL URLs to async psycopg format. The
+    # ``postgres://`` URI scheme is still common in legacy Heroku setups, so we
+    # normalize it alongside ``postgresql://`` for compatibility.
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    elif not url.startswith("postgresql+psycopg"):
+    elif not url.startswith("postgresql+psycopg://"):
         raise RuntimeError(f"Expected PostgreSQL URL, got {url}")
 
     return url
