@@ -61,10 +61,11 @@ async def test_get_redis_retries_after_cooldown(
     _StubRedisFactory.created_clients = []
 
     # Guard against unexpected reconnect attempts by counting instantiations.
-    attempts: dict[str, int] = {"count": 0}
+    attempts = 0
 
     def _increment_attempts() -> None:
-        attempts["count"] += 1
+        nonlocal attempts
+        attempts += 1
 
     _StubRedisFactory.on_instantiate = _increment_attempts
 
