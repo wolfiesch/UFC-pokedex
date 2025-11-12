@@ -230,10 +230,7 @@ async def get_duplicate_images(
     # intent crystal clear for future maintainers working through the async workflow.
     fighters_with_duplicates: list[tuple[Fighter, list[str]]] = []
 
-    # ``referenced_duplicate_ids`` records the universe of duplicate fighter IDs that
-    # appear across all flagged fighters. Collecting them up front allows us to issue
-    # a single ``IN`` query instead of repeatedly calling the database within the loop
-    # (which previously created the undesirable N+1 query pattern).
+    # Collect all duplicate IDs to enable single batched lookup.
     referenced_duplicate_ids: set[str] = set()
 
     for fighter in fighters:
