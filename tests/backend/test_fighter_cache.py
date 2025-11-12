@@ -104,7 +104,7 @@ def test_search_cache_key_and_serialization() -> None:
         query="nunes",
         stance="orthodox",
         division="featherweight",
-        champion_statuses=frozenset({"current"}),
+        champion_statuses=("current",),
         streak_type="win",
         min_streak_count=3,
     )
