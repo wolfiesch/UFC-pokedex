@@ -95,11 +95,7 @@ class FavoritesAnalytics:
         self, entries: Iterable[FavoriteEntryModel]
     ) -> list[FavoriteEntrySchema]:
         """Convert ORM entries into API schemas."""
-
-        payload: list[FavoriteEntrySchema] = []
-        for entry in self.sort_entries(entries):
-            payload.append(self.entry_to_schema(entry))
-        return payload
+        return [self.entry_to_schema(entry) for entry in self.sort_entries(entries)]
 
     def build_activity(
         self, entries: Iterable[FavoriteEntryModel]
