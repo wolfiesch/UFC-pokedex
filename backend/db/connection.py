@@ -193,7 +193,5 @@ async def get_async_session_context() -> AsyncIterator[AsyncSession]:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            # Ensure no dangling transactions remain open
-            if session.in_transaction():
-                await session.rollback()
+        # Note: Don't rollback in finally - if commit() was called successfully,
+        # rolling back would undo the committed work

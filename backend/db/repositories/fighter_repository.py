@@ -1557,29 +1557,37 @@ class FighterRepository(BaseRepository):
         """
         from sqlalchemy import update
 
-        stmt = (
-            update(Fighter)
-            .where(Fighter.id == fighter_id)
-            .values(
-                birthplace=birthplace,
-                birthplace_city=birthplace_city,
-                birthplace_country=birthplace_country,
-                nationality=nationality,
-                training_gym=training_gym,
-                training_city=training_city,
-                training_country=training_country,
-                ufc_com_slug=ufc_com_slug,
-                ufc_com_match_confidence=ufc_com_match_confidence,
-                ufc_com_match_method=ufc_com_match_method,
-                ufc_com_scraped_at=ufc_com_scraped_at,
-                **(
-                    {"needs_manual_review": needs_manual_review}
-                    if needs_manual_review is not None
-                    else {}
-                ),
-            )
-        )
-        await self._session.execute(stmt)
+        # Build update dict with only non-None values
+        update_values = {}
+        if birthplace is not None:
+            update_values["birthplace"] = birthplace
+        if birthplace_city is not None:
+            update_values["birthplace_city"] = birthplace_city
+        if birthplace_country is not None:
+            update_values["birthplace_country"] = birthplace_country
+        if nationality is not None:
+            update_values["nationality"] = nationality
+        if training_gym is not None:
+            update_values["training_gym"] = training_gym
+        if training_city is not None:
+            update_values["training_city"] = training_city
+        if training_country is not None:
+            update_values["training_country"] = training_country
+        if ufc_com_slug is not None:
+            update_values["ufc_com_slug"] = ufc_com_slug
+        if ufc_com_match_confidence is not None:
+            update_values["ufc_com_match_confidence"] = ufc_com_match_confidence
+        if ufc_com_match_method is not None:
+            update_values["ufc_com_match_method"] = ufc_com_match_method
+        if ufc_com_scraped_at is not None:
+            update_values["ufc_com_scraped_at"] = ufc_com_scraped_at
+        if needs_manual_review is not None:
+            update_values["needs_manual_review"] = needs_manual_review
+
+        if update_values:
+            stmt = update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
+            result = await self._session.execute(stmt)
+            print(f"DEBUG: Updated {result.rowcount} rows with values: {update_values}")
 
     async def update_fighter_nationality(
         self,

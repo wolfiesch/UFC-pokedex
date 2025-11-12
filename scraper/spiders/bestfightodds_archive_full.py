@@ -135,6 +135,13 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
             )
             return
 
+        # Detect redirects to homepage (invalid event IDs redirect to homepage)
+        if response.url == "https://www.bestfightodds.com/" or \
+           "/events/" not in response.url:
+            self.stats["not_found"] += 1
+            self.logger.debug(f"Event ID {event_id} redirected to homepage (invalid ID)")
+            return
+
         # Extract event title from page
         event_title = self._extract_event_title(response)
         if not event_title:

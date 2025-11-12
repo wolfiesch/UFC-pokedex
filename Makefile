@@ -580,18 +580,18 @@ scrape-archive-test: ## Test archive scraper with small ID range (1800-1850)
 	@echo "🧪 Testing archive scraper with ID range 1800-1850..."
 	.venv/bin/scrapy crawl bestfightodds_archive_full -a start_id=1800 -a end_id=1850 -a organization=UFC -o /tmp/archive_test.jsonl
 
-scrape-odds-batch: ## Batch scrape betting odds for all UFC events
+scrape-odds-batch: ## Batch scrape betting odds for discovered UFC events (51 events from web search)
 	@echo "📊 Starting batch odds scraping..."
-	@echo "   This will scrape odds for all events that haven't been scraped yet"
-	@python scripts/batch_scrape_odds.py --organization UFC --batch-size 10
+	@echo "   This will scrape odds for 51 discovered UFC events (2016-2024)"
+	@.venv/bin/python scripts/batch_scrape_odds.py --archive-file data/raw/bfo_discovered_events.jsonl --organization UFC --batch-size 10
 
 scrape-odds-dry-run: ## Preview what events would be scraped
 	@echo "🔍 Dry run - showing events to be scraped..."
-	@python scripts/batch_scrape_odds.py --organization UFC --dry-run
+	@.venv/bin/python scripts/batch_scrape_odds.py --archive-file data/raw/bfo_discovered_events.jsonl --organization UFC --dry-run
 
 scrape-odds-resume: ## Resume previous batch scraping session
 	@echo "▶️  Resuming odds scraping from last checkpoint..."
-	@python scripts/batch_scrape_odds.py --organization UFC --batch-size 10 --resume
+	@.venv/bin/python scripts/batch_scrape_odds.py --archive-file data/raw/bfo_discovered_events.jsonl --organization UFC --batch-size 10 --resume
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DEPLOYMENT (cPanel via SSH)

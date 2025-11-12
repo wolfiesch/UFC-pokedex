@@ -103,7 +103,11 @@ class BatchOddsScraper:
         progress = self.load_progress()
         scraped_ids = set(progress.get("scraped_event_ids", []))
 
-        pending = [e for e in all_events if e.get("event_id") not in scraped_ids]
+        # Support both event_id and event_slug as identifiers
+        pending = [
+            e for e in all_events
+            if e.get("event_id", e.get("event_slug")) not in scraped_ids
+        ]
 
         print(f"✅ Already scraped: {len(scraped_ids)} events")
         print(f"📥 Pending: {len(pending)} events")
@@ -116,9 +120,10 @@ class BatchOddsScraper:
         failed = []
 
         for i, event in enumerate(events, 1):
-            event_id = event.get("event_id")
+            # Support both event_id and event_slug
+            event_id = event.get("event_id", event.get("event_slug"))
             event_url = event.get("event_url")
-            event_title = event.get("event_title", "Unknown")
+            event_title = event.get("event_title", event.get("event_title_guess", "Unknown"))
 
             print(f"\n[{i}/{len(events)}] Scraping: {event_title}")
             print(f"   URL: {event_url}")
@@ -208,7 +213,11 @@ class BatchOddsScraper:
         if dry_run:
             print("\n🔍 DRY RUN - Would scrape:")
             for event in pending_events[:10]:
-                print(f"   - {event.get('event_title')} ({event.get('event_date')})")
+                title = event.get('event_title', event.get('event_title_guess', 'Unknown'))
+                date = event.get('event_date', 'Unknown date')
+                url = event.get('event_url', '')
+                print(f"   - {title} ({date})")
+                print(f"     {url}")
             if len(pending_events) > 10:
                 print(f"   ... and {len(pending_events) - 10} more")
             return
