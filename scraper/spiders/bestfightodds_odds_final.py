@@ -140,10 +140,15 @@ class BestFightOddsFinalSpider(scrapy.Spider):
 
     async def _extract_odds_with_data_li(self, page, matchup_id: str) -> dict:
         """
-        Extract odds using data-li attributes.
+        Extract CLOSING odds using data-li attributes.
 
-        data-li format: [bookmaker_id, fighter_number, matchup_id, ...]
-        Example: [21,1,40336] = bookmaker 21, fighter 1, matchup 40336
+        CRITICAL: The page contains multiple odds per bookmaker:
+        - Closing odds: data-li = [bookmaker_id, fighter_num, matchup_id] (3 elements)
+        - Opening/Historical: data-li = [bookmaker_id, fighter_num, matchup_id, period, ...] (4+ elements)
+
+        We ONLY want closing odds (3-element arrays) to match the visible table.
+
+        Example closing odd: [21,1,40336] = FanDuel, fighter 1, matchup 40336
         """
         try:
             result = await page.evaluate(f"""
@@ -160,7 +165,10 @@ class BestFightOddsFinalSpider(scrapy.Spider):
 
                         try {{
                             const parsed = JSON.parse(dataLi);
-                            if (parsed.length >= 3) {{
+
+                            // CRITICAL FIX: Only extract closing odds (exactly 3 elements)
+                            // This filters out opening odds and historical data (4+ elements)
+                            if (parsed.length === 3) {{
                                 const bookmaker_id = parsed[0];
                                 const fighter_num = parsed[1];  // 1 or 2
                                 const odds_value = cell.textContent.trim();
