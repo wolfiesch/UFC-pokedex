@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from typing import Any, Literal
 
 import pytest
@@ -11,9 +11,9 @@ from backend.schemas.fighter import (
     FighterListItem,
 )
 from backend.services.fighter_query_service import (
+    FighterPresentationServiceProtocol,
     FighterQueryService,
-    FighterRepositoryProtocol,
-    InMemoryFighterRepository,
+    InMemoryFighterPresentationService,
 )
 
 pytest.importorskip("pytest_asyncio")
@@ -31,7 +31,7 @@ class FakeCache:
         self._store[key] = value
 
 
-class FakeComparisonRepository:
+class FakeComparisonRepository(FighterPresentationServiceProtocol):
     def __init__(self) -> None:
         self.calls: list[Sequence[str]] = []
 
@@ -56,9 +56,16 @@ class FakeComparisonRepository:
         *,
         limit: int | None = None,
         offset: int | None = None,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
-    ) -> Iterable[FighterListItem]:
+    ) -> list[FighterListItem]:
         """Not used in this test double."""
 
         raise NotImplementedError
@@ -70,14 +77,15 @@ class FakeComparisonRepository:
 
     async def search_fighters(
         self,
+        *,
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
+        include_locations: bool = True,
         include_streak: bool = False,
-        *,
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
@@ -85,7 +93,16 @@ class FakeComparisonRepository:
 
         raise NotImplementedError
 
-    async def count_fighters(self) -> int:
+    async def count_fighters(
+        self,
+        nationality: str | None = None,
+        birthplace_country: str | None = None,
+        birthplace_city: str | None = None,
+        training_country: str | None = None,
+        training_city: str | None = None,
+        training_gym: str | None = None,
+        has_location_data: bool | None = None,
+    ) -> int:
         """Not used in this test double."""
 
         raise NotImplementedError
@@ -120,8 +137,8 @@ async def test_compare_fighters_preserves_requested_order() -> None:
 def test_in_memory_repository_conforms_to_protocol() -> None:
     """Ensure the built-in in-memory repository satisfies the protocol."""
 
-    repository = InMemoryFighterRepository()
-    assert isinstance(repository, FighterRepositoryProtocol)
+    repository = InMemoryFighterPresentationService()
+    assert isinstance(repository, FighterPresentationServiceProtocol)
 
 
 def test_protocol_runtime_check_detects_missing_methods() -> None:
@@ -131,4 +148,4 @@ def test_protocol_runtime_check_detects_missing_methods() -> None:
         async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
             return None
 
-    assert not isinstance(IncompleteRepository(), FighterRepositoryProtocol)
+    assert not isinstance(IncompleteRepository(), FighterPresentationServiceProtocol)

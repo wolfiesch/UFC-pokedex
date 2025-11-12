@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from datetime import date
 from typing import Any, Literal, Protocol, runtime_checkable
 
@@ -35,6 +35,7 @@ from backend.schemas.fighter import (
     PaginatedFightersResponse,
 )
 from backend.services.caching import CacheableService, cached
+from backend.services.fighter_presentation_service import FighterPresentationService
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +112,8 @@ def _search_cache_key(filters: FighterSearchFilters, *, limit: int, offset: int)
 
 
 @runtime_checkable
-class FighterRepositoryProtocol(Protocol):
-    """Minimal repository surface required by :class:`FighterQueryService`."""
+class FighterPresentationServiceProtocol(Protocol):
+    """Minimal presentation surface required by :class:`FighterQueryService`."""
 
     async def list_fighters(
         self,
@@ -128,7 +129,7 @@ class FighterRepositoryProtocol(Protocol):
         has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
-    ) -> Iterable[FighterListItem]:
+    ) -> list[FighterListItem]:
         """Return lightweight fighter listings honouring pagination hints."""
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
@@ -176,32 +177,34 @@ class FighterQueryService(CacheableService):
 
     def __init__(
         self,
-        repository: FighterRepositoryProtocol,
+        presentation_service: FighterPresentationServiceProtocol,
         *,
         cache: CacheClient | None = None,
     ) -> None:
         super().__init__(cache=cache)
-        self._repository = repository
+        self._presentation = presentation_service
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: _list_cache_key(
-            limit=limit,
-            offset=offset,
-            nationality=nationality,
-            include_streak=include_streak,
-            streak_window=streak_window,
-        )
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered queries for now
+        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: (
+            _list_cache_key(
+                limit=limit,
+                offset=offset,
+                nationality=nationality,
+                include_streak=include_streak,
+                streak_window=streak_window,
+            )
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered queries for now
         ttl=300,
         serializer=lambda fighters: [fighter.model_dump() for fighter in fighters],
         deserializer=_deserialize_fighter_list,
@@ -226,7 +229,7 @@ class FighterQueryService(CacheableService):
     ) -> list[FighterListItem]:
         """Return paginated fighter summaries from the backing repository."""
 
-        fighters = await self._repository.list_fighters(
+        fighters = await self._presentation.list_fighters(
             limit=limit,
             offset=offset,
             nationality=nationality,
@@ -253,21 +256,23 @@ class FighterQueryService(CacheableService):
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Fetch a single fighter profile including detailed statistics."""
 
-        return await self._repository.get_fighter(fighter_id)
+        return await self._presentation.get_fighter(fighter_id)
 
     @cached(
-        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: f"fighters:count:{nationality if nationality else 'all'}"
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered counts
+        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: (
+            f"fighters:count:{nationality if nationality else 'all'}"
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered counts
         ttl=600,
     )
     async def count_fighters(
@@ -282,7 +287,7 @@ class FighterQueryService(CacheableService):
     ) -> int:
         """Return the total number of indexed fighters with caching (optionally filtered)."""
 
-        return await self._repository.count_fighters(
+        return await self._presentation.count_fighters(
             nationality=nationality,
             birthplace_country=birthplace_country,
             birthplace_city=birthplace_city,
@@ -295,7 +300,7 @@ class FighterQueryService(CacheableService):
     async def get_random_fighter(self) -> FighterListItem | None:
         """Return a random fighter without caching (high variance by design)."""
 
-        return await self._repository.get_random_fighter()
+        return await self._presentation.get_random_fighter()
 
     async def search_fighters(
         self,
@@ -353,7 +358,7 @@ class FighterQueryService(CacheableService):
                         exc,
                     )
 
-        fighters, total = await self._repository.search_fighters(
+        fighters, total = await self._presentation.search_fighters(
             query=filters.query,
             stance=filters.stance,
             division=filters.division,
@@ -398,10 +403,10 @@ class FighterQueryService(CacheableService):
     ) -> list[FighterComparisonEntry]:
         """Retrieve comparable stat bundles for the requested fighters."""
 
-        return await self._repository.get_fighters_for_comparison(fighter_ids)
+        return await self._presentation.get_fighters_for_comparison(fighter_ids)
 
 
-class InMemoryFighterRepository(FighterRepositoryProtocol):
+class InMemoryFighterPresentationService(FighterPresentationServiceProtocol):
     """Temporary repository used in tests and during local development."""
 
     def __init__(self) -> None:
@@ -442,7 +447,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         has_location_data: bool | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
-    ) -> Iterable[FighterListItem]:
+    ) -> list[FighterListItem]:
         """Return fighters in insertion order while honouring pagination hints."""
 
         roster: list[FighterListItem] = [
@@ -453,19 +458,19 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             roster = [f for f in roster if f.nationality == nationality]
         # Add location filters (simple implementation for in-memory)
         if birthplace_country:
-            roster = [
-                f for f in roster if f.birthplace_country == birthplace_country
-            ]
+            roster = [f for f in roster if f.birthplace_country == birthplace_country]
         if training_gym:
             roster = [
                 f
                 for f in roster
                 if f.training_gym and training_gym.lower() in f.training_gym.lower()
             ]
-        return paginate_roster_entries(
-            roster,
-            limit=limit,
-            offset=offset,
+        return list(
+            paginate_roster_entries(
+                roster,
+                limit=limit,
+                offset=offset,
+            )
         )
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
@@ -564,12 +569,13 @@ def get_fighter_query_service(
     """FastAPI dependency wiring the repository and cache for queries."""
 
     repository = FighterRepository(session)
-    return FighterQueryService(repository, cache=cache)
+    presentation = FighterPresentationService(repository)
+    return FighterQueryService(presentation, cache=cache)
 
 
 __all__ = [
     "FighterQueryService",
-    "FighterRepositoryProtocol",
-    "InMemoryFighterRepository",
+    "FighterPresentationServiceProtocol",
+    "InMemoryFighterPresentationService",
     "get_fighter_query_service",
 ]

@@ -77,6 +77,9 @@ def freeze_utc_today(
     monkeypatch.setattr(
         "backend.db.repositories.fighter_repository.datetime", FrozenDateTime
     )
+    monkeypatch.setattr(
+        "backend.services.fighter_presentation_service.datetime", FrozenDateTime
+    )
 
 
 @pytest.mark.asyncio

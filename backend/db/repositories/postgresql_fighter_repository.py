@@ -30,6 +30,7 @@ from backend.schemas.stats import (
     TrendTimeBucket,
     TrendsResponse,
 )
+from backend.services.fighter_presentation_service import FighterPresentationService
 
 
 class PostgreSQLFighterRepository:
@@ -38,6 +39,7 @@ class PostgreSQLFighterRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._fighter_repo = FighterRepository(session)
+        self._presentation = FighterPresentationService(self._fighter_repo)
         self._fight_graph_repo = FightGraphRepository(session)
         self._stats_repo = StatsRepository(session)
         self._fight_repo = FightRepository(session)
@@ -59,7 +61,7 @@ class PostgreSQLFighterRepository:
         streak_window: int = 6,
     ) -> Iterable[FighterListItem]:
         """List all fighters with optional pagination."""
-        return await self._fighter_repo.list_fighters(
+        return await self._presentation.list_fighters(
             limit=limit,
             offset=offset,
             nationality=nationality,
@@ -75,7 +77,7 @@ class PostgreSQLFighterRepository:
 
     async def get_fighter(self, fighter_id: str) -> FighterDetail | None:
         """Get detailed fighter information by ID."""
-        return await self._fighter_repo.get_fighter(fighter_id)
+        return await self._presentation.get_fighter(fighter_id)
 
     async def search_fighters(
         self,
@@ -91,7 +93,7 @@ class PostgreSQLFighterRepository:
         offset: int | None = None,
     ) -> tuple[list[FighterListItem], int]:
         """Search fighters by various criteria."""
-        return await self._fighter_repo.search_fighters(
+        return await self._presentation.search_fighters(
             query=query,
             stance=stance,
             division=division,
@@ -107,7 +109,7 @@ class PostgreSQLFighterRepository:
         self, fighter_ids: Sequence[str]
     ) -> list[FighterComparisonEntry]:
         """Return stats snapshots for the requested fighters."""
-        return await self._fighter_repo.get_fighters_for_comparison(fighter_ids)
+        return await self._presentation.get_fighters_for_comparison(fighter_ids)
 
     async def count_fighters(
         self,
@@ -120,7 +122,7 @@ class PostgreSQLFighterRepository:
         has_location_data: bool | None = None,
     ) -> int:
         """Get the total count of fighters."""
-        return await self._fighter_repo.count_fighters(
+        return await self._presentation.count_fighters(
             nationality=nationality,
             birthplace_country=birthplace_country,
             birthplace_city=birthplace_city,
@@ -132,7 +134,7 @@ class PostgreSQLFighterRepository:
 
     async def get_random_fighter(self) -> FighterListItem | None:
         """Get a random fighter."""
-        return await self._fighter_repo.get_random_fighter()
+        return await self._presentation.get_random_fighter()
 
     async def create_fighter(self, fighter: Fighter) -> Fighter:
         """Create a new fighter."""
