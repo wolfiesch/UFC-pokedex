@@ -55,10 +55,11 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
   // Hooks
   const { isFavorite, toggleFavorite } = useFavorites({ autoInitialize: false });
   const { addToComparison, isInComparison } = useComparison();
-  const { details, isLoading: isLoadingDetails, error: detailsError } = useFighterDetails(
-    fighter.fighter_id,
-    detailsEnabled
-  );
+  const {
+    details,
+    isLoading: isLoadingDetails,
+    error: detailsError,
+  } = useFighterDetails(fighter.fighter_id, detailsEnabled);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -406,12 +407,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                   transition={{ duration: 0.2 }}
                 >
                   <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-white">
-                    {isLoadingDetails ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                        <span className="text-sm text-white/60">Loading stats...</span>
-                      </div>
-                    ) : detailsError ? (
+                    {detailsError ? (
                       <div className="flex flex-col items-center gap-2 text-center">
                         <svg
                           className="h-8 w-8 text-white/40"
@@ -434,6 +430,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                         <h4 className="text-center text-sm font-semibold uppercase tracking-wider text-white/60">
                           Quick Stats
                         </h4>
+
+                        {isLoadingDetails && !details && (
+                          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            <span>Fetching fight details...</span>
+                          </div>
+                        )}
 
                         {/* Last Fight / Next Fight Info */}
                         {lastFight && (
@@ -459,6 +462,13 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                                 </>
                               );
                             })()}
+                          </div>
+                        )}
+                        {!lastFight && detailsEnabled && (
+                          <div className="w-full rounded-lg border border-white/10 p-3 text-center text-xs text-white/60">
+                            {isLoadingDetails
+                              ? "Pulling fight history..."
+                              : "Fight history loads after a brief hover."}
                           </div>
                         )}
 

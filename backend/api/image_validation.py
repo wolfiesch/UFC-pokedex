@@ -13,7 +13,7 @@ from backend.db.models import Fighter
 from backend.schemas.fighter import FighterListItem
 from backend.services.image_resolver import resolve_fighter_image
 
-router = APIRouter(prefix="/validation", tags=["Image Validation"])
+router = APIRouter(tags=["Image Validation"])
 
 
 @router.get("/stats")

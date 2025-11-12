@@ -109,7 +109,7 @@ export default function ExplorePage() {
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
                 These elite training facilities have produced multiple UFC fighters and
-                champions. Training gyms play a crucial role in a fighter's development,
+                champions. Training gyms play a crucial role in a fighter&apos;s development,
                 providing coaching, sparring partners, and technical expertise.
               </p>
               <p className="text-xs pt-2">
