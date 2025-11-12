@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from collections.abc import Sequence
 from functools import lru_cache
 from hashlib import sha256
@@ -36,7 +37,9 @@ _FAVORITE_STATS_PREFIX = "favorites:stats"
 
 _redis_client: RedisClient | None = None
 _client_lock = asyncio.Lock()
-_redis_disabled = False
+_redis_disabled: float | None = None
+# Duration (in seconds) that the cache layer waits before retrying a failed Redis connection.
+_REDIS_RETRY_DELAY_SECONDS = 30.0
 
 
 def _redis_url() -> str:
@@ -125,15 +128,20 @@ def favorite_stats_key(collection_id: int | str) -> str:
 
 
 async def get_redis() -> RedisClient | None:
-    """Get Redis client, returning None if connection fails."""
+    """Get Redis client, returning ``None`` when temporarily in backoff."""
     global _redis_client, _redis_disabled
     redis_class, _ = _load_redis_components()
     if redis_class is None:
         logger.info("Redis dependency not installed; caching remains disabled.")
         return None
 
-    if _redis_disabled:
-        logger.debug("Redis connection disabled after previous failure; skipping attempt.")
+    now = time.monotonic()
+    if _redis_disabled is not None and now < _redis_disabled:
+        remaining = _redis_disabled - now
+        logger.debug(
+            "Redis connection temporarily disabled; %.2fs remaining in backoff window.",
+            remaining,
+        )
         return None
 
     # ALWAYS acquire lock first to prevent TOCTOU race
@@ -142,7 +150,8 @@ async def get_redis() -> RedisClient | None:
         if _redis_client is not None:
             return _redis_client
 
-        if _redis_disabled:
+        now = time.monotonic()
+        if _redis_disabled is not None and now < _redis_disabled:
             return None
 
         try:
@@ -152,15 +161,20 @@ async def get_redis() -> RedisClient | None:
             # Test connection before storing the singleton instance.
             await client.ping()
             _redis_client = client
+            _redis_disabled = None
             logger.info("Redis connection established successfully")
             return _redis_client
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
+                backoff_until = time.monotonic() + _REDIS_RETRY_DELAY_SECONDS
+                _redis_disabled = backoff_until
+                backoff_duration = _REDIS_RETRY_DELAY_SECONDS
                 logger.warning(
-                    f"Redis connection failed: {exc}. Caching will be disabled."
+                    "Redis connection failed: %s. Retrying after %.2fs cool-down.",
+                    exc,
+                    backoff_duration,
                 )
                 _redis_client = None
-                _redis_disabled = True
                 return None
             raise
 
@@ -262,7 +276,7 @@ async def close_redis() -> None:
     if _redis_client is not None:
         await _redis_client.aclose()
         _redis_client = None
-    _redis_disabled = False
+    _redis_disabled = None
 
 
 async def invalidate_fighter(cache: CacheClient, fighter_id: str) -> None:
