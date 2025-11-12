@@ -43,8 +43,7 @@ def _filter_business_queries(statements: list[str]) -> list[str]:
     return [
         statement
         for statement in statements
-        if statement.lstrip().upper().startswith("SELECT")
-        and not statement.lstrip().upper().startswith("SELECT CAST(")
+        if statement.lstrip().upper().startswith("SELECT") and " FROM " in statement.upper()
     ]
 
 
