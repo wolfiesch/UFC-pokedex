@@ -60,6 +60,50 @@ def _list_cache_key(
     )
 
 
+def _list_cache_strategy(
+    _self: FighterQueryService,
+    *,
+    limit: int | None = None,
+    offset: int | None = None,
+    nationality: str | None = None,
+    birthplace_country: str | None = None,
+    birthplace_city: str | None = None,
+    training_country: str | None = None,
+    training_city: str | None = None,
+    training_gym: str | None = None,
+    has_location_data: bool | None = None,
+    include_streak: bool = False,
+    streak_window: int = 6,
+) -> str | None:
+    """Cache strategy helper mirroring :meth:`FighterQueryService.list_fighters`.
+
+    The cached decorator expects a callable with the same signature as the
+    method. Extracting this helper keeps the decorator invocation readable while
+    ensuring type checkers know which parameters participate in cache key
+    generation.
+    """
+
+    if any(
+        [
+            birthplace_country,
+            birthplace_city,
+            training_country,
+            training_city,
+            training_gym,
+            has_location_data,
+        ]
+    ):
+        return None
+
+    return _list_cache_key(
+        limit=limit,
+        offset=offset,
+        nationality=nationality,
+        include_streak=include_streak,
+        streak_window=streak_window,
+    )
+
+
 def _deserialize_fighter_list(payload: Any) -> list[FighterListItem]:
     """Deserialize cached fighter list payloads back into Pydantic models."""
 
@@ -98,6 +142,7 @@ def _search_cache_key(filters: FighterSearchFilters, *, limit: int, offset: int)
     champion_fragment = (
         ",".join(filters.champion_statuses) if filters.champion_statuses else None
     )
+
     return search_key(
         query=filters.query or "",
         stance=filters.stance,
@@ -110,9 +155,43 @@ def _search_cache_key(filters: FighterSearchFilters, *, limit: int, offset: int)
     )
 
 
+def _count_cache_strategy(
+    _self: FighterQueryService,
+    *,
+    nationality: str | None = None,
+    birthplace_country: str | None = None,
+    birthplace_city: str | None = None,
+    training_country: str | None = None,
+    training_city: str | None = None,
+    training_gym: str | None = None,
+    has_location_data: bool | None = None,
+) -> str | None:
+    """Return cache key for :meth:`FighterQueryService.count_fighters`."""
+
+    if any(
+        [
+            birthplace_country,
+            birthplace_city,
+            training_country,
+            training_city,
+            training_gym,
+            has_location_data,
+        ]
+    ):
+        return None
+
+    return f"fighters:count:{nationality if nationality else 'all'}"
+
+
 @runtime_checkable
 class FighterRepositoryProtocol(Protocol):
-    """Minimal repository surface required by :class:`FighterQueryService`."""
+    """Minimal repository surface required by :class:`FighterQueryService`.
+
+    The concrete repository is expected to delegate ranking enrichment and
+    fight-history assembly to helper modules so the service only depends on
+    data-access oriented methods. This protocol mirrors that slimmer surface so
+    alternate implementations can stay focused on query composition.
+    """
 
     async def list_fighters(
         self,
@@ -184,24 +263,7 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: _list_cache_key(
-            limit=limit,
-            offset=offset,
-            nationality=nationality,
-            include_streak=include_streak,
-            streak_window=streak_window,
-        )
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered queries for now
+        _list_cache_strategy,  # Don't cache location-filtered queries for now
         ttl=300,
         serializer=lambda fighters: [fighter.model_dump() for fighter in fighters],
         deserializer=_deserialize_fighter_list,
@@ -255,21 +317,7 @@ class FighterQueryService(CacheableService):
 
         return await self._repository.get_fighter(fighter_id)
 
-    @cached(
-        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: f"fighters:count:{nationality if nationality else 'all'}"
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered counts
-        ttl=600,
-    )
+    @cached(_count_cache_strategy, ttl=600)
     async def count_fighters(
         self,
         nationality: str | None = None,
@@ -453,9 +501,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             roster = [f for f in roster if f.nationality == nationality]
         # Add location filters (simple implementation for in-memory)
         if birthplace_country:
-            roster = [
-                f for f in roster if f.birthplace_country == birthplace_country
-            ]
+            roster = [f for f in roster if f.birthplace_country == birthplace_country]
         if training_gym:
             roster = [
                 f
