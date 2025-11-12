@@ -1,0 +1,164 @@
+================================================================================
+                    UFC-POKEDEX COUPLING ANALYSIS SUMMARY
+================================================================================
+
+CRITICAL ISSUES IDENTIFIED
+================================================================================
+
+BACKEND HIGH-COUPLING AREAS:
+
+1. FIGHTER REPOSITORY (fighter_repository.py)
+   - Size: 1,778 lines
+   - Responsibility: Handles 8 different data concerns in single module
+   - Image Resolution: 6+ call sites (list, detail, search, random)
+   - High-Risk Methods:
+     * get_fighter() - 237 lines with 8 different fetch operations
+     * list_fighters() - 164 lines with 4 different fetch operations
+   - Imports: 5 distinct external modules
+   - Risk Level: CRITICAL
+
+2. CACHE MODULE (cache.py + caching.py)
+   - Imported by: 8 services/modules
+   - Functions imported: 7+ per service
+   - Tight Coupling Pattern: Services directly import cache key builders
+   - Risk Level: CRITICAL
+
+3. DATA MODELS (db/models/__init__.py)
+   - Imported by: 16+ files across codebase
+   - Size: 400+ lines (all models in single file)
+   - Direct dependency from every repository
+   - Risk Level: HIGH
+
+4. IMAGE RESOLUTION (services/image_resolver.py)
+   - Call Sites: 6+ across 3 files
+   - Pattern: Presentation logic embedded in repository layer
+   - Impact: Cannot change image handling without touching repositories
+   - Risk Level: HIGH
+
+5. FIGHTER QUERY SERVICE (services/fighter_query_service.py)
+   - Cache imports: 7 items directly imported
+   - Repository imports: 5+ items from single repository
+   - Risk Level: HIGH
+
+FRONTEND HIGH-COUPLING AREAS:
+
+1. API MODULE (@/lib/api)
+   - Imported by: 15+ files
+   - All API calls centralized
+   - Changes ripple to 15+ files
+   - Risk Level: CRITICAL
+
+2. FAVORITES FILTERS STORE (@/store/favoritesFiltersStore)
+   - Used by: 6+ hooks/components
+   - Single source of truth for all filtering
+   - Risk Level: HIGH
+
+3. FAVORITES STORE (@/store/favoritesStore)
+   - Used by: 6+ hooks/components
+   - Backend synchronization point
+   - Risk Level: HIGH
+
+4. FIGHTWEBCLIENT COMPONENT (components/FightWeb/FightWebClient.tsx)
+   - Child components: 9+
+   - Orchestrator pattern creates tight coupling
+   - Risk Level: MEDIUM
+
+================================================================================
+COUPLING PATTERNS DETECTED
+================================================================================
+
+PATTERN 1: Data Decoration in Repository Layer
+  Files: fighter_repository.py, fight_graph_repository.py
+  Impact: Cannot change image handling without modifying repositories
+  Severity: HIGH
+  
+PATTERN 2: Scattered Caching Concerns  
+  Files: fighter_query_service.py, fight_graph_service.py, stats_service.py
+  Impact: Cache changes require updates across 5+ services
+  Severity: HIGH
+
+PATTERN 3: Monolithic Repository Methods
+  Examples: get_fighter() (237 lines), list_fighters() (164 lines)
+  Impact: Single method handles 8+ concerns, difficult to modify
+  Severity: CRITICAL
+
+PATTERN 4: Hub Module Accumulation
+  Modules: backend.cache, backend.db.models, @/lib/api
+  Impact: Central modules have many dependents
+  Severity: HIGH
+
+PATTERN 5: Service-to-Repository Tight Binding
+  Services: fighter_query_service, stats_service, fight_graph_service
+  Impact: Cannot swap repository implementations
+  Severity: MEDIUM
+
+================================================================================
+CIRCULAR DEPENDENCIES
+================================================================================
+
+BACKEND:
+  - No direct circular imports found
+  - BUT: Bidirectional coupling between repositories and schemas
+  - BUT: Services import from repositories which import from models
+  
+FRONTEND:
+  - No circular imports found
+  - Logical circular references through stores and hooks
+
+Risk Level: LOW (but implicit coupling exists)
+
+================================================================================
+QUANTITATIVE METRICS
+================================================================================
+
+BACKEND COUPLING DENSITY:
+  - Hub modules (5+ imports): 3
+  - Hub files (100+ lines, 5+ imports): 5
+  - Coupling hot-spots: 15+
+  - Image resolution call sites: 6+
+  - Cache key builders imported: 7+ per service
+
+FRONTEND COUPLING DENSITY:
+  - Hub modules (5+ imports): 2
+  - Component orchestration points: 2
+  - Store-to-hook dependencies: 6
+  - API functions centralized: 15+
+
+================================================================================
+FILES WITH HIGHEST COUPLING RISK (PRIORITY ORDER)
+================================================================================
+
+BACKEND:
+  1. backend/db/repositories/fighter_repository.py (1,778 lines)
+  2. backend/services/fighter_query_service.py (400+ lines)
+  3. backend/db/models/__init__.py (400+ lines)
+  4. backend/cache.py (200+ lines)
+  5. backend/services/stats_service.py (200+ lines)
+
+FRONTEND:
+  1. frontend/src/lib/api.ts
+  2. frontend/src/store/favoritesStore.ts
+  3. frontend/src/store/favoritesFiltersStore.ts
+  4. frontend/src/components/FightWeb/FightWebClient.tsx
+  5. frontend/src/hooks/useFighters.ts
+
+================================================================================
+IMMEDIATE ACTIONS REQUIRED
+================================================================================
+
+BACKEND:
+  1. Extract image resolution out of repositories
+  2. Create repository interface/abstraction
+  3. Break up monolithic methods in fighter_repository
+  4. Consolidate cache management
+  5. Separate data models into submodules
+
+FRONTEND:
+  1. Create API abstraction/facade layer
+  2. Partition large stores
+  3. Reduce component orchestration coupling
+  4. Simplify hook dependency chains
+
+================================================================================
+Full detailed report available in: docs/reports/coupling-analysis.md
+================================================================================
