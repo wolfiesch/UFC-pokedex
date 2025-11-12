@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable, Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any, Literal
 from typing import cast as typing_cast
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import load_only
 
 from backend.db.models import Fighter
+from backend.db.repositories.base import _calculate_age
 from backend.db.repositories.fighter.filters import (
     _validate_streak_type,
-    filter_roster_entries,
     normalize_search_filters,
-    paginate_roster_entries,
 )
 from backend.schemas.fighter import FighterListItem
 from backend.services.image_resolver import resolve_fighter_image
@@ -111,6 +110,7 @@ class FighterRosterMixin:
 
         rankings = await self._fetch_ranking_summaries(fighter_ids)
 
+        today_utc = datetime.now(tz=UTC).date()
         roster_entries: list[FighterListItem] = []
         for fighter in fighters:
             streak_bundle = streak_by_fighter.get(fighter.id, {})
@@ -122,12 +122,14 @@ class FighterRosterMixin:
                     detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
                     name=fighter.name,
                     nickname=fighter.nickname,
+                    record=fighter.record,
                     division=fighter.division,
                     height=fighter.height,
                     weight=fighter.weight,
                     reach=fighter.reach,
                     stance=fighter.stance,
                     dob=fighter.dob,
+                    age=_calculate_age(dob=fighter.dob, reference_date=today_utc),
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
@@ -191,6 +193,7 @@ class FighterRosterMixin:
         offset: int | None = None,
         include_streak: bool = False,
         streak_window: int = 6,
+        include_locations: bool = True,
     ) -> tuple[list[FighterListItem], int]:
         """Search fighters with optional filters and pagination."""
 
@@ -208,22 +211,66 @@ class FighterRosterMixin:
             base_columns
         )
 
-        fighters_stmt = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .order_by(Fighter.name, Fighter.id)
-        )
+        # Build query with database-level filtering for performance
+        query_stmt = select(Fighter).options(load_only(*load_columns))
 
-        fighters_result = await self._session.execute(fighters_stmt)
-        fighters = fighters_result.scalars().all()
-        filtered_fighters = filter_roster_entries(fighters, filters=filters)
-        total = len(filtered_fighters)
+        # Apply text search at database level
+        if filters.query:
+            search_pattern = f"%{filters.query}%"
+            search_conditions = [
+                Fighter.name.ilike(search_pattern),
+                Fighter.nickname.ilike(search_pattern),
+            ]
+            if include_locations:
+                search_conditions.extend(
+                    [
+                        Fighter.birthplace.ilike(search_pattern),
+                        Fighter.training_gym.ilike(search_pattern),
+                        Fighter.nationality.ilike(search_pattern),
+                        Fighter.fighting_out_of.ilike(search_pattern),
+                    ]
+                )
+            query_stmt = query_stmt.where(or_(*search_conditions))
 
-        paginated = paginate_roster_entries(
-            filtered_fighters, limit=limit, offset=offset
-        )
-        fighter_ids = [fighter.id for fighter in paginated]
+        # Apply stance filter at database level
+        if filters.stance:
+            query_stmt = query_stmt.where(Fighter.stance.ilike(filters.stance))
 
+        # Apply division filter at database level
+        if filters.division:
+            query_stmt = query_stmt.where(Fighter.division.ilike(filters.division))
+
+        # Apply champion status filters at database level
+        if filters.champion_statuses:
+            champion_conditions = []
+            for status in filters.champion_statuses:
+                if status == "current":
+                    champion_conditions.append(Fighter.is_current_champion.is_(True))
+                elif status == "former":
+                    champion_conditions.append(Fighter.is_former_champion.is_(True))
+                elif status == "interim":
+                    champion_conditions.append(Fighter.was_interim.is_(True))
+            if champion_conditions:
+                query_stmt = query_stmt.where(or_(*champion_conditions))
+
+        query_stmt = query_stmt.order_by(Fighter.name, Fighter.id)
+
+        # Get total count before pagination
+        count_stmt = select(func.count()).select_from(query_stmt.subquery())
+        count_result = await self._session.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        # Apply pagination at database level
+        if offset is not None:
+            query_stmt = query_stmt.offset(offset)
+        if limit is not None:
+            query_stmt = query_stmt.limit(limit)
+
+        result = await self._session.execute(query_stmt)
+        fighters = result.scalars().all()
+        fighter_ids = [f.id for f in fighters]
+
+        # Fetch streak data if requested
         streak_by_fighter: dict[
             str, dict[str, int | Literal["win", "loss", "draw", "none"]]
         ] = {}
@@ -232,11 +279,28 @@ class FighterRosterMixin:
                 fighter_ids, window=streak_window
             )
 
+        # Apply streak filter in-memory (can't be done efficiently at DB level)
+        if filters.streak_type and filters.min_streak_count is not None:
+            filtered_fighters = []
+            for fighter in fighters:
+                streak_bundle = streak_by_fighter.get(fighter.id, {})
+                fighter_streak_type = streak_bundle.get("current_streak_type", "none")
+                fighter_streak_count = int(streak_bundle.get("current_streak_count", 0))
+                if (
+                    fighter_streak_type == filters.streak_type
+                    and fighter_streak_count >= filters.min_streak_count
+                ):
+                    filtered_fighters.append(fighter)
+            fighters = filtered_fighters
+            fighter_ids = [f.id for f in fighters]
+            total = len(fighters)
+
         rankings = await self._fetch_ranking_summaries(fighter_ids)
         fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)
 
+        today_utc = datetime.now(tz=UTC).date()
         roster_entries: list[FighterListItem] = []
-        for fighter in paginated:
+        for fighter in fighters:
             streak_bundle = streak_by_fighter.get(fighter.id, {})
             fight_status = fight_status_by_fighter.get(fighter.id, {})
             ranking = rankings.get(fighter.id)
@@ -246,12 +310,14 @@ class FighterRosterMixin:
                     detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
                     name=fighter.name,
                     nickname=fighter.nickname,
+                    record=fighter.record,
                     division=fighter.division,
                     height=fighter.height,
                     weight=fighter.weight,
                     reach=fighter.reach,
                     stance=fighter.stance,
                     dob=fighter.dob,
+                    age=_calculate_age(dob=fighter.dob, reference_date=today_utc),
                     image_url=resolve_fighter_image(fighter.id, fighter.image_url),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
@@ -513,24 +579,47 @@ class FighterRosterMixin:
         result = await self._session.execute(query)
         rows = result.all()
 
+        # Fetch notable fighters in a single query using window function
+        gym_names = [row.gym for row in rows]
+        notable_by_gym: dict[str, list[str]] = {}
+
+        if gym_names:
+            from sqlalchemy import text
+
+            notable_query = text(
+                """
+                WITH ranked_fighters AS (
+                    SELECT
+                        name,
+                        training_gym,
+                        ROW_NUMBER() OVER(
+                            PARTITION BY training_gym
+                            ORDER BY last_fight_date DESC NULLS LAST
+                        ) as rn
+                    FROM fighter
+                    WHERE training_gym = ANY(:gym_names)
+                )
+                SELECT name, training_gym
+                FROM ranked_fighters
+                WHERE rn <= 2
+            """
+            )
+            notable_result = await self._session.execute(
+                notable_query, {"gym_names": gym_names}
+            )
+
+            for name, gym in notable_result:
+                notable_by_gym.setdefault(gym, []).append(name)
+
         stats: list[dict[str, Any]] = []
         for row in rows:
-            notable_query = (
-                select(Fighter.name)
-                .where(Fighter.training_gym == row.gym)
-                .order_by(Fighter.last_fight_date.desc().nulls_last())
-                .limit(2)
-            )
-            notable_result = await self._session.execute(notable_query)
-            notable_fighters = [name for (name,) in notable_result.all()]
-
             stats.append(
                 {
                     "gym": row.gym,
                     "city": row.city,
                     "country": row.country,
                     "fighter_count": row.fighter_count,
-                    "notable_fighters": notable_fighters,
+                    "notable_fighters": notable_by_gym.get(row.gym, []),
                 }
             )
 

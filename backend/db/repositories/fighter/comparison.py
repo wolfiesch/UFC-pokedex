@@ -25,10 +25,8 @@ class FighterComparisonMixin:
         if not fighter_ids:
             return []
 
-        ordered_ids: list[str] = []
-        for fighter_id in fighter_ids:
-            if fighter_id not in ordered_ids:
-                ordered_ids.append(fighter_id)
+        # Use dict.fromkeys() for O(n) deduplication while preserving order
+        ordered_ids = list(dict.fromkeys(fighter_ids))
 
         base_columns = self._fighter_comparison_columns()
         load_columns, supports_was_interim = await self._resolve_fighter_columns(

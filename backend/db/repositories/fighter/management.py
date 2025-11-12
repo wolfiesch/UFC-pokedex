@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import load_only
 
 from backend.db.models import Fighter
@@ -65,8 +65,6 @@ class FighterManagementMixin:
     ) -> None:
         """Update fighter location and UFC.com metadata fields."""
 
-        from sqlalchemy import update
-
         update_values = {}
         if birthplace is not None:
             update_values["birthplace"] = birthplace
@@ -105,8 +103,6 @@ class FighterManagementMixin:
         nationality: str,
     ) -> None:
         """Update fighter nationality from Sherdog data."""
-
-        from sqlalchemy import update
 
         stmt = (
             update(Fighter)

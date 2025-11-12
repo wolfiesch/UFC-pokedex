@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from backend.db.repositories.fighter import FighterRepository
 from backend.db.repositories.fighter.filters import (
     FighterSearchFilters,
@@ -19,4 +21,5 @@ __all__ = [
     "paginate_roster_entries",
     "FighterRankingSummary",
     "StreakType",
+    "datetime",  # For backward compatibility with tests that patch this module
 ]
