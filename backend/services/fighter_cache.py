@@ -153,7 +153,7 @@ def fighter_comparison_cache_key(fighter_ids: Sequence[str]) -> str | None:
     persisting partially filled bundles.
     """
 
-    return comparison_key(fighter_ids) if len(fighter_ids) >= 2 else None
+    return comparison_key(sorted(fighter_ids)) if len(fighter_ids) >= 2 else None
 
 
 def serialize_fighter_comparisons(
