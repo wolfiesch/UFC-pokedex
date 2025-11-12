@@ -2013,7 +2013,7 @@ export default function ExplorePage() {
 - [ ] Create `scripts/load_sherdog_nationality.py`
 - [ ] Create `scripts/load_manual_curated_data.py`
 - [ ] Create `scripts/review_matches.py` CLI tool
-- [ ] Build `data/manual/gym_locations.csv` seed + `scripts/suggest_gym_location.py`
+- [x] Build `data/manual/gym_locations.csv` seed + `scripts/suggest_gym_location.py`
 - [ ] Add Makefile targets
 - [ ] Run full data load on development database
 

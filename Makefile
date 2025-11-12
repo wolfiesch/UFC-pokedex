@@ -576,12 +576,16 @@ monitor-location-health: ## Check location data health and coverage
 monitor-location-health-json: ## Check location data health (JSON output)
 	@PYTHONPATH=. .venv/bin/python scripts/monitor_location_data_health.py --json
 
-.PHONY: scrape-ufc-com-locations match-ufc-com-fighters load-fighter-locations enrich-fighter-locations
+.PHONY: scrape-ufc-com-locations scrape-ufc-com-batched match-ufc-com-fighters load-fighter-locations enrich-fighter-locations
 scrape-ufc-com-locations: ## Scrape UFC.com list + detail pages for location data
 	@echo "🌐 Scraping UFC.com athletes list..."
 	PYTHONPATH=. .venv/bin/scrapy crawl ufc_com_athletes
 	@echo "🏃 Scraping individual UFC.com athlete profiles..."
 	PYTHONPATH=. .venv/bin/scrapy crawl ufc_com_athlete_detail -a input=data/processed/ufc_com_athletes_list.jsonl
+
+scrape-ufc-com-batched: ## Scrape UFC.com athlete profiles in polite batches
+	@echo "📦 Running batched UFC.com scrape..."
+	PYTHONPATH=. .venv/bin/python scripts/scrape_ufc_com_batched.py
 
 match-ufc-com-fighters: ## Run fuzzy matcher to link UFC.com slugs with UFCStats IDs
 	@echo "🤝 Matching UFC.com fighters to UFCStats roster..."
