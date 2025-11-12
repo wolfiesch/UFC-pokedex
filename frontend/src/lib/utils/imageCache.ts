@@ -408,6 +408,14 @@ class ImageBitmapCache {
    * Preloads multiple bitmaps in the background
    * Uses requestIdleCallback for low-priority loading
    * Returns a cancel function to stop preloading
+   *
+   * IMPORTANT: Always call the returned cleanup function in useEffect cleanup!
+   *
+   * @example
+   * useEffect(() => {
+   *   const cancel = preloadBitmaps(urls);
+   *   return () => cancel(); // REQUIRED: prevents memory leak
+   * }, [urls]);
    */
   preloadBitmaps(urls: string[]): () => void {
     let cancelled = false;
@@ -531,6 +539,14 @@ export async function getOpponentBitmap(
 /**
  * Convenience function to preload bitmaps
  * Returns a cancel function to stop preloading
+ *
+ * IMPORTANT: Always call the returned cleanup function in useEffect cleanup!
+ *
+ * @example
+ * useEffect(() => {
+ *   const cancel = preloadBitmaps(urls);
+ *   return () => cancel(); // REQUIRED: prevents memory leak
+ * }, [urls]);
  */
 export function preloadBitmaps(urls: string[]): () => void {
   return imageCache.preloadBitmaps(urls);
