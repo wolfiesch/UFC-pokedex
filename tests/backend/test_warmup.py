@@ -62,7 +62,7 @@ async def test_warmup_database_postgresql_executes_ping(
 
     await warmup.warmup_database(
         resolve_db_type=lambda: "postgresql",
-        resolve_engine=lambda: object(),
+        resolve_engine=object,
     )
 
     assert dummy_txn.connection.execute.await_count == 1
