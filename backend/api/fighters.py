@@ -6,10 +6,8 @@ from backend.schemas.fighter import (
     FighterListItem,
     PaginatedFightersResponse,
 )
-from backend.services.fighter_query_service import (
-    FighterQueryService,
-    get_fighter_query_service,
-)
+from backend.services.fighter_query_service import FighterQueryService
+from backend.services.dependencies import get_fighter_query_service
 
 router = APIRouter()
 

@@ -6,24 +6,13 @@ import logging
 import secrets
 from collections.abc import Iterable, Sequence
 from datetime import date
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
-from fastapi import Depends
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.cache import (
-    CacheClient,
-    comparison_key,
-    detail_key,
-    get_cache_client,
-    list_key,
-    search_key,
-)
-from backend.db.connection import get_db
+from backend.cache import CacheClient
 from backend.db.repositories.fighter_repository import (
     FighterRepository,
-    FighterSearchFilters,
     filter_roster_entries,
     normalize_search_filters,
     paginate_roster_entries,
@@ -35,79 +24,26 @@ from backend.schemas.fighter import (
     PaginatedFightersResponse,
 )
 from backend.services.caching import CacheableService, cached
+from backend.services.fighter_cache import (
+    FIGHTER_COMPARISON_TTL,
+    FIGHTER_DETAIL_TTL,
+    FIGHTER_LIST_TTL,
+    FIGHTER_SEARCH_TTL,
+    deserialize_fighter_comparisons,
+    deserialize_fighter_detail,
+    deserialize_fighter_list,
+    deserialize_fighter_search,
+    fighter_comparison_cache_key,
+    fighter_detail_cache_key,
+    fighter_list_cache_key,
+    fighter_search_cache_key,
+    serialize_fighter_comparisons,
+    serialize_fighter_detail,
+    serialize_fighter_list,
+    serialize_fighter_search,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _list_cache_key(
-    *,
-    limit: int | None,
-    offset: int | None,
-    nationality: str | None,
-    include_streak: bool,
-    streak_window: int,
-) -> str | None:
-    """Return a cache key for list endpoints when pagination hints are valid."""
-
-    if limit is None or offset is None or limit < 0 or offset < 0:
-        return None
-    return list_key(
-        limit,
-        offset,
-        nationality=nationality,
-        include_streak=include_streak,
-        streak_window=streak_window,
-    )
-
-
-def _deserialize_fighter_list(payload: Any) -> list[FighterListItem]:
-    """Deserialize cached fighter list payloads back into Pydantic models."""
-
-    if not isinstance(payload, list):
-        raise TypeError("Expected cached fighter list to be a list")
-    return [FighterListItem.model_validate(item) for item in payload]
-
-
-def _deserialize_fighter_detail(payload: Any) -> FighterDetail:
-    """Deserialize cached fighter detail payloads back into rich models."""
-
-    if not isinstance(payload, dict):
-        raise TypeError("Expected cached fighter detail to be a mapping")
-    return FighterDetail.model_validate(payload)
-
-
-def _deserialize_search_results(payload: Any) -> PaginatedFightersResponse:
-    """Deserialize cached search payloads into the paginated response model."""
-
-    if not isinstance(payload, dict):
-        raise TypeError("Expected cached search payload to be a mapping")
-    return PaginatedFightersResponse.model_validate(payload)
-
-
-def _deserialize_comparisons(payload: Any) -> list[FighterComparisonEntry]:
-    """Deserialize cached fighter comparison payloads into entry models."""
-
-    if not isinstance(payload, list):
-        raise TypeError("Expected cached comparison payload to be a list")
-    return [FighterComparisonEntry.model_validate(item) for item in payload]
-
-
-def _search_cache_key(filters: FighterSearchFilters, *, limit: int, offset: int) -> str:
-    """Return a deterministic cache key for fighter search results."""
-
-    champion_fragment = (
-        ",".join(filters.champion_statuses) if filters.champion_statuses else None
-    )
-    return search_key(
-        query=filters.query or "",
-        stance=filters.stance,
-        division=filters.division,
-        champion_statuses=champion_fragment,
-        streak_type=filters.streak_type,
-        min_streak_count=filters.min_streak_count,
-        limit=limit,
-        offset=offset,
-    )
 
 
 @runtime_checkable
@@ -184,27 +120,29 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: _list_cache_key(
-            limit=limit,
-            offset=offset,
-            nationality=nationality,
-            include_streak=include_streak,
-            streak_window=streak_window,
-        )
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered queries for now
-        ttl=300,
-        serializer=lambda fighters: [fighter.model_dump() for fighter in fighters],
-        deserializer=_deserialize_fighter_list,
+        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: (
+            fighter_list_cache_key(
+                limit=limit,
+                offset=offset,
+                nationality=nationality,
+                include_streak=include_streak,
+                streak_window=streak_window,
+            )
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered queries for now
+        ttl=FIGHTER_LIST_TTL,
+        serializer=serialize_fighter_list,
+        deserializer=deserialize_fighter_list,
         deserialize_error_message=(
             "Failed to deserialize cached fighter list for key {key}: {error}"
         ),
@@ -242,10 +180,10 @@ class FighterQueryService(CacheableService):
         return list(fighters)
 
     @cached(
-        lambda _self, fighter_id: detail_key(fighter_id),
-        ttl=7200,
-        serializer=lambda fighter: fighter.model_dump(),
-        deserializer=_deserialize_fighter_detail,
+        lambda _self, fighter_id: fighter_detail_cache_key(fighter_id),
+        ttl=FIGHTER_DETAIL_TTL,
+        serializer=serialize_fighter_detail,
+        deserializer=deserialize_fighter_detail,
         deserialize_error_message=(
             "Failed to deserialize cached fighter detail for key {key}: {error}"
         ),
@@ -256,18 +194,20 @@ class FighterQueryService(CacheableService):
         return await self._repository.get_fighter(fighter_id)
 
     @cached(
-        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: f"fighters:count:{nationality if nationality else 'all'}"
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered counts
+        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: (
+            f"fighters:count:{nationality if nationality else 'all'}"
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered counts
         ttl=600,
     )
     async def count_fighters(
@@ -336,7 +276,11 @@ class FighterQueryService(CacheableService):
         )
 
         cache_key = (
-            _search_cache_key(filters, limit=resolved_limit, offset=resolved_offset)
+            fighter_search_cache_key(
+                filters,
+                limit=resolved_limit,
+                offset=resolved_offset,
+            )
             if should_cache
             else None
         )
@@ -345,7 +289,7 @@ class FighterQueryService(CacheableService):
             cached_payload = await self._cache_get(cache_key)
             if cached_payload is not None:
                 try:
-                    return _deserialize_search_results(cached_payload)
+                    return deserialize_fighter_search(cached_payload)
                 except (ValidationError, TypeError) as exc:  # pragma: no cover
                     logger.warning(
                         "Failed to deserialize cached fighter search for key %s: %s",
@@ -378,17 +322,19 @@ class FighterQueryService(CacheableService):
         )
 
         if cache_key is not None:
-            await self._cache_set(cache_key, response.model_dump(), ttl=300)
+            await self._cache_set(
+                cache_key,
+                serialize_fighter_search(response),
+                ttl=FIGHTER_SEARCH_TTL,
+            )
 
         return response
 
     @cached(
-        lambda _self, fighter_ids: (
-            comparison_key(fighter_ids) if len(fighter_ids) >= 2 else None
-        ),
-        ttl=600,
-        serializer=lambda fighters: [entry.model_dump() for entry in fighters],
-        deserializer=_deserialize_comparisons,
+        lambda _self, fighter_ids: fighter_comparison_cache_key(fighter_ids),
+        ttl=FIGHTER_COMPARISON_TTL,
+        serializer=serialize_fighter_comparisons,
+        deserializer=deserialize_fighter_comparisons,
         deserialize_error_message=(
             "Failed to deserialize cached fighter comparison for key {key}: {error}"
         ),
@@ -453,9 +399,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             roster = [f for f in roster if f.nationality == nationality]
         # Add location filters (simple implementation for in-memory)
         if birthplace_country:
-            roster = [
-                f for f in roster if f.birthplace_country == birthplace_country
-            ]
+            roster = [f for f in roster if f.birthplace_country == birthplace_country]
         if training_gym:
             roster = [
                 f
@@ -557,19 +501,8 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         return self._list_item_from_detail(detail)
 
 
-def get_fighter_query_service(
-    session: AsyncSession = Depends(get_db),
-    cache: CacheClient = Depends(get_cache_client),
-) -> FighterQueryService:
-    """FastAPI dependency wiring the repository and cache for queries."""
-
-    repository = FighterRepository(session)
-    return FighterQueryService(repository, cache=cache)
-
-
 __all__ = [
     "FighterQueryService",
     "FighterRepositoryProtocol",
     "InMemoryFighterRepository",
-    "get_fighter_query_service",
 ]

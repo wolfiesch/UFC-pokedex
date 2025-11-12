@@ -59,9 +59,7 @@ sys.modules.setdefault("redis.exceptions", redis_exceptions_module)
 # Import backend modules after the Redis stubs are registered to avoid optional dependency errors.
 from backend.main import app  # noqa: E402
 from backend.schemas.fighter import FighterDetail  # noqa: E402
-from backend.services.fighter_query_service import (  # noqa: E402
-    get_fighter_query_service,
-)
+from backend.services.dependencies import get_fighter_query_service  # noqa: E402
 
 
 class StubFighterQueryService:
