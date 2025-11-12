@@ -1,5 +1,5 @@
 ---
-description: Implement a feature plan from Plans/ directory and update status
+description: Implement a feature plan from docs/plans/ directory and update status
 ---
 
 Implement the plan from: @$1
@@ -19,7 +19,7 @@ Please follow these steps:
 3. **Implement the plan**:
    - Follow the implementation steps from the plan
    - Write clean, well-tested code
-   - Follow project conventions from @CLAUDE.md
+   - Follow project conventions from `docs/ai-assistants/CLAUDE.md`
    - Run tests and verify functionality
    - Handle edge cases mentioned in the plan
 

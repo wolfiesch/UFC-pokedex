@@ -119,8 +119,10 @@ ufc-pokedex/
 │   ├── scrape_updates.py      # Incremental update script
 │   └── seed_db.py             # Database seeding
 │
-├── Plans/                      # Project documentation
-│   └── Initial_Plan.md        # This file
+├── docs/
+│   └── plans/
+│       └── archive/
+│           └── Initial_Plan.md  # This file
 │
 ├── .github/
 │   └── workflows/

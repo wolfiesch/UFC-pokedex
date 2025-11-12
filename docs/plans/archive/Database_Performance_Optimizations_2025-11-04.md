@@ -1391,7 +1391,7 @@ curl -w "Time: %{time_total}s\n" -o /dev/null -s "http://localhost:8000/fighters
 ## Post-Implementation Tasks
 
 1. **Documentation Updates**:
-   - Update CLAUDE.md with new performance characteristics
+   - Update `../../ai-assistants/CLAUDE.md` with new performance characteristics
    - Document new indexes in schema documentation
    - Add benchmarking instructions to README
 

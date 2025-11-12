@@ -7,9 +7,10 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
 - `scraper/` – Scrapy project + BeautifulSoup utilities.
 - `backend/` – FastAPI service exposing fighter data.
 - `frontend/` – Next.js 14 application with Tailwind styling.
-- `docs/` – Research and project documentation.
+- `docs/` – Research notes, runbooks, plans, and AI-assistant guides (see `docs/README.md`).
 - `scripts/` – Operational scripts (scrape, seed).
-- `data/` – Local data cache (ignored from version control).
+- `tests/` – Automated suites plus `tests/manual/` for exploratory QA scripts.
+- `data/` – Local cache and archived payloads (`data/backups/legacy/` stores SQL dumps; see `docs/runbooks/operations/backups.md`).
 
 ## Getting Started
 
@@ -65,9 +66,9 @@ make dev                   # Backend + Frontend with Cloudflare tunnels
 - **SQLite**: Fast setup, no Docker needed, good for UI work and small datasets
 - **PostgreSQL**: Production-like, handles large datasets, required for migration testing
 
-See `CLAUDE.md` for detailed comparison and switching instructions.
+See `docs/ai-assistants/CLAUDE.md` for detailed comparison and switching instructions.
 
-Refer to `Plans/Initial_Plan.md` for the full project roadmap.
+Refer to `docs/plans/archive/Initial_Plan.md` for the full project roadmap.
 
 ## Container Workflow
 
@@ -127,3 +128,7 @@ You can also call the underlying targets directly:
 
 - `make load-data` ingests the fighter list JSONL only.
 - `make load-data-details` ingests detail JSON files without reloading the list data.
+
+## Manual Smoke Tests
+
+Quick exploratory scripts now live under `tests/manual/` (documented in `tests/manual/README.md`). They are excluded from the default `pytest` run; execute them directly (e.g., `PYTHONPATH=. uv run python tests/manual/test_comprehensive_webapp.py`) when you need to reproduce end-to-end flows outside the automated suites.

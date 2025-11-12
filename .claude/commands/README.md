@@ -30,7 +30,7 @@ Run ceviz performance analysis with automatic report archiving and progress trac
 - Progress tracking: `frontend/benchmarks/PROGRESS.md`
 
 ### `/newplan`
-Create a new feature plan document in the Plans/ directory.
+Create a new feature plan document in the `docs/plans/` directory.
 
 **Usage:**
 ```
@@ -38,7 +38,7 @@ Create a new feature plan document in the Plans/ directory.
 ```
 
 ### `/runplan`
-Implement a feature plan from the Plans/ directory and update status.
+Implement a feature plan from the `docs/plans/` directory and update status.
 
 **Usage:**
 ```

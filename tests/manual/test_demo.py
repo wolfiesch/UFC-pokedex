@@ -3,8 +3,8 @@
 UFC Pokedex Static Demo Test
 Demonstrates webapp-testing skill capabilities
 """
+from pathlib import Path
 from playwright.sync_api import sync_playwright
-import os
 import time
 
 def test_static_demo():
@@ -14,8 +14,8 @@ def test_static_demo():
         page.set_viewport_size({"width": 1920, "height": 1080})
 
         # Get absolute path to HTML file
-        html_path = os.path.abspath('test_demo.html')
-        file_url = f'file://{html_path}'
+        html_path = Path(__file__).resolve().parent / "assets" / "test_demo.html"
+        file_url = html_path.as_uri()
 
         print("=" * 70)
         print("UFC Pokedex - Webapp Testing Skill Demonstration")

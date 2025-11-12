@@ -60,6 +60,7 @@ ignore = ["B008"]  # Allow function default arguments with calls (use carefully)
 minversion = "8.0"
 addopts = "-q --disable-warnings"
 testpaths = ["tests"]
+norecursedirs = ["tests/manual"]
 
 [tool.mypy]
 python_version = "3.11"

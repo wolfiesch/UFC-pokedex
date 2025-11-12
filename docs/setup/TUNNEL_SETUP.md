@@ -237,4 +237,4 @@ The `make dev` command automatically configures CORS. If you see CORS errors:
 
 - Cloudflare Tunnel Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/
 - Check logs: `/tmp/tunnel.log`, `/tmp/backend.log`, `/tmp/frontend.log`
-- See `../../CLAUDE.md` for more development info
+- See `../ai-assistants/CLAUDE.md` for more development info

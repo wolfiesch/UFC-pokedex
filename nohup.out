@@ -1,0 +1,2 @@
+bash: -c: line 0: syntax error near unexpected token `newline'
+bash: -c: line 0: `DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex PYTHONPATH=. .venv/bin/python /tmp/generate_all_slugs.py >'

@@ -1,5 +1,5 @@
 ---
-description: Create a new feature plan document in Plans/ directory
+description: Create a new feature plan document in docs/plans/ directory
 ---
 
 Create a comprehensive plan for the following feature:
@@ -19,7 +19,7 @@ Please follow these steps:
    - Potential challenges and edge cases
    - Success criteria
 
-2. **Save the plan** as a markdown file in the `Plans/` directory with an appropriate filename based on the feature description. Use this naming convention:
+2. **Save the plan** as a markdown file in the `docs/plans/` directory with an appropriate filename based on the feature description. Use this naming convention:
    - Convert feature description to a descriptive filename
    - Format: `Feature_Name_YYYY-MM-DD.md` (include today's date)
    - Example: `Add_Fighter_Comparison_Tool_2025-11-04.md`
@@ -31,7 +31,7 @@ Please follow these steps:
    - Any relevant diagrams or examples
 
 4. **Reference existing code** where appropriate:
-   - Review @CLAUDE.md for project conventions
+   - Review `docs/ai-assistants/CLAUDE.md` for project conventions
    - Consider existing architecture from the codebase
    - Ensure the plan aligns with current patterns
 

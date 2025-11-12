@@ -333,7 +333,7 @@ User experience: Only 1 in 185 fighters lacks an image
 
 ### Immediate Actions
 1. ✅ Deploy 268 new images to production
-2. ✅ Document scraper in CLAUDE.md
+2. ✅ Document scraper in `../ai-assistants/CLAUDE.md`
 3. ✅ Add Makefile commands to workflow
 
 ### Optional Improvements

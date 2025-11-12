@@ -12,6 +12,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+venv/
 *.egg-info/
 
 # Node
@@ -40,7 +41,7 @@ docker-compose.override.yml
 test-results/
 playwright-report/
 playwright/.cache/
-tests/e2e/screenshots/
+frontend/tests/e2e/screenshots/
 .playwright-mcp/
 
 # Scrapy cache (use pattern, not individual files!)

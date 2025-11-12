@@ -33,7 +33,7 @@ test.describe('UFC Pokedex Homepage', () => {
 
     // Take a screenshot for visual verification
     await page.screenshot({
-      path: 'tests/e2e/screenshots/homepage.png',
+      path: 'frontend/tests/e2e/screenshots/homepage.png',
       fullPage: true
     });
 
@@ -57,7 +57,7 @@ test.describe('UFC Pokedex Homepage', () => {
 
     // Take a screenshot
     await page.screenshot({
-      path: 'tests/e2e/screenshots/fighter-grid.png'
+      path: 'frontend/tests/e2e/screenshots/fighter-grid.png'
     });
   });
 
@@ -78,7 +78,7 @@ test.describe('UFC Pokedex Homepage', () => {
 
     // Take a screenshot of the detail page
     await page.screenshot({
-      path: 'tests/e2e/screenshots/fighter-detail.png',
+      path: 'frontend/tests/e2e/screenshots/fighter-detail.png',
       fullPage: true
     });
 
@@ -96,7 +96,7 @@ test.describe('Responsive Design', () => {
 
     // Take mobile screenshot
     await page.screenshot({
-      path: 'tests/e2e/screenshots/homepage-mobile.png',
+      path: 'frontend/tests/e2e/screenshots/homepage-mobile.png',
       fullPage: true
     });
 
@@ -112,7 +112,7 @@ test.describe('Responsive Design', () => {
 
     // Take tablet screenshot
     await page.screenshot({
-      path: 'tests/e2e/screenshots/homepage-tablet.png',
+      path: 'frontend/tests/e2e/screenshots/homepage-tablet.png',
       fullPage: true
     });
 

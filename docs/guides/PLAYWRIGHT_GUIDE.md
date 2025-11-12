@@ -7,8 +7,8 @@ This guide explains how to use Playwright MCP integration with Claude Code to au
 The following has been configured for you:
 
 1. **`.mcp.json`** - Model Context Protocol configuration for Playwright
-2. **`playwright.config.ts`** - Playwright test configuration
-3. **`tests/e2e/`** - Example test directory with sample tests
+2. **`frontend/tests/e2e/playwright.config.ts`** - Playwright test configuration
+3. **`frontend/tests/e2e/specs/`** - Example test directory with sample tests
 4. **Browser binaries** - Chromium, Firefox, WebKit installed
 
 ## How It Works
@@ -76,7 +76,7 @@ npm install -D @playwright/test
 npx playwright test
 
 # Run specific test file
-npx playwright test tests/e2e/example-homepage.spec.ts
+npx playwright test frontend/tests/e2e/specs/example-homepage.spec.ts
 
 # Run in headed mode (see browser)
 npx playwright test --headed
@@ -188,13 +188,15 @@ Claude can:
 
 ```
 UFC-pokedex/
-├── .mcp.json                          # MCP configuration (Playwright)
-├── playwright.config.ts               # Playwright settings
-├── tests/
-│   └── e2e/
-│       ├── example-homepage.spec.ts   # Example test suite
-│       └── screenshots/               # Generated screenshots
-└── PLAYWRIGHT_GUIDE.md               # This file
+├── .mcp.json                                  # MCP configuration (Playwright)
+├── frontend/
+│   └── tests/
+│       └── e2e/
+│           ├── playwright.config.ts           # Playwright settings
+│           ├── specs/
+│           │   └── example-homepage.spec.ts   # Example test suite
+│           └── screenshots/                   # Generated screenshots
+└── docs/guides/PLAYWRIGHT_GUIDE.md            # This file
 ```
 
 ## Troubleshooting
@@ -212,7 +214,7 @@ UFC-pokedex/
 - Check `.env` has correct `CORS_ALLOW_ORIGINS`
 
 ### "Screenshots not appearing"
-- Check `tests/e2e/screenshots/` directory
+- Check `frontend/tests/e2e/screenshots/` directory
 - Ensure test has write permissions
 
 ## Next Steps

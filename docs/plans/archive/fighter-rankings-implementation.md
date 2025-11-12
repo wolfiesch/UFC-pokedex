@@ -517,7 +517,7 @@ GET /rankings/Lightweight
 ### Deliverables
 
 1. **Playwright E2E Tests**
-   - File: `tests/e2e/rankings.spec.ts` (to create)
+   - File: `frontend/tests/e2e/specs/rankings.spec.ts` (to create)
    - Test scenarios:
      - View division rankings page
      - Click fighter to see ranking history
@@ -538,7 +538,7 @@ GET /rankings/Lightweight
    - Accessibility: ARIA labels, keyboard navigation
 
 4. **Documentation**
-   - Update: `CLAUDE.md` with rankings feature details
+   - Update: `../../ai-assistants/CLAUDE.md` with rankings feature details
    - Document: Scraper usage (`make scrape-rankings`)
    - Document: Data import process
    - Document: API endpoints in OpenAPI spec

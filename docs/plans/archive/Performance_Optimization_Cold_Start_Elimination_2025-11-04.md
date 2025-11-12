@@ -570,7 +570,7 @@ done
 4. **Add production build testing workflow**
    - Document `npm run build && npm run start` workflow
    - Create Makefile target for production testing
-   - Add to CLAUDE.md
+   - Add to `../../ai-assistants/CLAUDE.md`
 
 ### Phase 4: Redis Caching for Favorites (Priority: Low)
 
@@ -595,7 +595,7 @@ done
    - Add to `make dev` workflow
    - Test tunnel warmth
 
-2. **Update tunnel documentation** (`CLAUDE.md`)
+2. **Update tunnel documentation** (`../../ai-assistants/CLAUDE.md`)
    - Document keepalive behavior
    - Add troubleshooting tips
 
@@ -620,7 +620,7 @@ backend/services/favorites_service.py  # Query optimization
 frontend/src/lib/api-ssr.ts    # Update cache policies
 frontend/package.json          # Add warmup script
 Makefile                       # Add production test target
-CLAUDE.md                      # Document new workflows
+../../ai-assistants/CLAUDE.md                      # Document new workflows
 ```
 
 ## Dependencies & Prerequisites
@@ -757,7 +757,7 @@ async def warmup_redis():
 **Issue:** Dev mode always compiles on-demand (cannot be avoided)
 
 **Solution:**
-- Document expected behavior in CLAUDE.md
+- Document expected behavior in `../../ai-assistants/CLAUDE.md`
 - Provide `make dev:prod` for production-like testing
 - Route warmer reduces compilation count
 
@@ -852,7 +852,7 @@ async def startup_health():
 
 ## Documentation Updates
 
-### CLAUDE.md Updates
+### `../../ai-assistants/CLAUDE.md` Updates
 
 ```markdown
 ## Performance Optimization

@@ -1,7 +1,7 @@
 # UFC Pokedex - Bug Fix Plan
 
 **Plan Created:** 2025-11-07
-**Related:** BUG_REPORT.md
+**Related:** `../reports/BUG_REPORT.md`
 **Priority:** CRITICAL - Blocks all development
 
 ---
@@ -37,7 +37,7 @@ When developers run `make dev-local`, the frontend should automatically use `htt
    - `.env.local` retains the tunnel URLs
    - No automatic cleanup or switching mechanism exists
 
-3. **CLAUDE.md Documentation:**
+3. **`../ai-assistants/CLAUDE.md` Documentation:**
    - States: "Start backend + frontend with localhost URLs (no tunnels, no env changes)"
    - Reality: Does not modify existing env files
 
@@ -46,7 +46,7 @@ When developers run `make dev-local`, the frontend should automatically use `htt
 **Option A: Makefile Auto-Configuration (Recommended)**
 - ✅ Automatic - no manual steps
 - ✅ Foolproof - always correct
-- ✅ Matches CLAUDE.md description
+- ✅ Matches `../ai-assistants/CLAUDE.md` description
 - ❌ Slightly more complex Makefile logic
 
 **Option B: Better Documentation**
@@ -160,9 +160,9 @@ grep -r "\.env\.local" .gitignore frontend/.gitignore 2>/dev/null
 .env*.local
 ```
 
-#### Change 3: Update CLAUDE.md Documentation
+#### Change 3: Update `../ai-assistants/CLAUDE.md` Documentation
 
-**File:** `CLAUDE.md`
+**File:** `../ai-assistants/CLAUDE.md`
 **Location:** Line ~20-25 (under "Running Services")
 
 **Add clarification:**
@@ -352,7 +352,7 @@ The fix is considered successful when:
 ### Permanent Fix (Do Next)
 - [ ] Update Makefile `dev-local` target to auto-configure .env.local
 - [ ] Verify `.env.local` is in `.gitignore`
-- [ ] Update CLAUDE.md with clarified instructions
+- [ ] Update `../ai-assistants/CLAUDE.md` with clarified instructions
 - [ ] Test fresh checkout scenario
 - [ ] Test switching from tunnel mode
 - [ ] Test all pages (home, search, detail, events)

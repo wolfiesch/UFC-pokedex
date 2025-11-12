@@ -99,7 +99,7 @@ Update Makefile to auto-configure localhost URLs in `make dev-local`
 - Backend is running correctly on port 8000
 - Frontend is running correctly on port 3000
 - No code bugs found - pure configuration issue
-- Documentation (CLAUDE.md) could be clearer about env switching
+- Documentation (`../ai-assistants/CLAUDE.md`) could be clearer about env switching
 
 ---
 

@@ -257,7 +257,7 @@ Remaining: ~153 fighters
 1. **Wait for final run completion** (~20-30 minutes remaining)
 2. **Analyze final statistics**
 3. **Update this report with results**
-4. **Document in CLAUDE.md** for future reference
+4. **Document in `../ai-assistants/CLAUDE.md`** for future reference
 5. **Consider manual curation** for top unimaged fighters
 
 ## Conclusion
