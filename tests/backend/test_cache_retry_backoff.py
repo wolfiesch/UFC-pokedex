@@ -104,8 +104,7 @@ async def test_get_redis_retries_after_cooldown(
     assert cache._redis_disabled is None  # type: ignore[attr-defined]
 
     await cache.close_redis()
-
-
+    _StubRedisFactory.on_instantiate = None
 @pytest.mark.asyncio
 async def test_close_redis_clears_backoff(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
