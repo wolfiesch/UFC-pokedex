@@ -107,7 +107,7 @@ async def test_get_redis_retries_after_cooldown(
     _StubRedisFactory.on_instantiate = None
 @pytest.mark.asyncio
 async def test_close_redis_clears_backoff(
-    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+    monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Closing the cache connection also resets any pending backoff metadata."""
 
