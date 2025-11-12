@@ -10,7 +10,11 @@ import pytest
 try:
     import pytest_asyncio
     from sqlalchemy import insert
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for fighter stats tests.",
@@ -380,7 +384,7 @@ async def test_get_fighter_populates_age_from_dob(
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
     monkeypatch.setattr(
-        "backend.db.repositories.fighter_repository.datetime", FixedDateTime
+        "backend.db.repositories.fighter.roster.datetime", FixedDateTime
     )
 
     fighter: Fighter = Fighter(
@@ -413,7 +417,7 @@ async def test_get_fighter_returns_none_age_when_dob_missing(
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
     monkeypatch.setattr(
-        "backend.db.repositories.fighter_repository.datetime", FixedDateTime
+        "backend.db.repositories.fighter.roster.datetime", FixedDateTime
     )
 
     fighter: Fighter = Fighter(

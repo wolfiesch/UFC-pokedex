@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.models import Fight, Fighter
 from backend.db.repositories.fight_graph_repository import FightGraphRepository
 from backend.db.repositories.fight_repository import FightRepository
-from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.fighter import FighterRepository
 from backend.db.repositories.stats_repository import StatsRepository
 from backend.schemas.fight_graph import FightGraphResponse
 from backend.schemas.fighter import (

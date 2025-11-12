@@ -15,7 +15,7 @@ from backend.db.repositories.base import (
 from backend.db.repositories.event_repository import PostgreSQLEventRepository
 from backend.db.repositories.fight_graph_repository import FightGraphRepository
 from backend.db.repositories.fight_repository import FightRepository
-from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.fighter import FighterRepository
 from backend.db.repositories.postgresql_fighter_repository import (
     PostgreSQLFighterRepository,
 )

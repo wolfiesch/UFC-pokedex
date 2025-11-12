@@ -75,7 +75,7 @@ def freeze_utc_today(
             return reference_moment if tz is None else reference_moment.astimezone(tz)
 
     monkeypatch.setattr(
-        "backend.db.repositories.fighter_repository.datetime", FrozenDateTime
+        "backend.db.repositories.fighter.roster.datetime", FrozenDateTime
     )
 
 
@@ -221,25 +221,33 @@ async def test_list_fighters_filters_by_nationality(
     repo = PostgreSQLFighterRepository(session)
 
     # Test filtering by American nationality
-    us_fighters = list(await repo.list_fighters(nationality="American", limit=10, offset=0))
+    us_fighters = list(
+        await repo.list_fighters(nationality="American", limit=10, offset=0)
+    )
     assert len(us_fighters) == 1
     assert us_fighters[0].fighter_id == "us-fighter"
     assert us_fighters[0].nationality == "American"
 
     # Test filtering by Brazilian nationality
-    br_fighters = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_fighters = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_fighters) == 1
     assert br_fighters[0].fighter_id == "br-fighter"
     assert br_fighters[0].nationality == "Brazilian"
 
     # Test filtering by Irish nationality
-    ie_fighters = list(await repo.list_fighters(nationality="Irish", limit=10, offset=0))
+    ie_fighters = list(
+        await repo.list_fighters(nationality="Irish", limit=10, offset=0)
+    )
     assert len(ie_fighters) == 1
     assert ie_fighters[0].fighter_id == "ie-fighter"
     assert ie_fighters[0].nationality == "Irish"
 
     # Test filtering by non-existent nationality
-    jp_fighters = list(await repo.list_fighters(nationality="Japanese", limit=10, offset=0))
+    jp_fighters = list(
+        await repo.list_fighters(nationality="Japanese", limit=10, offset=0)
+    )
     assert len(jp_fighters) == 0
 
     # Test no filter returns all fighters
@@ -356,6 +364,8 @@ async def test_list_fighters_nationality_with_pagination(
     assert all(f.nationality == "American" for f in page_3)
 
     # Test Brazilian fighters with pagination
-    br_page = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_page = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_page) == 2
     assert all(f.nationality == "Brazilian" for f in br_page)

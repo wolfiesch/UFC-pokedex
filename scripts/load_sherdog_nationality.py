@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 
 from backend.db.connection import get_async_session_context
-from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.fighter import FighterRepository
 
 
 @click.command()

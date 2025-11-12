@@ -20,13 +20,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.db.connection import get_async_session_context
-from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.fighter import FighterRepository
 from scripts.utils.gym_locations import resolve_gym_location
 
 
 @click.command()
 @click.option(
-    "--matches", type=click.Path(exists=True), required=True, help="Path to matches JSONL file"
+    "--matches",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to matches JSONL file",
 )
 @click.option("--dry-run", is_flag=True, help="Preview changes without writing")
 @click.option("--auto-only", is_flag=True, help="Skip manual review items")
@@ -64,7 +67,8 @@ async def _load_ufc_com_locations_async(matches: str, dry_run: bool, auto_only: 
 
                 # Load UFC.com fighter data
                 ufc_com_file = (
-                    Path("data/processed/ufc_com_fighters") / f"{match['ufc_com_slug']}.json"
+                    Path("data/processed/ufc_com_fighters")
+                    / f"{match['ufc_com_slug']}.json"
                 )
 
                 if not ufc_com_file.exists():
@@ -109,7 +113,9 @@ async def _load_ufc_com_locations_async(matches: str, dry_run: bool, auto_only: 
 
                         if gym_location:
                             if gym_location.city:
-                                update_kwargs.setdefault("training_city", gym_location.city)
+                                update_kwargs.setdefault(
+                                    "training_city", gym_location.city
+                                )
                             if gym_location.country:
                                 update_kwargs.setdefault(
                                     "training_country", gym_location.country

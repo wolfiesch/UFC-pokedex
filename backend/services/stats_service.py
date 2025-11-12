@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
-from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.fighter import FighterRepository
 from backend.db.repositories.stats_repository import StatsRepository
 from backend.schemas.stats import (
     CityStat,
@@ -287,7 +287,9 @@ class StatsService(CacheableService):
         stats = await self._fighter_repository.get_gym_stats(country)
 
         # Filter by min_fighters
-        filtered_stats = [stat for stat in stats if stat["fighter_count"] >= min_fighters]
+        filtered_stats = [
+            stat for stat in stats if stat["fighter_count"] >= min_fighters
+        ]
 
         # Sort based on sort_by parameter
         if sort_by == "name":
