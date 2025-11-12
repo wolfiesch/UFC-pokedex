@@ -92,6 +92,32 @@ class Fighter(Base):
     dob: Mapped[date | None]
     record: Mapped[str | None]
     sherdog_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    sherdog_url: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Full Sherdog profile URL for the fighter",
+    )
+    primary_promotion: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        index=True,
+        doc="Primary promotion/organization (UFC, Bellator, PFL, ONE, etc.)",
+    )
+    all_promotions: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        doc="List of all promotions the fighter has competed in with fight counts",
+    )
+    total_fights: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Total number of professional fights across all promotions",
+    )
+    amateur_record: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Amateur fight record (W-L-D format)",
+    )
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image_scraped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     cropped_image_url: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -301,6 +327,47 @@ class Fight(Base):
         String,
         nullable=True,
         doc="Recorded weight class label for the bout (e.g., Lightweight).",
+    )
+
+    # Sherdog-specific fields for multi-promotion support
+    opponent_sherdog_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        index=True,
+        doc="Opponent's Sherdog ID for cross-referencing",
+    )
+    event_sherdog_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        index=True,
+        doc="Event's Sherdog ID for cross-referencing",
+    )
+    promotion: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        index=True,
+        doc="Promotion/organization where fight took place (UFC, Bellator, PFL, etc.)",
+    )
+    method_details: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Additional method details (e.g., 'Rear Naked Choke', 'Punches')",
+    )
+    is_amateur: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        doc="Whether this was an amateur bout",
+    )
+    location: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Fight location (city, state, country)",
+    )
+    referee: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Referee name if available",
     )
 
     fighter: Mapped[Fighter] = relationship("Fighter", back_populates="fights")
