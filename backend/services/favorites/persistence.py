@@ -218,7 +218,7 @@ class FavoritesPersistence:
         """Delete an entry and normalize remaining positions."""
 
         await self._session.delete(entry)
-        await self._session.flush()
+        collection.entries.remove(entry)
         await self.normalize_positions(collection)
         await self._session.flush()
 
