@@ -1586,8 +1586,7 @@ class FighterRepository(BaseRepository):
 
         if update_values:
             stmt = update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
-            result = await self._session.execute(stmt)
-            print(f"DEBUG: Updated {result.rowcount} rows with values: {update_values}")
+            await self._session.execute(stmt)
 
     async def update_fighter_nationality(
         self,

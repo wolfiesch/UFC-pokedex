@@ -14,6 +14,10 @@ from pathlib import Path
 from typing import Any
 
 import click
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from backend.db.connection import get_async_session_context
 from backend.db.repositories.fighter_repository import FighterRepository
@@ -112,18 +116,19 @@ async def _load_ufc_com_locations_async(matches: str, dry_run: bool, auto_only: 
                                 )
 
                         await repo.update_fighter_location(**update_kwargs)
+                        await session.commit()  # Commit after each successful update
                         stats["loaded"] += 1
 
                         if stats["loaded"] % 100 == 0:
                             click.echo(f"Loaded {stats['loaded']} fighters...")
 
                     except Exception as e:
+                        await session.rollback()
                         click.echo(f"❌ Error updating {match['ufcstats_id']}: {e}")
                         stats["errors"] += 1
 
         if not dry_run:
-            await session.commit()
-            click.echo("✅ Changes committed to database")
+            click.echo("✅ All changes committed to database")
 
     click.echo("\n" + "=" * 50)
     click.echo("SUMMARY")
