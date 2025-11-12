@@ -17,6 +17,7 @@ import {
   formatFightDate,
   getRelativeTime,
 } from "@/lib/fighter-utils";
+import { toCountryIsoCode } from "@/lib/countryCodes";
 
 interface EnhancedFighterCardProps {
   fighter: FighterListItem;
@@ -113,6 +114,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
   const isInComparisonList = isInComparison(fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
   const shouldShowImage = Boolean(imageSrc) && !imageError;
+  const nationalityFlag = toCountryIsoCode(fighter.nationality ?? undefined);
 
   // Record pill uses fighter.record directly (no win% computation)
 
@@ -552,9 +554,9 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               <span>{fighter.record}</span>
               <div className="flex items-center gap-2">
                 {fighter.stance && <span>{fighter.stance}</span>}
-                {fighter.nationality && (
+                {nationalityFlag && (
                   <div className="flex items-center gap-1">
-                    <CountryFlag countryCode={fighter.nationality} width={16} height={12} />
+                    <CountryFlag countryCode={nationalityFlag} width={16} height={12} />
                   </div>
                 )}
               </div>
@@ -565,8 +567,8 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               <div className="pt-3 mt-3 border-t border-border/50">
                 <div className="text-xs text-muted-foreground mb-1">Fighting Out Of</div>
                 <div className="text-sm text-foreground flex items-center gap-2">
-                  {fighter.nationality && (
-                    <CountryFlag countryCode={fighter.nationality} width={20} height={14} />
+                  {nationalityFlag && (
+                    <CountryFlag countryCode={nationalityFlag} width={20} height={14} />
                   )}
                   {fighter.fighting_out_of}
                 </div>

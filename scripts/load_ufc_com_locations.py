@@ -11,11 +11,13 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import click
 
 from backend.db.connection import get_async_session_context
 from backend.db.repositories.fighter_repository import FighterRepository
+from scripts.utils.gym_locations import resolve_gym_location
 
 
 @click.command()
@@ -69,24 +71,47 @@ async def _load_ufc_com_locations_async(matches: str, dry_run: bool, auto_only: 
                 with open(ufc_com_file) as uf:
                     ufc_com_data = json.load(uf)
 
+                gym_location = resolve_gym_location(ufc_com_data.get("training_gym"))
+
                 if dry_run:
                     click.echo(f"Would update {match['ufcstats_id']} with:")
                     click.echo(f"  Birthplace: {ufc_com_data.get('birthplace')}")
                     click.echo(f"  Training gym: {ufc_com_data.get('training_gym')}")
+                    if gym_location:
+                        click.echo(
+                            f"  Training location: {gym_location.city}, {gym_location.country}"
+                        )
                 else:
                     try:
-                        await repo.update_fighter_location(
-                            fighter_id=match["ufcstats_id"],
-                            birthplace=ufc_com_data.get("birthplace"),
-                            birthplace_city=ufc_com_data.get("birthplace_city"),
-                            birthplace_country=ufc_com_data.get("birthplace_country"),
-                            training_gym=ufc_com_data.get("training_gym"),
-                            ufc_com_slug=match["ufc_com_slug"],
-                            ufc_com_match_confidence=match["confidence"],
-                            ufc_com_match_method=match["classification"],
-                            ufc_com_scraped_at=datetime.utcnow(),
-                            needs_manual_review=match.get("needs_manual_review", False),
-                        )
+                        update_kwargs: dict[str, Any] = {
+                            "fighter_id": match["ufcstats_id"],
+                            "ufc_com_slug": match["ufc_com_slug"],
+                            "ufc_com_match_confidence": match["confidence"],
+                            "ufc_com_match_method": match["classification"],
+                            "ufc_com_scraped_at": datetime.utcnow(),
+                            "needs_manual_review": match.get("needs_manual_review"),
+                        }
+
+                        for field in (
+                            "birthplace",
+                            "birthplace_city",
+                            "birthplace_country",
+                            "nationality",
+                            "training_gym",
+                        ):
+                            value = ufc_com_data.get(field)
+                            if value:
+                                update_kwargs[field] = value
+
+                        if gym_location:
+                            if gym_location.city:
+                                update_kwargs.setdefault("training_city", gym_location.city)
+                            if gym_location.country:
+                                update_kwargs.setdefault(
+                                    "training_country", gym_location.country
+                                )
+
+                        await repo.update_fighter_location(**update_kwargs)
                         stats["loaded"] += 1
 
                         if stats["loaded"] % 100 == 0:

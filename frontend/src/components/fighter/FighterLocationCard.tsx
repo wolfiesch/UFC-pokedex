@@ -6,18 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Dumbbell, Globe, ArrowRight } from "lucide-react";
 import type { FighterDetail } from "@/lib/types";
 import CountryFlag from "@/components/CountryFlag";
+import { toCountryIsoCode } from "@/lib/countryCodes";
 
 interface FighterLocationCardProps {
   fighter: FighterDetail;
 }
 
 export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
-  const birthplace = (fighter as any).birthplace;
-  const birthplaceCountry = (fighter as any).birthplace_country;
-  const trainingGym = (fighter as any).training_gym;
-  const trainingCity = (fighter as any).training_city;
-  const trainingCountry = (fighter as any).training_country;
-  const nationality = (fighter as any).nationality;
+  const {
+    birthplace,
+    birthplace_country: birthplaceCountry,
+    training_gym: trainingGym,
+    training_city: trainingCity,
+    training_country: trainingCountry,
+    nationality,
+  } = fighter;
+
+  const birthplaceFlag = toCountryIsoCode(birthplaceCountry ?? nationality ?? undefined);
+  const nationalityFlag = toCountryIsoCode(nationality ?? undefined);
+  const trainingFlag = toCountryIsoCode(trainingCountry ?? nationality ?? undefined);
 
   // Don't show the card if no location data exists
   if (!birthplace && !trainingGym && !nationality) {
@@ -42,8 +49,8 @@ export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
             </div>
             <div className="pl-6 space-y-2">
               <div className="flex items-center gap-2">
-                {nationality && (
-                  <CountryFlag countryCode={nationality} width={24} height={16} />
+                {birthplaceFlag && (
+                  <CountryFlag countryCode={birthplaceFlag} width={24} height={16} />
                 )}
                 <Badge variant="outline" className="text-base">
                   {birthplace}
@@ -97,8 +104,8 @@ export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
             </div>
             <div className="pl-6 space-y-2">
               <div className="flex items-center gap-2">
-                {nationality && (
-                  <CountryFlag countryCode={nationality} width={24} height={16} />
+                {trainingFlag && (
+                  <CountryFlag countryCode={trainingFlag} width={24} height={16} />
                 )}
                 <div className="flex flex-col gap-1">
                   <Badge variant="secondary" className="text-base w-fit">
@@ -129,7 +136,12 @@ export function FighterLocationCard({ fighter }: FighterLocationCardProps) {
           <div className="pt-2 border-t border-border/50">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Represents</span>
-              <Badge variant="outline">{nationality}</Badge>
+              <div className="flex items-center gap-2">
+                {nationalityFlag && (
+                  <CountryFlag countryCode={nationalityFlag} width={20} height={14} />
+                )}
+                <Badge variant="outline">{nationality}</Badge>
+              </div>
             </div>
           </div>
         )}

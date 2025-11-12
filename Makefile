@@ -575,3 +575,23 @@ monitor-location-health: ## Check location data health and coverage
 
 monitor-location-health-json: ## Check location data health (JSON output)
 	@PYTHONPATH=. .venv/bin/python scripts/monitor_location_data_health.py --json
+
+.PHONY: scrape-ufc-com-locations match-ufc-com-fighters load-fighter-locations enrich-fighter-locations
+scrape-ufc-com-locations: ## Scrape UFC.com list + detail pages for location data
+	@echo "🌐 Scraping UFC.com athletes list..."
+	PYTHONPATH=. .venv/bin/scrapy crawl ufc_com_athletes
+	@echo "🏃 Scraping individual UFC.com athlete profiles..."
+	PYTHONPATH=. .venv/bin/scrapy crawl ufc_com_athlete_detail -a input=data/processed/ufc_com_athletes_list.jsonl
+
+match-ufc-com-fighters: ## Run fuzzy matcher to link UFC.com slugs with UFCStats IDs
+	@echo "🤝 Matching UFC.com fighters to UFCStats roster..."
+	PYTHONPATH=. .venv/bin/python scripts/match_ufc_com_fighters.py --ufc-com-dir data/processed/ufc_com_fighters --output data/processed/ufc_com_matches.jsonl --manual-review-output data/processed/ufc_com_matches_manual_review.jsonl
+
+load-fighter-locations: ## Load UFC.com + Sherdog location data into the database
+	@echo "📥 Loading UFC.com-derived birthplace/training data..."
+	PYTHONPATH=. .venv/bin/python scripts/load_ufc_com_locations.py --matches data/processed/ufc_com_matches.jsonl --auto-only
+	@echo "🌎 Backfilling Sherdog nationality data..."
+	PYTHONPATH=. .venv/bin/python scripts/load_sherdog_nationality.py
+
+enrich-fighter-locations: scrape-ufc-com-locations match-ufc-com-fighters load-fighter-locations ## Full pipeline: scrape → match → load
+	@echo "✅ Fighter location enrichment pipeline complete."

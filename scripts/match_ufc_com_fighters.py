@@ -186,6 +186,7 @@ def match_fighters(
     """
     all_matches = []
     manual_review_matches = []
+    matched_fighters: dict[str, str] = {}
 
     stats = {
         "total": len(ufc_com_fighters),
@@ -194,6 +195,7 @@ def match_fighters(
         "manual_review": 0,
         "no_match": 0,
         "duplicates_detected": 0,
+        "duplicate_conflicts": 0,
     }
 
     click.echo("\nMatching UFC.com fighters to UFCStats database...\n")
@@ -244,7 +246,36 @@ def match_fighters(
             "match_scores": top_match["match_scores"],
         }
 
+        existing_slug = matched_fighters.get(top_match["ufcstats_id"])
+        if existing_slug:
+            click.echo(
+                f"  ⚠️ Duplicate detected: {top_match['ufcstats_id']} is already matched to {existing_slug}. "
+                "Routing to manual review."
+            )
+            stats["duplicate_conflicts"] += 1
+
+            manual_review_matches.append(
+                {
+                    "reason": "duplicate_conflict",
+                    "conflicting_slug": existing_slug,
+                    "candidate_slug": ufc_com_slug,
+                    "recommended_match": top_match["ufcstats_id"],
+                    "classification": classification,
+                    "confidence": top_match["final_confidence"],
+                    "ufc_com_fighter": {
+                        "name": ufc_com_name,
+                        "slug": ufc_com_slug,
+                        "division": ufc_com_fighter.get("division"),
+                        "record": ufc_com_fighter.get("record"),
+                    },
+                }
+            )
+            stats["manual_review"] += 1
+            click.echo()
+            continue
+
         all_matches.append(match_record)
+        matched_fighters[top_match["ufcstats_id"]] = ufc_com_slug
 
         # Log result
         click.echo(
@@ -303,6 +334,8 @@ def match_fighters(
     click.echo(f"Manual review needed: {stats['manual_review']}")
     click.echo(f"No match found: {stats['no_match']}")
     click.echo(f"Duplicates detected: {stats['duplicates_detected']}")
+    if stats["duplicate_conflicts"]:
+        click.echo(f"Slug conflicts routed to manual review: {stats['duplicate_conflicts']}")
     click.echo()
     click.echo(
         f"Match rate: {(stats['auto_high'] + stats['auto_medium'] + stats['manual_review']) / stats['total'] * 100:.1f}%"

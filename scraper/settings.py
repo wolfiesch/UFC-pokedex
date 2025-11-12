@@ -14,6 +14,11 @@ ITEM_PIPELINES = {
     "scraper.pipelines.sherdog_storage.SherdogStoragePipeline": 300,
 }
 
+DOWNLOADER_MIDDLEWARES = {
+    "scraper.middlewares.retry.UFCComRetryMiddleware": 550,
+    "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
+}
+
 LOG_LEVEL = "INFO"
 
 # HTTP Caching - Avoid re-scraping already downloaded fighters
@@ -25,4 +30,3 @@ HTTPCACHE_IGNORE_HTTP_CODES = [500, 502, 503, 504]
 # Connection pooling optimizations
 REACTOR_THREADPOOL_MAXSIZE = 20
 DNS_TIMEOUT = 10
-

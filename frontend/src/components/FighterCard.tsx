@@ -194,31 +194,31 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
           </dl>
 
           {/* Location Information - Desktop */}
-          {((fighter as any).birthplace || (fighter as any).training_gym || (fighter as any).nationality) && (
+          {(fighter.birthplace || fighter.training_gym || fighter.nationality) && (
             <div className="hidden md:flex flex-col gap-2 pt-2 border-t border-border/50">
-              {(fighter as any).birthplace && (
+              {fighter.birthplace && (
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <Badge variant="outline" className="text-xs">
                     <span className="text-muted-foreground">Born:</span>
-                    <span className="ml-1 font-medium">{(fighter as any).birthplace}</span>
+                    <span className="ml-1 font-medium">{fighter.birthplace}</span>
                   </Badge>
                 </div>
               )}
-              {(fighter as any).training_gym && (
+              {fighter.training_gym && (
                 <div className="flex items-center gap-2">
                   <Dumbbell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <Badge variant="secondary" className="text-xs">
                     <span className="text-muted-foreground">Trains:</span>
-                    <span className="ml-1 font-medium">{(fighter as any).training_gym}</span>
+                    <span className="ml-1 font-medium">{fighter.training_gym}</span>
                   </Badge>
                 </div>
               )}
-              {!(fighter as any).birthplace && (fighter as any).nationality && (
+              {!fighter.birthplace && fighter.nationality && (
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <Badge variant="outline" className="text-xs">
-                    <span className="font-medium">{(fighter as any).nationality}</span>
+                    <span className="font-medium">{fighter.nationality}</span>
                   </Badge>
                 </div>
               )}
@@ -226,21 +226,21 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
           )}
 
           {/* Location Information - Mobile Compact */}
-          {((fighter as any).birthplace || (fighter as any).training_gym || (fighter as any).nationality) && (
+          {(fighter.birthplace || fighter.training_gym || fighter.nationality) && (
             <div className="flex md:hidden flex-wrap gap-1.5 pt-2 border-t border-border/50">
-              {(fighter as any).birthplace && (
+              {fighter.birthplace && (
                 <Badge variant="outline" className="text-xs">
-                  📍 {(fighter as any).birthplace_city || (fighter as any).birthplace_country || (fighter as any).birthplace}
+                  📍 {fighter.birthplace_city || fighter.birthplace_country || fighter.birthplace}
                 </Badge>
               )}
-              {(fighter as any).training_gym && (
+              {fighter.training_gym && (
                 <Badge variant="secondary" className="text-xs">
-                  💪 {(fighter as any).training_gym}
+                  💪 {fighter.training_gym}
                 </Badge>
               )}
-              {!(fighter as any).birthplace && (fighter as any).nationality && (
+              {!fighter.birthplace && fighter.nationality && (
                 <Badge variant="outline" className="text-xs">
-                  🌍 {(fighter as any).nationality}
+                  🌍 {fighter.nationality}
                 </Badge>
               )}
             </div>

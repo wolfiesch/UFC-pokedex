@@ -14,14 +14,22 @@ from pathlib import Path
 from typing import Literal
 
 import click
+import httpx
+from bs4 import BeautifulSoup
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.connection import get_session
 from backend.db.models import Fighter
+from scripts.utils.gym_locations import resolve_gym_location
 
 
 PriorityLevel = Literal["high", "medium", "low", "all"]
+UFC_COM_BASE_URL = "https://www.ufc.com/athlete"
+UFC_COM_HEADERS = {
+    "User-Agent": "UFC-Pokedex-LocationRefresher/1.0 (+https://github.com/wolfgangschoenberger/ufc-pokedex)",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 
 def should_refresh_fighter(fighter: Fighter) -> bool:
@@ -192,35 +200,62 @@ async def get_fighters_for_refresh(
     return candidates
 
 
-async def refresh_fighter_data(fighter: Fighter, dry_run: bool = False) -> dict | None:
-    """
-    Scrape UFC.com for updated fighter data.
+def _parse_bio_fields(html: str) -> dict[str, str | None]:
+    """Extract birthplace and training information from the UFC.com profile HTML."""
 
-    In a real implementation, this would:
-    1. Fetch UFC.com athlete page
-    2. Parse location data
-    3. Return updated data dict
+    soup = BeautifulSoup(html, "html.parser")
+    bio_data: dict[str, str | None] = {}
 
-    For now, this is a placeholder that returns None (no changes).
-    """
-    # TODO: Implement actual UFC.com scraping
-    # This would use the ufc_com_athlete_detail spider or direct HTTP requests
+    for field in soup.select(".c-bio__field"):
+        label_el = field.select_one(".c-bio__label")
+        value_el = field.select_one(".c-bio__text")
+        if not label_el or not value_el:
+            continue
 
-    # Placeholder: In production, this would fetch real data
-    # from UFC.com using the fighter's ufc_com_slug
+        label = label_el.get_text(strip=True)
+        value = value_el.get_text(strip=True)
+        if not label or not value:
+            continue
+
+        if label.lower() == "place of birth":
+            bio_data["birthplace"] = value
+            if "," in value:
+                city, country = value.split(",", 1)
+                bio_data["birthplace_city"] = city.strip()
+                bio_data["birthplace_country"] = country.strip()
+            else:
+                bio_data["birthplace_country"] = value
+        elif label.lower() == "trains at":
+            bio_data["training_gym"] = value
+
+    return bio_data
+
+
+async def refresh_fighter_data(
+    fighter: Fighter,
+    client: httpx.AsyncClient,
+) -> dict | None:
+    """Scrape UFC.com for updated fighter data."""
+
     if not fighter.ufc_com_slug:
         return None
 
-    # Example structure of what would be returned:
-    # return {
-    #     "birthplace": "Dublin, Ireland",
-    #     "birthplace_city": "Dublin",
-    #     "birthplace_country": "Ireland",
-    #     "training_gym": "SBG Ireland",
-    #     "fighting_out_of": "Dublin, Ireland",
-    # }
+    url = f"{UFC_COM_BASE_URL}/{fighter.ufc_com_slug}"
+    response = await client.get(url, headers=UFC_COM_HEADERS, timeout=30.0)
+    response.raise_for_status()
 
-    return None
+    parsed = _parse_bio_fields(response.text)
+    if not parsed:
+        return None
+
+    gym_location = resolve_gym_location(parsed.get("training_gym"))
+    if gym_location:
+        if gym_location.city:
+            parsed.setdefault("training_city", gym_location.city)
+        if gym_location.country:
+            parsed.setdefault("training_country", gym_location.country)
+
+    return parsed
 
 
 def write_change_log(fighter_id: str, fighter_name: str, changes: dict):
@@ -270,6 +305,10 @@ async def update_fighter_location(
         fighter.birthplace_country = new_data["birthplace_country"]
     if "training_gym" in new_data:
         fighter.training_gym = new_data["training_gym"]
+    if "training_city" in new_data:
+        fighter.training_city = new_data["training_city"]
+    if "training_country" in new_data:
+        fighter.training_country = new_data["training_country"]
     if "fighting_out_of" in new_data:
         fighter.fighting_out_of = new_data["fighting_out_of"]
 
@@ -333,7 +372,7 @@ async def run_refresh(priority: PriorityLevel, limit: int | None, dry_run: bool)
     if dry_run:
         click.echo("🔍 DRY RUN MODE - No changes will be made\n")
 
-    async with get_session() as session:
+    async with get_session() as session, httpx.AsyncClient() as http_client:
         # Get candidates for refresh
         click.echo(f"🔎 Finding fighters needing refresh (priority: {priority})...")
         candidates = await get_fighters_for_refresh(session, priority, limit)
@@ -377,7 +416,7 @@ async def run_refresh(priority: PriorityLevel, limit: int | None, dry_run: bool)
 
             try:
                 # Fetch new data from UFC.com
-                new_data = await refresh_fighter_data(fighter, dry_run)
+                new_data = await refresh_fighter_data(fighter, http_client)
 
                 if not new_data:
                     stats["no_changes"] += 1

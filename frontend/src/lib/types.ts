@@ -27,6 +27,14 @@ export type FighterListItem = {
   peak_rank_source?: string | null;
   peak_rank_division?: string | null;
   peak_rank_date?: string | null;
+  birthplace?: string | null;
+  birthplace_city?: string | null;
+  birthplace_country?: string | null;
+  nationality?: string | null;
+  fighting_out_of?: string | null;
+  training_gym?: string | null;
+  training_city?: string | null;
+  training_country?: string | null;
 };
 
 export type FightHistoryEntry = {

@@ -1441,9 +1441,11 @@ class FighterRepository(BaseRepository):
                 ufc_com_match_confidence=ufc_com_match_confidence,
                 ufc_com_match_method=ufc_com_match_method,
                 ufc_com_scraped_at=ufc_com_scraped_at,
-                needs_manual_review=needs_manual_review
-                if needs_manual_review is not None
-                else False,
+                **(
+                    {"needs_manual_review": needs_manual_review}
+                    if needs_manual_review is not None
+                    else {}
+                ),
             )
         )
         await self._session.execute(stmt)
@@ -1510,10 +1512,10 @@ class FighterRepository(BaseRepository):
         result = await self._session.execute(query)
         rows = result.all()
 
-        # Get total fighters with non-null country data
-        total_query = select(func.count()).select_from(Fighter).where(column.isnot(None))
-        total_result = await self._session.execute(total_query)
-        total = total_result.scalar_one_or_none() or 0
+        # Get total roster count for percentage calculations
+        roster_total_query = select(func.count()).select_from(Fighter)
+        roster_total_result = await self._session.execute(roster_total_query)
+        total = roster_total_result.scalar_one_or_none() or 0
 
         # Format results with percentage
         stats = []
@@ -1566,14 +1568,10 @@ class FighterRepository(BaseRepository):
         result = await self._session.execute(query)
         rows = result.all()
 
-        # Get total fighters with non-null city data
-        total_query = (
-            select(func.count()).select_from(Fighter).where(city_column.isnot(None))
-        )
-        if country:
-            total_query = total_query.where(country_column == country)
-        total_result = await self._session.execute(total_query)
-        total = total_result.scalar_one_or_none() or 0
+        # Get total roster count (global denominator for percentages)
+        roster_total_query = select(func.count()).select_from(Fighter)
+        roster_total_result = await self._session.execute(roster_total_query)
+        total = roster_total_result.scalar_one_or_none() or 0
 
         # Format results with percentage
         stats = []
