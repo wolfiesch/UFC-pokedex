@@ -19,7 +19,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Literal, TypeVar
 from typing import cast as typing_cast
 
-from sqlalchemy import func, literal, select, true, union_all
+from sqlalchemy import case, func, literal, select, true, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
@@ -470,7 +470,7 @@ class FighterRepository(BaseRepository):
                     partition_by=Fight.fighter_id,
                     order_by=(
                         # Prioritize rows with valid results (W, L, win, loss, draw, NC)
-                        func.case(
+                        case(
                             (Fight.result.in_(["W", "L", "win", "loss", "draw", "nc", "NC", "no contest"]), 0),
                             else_=1
                         ),
