@@ -315,7 +315,7 @@ async def get_fighters_by_flag(
                     if fighter.image_resolution_width
                     else None
                 ),
-                "flag_details": (fighter.image_validation_flags or {}).get(flag),
+                "flag_details": fighter.image_validation_flags.get(flag),
             }
         )
 
