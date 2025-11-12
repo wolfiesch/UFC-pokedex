@@ -121,14 +121,18 @@ async def get_low_quality_images(
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
                 "has_face": fighter.has_face_detected,
                 "flags": fighter.image_validation_flags or {},
-                "validated_at": fighter.image_validated_at.isoformat()
-                if fighter.image_validated_at
-                else None,
+                "validated_at": (
+                    fighter.image_validated_at.isoformat()
+                    if fighter.image_validated_at
+                    else None
+                ),
             }
         )
 
@@ -156,7 +160,8 @@ async def get_fighters_without_faces(
         select(Fighter)
         .where(
             and_(
-                Fighter.image_validated_at.isnot(None), Fighter.has_face_detected == False
+                Fighter.image_validated_at.isnot(None),
+                Fighter.has_face_detected == False,
             )
         )
         .order_by(Fighter.name)
@@ -175,9 +180,11 @@ async def get_fighters_without_faces(
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
                 "flags": fighter.image_validation_flags or {},
             }
         )
@@ -216,29 +223,56 @@ async def get_duplicate_images(
 
     # Filter to only those with potential_duplicates flag
     items = []
+
+    # ``fighters_with_duplicates`` retains the original fighter objects alongside the
+    # raw duplicate ID lists so we can build the response after performing a single
+    # batched lookup. Explicit typing combined with verbose documentation makes the
+    # intent crystal clear for future maintainers working through the async workflow.
+    fighters_with_duplicates: list[tuple[Fighter, list[str]]] = []
+
+    # ``referenced_duplicate_ids`` records the universe of duplicate fighter IDs that
+    # appear across all flagged fighters. Collecting them up front allows us to issue
+    # a single ``IN`` query instead of repeatedly calling the database within the loop
+    # (which previously created the undesirable N+1 query pattern).
+    referenced_duplicate_ids: set[str] = set()
+
     for fighter in fighters:
         flags = fighter.image_validation_flags or {}
-        if "potential_duplicates" in flags:
-            duplicate_ids = flags["potential_duplicates"]
+        duplicate_ids: list[str] | None = flags.get("potential_duplicates")
 
-            # Fetch duplicate fighter names
-            dup_query = select(Fighter.id, Fighter.name).where(
-                Fighter.id.in_(duplicate_ids)
-            )
-            dup_result = await session.execute(dup_query)
-            duplicates = [
-                {"fighter_id": row.id, "name": row.name} for row in dup_result.all()
-            ]
+        if duplicate_ids:
+            fighters_with_duplicates.append((fighter, duplicate_ids))
+            referenced_duplicate_ids.update(duplicate_ids)
 
-            items.append(
-                {
-                    "fighter_id": fighter.id,
-                    "name": fighter.name,
-                    "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
-                    "quality_score": fighter.image_quality_score,
-                    "duplicates": duplicates,
-                }
-            )
+    # Build a lookup of fighter_id -> fighter_name for every duplicate referenced.
+    # Fetching everything in one query keeps database load predictable regardless of
+    # how many duplicates we encounter.
+    duplicate_lookup: dict[str, str] = {}
+    if referenced_duplicate_ids:
+        dup_query = select(Fighter.id, Fighter.name).where(
+            Fighter.id.in_(referenced_duplicate_ids)
+        )
+        dup_result = await session.execute(dup_query)
+        duplicate_lookup = {row.id: row.name for row in dup_result}
+
+    for fighter, duplicate_ids in fighters_with_duplicates:
+        duplicates = [
+            {
+                "fighter_id": duplicate_id,
+                "name": duplicate_lookup.get(duplicate_id, "Unknown Fighter"),
+            }
+            for duplicate_id in duplicate_ids
+        ]
+
+        items.append(
+            {
+                "fighter_id": fighter.id,
+                "name": fighter.name,
+                "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
+                "quality_score": fighter.image_quality_score,
+                "duplicates": duplicates,
+            }
+        )
 
     return {"fighters": items, "count": len(items), "limit": limit, "offset": offset}
 
@@ -294,9 +328,11 @@ async def get_fighters_by_flag(
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
                 "flag_details": fighter.image_validation_flags.get(flag),
             }
         )
@@ -353,7 +389,9 @@ async def get_fighter_validation(
             "face_count": fighter.face_count,
         },
         "flags": fighter.image_validation_flags or {},
-        "validated_at": fighter.image_validated_at.isoformat()
-        if fighter.image_validated_at
-        else None,
+        "validated_at": (
+            fighter.image_validated_at.isoformat()
+            if fighter.image_validated_at
+            else None
+        ),
     }
