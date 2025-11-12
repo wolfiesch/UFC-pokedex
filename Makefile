@@ -256,6 +256,36 @@ sherdog-fight-history-workflow: ## Full workflow: scrape unscraped fighters → 
 	@echo ""
 	@echo "✅ Sherdog fight history workflow complete!"
 
+extract-ufc-for-sherdog: ## Extract UFC fighters that need Sherdog enrichment (all ~4,447 fighters)
+	@echo "📋 Extracting UFC fighters without Sherdog data..."
+	DATABASE_URL="postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" \
+	PYTHONPATH=. .venv/bin/python scripts/extract_ufc_fighters_for_sherdog.py
+
+extract-ufc-for-sherdog-test: ## Extract 100 UFC fighters for testing
+	@echo "📋 Extracting 100 UFC fighters for testing..."
+	DATABASE_URL="postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" \
+	PYTHONPATH=. .venv/bin/python scripts/extract_ufc_fighters_for_sherdog.py --limit 100
+
+scrape-ufc-sherdog-test: ## Test scrape with 100 UFC fighters
+	@echo "🧪 Test scraping 100 UFC fighters from Sherdog..."
+	@if [ ! -f data/processed/ufc_fighters_for_sherdog.json ]; then \
+		echo "📋 Extracting test fighters first..."; \
+		$(MAKE) extract-ufc-for-sherdog-test; \
+	fi
+	PYTHONPATH=. .venv/bin/scrapy crawl sherdog_fight_history \
+		-a input_file=data/processed/ufc_fighters_for_sherdog.json
+
+ufc-sherdog-workflow-test: ## Test full workflow with 100 fighters
+	@echo "🧪 Testing UFC Sherdog workflow with 100 fighters..."
+	@echo ""
+	@$(MAKE) extract-ufc-for-sherdog-test
+	@echo ""
+	@$(MAKE) scrape-ufc-sherdog-test
+	@echo ""
+	@$(MAKE) load-sherdog-fight-history
+	@echo ""
+	@echo "✅ Test workflow complete!"
+
 scrape-images-wikimedia: ## Scrape fighter images from Wikimedia Commons (legal, ~20% coverage)
 	PYTHONPATH=. .venv/bin/python scripts/wikimedia_image_scraper.py --batch-size 50
 
