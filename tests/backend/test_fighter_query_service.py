@@ -13,8 +13,8 @@ from backend.schemas.fighter import (
 from backend.services.fighter_query_service import (
     FighterQueryService,
     FighterRepositoryProtocol,
-    InMemoryFighterRepository,
 )
+from tests.backend.support.in_memory_repositories import InMemoryFighterRepository
 
 pytest.importorskip("pytest_asyncio")
 pytest.importorskip("sqlalchemy")
