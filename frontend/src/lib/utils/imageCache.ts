@@ -407,39 +407,71 @@ class ImageBitmapCache {
   /**
    * Preloads multiple bitmaps in the background
    * Uses requestIdleCallback for low-priority loading
+   * Returns a cancel function to stop preloading
    */
-  preloadBitmaps(urls: string[]): void {
+  preloadBitmaps(urls: string[]): () => void {
+    let cancelled = false;
+    const timeoutIds: number[] = [];
+    const idleCallbackIds: number[] = [];
+
+    const cleanup = () => {
+      cancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+      idleCallbackIds.forEach(id => {
+        if ('cancelIdleCallback' in window) {
+          (window as any).cancelIdleCallback(id);
+        }
+      });
+      timeoutIds.length = 0;
+      idleCallbackIds.length = 0;
+    };
+
     const loadNext = (index: number) => {
-      if (index >= urls.length) {
+      // Stop if cancelled or reached end
+      if (cancelled || index >= urls.length) {
+        cleanup();
         return;
       }
 
       const url = urls[index];
       if (!this.has(url) && !this.isLoading(url)) {
         this.loadBitmap(url).then(() => {
+          if (cancelled) return;
+
           // Schedule next load
           if ("requestIdleCallback" in window) {
-            requestIdleCallback(() => loadNext(index + 1));
+            const id = requestIdleCallback(() => loadNext(index + 1));
+            idleCallbackIds.push(id);
           } else {
-            setTimeout(() => loadNext(index + 1), 16);
+            const id = setTimeout(() => loadNext(index + 1), 16) as unknown as number;
+            timeoutIds.push(id);
           }
         });
       } else {
         // Skip already cached/loading images
+        if (cancelled) return;
+
         if ("requestIdleCallback" in window) {
-          requestIdleCallback(() => loadNext(index + 1));
+          const id = requestIdleCallback(() => loadNext(index + 1));
+          idleCallbackIds.push(id);
         } else {
-          setTimeout(() => loadNext(index + 1), 16);
+          const id = setTimeout(() => loadNext(index + 1), 16) as unknown as number;
+          timeoutIds.push(id);
         }
       }
     };
 
     // Start loading
     if ("requestIdleCallback" in window) {
-      requestIdleCallback(() => loadNext(0));
+      const id = requestIdleCallback(() => loadNext(0));
+      idleCallbackIds.push(id);
     } else {
-      setTimeout(() => loadNext(0), 100);
+      const id = setTimeout(() => loadNext(0), 100) as unknown as number;
+      timeoutIds.push(id);
     }
+
+    // Return cleanup function
+    return cleanup;
   }
 
   /**
@@ -498,7 +530,8 @@ export async function getOpponentBitmap(
 
 /**
  * Convenience function to preload bitmaps
+ * Returns a cancel function to stop preloading
  */
-export function preloadBitmaps(urls: string[]): void {
-  imageCache.preloadBitmaps(urls);
+export function preloadBitmaps(urls: string[]): () => void {
+  return imageCache.preloadBitmaps(urls);
 }
