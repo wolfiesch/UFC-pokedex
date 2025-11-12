@@ -357,7 +357,8 @@ def _build_flag_predicate(flag: str) -> ColumnElement[bool]:
     # ``json_type`` instead of ``json_extract`` ensures that explicit ``null``
     # values remain discoverable because SQLite reports their type as the string
     # ``"null"`` rather than propagating ``NULL`` up to SQLAlchemy.
-    json_path: str = f'$_QUOTE_$."{flag.replace('"', '""')}"$_QUOTE_'
+    escaped_flag = flag.replace('"', '""')
+    json_path: str = f'$."{escaped_flag}"'
     return func.json_type(Fighter.image_validation_flags, json_path).isnot(None)
 
 
