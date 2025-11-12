@@ -605,6 +605,38 @@ scrape-odds-optimized: ## Scrape odds with optimized settings (537 events, ~1.6 
 		--download-delay 2.0 \
 		--wait-timeout 6000
 
+scrape-odds-recent-first: ## Scrape recent events first (2024-2025), then work backward
+	@echo "⚡ Starting optimized odds scraping (RECENT EVENTS FIRST)..."
+	@echo "   📅 Strategy: Scrape 2024-2025 events first (with active odds)"
+	@echo "   ⏱️  Recent events (~21): ~5 minutes"
+	@echo "   ⏱️  All events (537): ~1.6 hours total"
+	@echo ""
+	@if [ ! -f data/raw/bfo_numbered_events_reversed.jsonl ]; then \
+		echo "🔄 Creating reversed event list..."; \
+		tac data/raw/bfo_numbered_events.jsonl > data/raw/bfo_numbered_events_reversed.jsonl; \
+	fi
+	@.venv/bin/python scripts/batch_scrape_odds.py \
+		--archive-file data/raw/bfo_numbered_events_reversed.jsonl \
+		--organization UFC \
+		--batch-size 10 \
+		--download-delay 2.0 \
+		--wait-timeout 6000 \
+		--resume
+
+scrape-odds-recent-only: ## Scrape ONLY recent events (2024-2025, ~5 min)
+	@echo "⚡ Scraping recent events only (2024-2025)..."
+	@if [ ! -f data/raw/bfo_recent_events.jsonl ]; then \
+		echo "🔄 Creating filtered event list..."; \
+		cat data/raw/bfo_numbered_events.jsonl | python3 -c "import json, sys; from dateutil import parser; [print(json.dumps(e)) for line in sys.stdin if (e := json.loads(line)) and parser.parse(e.get('event_date', '')).year >= 2024]" > data/raw/bfo_recent_events.jsonl; \
+	fi
+	@.venv/bin/python scripts/batch_scrape_odds.py \
+		--archive-file data/raw/bfo_recent_events.jsonl \
+		--organization UFC \
+		--batch-size 5 \
+		--download-delay 2.0 \
+		--wait-timeout 6000 \
+		--resume
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # HISTORICAL LINE MOVEMENT SCRAPING (MUCH SLOWER - 40-73 hours!)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
