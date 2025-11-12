@@ -224,29 +224,48 @@ async def get_duplicate_images(
 
     # Filter to only those with potential_duplicates flag
     items = []
+
+    # Store fighter objects with their duplicate IDs for batch processing.
+    fighters_with_duplicates: list[tuple[Fighter, list[str]]] = []
+
+    # Collect all duplicate IDs to enable single batched lookup.
+    referenced_duplicate_ids: set[str] = set()
+
     for fighter in fighters:
         flags = fighter.image_validation_flags or {}
-        if "potential_duplicates" in flags:
-            duplicate_ids = flags["potential_duplicates"]
+        duplicate_ids: list[str] | None = flags.get("potential_duplicates")
 
-            # Fetch duplicate fighter names
-            dup_query = select(Fighter.id, Fighter.name).where(
-                Fighter.id.in_(duplicate_ids)
-            )
-            dup_result = await session.execute(dup_query)
-            duplicates = [
-                {"fighter_id": row.id, "name": row.name} for row in dup_result.all()
-            ]
+        if duplicate_ids:
+            fighters_with_duplicates.append((fighter, duplicate_ids))
+            referenced_duplicate_ids.update(duplicate_ids)
 
-            items.append(
-                {
-                    "fighter_id": fighter.id,
-                    "name": fighter.name,
-                    "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
-                    "quality_score": fighter.image_quality_score,
-                    "duplicates": duplicates,
-                }
-            )
+    # Batch-fetch fighter names for all duplicate IDs.
+    duplicate_lookup: dict[str, str] = {}
+    if referenced_duplicate_ids:
+        dup_query = select(Fighter.id, Fighter.name).where(
+            Fighter.id.in_(referenced_duplicate_ids)
+        )
+        dup_result = await session.execute(dup_query)
+        duplicate_lookup = {row.id: row.name for row in dup_result}
+
+    for fighter, duplicate_ids in fighters_with_duplicates:
+        duplicates = [
+            {
+                "fighter_id": duplicate_id,
+                "name": duplicate_lookup.get(duplicate_id, "Unknown Fighter"),
+            }
+            for duplicate_id in duplicate_ids
+        ]
+
+        items.append(
+            {
+                "fighter_id": fighter.id,
+                "name": fighter.name,
+                "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
+                "quality_score": fighter.image_quality_score,
+                "duplicates": duplicates,
+            }
+        )
 
     return {"fighters": items, "count": len(items), "limit": limit, "offset": offset}
 
