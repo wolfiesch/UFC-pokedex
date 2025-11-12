@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -593,6 +593,68 @@ scrape-odds-dry-run: ## Preview what events would be scraped
 scrape-odds-resume: ## Resume previous batch scraping session
 	@echo "▶️  Resuming odds scraping from last checkpoint..."
 	@.venv/bin/python scripts/batch_scrape_odds.py --archive-file data/raw/bfo_numbered_events.jsonl --organization UFC --batch-size 10 --resume
+
+scrape-odds-optimized: ## Scrape odds with optimized settings (537 events, ~1.6 hours, recommended)
+	@echo "⚡ Starting optimized batch odds scraping..."
+	@echo "   Settings: download-delay=2.0s, wait-timeout=6000ms"
+	@echo "   Estimated time: ~1.6 hours (vs 2.2 hours with default settings)"
+	@.venv/bin/python scripts/batch_scrape_odds.py \
+		--archive-file data/raw/bfo_numbered_events.jsonl \
+		--organization UFC \
+		--batch-size 10 \
+		--download-delay 2.0 \
+		--wait-timeout 6000
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# HISTORICAL LINE MOVEMENT SCRAPING (MUCH SLOWER - 40-73 hours!)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+scrape-line-movement-test: ## Test line movement scraper with 1 event (~5 minutes)
+	@echo "🧪 Testing line movement scraper with 1 event..."
+	@echo "   This will take ~5 minutes to complete"
+	@.venv/bin/python scripts/batch_scrape_line_movement.py --test
+
+scrape-line-movement-estimate: ## Show time estimates for line movement scraping
+	@.venv/bin/python scripts/estimate_line_movement_time.py
+
+scrape-line-movement-recent: ## Scrape line movement for recent events only (2020-2025, ~20 hours)
+	@echo "📈 Starting line movement scraping (recent events 2020-2025)..."
+	@echo "   ⚠️  WARNING: This will take ~20 hours!"
+	@echo "   Estimated: ~150 events × 8 min/event"
+	@.venv/bin/python scripts/batch_scrape_line_movement.py \
+		--archive-file data/raw/bfo_numbered_events.jsonl \
+		--organization UFC \
+		--batch-size 10 \
+		--recent-only
+
+scrape-line-movement-full: ## Scrape line movement for ALL 537 events (~73 hours, 3+ days)
+	@echo "📈 Starting FULL line movement scraping..."
+	@echo "   ⚠️  WARNING: This will take ~73 hours (3+ days)!"
+	@echo "   537 events × ~8 min/event = 71.6 hours"
+	@echo ""
+	@read -p "Are you sure you want to continue? [yes/no] " -r; \
+	if [ "$$REPLY" = "yes" ]; then \
+		.venv/bin/python scripts/batch_scrape_line_movement.py \
+			--archive-file data/raw/bfo_numbered_events.jsonl \
+			--organization UFC \
+			--batch-size 10; \
+	else \
+		echo "Aborted"; \
+	fi
+
+scrape-line-movement-resume: ## Resume previous line movement scraping session
+	@echo "▶️  Resuming line movement scraping from last checkpoint..."
+	@.venv/bin/python scripts/batch_scrape_line_movement.py \
+		--archive-file data/raw/bfo_numbered_events.jsonl \
+		--organization UFC \
+		--batch-size 10 \
+		--resume
+
+scrape-line-movement-dry-run: ## Preview what events would be scraped for line movement
+	@.venv/bin/python scripts/batch_scrape_line_movement.py \
+		--archive-file data/raw/bfo_numbered_events.jsonl \
+		--organization UFC \
+		--dry-run
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DEPLOYMENT (cPanel via SSH)
