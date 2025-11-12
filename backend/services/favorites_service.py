@@ -288,7 +288,7 @@ class FavoritesService:
             raise LookupError("Collection not found")
         if user_id is not None and collection.user_id != user_id:
             raise PermissionError("Collection does not belong to the supplied user")
-        await self._persistence.ensure_entries_loaded(collection)
+        # Entries are already eagerly loaded by load_collection; no need to ensure again.
         return collection
 
     def _require_entry(
