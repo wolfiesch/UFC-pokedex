@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/providers/ToastProvider";
 import { CommandPaletteProvider } from "@/components/providers/CommandPaletteProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 
 export const metadata: Metadata = {
   title: "UFC Fighter Pokedex",
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        <PerformanceMonitor />
         <ErrorBoundary>
           <QueryProvider>
             <ToastProvider>
