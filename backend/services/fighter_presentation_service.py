@@ -312,7 +312,6 @@ class FighterPresentationService:
                     streak_type = cast(
                         Literal["win", "loss", "draw", "none"], normalized
                     )
-        if include_streak:
             streak_count = int((streak_data or {}).get("current_streak_count") or 0)
             if streak_count <= 0:
                 streak_type = "none"
