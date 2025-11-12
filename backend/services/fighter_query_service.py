@@ -184,24 +184,26 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: _list_cache_key(
-            limit=limit,
-            offset=offset,
-            nationality=nationality,
-            include_streak=include_streak,
-            streak_window=streak_window,
-        )
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered queries for now
+        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: (
+            _list_cache_key(
+                limit=limit,
+                offset=offset,
+                nationality=nationality,
+                include_streak=include_streak,
+                streak_window=streak_window,
+            )
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered queries for now
         ttl=300,
         serializer=lambda fighters: [fighter.model_dump() for fighter in fighters],
         deserializer=_deserialize_fighter_list,
@@ -256,18 +258,20 @@ class FighterQueryService(CacheableService):
         return await self._repository.get_fighter(fighter_id)
 
     @cached(
-        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: f"fighters:count:{nationality if nationality else 'all'}"
-        if not any(
-            [
-                birthplace_country,
-                birthplace_city,
-                training_country,
-                training_city,
-                training_gym,
-                has_location_data,
-            ]
-        )
-        else None,  # Don't cache location-filtered counts
+        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: (
+            f"fighters:count:{nationality if nationality else 'all'}"
+            if not any(
+                [
+                    birthplace_country,
+                    birthplace_city,
+                    training_country,
+                    training_city,
+                    training_gym,
+                    has_location_data,
+                ]
+            )
+            else None
+        ),  # Don't cache location-filtered counts
         ttl=600,
     )
     async def count_fighters(
@@ -453,9 +457,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             roster = [f for f in roster if f.nationality == nationality]
         # Add location filters (simple implementation for in-memory)
         if birthplace_country:
-            roster = [
-                f for f in roster if f.birthplace_country == birthplace_country
-            ]
+            roster = [f for f in roster if f.birthplace_country == birthplace_country]
         if training_gym:
             roster = [
                 f
