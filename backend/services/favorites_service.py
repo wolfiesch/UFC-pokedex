@@ -1,34 +1,34 @@
-"""Business logic powering the favorites API endpoints."""
+"""Business logic powering the favorites API endpoints.
+
+Persistence-oriented operations delegated to :class:`FavoritesPersistence`:
+* ``tables_ready`` – readiness probe ensuring tables exist before use.
+* ``list_collections`` – primary query used by ``list_collections`` handler.
+* ``load_collection`` – shared loader for single-collection workflows.
+* ``create_collection``/``update_collection``/``delete_collection`` – CRUD helpers.
+* ``add_entry``/``update_entry``/``delete_entry``/``reorder_entries`` – entry
+  mutation helpers that maintain positional integrity.
+* ``fetch_fights_for_entries`` – supporting query for analytics calculations.
+
+Analytics responsibilities handled by :class:`FavoritesAnalytics`:
+* ``compute_collection_stats`` – aggregation powering stats cards.
+* ``entries_to_schema``/``entry_to_schema`` – presentation layer conversions.
+* ``build_activity`` – audit trail derived from entry timestamps.
+* ``collection_summary`` and ``collection_detail`` – schema builders consumed by
+  the API layer.
+
+Separating concerns keeps :class:`FavoritesService` focused on coordinating the
+workflow while making each collaborator individually testable.
+"""
 
 from __future__ import annotations
 
-from collections import Counter
-from collections.abc import Iterable
-from datetime import UTC, datetime
-
 from fastapi import Depends
-from sqlalchemy import inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
 
-from backend.cache import (
-    CacheClient,
-    favorite_collection_key,
-    favorite_list_key,
-    favorite_stats_key,
-    get_cache_client,
-)
+from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
-from backend.db.models import (
-    FavoriteCollection,
-    Fight,
-    Fighter,
-)
-from backend.db.models import (
-    FavoriteEntry as FavoriteEntryModel,
-)
+from backend.db.models import FavoriteCollection, FavoriteEntry as FavoriteEntryModel
 from backend.schemas.favorites import (
-    FavoriteActivityItem,
     FavoriteCollectionCreate,
     FavoriteCollectionDetail,
     FavoriteCollectionListResponse,
@@ -38,172 +38,85 @@ from backend.schemas.favorites import (
     FavoriteEntryCreate,
     FavoriteEntryReorderRequest,
     FavoriteEntryUpdate,
-    FavoriteUpcomingFight,
 )
 from backend.schemas.favorites import (
     FavoriteEntry as FavoriteEntrySchema,
 )
-
-_FAVORITES_TABLES_READY_CACHE: bool | None = None
+from backend.services.favorites import (
+    FavoritesAnalytics,
+    FavoritesCache,
+    FavoritesPersistence,
+)
 
 
 class FavoritesService:
-    """Encapsulates persistence, caching, and aggregation for favorites."""
+    """Orchestrates persistence, analytics, and caching dependencies."""
 
-    def __init__(self, session: AsyncSession, cache: CacheClient) -> None:
-        self._session = session
+    def __init__(
+        self,
+        *,
+        persistence: FavoritesPersistence,
+        analytics: FavoritesAnalytics,
+        cache: FavoritesCache,
+    ) -> None:
+        self._persistence = persistence
+        self._analytics = analytics
         self._cache = cache
-        self._tables_ready: bool | None = None
-
-    async def _favorites_tables_ready(self) -> bool:
-        """Check whether the backing favorites tables exist.
-
-        The readiness probe intentionally only caches *successful* discoveries so that a
-        transient migration gap (e.g. application booted before Alembic runs) does not
-        permanently disable the feature. A failed probe therefore leads to a re-check the
-        next time an operation touches the service.
-        """
-
-        global _FAVORITES_TABLES_READY_CACHE
-
-        if _FAVORITES_TABLES_READY_CACHE is True:
-            # A previous instance already observed the tables; mirror that locally to
-            # avoid redundant inspector calls.
-            self._tables_ready = True
-            return True
-
-        if self._tables_ready is True:
-            # This instance already confirmed the schema exists.
-            return True
-
-        target_tables = {
-            FavoriteCollection.__tablename__,
-            FavoriteEntryModel.__tablename__,
-        }
-
-        def _check_tables(sync_session) -> bool:
-            """Run inside a sync context; uses the bound engine for inspection."""
-
-            engine = sync_session.get_bind()
-            if engine is None:
-                return False
-
-            inspector = inspect(engine)
-            existing = set(inspector.get_table_names())
-            return target_tables.issubset(existing)
-
-        tables_ready = await self._session.run_sync(_check_tables)
-
-        if tables_ready:
-            # Persist both the process-wide and instance-level flags so future invocations
-            # skip the inspector hit altogether.
-            self._tables_ready = True
-            _FAVORITES_TABLES_READY_CACHE = True
-        else:
-            # Record the local failure for observability while leaving the global cache
-            # untouched—this ensures the service retries on the next call instead of
-            # becoming permanently disabled when migrations lag behind process startup.
-            self._tables_ready = False
-
-        return tables_ready
 
     async def list_collections(self, *, user_id: str) -> FavoriteCollectionListResponse:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             return FavoriteCollectionListResponse(total=0, collections=[])
 
-        cache_key = favorite_list_key(user_id)
-        cached = await self._cache.get_json(cache_key)
+        cached = await self._cache.read_collection_list(user_id=user_id)
         if cached is not None:
-            summaries = [
-                FavoriteCollectionSummary(**item)
-                for item in cached.get("collections", [])
-            ]
-            return FavoriteCollectionListResponse(
-                total=cached.get("total", len(summaries)),
-                collections=summaries,
-            )
+            return cached
 
-        entry_loader = selectinload(FavoriteCollection.entries).options(
-            load_only(
-                FavoriteEntryModel.id,
-                FavoriteEntryModel.fighter_id,
-                FavoriteEntryModel.position,
-                FavoriteEntryModel.notes,
-                FavoriteEntryModel.tags,
-                FavoriteEntryModel.metadata_json,
-                FavoriteEntryModel.added_at,
-                FavoriteEntryModel.updated_at,
-            ),
-            selectinload(FavoriteEntryModel.fighter).options(
-                load_only(Fighter.id, Fighter.division)
-            ),
-        )
-
-        query = (
-            select(FavoriteCollection)
-            .options(entry_loader)
-            .where(FavoriteCollection.user_id == user_id)
-            .order_by(FavoriteCollection.created_at.desc())
-        )
-        result = await self._session.execute(query)
-        collections = result.scalars().unique().all()
-
+        collections = await self._persistence.list_collections(user_id=user_id)
         summaries: list[FavoriteCollectionSummary] = []
         for collection in collections:
             stats = await self._get_collection_stats(collection)
-            summaries.append(self._collection_to_summary(collection, stats=stats))
+            summaries.append(
+                self._analytics.collection_summary(collection, stats=stats)
+            )
 
         payload = FavoriteCollectionListResponse(
             total=len(summaries),
             collections=summaries,
         )
-        await self._cache.set_json(cache_key, payload.model_dump(mode="json"))
+        await self._cache.write_collection_list(user_id=user_id, payload=payload)
         return payload
 
     async def get_collection(
         self, *, collection_id: int, user_id: str | None = None
     ) -> FavoriteCollectionDetail | None:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             return None
 
-        cache_key = favorite_collection_key(collection_id)
-        cached = await self._cache.get_json(cache_key)
+        cached = await self._cache.read_collection_detail(collection_id=collection_id)
         if cached is not None:
-            detail = FavoriteCollectionDetail(**cached)
-            if user_id is not None and detail.user_id != user_id:
+            if user_id is not None and cached.user_id != user_id:
                 return None
-            return detail
+            return cached
 
-        collection = await self._load_collection(collection_id)
+        collection = await self._persistence.load_collection(collection_id)
         if collection is None:
             return None
         if user_id is not None and collection.user_id != user_id:
             return None
 
-        detail = await self._collection_to_detail(collection)
-        await self._cache.set_json(cache_key, detail.model_dump(mode="json"))
-        return detail
+        return await self._build_collection_detail(collection)
 
     async def create_collection(
         self, payload: FavoriteCollectionCreate
     ) -> FavoriteCollectionDetail:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             raise RuntimeError(
                 "Favorites tables are missing; run database migrations to enable favorites."
             )
 
-        collection = FavoriteCollection(
-            user_id=payload.user_id,
-            title=payload.title,
-            slug=payload.slug,
-            description=payload.description,
-            is_public=payload.is_public,
-            metadata_json=payload.metadata,
-        )
-        self._session.add(collection)
-        await self._session.flush()
-        await self._invalidate_cache(user_id=collection.user_id)
-        return await self._collection_to_detail(collection)
+        collection = await self._persistence.create_collection(payload)
+        await self._cache.invalidate(user_id=collection.user_id)
+        return await self._build_collection_detail(collection)
 
     async def update_collection(
         self,
@@ -212,50 +125,37 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteCollectionUpdate,
     ) -> FavoriteCollectionDetail:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             raise RuntimeError(
                 "Favorites tables are missing; run database migrations to enable favorites."
             )
 
-        collection = await self._load_collection(collection_id)
+        collection = await self._persistence.load_collection(collection_id)
         if collection is None:
             raise LookupError("Collection not found")
         if user_id is not None and collection.user_id != user_id:
             raise PermissionError("Collection does not belong to the supplied user")
 
-        if payload.title is not None:
-            collection.title = payload.title
-        if payload.description is not None:
-            collection.description = payload.description
-        if payload.is_public is not None:
-            collection.is_public = payload.is_public
-        if payload.slug is not None:
-            collection.slug = payload.slug
-        if payload.metadata is not None:
-            collection.metadata_json = payload.metadata
-        collection.updated_at = datetime.now(UTC)
-
-        await self._session.flush()
-        await self._invalidate_cache(
+        await self._persistence.update_collection(collection, payload)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
-        return await self._collection_to_detail(collection)
+        return await self._build_collection_detail(collection)
 
     async def delete_collection(
         self, *, collection_id: int, user_id: str | None
     ) -> None:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             return
 
-        collection = await self._load_collection(collection_id)
+        collection = await self._persistence.load_collection(collection_id)
         if collection is None:
             return
         if user_id is not None and collection.user_id != user_id:
             raise PermissionError("Collection does not belong to the supplied user")
 
-        await self._session.delete(collection)
-        await self._session.flush()
-        await self._invalidate_cache(
+        await self._persistence.delete_collection(collection)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
 
@@ -266,50 +166,17 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryCreate,
     ) -> FavoriteEntrySchema:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             raise RuntimeError(
                 "Favorites tables are missing; run database migrations to enable favorites."
             )
 
-        collection = await self._load_collection(collection_id)
-        if collection is None:
-            raise LookupError("Collection not found")
-        if user_id is not None and collection.user_id != user_id:
-            raise PermissionError("Collection does not belong to the supplied user")
-
-        existing = next(
-            (
-                entry
-                for entry in collection.entries
-                if entry.fighter_id == payload.fighter_id
-            ),
-            None,
-        )
-        if existing is not None:
-            raise ValueError("Fighter already exists in the collection")
-
-        position = payload.position
-        if position >= len(collection.entries):
-            position = len(collection.entries)
-
-        entry = FavoriteEntryModel(
-            collection_id=collection.id,
-            fighter_id=payload.fighter_id,
-            position=position,
-            notes=payload.notes,
-            tags=payload.tags,
-            metadata_json=payload.metadata,
-        )
-        self._session.add(entry)
-        collection.entries.append(entry)
-
-        await self._session.flush()
-        await self._normalize_positions(collection)
-        await self._session.flush()
-        await self._invalidate_cache(
+        collection = await self._require_collection(collection_id, user_id)
+        entry = await self._persistence.add_entry(collection, payload)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
-        return self._entry_to_schema(entry)
+        return self._analytics.entry_to_schema(entry)
 
     async def update_entry(
         self,
@@ -319,37 +186,18 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryUpdate,
     ) -> FavoriteEntrySchema:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             raise RuntimeError(
                 "Favorites tables are missing; run database migrations to enable favorites."
             )
 
-        collection = await self._load_collection(collection_id)
-        if collection is None:
-            raise LookupError("Collection not found")
-        if user_id is not None and collection.user_id != user_id:
-            raise PermissionError("Collection does not belong to the supplied user")
-
-        entry = next((item for item in collection.entries if item.id == entry_id), None)
-        if entry is None:
-            raise LookupError("Entry not found")
-
-        if payload.position is not None:
-            entry.position = payload.position
-        if payload.notes is not None:
-            entry.notes = payload.notes
-        if payload.tags is not None:
-            entry.tags = payload.tags
-        if payload.metadata is not None:
-            entry.metadata_json = payload.metadata
-        entry.updated_at = datetime.now(UTC)
-
-        await self._normalize_positions(collection)
-        await self._session.flush()
-        await self._invalidate_cache(
+        collection = await self._require_collection(collection_id, user_id)
+        entry = self._require_entry(collection, entry_id)
+        await self._persistence.update_entry(collection, entry, payload)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
-        return self._entry_to_schema(entry)
+        return self._analytics.entry_to_schema(entry)
 
     async def delete_entry(
         self,
@@ -358,10 +206,10 @@ class FavoritesService:
         entry_id: int,
         user_id: str | None,
     ) -> None:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             return
 
-        collection = await self._load_collection(collection_id)
+        collection = await self._persistence.load_collection(collection_id)
         if collection is None:
             return
         if user_id is not None and collection.user_id != user_id:
@@ -371,11 +219,8 @@ class FavoritesService:
         if entry is None:
             return
 
-        await self._session.delete(entry)
-        await self._session.flush()
-        await self._normalize_positions(collection)
-        await self._session.flush()
-        await self._invalidate_cache(
+        await self._persistence.delete_entry(collection, entry)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
 
@@ -386,244 +231,85 @@ class FavoritesService:
         user_id: str | None,
         payload: FavoriteEntryReorderRequest,
     ) -> FavoriteCollectionDetail:
-        if not await self._favorites_tables_ready():
+        if not await self._persistence.tables_ready():
             raise RuntimeError(
                 "Favorites tables are missing; run database migrations to enable favorites."
             )
 
-        collection = await self._load_collection(collection_id)
-        if collection is None:
-            raise LookupError("Collection not found")
-        if user_id is not None and collection.user_id != user_id:
-            raise PermissionError("Collection does not belong to the supplied user")
-
-        lookup = {entry.id: entry for entry in collection.entries}
-        if set(lookup.keys()) != set(payload.entry_ids):
-            raise ValueError("Reorder payload must reference every entry exactly once")
-
-        for index, entry_id in enumerate(payload.entry_ids):
-            lookup[entry_id].position = index
-
-        await self._session.flush()
-        await self._invalidate_cache(
+        collection = await self._require_collection(collection_id, user_id)
+        await self._persistence.reorder_entries(collection, payload)
+        await self._cache.invalidate(
             collection_id=collection.id, user_id=collection.user_id
         )
-        return await self._collection_to_detail(collection)
+        return await self._build_collection_detail(collection)
 
-    async def _load_collection(self, collection_id: int) -> FavoriteCollection | None:
-        if not await self._favorites_tables_ready():
-            return None
-
-        query = (
-            select(FavoriteCollection)
-            .options(
-                selectinload(FavoriteCollection.entries).selectinload(
-                    FavoriteEntryModel.fighter
-                )
-            )
-            .where(FavoriteCollection.id == collection_id)
-        )
-        result = await self._session.execute(query)
-        return result.scalars().unique().one_or_none()
-
-    def _collection_to_summary(
-        self,
-        collection: FavoriteCollection,
-        *,
-        stats: FavoriteCollectionStats | None,
-    ) -> FavoriteCollectionSummary:
-        return FavoriteCollectionSummary(
-            id=collection.id,
-            user_id=collection.user_id,
-            title=collection.title,
-            description=collection.description,
-            is_public=collection.is_public,
-            slug=collection.slug,
-            metadata=collection.metadata_json or {},
-            created_at=collection.created_at,
-            updated_at=collection.updated_at,
-            stats=stats,
-        )
-
-    async def _collection_to_detail(
+    async def _build_collection_detail(
         self, collection: FavoriteCollection
     ) -> FavoriteCollectionDetail:
+        await self._persistence.ensure_entries_loaded(collection)
         stats = await self._get_collection_stats(collection)
-        entries = sorted(collection.entries, key=lambda entry: entry.position)
-        entry_payload = [self._entry_to_schema(entry) for entry in entries]
-        activity = self._build_activity(entries)
-        detail = FavoriteCollectionDetail(
-            id=collection.id,
-            user_id=collection.user_id,
-            title=collection.title,
-            description=collection.description,
-            is_public=collection.is_public,
-            slug=collection.slug,
-            metadata=collection.metadata_json or {},
-            created_at=collection.created_at,
-            updated_at=collection.updated_at,
+        entries = self._analytics.entries_to_schema(collection.entries)
+        activity = self._analytics.build_activity(collection.entries)
+        detail = self._analytics.collection_detail(
+            collection,
             stats=stats,
-            entries=entry_payload,
+            entries=entries,
             activity=activity,
         )
-        cache_key = favorite_collection_key(collection.id)
-        await self._cache.set_json(cache_key, detail.model_dump(mode="json"))
+        await self._cache.write_collection_detail(
+            collection_id=collection.id, payload=detail
+        )
         return detail
 
     async def _get_collection_stats(
         self, collection: FavoriteCollection
     ) -> FavoriteCollectionStats:
-        cache_key = favorite_stats_key(collection.id)
-        cached = await self._cache.get_json(cache_key)
+        cached = await self._cache.read_collection_stats(collection_id=collection.id)
         if cached is not None:
-            return FavoriteCollectionStats(**cached)
+            return cached
 
-        stats = await self._compute_collection_stats(collection)
-        await self._cache.set_json(cache_key, stats.model_dump(mode="json"))
+        await self._persistence.ensure_entries_loaded(collection)
+        fights = await self._persistence.fetch_fights_for_entries(collection)
+        stats = self._analytics.compute_collection_stats(
+            entries=collection.entries,
+            fights=fights,
+        )
+        await self._cache.write_collection_stats(
+            collection_id=collection.id, payload=stats
+        )
         return stats
 
-    async def _compute_collection_stats(
-        self, collection: FavoriteCollection
-    ) -> FavoriteCollectionStats:
-        # Eagerly load entries to avoid lazy loading in async context
-        await self._session.refresh(collection, ["entries"])
+    async def _require_collection(
+        self, collection_id: int, user_id: str | None
+    ) -> FavoriteCollection:
+        collection = await self._persistence.load_collection(collection_id)
+        if collection is None:
+            raise LookupError("Collection not found")
+        if user_id is not None and collection.user_id != user_id:
+            raise PermissionError("Collection does not belong to the supplied user")
+        # Entries are already eagerly loaded by load_collection; no need to ensure again.
+        return collection
 
-        if not collection.entries:
-            return FavoriteCollectionStats(
-                total_fighters=0,
-                win_rate=0.0,
-                result_breakdown=self._empty_breakdown(),
-                divisions=[],
-                upcoming_fights=[],
-            )
-
-        fighter_ids = [entry.fighter_id for entry in collection.entries]
-        query = select(Fight).where(Fight.fighter_id.in_(fighter_ids))
-        result = await self._session.execute(query)
-        fights = result.scalars().all()
-
-        breakdown = Counter(self._normalize_result(fight.result) for fight in fights)
-        normalized = self._empty_breakdown()
-        normalized.update(breakdown)
-
-        wins = normalized.get("win", 0)
-        losses = normalized.get("loss", 0)
-        win_rate = wins / (wins + losses) if (wins + losses) else 0.0
-
-        divisions = sorted(
-            {
-                entry.fighter.division
-                for entry in collection.entries
-                if isinstance(entry.fighter, Fighter) and entry.fighter.division
-            }
-        )
-
-        upcoming = [
-            FavoriteUpcomingFight(
-                fighter_id=fight.fighter_id,
-                opponent_name=fight.opponent_name,
-                event_name=fight.event_name,
-                event_date=fight.event_date,
-                weight_class=fight.weight_class,
-            )
-            for fight in fights
-            if self._normalize_result(fight.result) == "upcoming"
-        ]
-
-        return FavoriteCollectionStats(
-            total_fighters=len(collection.entries),
-            win_rate=win_rate,
-            result_breakdown=normalized,
-            divisions=divisions,
-            upcoming_fights=upcoming,
-        )
-
-    def _entry_to_schema(self, entry: FavoriteEntryModel) -> FavoriteEntrySchema:
-        return FavoriteEntrySchema(
-            id=entry.id,
-            fighter_id=entry.fighter_id,
-            position=entry.position,
-            notes=entry.notes,
-            tags=list(entry.tags or []),
-            metadata=entry.metadata_json or {},
-            created_at=entry.added_at,
-            updated_at=entry.updated_at,
-        )
-
-    def _build_activity(
-        self, entries: Iterable[FavoriteEntryModel]
-    ) -> list[FavoriteActivityItem]:
-        feed: list[FavoriteActivityItem] = []
-        for entry in sorted(entries, key=lambda item: item.updated_at, reverse=True):
-            action = (
-                "updated"
-                if entry.updated_at and entry.updated_at > entry.added_at
-                else "added"
-            )
-            metadata: dict[str, object] = {}
-            if entry.notes:
-                metadata["notes"] = entry.notes
-            if entry.tags:
-                metadata["tags"] = entry.tags
-            feed.append(
-                FavoriteActivityItem(
-                    entry_id=entry.id,
-                    fighter_id=entry.fighter_id,
-                    action=action,
-                    occurred_at=(
-                        entry.updated_at if action == "updated" else entry.added_at
-                    ),
-                    metadata=metadata,
-                )
-            )
-        return feed
-
-    async def _normalize_positions(self, collection: FavoriteCollection) -> None:
-        entries = sorted(collection.entries, key=lambda entry: entry.position)
-        for index, entry in enumerate(entries):
-            entry.position = index
-
-    async def _invalidate_cache(
-        self,
-        *,
-        collection_id: int | None = None,
-        user_id: str | None = None,
-    ) -> None:
-        keys: list[str] = []
-        if collection_id is not None:
-            keys.append(favorite_collection_key(collection_id))
-            keys.append(favorite_stats_key(collection_id))
-        if user_id is not None:
-            keys.append(favorite_list_key(user_id))
-        if keys:
-            await self._cache.delete(*keys)
-
-    def _empty_breakdown(self) -> dict[str, int]:
-        """
-        Returns a template dictionary for fight result categories with zero counts.
-        Ensures all expected keys are present in the breakdown dictionary.
-        """
-        return {"win": 0, "loss": 0, "draw": 0, "nc": 0, "upcoming": 0, "other": 0}
-
-    def _normalize_result(self, result: str | None) -> str:
-        if result is None:
-            return "other"
-        normalized = result.strip().lower()
-        if normalized in {"w", "win"}:
-            return "win"
-        if normalized in {"l", "loss"}:
-            return "loss"
-        if normalized.startswith("draw"):
-            return "draw"
-        if normalized in {"nc", "no contest"}:
-            return "nc"
-        if normalized == "next":
-            return "upcoming"
-        return "other"
+    def _require_entry(
+        self, collection: FavoriteCollection, entry_id: int
+    ) -> FavoriteEntryModel:
+        entry = next((item for item in collection.entries if item.id == entry_id), None)
+        if entry is None:
+            raise LookupError("Entry not found")
+        return entry
 
 
 async def get_favorites_service(
     session: AsyncSession = Depends(get_db),
-    cache: CacheClient = Depends(get_cache_client),
+    cache_client: CacheClient = Depends(get_cache_client),
 ) -> FavoritesService:
-    return FavoritesService(session, cache)
+    """FastAPI dependency that wires the orchestrator together."""
+
+    persistence = FavoritesPersistence(session)
+    analytics = FavoritesAnalytics()
+    cache = FavoritesCache(cache_client)
+    return FavoritesService(
+        persistence=persistence,
+        analytics=analytics,
+        cache=cache,
+    )
