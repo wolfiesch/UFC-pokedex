@@ -115,7 +115,7 @@ def fighter_search_cache_key(
     """Produce a deterministic cache key for fighter search responses."""
 
     champion_fragment = (
-        ",".join(filters.champion_statuses) if filters.champion_statuses else None
+        ",".join(sorted(filters.champion_statuses)) if filters.champion_statuses else None
     )
     return search_key(
         query=filters.query or "",
