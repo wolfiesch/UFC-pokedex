@@ -37,16 +37,18 @@ async def warmup_database(
         start = time.time()
         db_type = resolve_db_type()
         logger.debug("Database warmup target detected as %s", db_type)
-        if db_type != "sqlite":
-            logger.debug(
-                "Skipping database warmup for non-SQLite backend '%s'", db_type
-            )
+
+        if db_type == "sqlite":
+            # SQLite connections do not use pooled connections in the same way as
+            # PostgreSQL, so we simply log the skip to avoid unnecessary work.
+            logger.info("⚠ Database warmup skipped for SQLite backend")
             return
 
         engine = resolve_engine()
 
+        # For pooled databases (e.g., PostgreSQL) run a lightweight ping so the pool
+        # establishes an initial connection before serving traffic.
         async with begin_engine_transaction(engine) as conn:
-            # Simple ping query to warm up connection
             await conn.execute(text("SELECT 1"))
 
         elapsed = (time.time() - start) * 1000
@@ -100,29 +102,42 @@ async def warmup_repository_queries(
 
         db_type = resolve_db_type()
 
-        if db_type != "sqlite":
+        if db_type == "postgresql":
             async for session in get_db():
+                repo = PostgreSQLFighterRepository(session)
+
+                # Warmup query: Fetch 1 fighter with relationships to prime the ORM
+                # loader strategies that are used heavily in production workloads.
+                await repo.list_fighters(limit=1, offset=0)
+                break  # Only need one iteration
+
+            elapsed = (time.time() - start) * 1000
+            logger.info(
+                "✓ Repository warmup (PostgreSQL) executed (%.0fms)",
+                elapsed,
+            )
+            return
+
+        if db_type == "sqlite":
+            async for session in get_db():
+                # SQLite benefits from a minimal query that exercises SQLAlchemy's
+                # metadata without relying on PostgreSQL-specific constructs.
                 await session.execute(select(Fighter.id).limit(1))
                 break
 
             elapsed = (time.time() - start) * 1000
             logger.info(
-                "✓ Repository warmup (lightweight) executed (%s, %.0fms)",
-                db_type,
+                "✓ Repository warmup (SQLite lightweight) executed (%.0fms)",
                 elapsed,
             )
             return
 
-        async for session in get_db():
-            repo = PostgreSQLFighterRepository(session)
-
-            # Warmup query: Fetch 1 fighter with relationships
-            # This initializes ORM mappers and relationship loaders
-            await repo.list_fighters(limit=1, offset=0)
-            break  # Only need one iteration
-
         elapsed = (time.time() - start) * 1000
-        logger.info(f"✓ Repository queries warmed up ({elapsed:.0f}ms)")
+        logger.info(
+            "⚠ Repository warmup skipped for unsupported database type '%s' (%.0fms)",
+            db_type,
+            elapsed,
+        )
     except Exception as e:
         logger.warning(f"Repository warmup failed: {e}")
 
