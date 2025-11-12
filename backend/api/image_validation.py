@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, and_, or_
+from sqlalchemy import func, select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import ColumnElement
 
+import backend.db.connection as db_connection
 from backend.db.connection import get_async_session
 from backend.db.models import Fighter
 from backend.schemas.fighter import FighterListItem
@@ -121,14 +123,18 @@ async def get_low_quality_images(
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
                 "has_face": fighter.has_face_detected,
                 "flags": fighter.image_validation_flags or {},
-                "validated_at": fighter.image_validated_at.isoformat()
-                if fighter.image_validated_at
-                else None,
+                "validated_at": (
+                    fighter.image_validated_at.isoformat()
+                    if fighter.image_validated_at
+                    else None
+                ),
             }
         )
 
@@ -156,7 +162,8 @@ async def get_fighters_without_faces(
         select(Fighter)
         .where(
             and_(
-                Fighter.image_validated_at.isnot(None), Fighter.has_face_detected == False
+                Fighter.image_validated_at.isnot(None),
+                Fighter.has_face_detected == False,
             )
         )
         .order_by(Fighter.name)
@@ -175,9 +182,11 @@ async def get_fighters_without_faces(
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
                 "flags": fighter.image_validation_flags or {},
             }
         )
@@ -263,51 +272,94 @@ async def get_fighters_by_flag(
     Returns:
         Dictionary with fighters list and metadata
     """
-    # Query fighters with the specified flag
-    # Note: JSON field querying syntax varies by database
-    # PostgreSQL: use JSON operators, SQLite: need to parse JSON in Python
-
-    query = (
-        select(Fighter)
-        .where(Fighter.image_validation_flags.isnot(None))
-        .order_by(Fighter.name)
+    # Construct dialect-aware predicates up front to keep both the main data
+    # query and the companion count query in sync.  We always guard against
+    # NULL JSON blobs before applying the database-specific key lookup so that
+    # SQLite's JSON1 functions and PostgreSQL's ``has_key`` operator behave
+    # identically.
+    flag_predicate: ColumnElement[bool] = _build_flag_predicate(flag)
+    shared_predicates: tuple[ColumnElement[bool], ...] = (
+        Fighter.image_validation_flags.isnot(None),
+        flag_predicate,
     )
 
-    result = await session.execute(query)
-    all_fighters = result.scalars().all()
+    # Execute a paginated data query that defers JSON evaluation to the
+    # database engine.  This avoids materialising the entire fighters table in
+    # Python when only a handful of rows match the requested flag.
+    data_query = (
+        select(Fighter)
+        .where(*shared_predicates)
+        .order_by(Fighter.name)
+        .limit(limit)
+        .offset(offset)
+    )
+    data_result = await session.execute(data_query)
+    paginated_fighters = data_result.scalars().all()
 
-    # Filter in Python (works for all databases)
-    filtered = []
-    for fighter in all_fighters:
-        flags = fighter.image_validation_flags or {}
-        if flag in flags:
-            filtered.append(fighter)
-
-    # Apply pagination
-    paginated = filtered[offset : offset + limit]
+    # Mirror the filtering conditions in a lightweight ``COUNT(*)`` query so
+    # the ``total`` field reflects the true number of matching rows, even when
+    # pagination clips the dataset.
+    count_query = select(func.count()).select_from(Fighter).where(*shared_predicates)
+    total: int = int((await session.execute(count_query)).scalar_one())
 
     items = []
-    for fighter in paginated:
+    for fighter in paginated_fighters:
         items.append(
             {
                 "fighter_id": fighter.id,
                 "name": fighter.name,
                 "image_url": resolve_fighter_image(fighter.id, fighter.image_url),
                 "quality_score": fighter.image_quality_score,
-                "resolution": f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
-                if fighter.image_resolution_width
-                else None,
-                "flag_details": fighter.image_validation_flags.get(flag),
+                "resolution": (
+                    f"{fighter.image_resolution_width}x{fighter.image_resolution_height}"
+                    if fighter.image_resolution_width
+                    else None
+                ),
+                "flag_details": (fighter.image_validation_flags or {}).get(flag),
             }
         )
 
     return {
         "fighters": items,
         "count": len(items),
-        "total": len(filtered),
+        "total": total,
         "limit": limit,
         "offset": offset,
     }
+
+
+def _build_flag_predicate(flag: str) -> ColumnElement[bool]:
+    """Return a SQL expression that checks for ``flag`` in the JSON payload.
+
+    The function detects the active database backend at runtime and emits the
+    most efficient operator supported by that dialect.  PostgreSQL benefits
+    from the native ``?`` operator exposed via SQLAlchemy's ``has_key`` helper,
+    while SQLite development environments rely on JSON1's ``json_type`` to
+    determine whether the key is present.
+
+    Args:
+        flag: The validation flag key requested by the API consumer.
+
+    Returns:
+        A :class:`~sqlalchemy.sql.elements.ColumnElement` producing a boolean
+        predicate that evaluates to ``True`` whenever ``flag`` exists in the
+        ``image_validation_flags`` JSON document.
+    """
+
+    database_type: str = db_connection.get_database_type()
+    if database_type == "postgresql":
+        # ``has_key`` maps to PostgreSQL's ``?`` operator, performing an index
+        # assisted existence check without inspecting the JSON payload in
+        # Python.  SQLAlchemy does not annotate the return type precisely, so
+        # we silence mypy's ``attr-defined`` warning.
+        return Fighter.image_validation_flags.has_key(flag)  # type: ignore[attr-defined]
+
+    # SQLite's JSON1 extension returns ``NULL`` when the path is missing.  Using
+    # ``json_type`` instead of ``json_extract`` ensures that explicit ``null``
+    # values remain discoverable because SQLite reports their type as the string
+    # ``"null"`` rather than propagating ``NULL`` up to SQLAlchemy.
+    json_path: str = f"$.{flag}"
+    return func.json_type(Fighter.image_validation_flags, json_path).isnot(None)
 
 
 @router.get("/{fighter_id}")
@@ -353,7 +405,9 @@ async def get_fighter_validation(
             "face_count": fighter.face_count,
         },
         "flags": fighter.image_validation_flags or {},
-        "validated_at": fighter.image_validated_at.isoformat()
-        if fighter.image_validated_at
-        else None,
+        "validated_at": (
+            fighter.image_validated_at.isoformat()
+            if fighter.image_validated_at
+            else None
+        ),
     }
