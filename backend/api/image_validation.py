@@ -224,10 +224,7 @@ async def get_duplicate_images(
     # Filter to only those with potential_duplicates flag
     items = []
 
-    # ``fighters_with_duplicates`` retains the original fighter objects alongside the
-    # raw duplicate ID lists so we can build the response after performing a single
-    # batched lookup. Explicit typing combined with verbose documentation makes the
-    # intent crystal clear for future maintainers working through the async workflow.
+    # Store fighter objects with their duplicate IDs for batch processing.
     fighters_with_duplicates: list[tuple[Fighter, list[str]]] = []
 
     # Collect all duplicate IDs to enable single batched lookup.
