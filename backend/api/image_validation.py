@@ -352,7 +352,7 @@ def _build_flag_predicate(flag: str) -> ColumnElement[bool]:
         # assisted existence check without inspecting the JSON payload in
         # Python.  SQLAlchemy does not annotate the return type precisely, so
         # we silence mypy's ``attr-defined`` warning.
-        return Fighter.image_validation_flags.has_key(flag)  # type: ignore[attr-defined]
+        return Fighter.image_validation_flags.has_key(flag)  # type: ignore[attr-defined]  # has_key exists on JSONB columns at runtime
 
     # SQLite's JSON1 extension returns ``NULL`` when the path is missing.  Using
     # ``json_type`` instead of ``json_extract`` ensures that explicit ``null``
