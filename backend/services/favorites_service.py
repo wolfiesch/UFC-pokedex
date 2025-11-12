@@ -215,7 +215,6 @@ class FavoritesService:
         if user_id is not None and collection.user_id != user_id:
             raise PermissionError("Collection does not belong to the supplied user")
 
-        await self._persistence.ensure_entries_loaded(collection)
         entry = next((item for item in collection.entries if item.id == entry_id), None)
         if entry is None:
             return
