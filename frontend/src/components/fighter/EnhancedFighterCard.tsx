@@ -403,7 +403,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               )}
             </div>
 
-            {/* Bottom Left Stack: Streak only */}
+            {/* Bottom Left Stack: Empty now - streak moved to compact row */}
             <div
               className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5"
               style={{
@@ -411,20 +411,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                 transformStyle: "preserve-3d",
               }}
             >
-              {/* Streak Badge */}
-              {streak && streak.count >= 2 && (
-                <div
-                  className={`flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur-sm ${
-                    streak.type === "win"
-                      ? "bg-green-500/90"
-                      : streak.type === "loss"
-                        ? "bg-red-500/90"
-                        : "bg-gray-500/90"
-                  }`}
-                >
-                  <span className="text-xs font-bold text-white">{streak.label}</span>
-                </div>
-              )}
+              {/* Streak Badge moved to compact stats row */}
             </div>
 
             {/* Bottom Right Stack: RankFlagBadge only */}
@@ -607,18 +594,43 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               )}
             </div>
 
-            {/* Compact Stats Row with Fight Badge */}
+            {/* Compact Stats Row with All Badges */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span>{fighter.record}</span>
-                {fighter.stance && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Record */}
+                <span className="font-medium">{fighter.record}</span>
+
+                {/* Division */}
+                {fighter.division && (
                   <>
                     <span>•</span>
-                    <span>{fighter.stance}</span>
+                    <span>{fighter.division}</span>
                   </>
                 )}
+
+                {/* Win Streak Badge */}
+                {streak && streak.count >= 2 && (
+                  <>
+                    <span>•</span>
+                    <span
+                      className={`flex items-center gap-0.5 ${
+                        streak.type === "win"
+                          ? "text-green-500"
+                          : streak.type === "loss"
+                            ? "text-red-500"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {streak.type === "win" ? "🟢" : streak.type === "loss" ? "🔴" : "⚫"}
+                      <span className="font-medium">{streak.label}</span>
+                    </span>
+                  </>
+                )}
+
+                {/* Fight Status Badge */}
                 <FightBadge fighter={fighter} />
               </div>
+
               <div className="flex items-center gap-2">
                 {nationalityFlag && (
                   <div className="flex items-center gap-1">

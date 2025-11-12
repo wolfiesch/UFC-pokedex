@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -217,6 +217,44 @@ sherdog-workflow-sample: ## Run Sherdog workflow with sample data (10 fighters)
 	@echo "\nStep 5: Updating database..."
 	@$(MAKE) update-fighter-images
 	@echo "\n✓ Sherdog sample workflow complete!"
+
+scrape-sherdog-fight-history: ## Scrape full fight histories from Sherdog for non-UFC fighters
+	@echo "🥊 Scraping Sherdog fight histories..."
+	@echo "   This will process all fighters in data/processed/non_ufc_fightmatrix_fighters.json"
+	PYTHONPATH=. .venv/bin/scrapy crawl sherdog_fight_history
+
+scrape-sherdog-fight-history-incremental: ## Scrape only unscraped fighters (avoids duplicates)
+	@echo "🔍 Finding fighters that haven't been scraped yet..."
+	@UNSCRAPED_COUNT=$$(PYTHONPATH=. .venv/bin/python scripts/get_unscraped_sherdog_fighters.py 2>&1 | grep "Found" | awk '{print $$2}'); \
+	if [ "$$UNSCRAPED_COUNT" = "0" ] || [ -z "$$UNSCRAPED_COUNT" ]; then \
+		echo "✅ All fighters already scraped!"; \
+		PYTHONPATH=. .venv/bin/python scripts/get_unscraped_sherdog_fighters.py 2>&1 | head -3; \
+	else \
+		echo "📊 Found $$UNSCRAPED_COUNT unscraped fighters"; \
+		echo ""; \
+		echo "🥊 Starting incremental scrape..."; \
+		PYTHONPATH=. .venv/bin/scrapy crawl sherdog_fight_history; \
+	fi
+
+load-sherdog-fight-history: ## Load scraped Sherdog fight histories into database
+	@echo "📥 Loading Sherdog fight histories into database..."
+	DATABASE_URL="postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" \
+	PYTHONPATH=. .venv/bin/python scripts/load_sherdog_fight_histories.py
+
+load-sherdog-fight-history-dry-run: ## Preview fight history load without database writes
+	@echo "🔍 Dry run - previewing fight history data..."
+	DATABASE_URL="postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" \
+	PYTHONPATH=. .venv/bin/python scripts/load_sherdog_fight_histories.py --dry-run
+
+sherdog-fight-history-workflow: ## Full workflow: scrape unscraped fighters → load to database
+	@echo "🚀 Starting Sherdog fight history workflow..."
+	@echo ""
+	@$(MAKE) scrape-sherdog-fight-history-incremental
+	@echo ""
+	@echo "📥 Loading scraped data into database..."
+	@$(MAKE) load-sherdog-fight-history
+	@echo ""
+	@echo "✅ Sherdog fight history workflow complete!"
 
 scrape-images-wikimedia: ## Scrape fighter images from Wikimedia Commons (legal, ~20% coverage)
 	PYTHONPATH=. .venv/bin/python scripts/wikimedia_image_scraper.py --batch-size 50
