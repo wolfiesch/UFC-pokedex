@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -56,15 +56,24 @@ async def test_warmup_database_postgresql_executes_ping(
     caplog.set_level(logging.INFO)
 
     dummy_txn = _DummyTransaction()
+    sentinel_engine = object()
 
-    # Patch the transaction helper so the warmup interacts with our dummy context.
-    monkeypatch.setattr(warmup, "begin_engine_transaction", lambda engine: dummy_txn)
+    # Patch the transaction helper so the warmup interacts with our dummy context
+    # and capture the engine argument for verification.
+    captured_engines: list[object] = []
+
+    def _capture_engine(engine: object) -> _DummyTransaction:
+        captured_engines.append(engine)
+        return dummy_txn
+
+    monkeypatch.setattr(warmup, "begin_engine_transaction", _capture_engine)
 
     await warmup.warmup_database(
         resolve_db_type=lambda: "postgresql",
-        resolve_engine=object,
+        resolve_engine=lambda: sentinel_engine,
     )
 
+    assert captured_engines == [sentinel_engine]
     assert dummy_txn.connection.execute.await_count == 1
     executed_statement = dummy_txn.connection.execute.await_args.args[0]
     assert str(executed_statement).strip().upper() == "SELECT 1"
@@ -74,36 +83,44 @@ async def test_warmup_database_postgresql_executes_ping(
 
 
 @pytest.mark.asyncio
-async def test_warmup_database_sqlite_skips_ping(
+async def test_warmup_database_warns_on_non_postgres(
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     request: pytest.FixtureRequest,
 ) -> None:
-    """Verify SQLite warmup logs a skip message and avoids the ping."""
+    """Verify non-PostgreSQL backends still execute the ping while logging a warning."""
 
     del request  # Fixture consumed to satisfy the custom asyncio harness.
 
     caplog.set_level(logging.INFO)
 
-    # Guard against accidental context manager usage by raising if called.
-    def _fail_if_used(_: object) -> Awaitable[None]:
-        raise AssertionError("SQLite warmup should not open pooled transactions")
+    dummy_txn = _DummyTransaction()
+    sentinel_engine = object()
 
-    monkeypatch.setattr(warmup, "begin_engine_transaction", _fail_if_used)
+    monkeypatch.setattr(warmup, "begin_engine_transaction", lambda _: dummy_txn)
 
-    await warmup.warmup_database(resolve_db_type=lambda: "sqlite")
+    await warmup.warmup_database(
+        resolve_db_type=lambda: "sqlite",
+        resolve_engine=lambda: sentinel_engine,
+    )
 
-    assert any("skipped" in record.getMessage() for record in caplog.records)
-    assert not [
-        record for record in caplog.records if record.levelno >= logging.WARNING
-    ]
+    assert dummy_txn.connection.execute.await_count == 1
+    assert any(
+        "expected PostgreSQL" in record.getMessage() for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
 async def test_warmup_repository_queries_postgresql(
+    caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
 ) -> None:
     """Confirm PostgreSQL warmup exercises the repository list query."""
+
+    del request
+
+    caplog.set_level(logging.INFO)
 
     session = AsyncMock()
     repo_instance = AsyncMock()
@@ -119,29 +136,37 @@ async def test_warmup_repository_queries_postgresql(
     await warmup.warmup_repository_queries(resolve_db_type=lambda: "postgresql")
 
     repo_instance.list_fighters.assert_awaited_once_with(limit=1, offset=0)
-    session.execute.assert_not_called()
+    assert not [
+        record for record in caplog.records if record.levelno >= logging.WARNING
+    ]
 
 
 @pytest.mark.asyncio
-async def test_warmup_repository_queries_sqlite(
+async def test_warmup_repository_queries_warns_on_non_postgres(
+    caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
 ) -> None:
-    """Validate SQLite warmup performs a lightweight ORM select."""
+    """Validate non-PostgreSQL backends still issue the repository warmup with a warning."""
+
+    del request
+
+    caplog.set_level(logging.INFO)
 
     session = AsyncMock()
+    repo_instance = AsyncMock()
 
     monkeypatch.setattr(
         "backend.db.connection.get_db", lambda: _generate_session(session)
     )
-
-    # Ensure the PostgreSQL repository is never instantiated for SQLite paths.
-    def _fail_repo(_: Any) -> None:
-        raise AssertionError("SQLite warmup should not build PostgreSQL repositories")
-
     monkeypatch.setattr(
-        "backend.db.repositories.PostgreSQLFighterRepository", _fail_repo
+        "backend.db.repositories.PostgreSQLFighterRepository",
+        lambda db_session: repo_instance,
     )
 
     await warmup.warmup_repository_queries(resolve_db_type=lambda: "sqlite")
 
-    session.execute.assert_awaited()
+    repo_instance.list_fighters.assert_awaited_once_with(limit=1, offset=0)
+    assert any(
+        "expected PostgreSQL" in record.getMessage() for record in caplog.records
+    )

@@ -10,7 +10,7 @@ import logging
 import time
 from collections.abc import Callable
 
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.db.connection import begin_engine_transaction
@@ -22,10 +22,12 @@ async def warmup_database(
     resolve_db_type: Callable[[], str] | None = None,
     resolve_engine: Callable[[], AsyncEngine] | None = None,
 ) -> None:
-    """Warm up database connection pool.
+    """Warm up the PostgreSQL connection pool by executing a ping query.
 
-    Executes a simple query to initialize the connection pool and ORM machinery.
-    Gracefully degrades if warmup fails.
+    The warmup now always opens a pooled transaction and issues ``SELECT 1`` so the
+    PostgreSQL driver establishes a connection ahead of the first request.  When a
+    different database type is detected we log a warning but still perform the ping
+    so misconfigurations surface quickly during startup.
     """
     try:
         if resolve_db_type is None:
@@ -38,11 +40,11 @@ async def warmup_database(
         db_type = resolve_db_type()
         logger.debug("Database warmup target detected as %s", db_type)
 
-        if db_type == "sqlite":
-            # SQLite connections do not use pooled connections in the same way as
-            # PostgreSQL, so we simply log the skip to avoid unnecessary work.
-            logger.info("⚠ Database warmup skipped for SQLite backend")
-            return
+        if db_type != "postgresql":
+            logger.warning(
+                "Database warmup expected PostgreSQL but detected '%s'; continuing",
+                db_type,
+            )
 
         engine = resolve_engine()
 
@@ -85,13 +87,14 @@ async def warmup_redis() -> None:
 async def warmup_repository_queries(
     resolve_db_type: Callable[[], str] | None = None,
 ) -> None:
-    """Warm up common repository queries.
+    """Warm up PostgreSQL repository queries.
 
-    Executes lightweight queries to initialize ORM mappers and relationship loaders.
-    Gracefully degrades if warmup fails.
+    The warmup always instantiates the PostgreSQL fighter repository so its mappers
+    and loader strategies are prepared before the application begins handling
+    traffic.  Non-PostgreSQL configurations trigger a warning but still run the
+    warmup query to avoid silently skipping initialization work.
     """
     from backend.db.connection import get_db
-    from backend.db.models import Fighter
     from backend.db.repositories import PostgreSQLFighterRepository
 
     try:
@@ -102,40 +105,23 @@ async def warmup_repository_queries(
 
         db_type = resolve_db_type()
 
-        if db_type == "postgresql":
-            async for session in get_db():
-                repo = PostgreSQLFighterRepository(session)
-
-                # Warmup query: Fetch 1 fighter with relationships to prime the ORM
-                # loader strategies that are used heavily in production workloads.
-                await repo.list_fighters(limit=1, offset=0)
-                break  # Only need one iteration
-
-            elapsed = (time.time() - start) * 1000
-            logger.info(
-                "✓ Repository warmup (PostgreSQL) executed (%.0fms)",
-                elapsed,
+        if db_type != "postgresql":
+            logger.warning(
+                "Repository warmup expected PostgreSQL but detected '%s'; continuing",
+                db_type,
             )
-            return
 
-        if db_type == "sqlite":
-            async for session in get_db():
-                # SQLite benefits from a minimal query that exercises SQLAlchemy's
-                # metadata without relying on PostgreSQL-specific constructs.
-                await session.execute(select(Fighter.id).limit(1))
-                break
+        async for session in get_db():
+            repo = PostgreSQLFighterRepository(session)
 
-            elapsed = (time.time() - start) * 1000
-            logger.info(
-                "✓ Repository warmup (SQLite lightweight) executed (%.0fms)",
-                elapsed,
-            )
-            return
+            # Warmup query: Fetch 1 fighter with relationships to prime the ORM
+            # loader strategies that are used heavily in production workloads.
+            await repo.list_fighters(limit=1, offset=0)
+            break  # Only need one iteration
 
         elapsed = (time.time() - start) * 1000
         logger.info(
-            "⚠ Repository warmup skipped for unsupported database type '%s' (%.0fms)",
-            db_type,
+            "✓ Repository warmup executed (%.0fms)",
             elapsed,
         )
     except Exception as e:
