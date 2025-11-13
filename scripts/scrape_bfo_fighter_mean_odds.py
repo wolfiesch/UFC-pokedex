@@ -51,6 +51,32 @@ def load_fighter_urls(mapping_file: Path, start: int = 0, limit: int | None = No
     return urls
 
 
+def get_already_scraped_fighter_urls(output_file: Path) -> set[str]:
+    """
+    Get set of fighter URLs that have already been scraped.
+
+    Returns:
+        Set of fighter URLs (normalized to lowercase for comparison)
+    """
+    if not output_file.exists():
+        return set()
+
+    scraped_urls = set()
+    with output_file.open() as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                data = json.loads(line)
+                if fighter_url := data.get("fighter_url"):
+                    # Normalize URL for comparison (BFO URLs are case-insensitive)
+                    scraped_urls.add(fighter_url.lower())
+            except json.JSONDecodeError:
+                continue
+
+    return scraped_urls
+
+
 def run_spider_batch(urls: list[str], output_file: Path, batch_num: int, total_batches: int) -> tuple[bool, int]:
     """
     Run spider for a batch of fighter URLs.
@@ -136,11 +162,27 @@ def main():
     print(f"Loading fighter URLs from {args.mapping_file}...")
     all_urls = load_fighter_urls(args.mapping_file, start=args.start, limit=args.limit)
 
+    # Check for already scraped fighters
+    already_scraped = get_already_scraped_fighter_urls(args.output)
+    if already_scraped:
+        print(f"Found {len(already_scraped)} already-scraped fighters in {args.output}")
+        # Filter out already-scraped URLs
+        urls_to_scrape = [url for url in all_urls if url.lower() not in already_scraped]
+        skipped = len(all_urls) - len(urls_to_scrape)
+        if skipped > 0:
+            print(f"  Skipping {skipped} already-scraped fighters")
+        all_urls = urls_to_scrape
+
     print(f"Found {len(all_urls)} fighters to scrape")
     if args.start > 0:
         print(f"  Starting from index {args.start}")
     if args.limit:
         print(f"  Limited to {args.limit} fighters")
+
+    # Exit if nothing to scrape
+    if len(all_urls) == 0:
+        print("\n✓ All fighters already scraped! Nothing to do.")
+        sys.exit(0)
 
     # Calculate batches
     batches = []
