@@ -427,12 +427,12 @@
               type="url"
               id="apiBaseInput"
               name="apiBase"
-              placeholder="https://api.example.com"
-              required
+              placeholder="https://api.example.com (leave blank for sample preview)"
             />
           </label>
           <p id="status">
-            Provide the API origin hosting /fightweb/graph. Defaults to localhost if omitted.
+            Provide the API origin hosting /fightweb/graph or clear the field to load bundled
+            sample data.
           </p>
         </fieldset>
 
@@ -561,7 +561,7 @@
       // Initialize API base URL from query params
       const params = new URLSearchParams(window.location.search);
       const providedBaseUrl = params.get("apiBaseUrl") ?? "";
-      const defaultBaseUrl = providedBaseUrl || "http://localhost:8000";
+      const defaultBaseUrl = providedBaseUrl || "";
       apiBaseInput.value = defaultBaseUrl;
 
       // Global state
@@ -579,6 +579,191 @@
       let targetDepthScale = 1.0;
       let autoOrbit = false;
       let tooltipsEnabled = true;
+
+      /**
+       * Bundled sample dataset for offline/preview usage.
+       * The structure mirrors the backend /fightweb/graph response so we can
+       * run the visualization without a running API.
+       * @type {{
+       *   nodes: Array<{
+       *     fighter_id: string;
+       *     id: string;
+       *     label: string;
+       *     name: string;
+       *     division: string;
+       *     record: string;
+       *     total_fights: number;
+       *     latest_event_date: string;
+       *     image_url: string | null;
+       *   }>;
+       *   links: Array<{ source: string; target: string; weight: number }>;
+       *   metadata: Record<string, unknown>;
+       * }}
+       */
+      const SAMPLE_GRAPH = {
+        nodes: [
+          {
+            fighter_id: "conor-mcgregor",
+            id: "conor-mcgregor",
+            label: "Conor McGregor",
+            name: "Conor McGregor",
+            division: "Lightweight",
+            record: "22-6-0",
+            total_fights: 28,
+            latest_event_date: "2021-07-10",
+            image_url: null,
+          },
+          {
+            fighter_id: "dustin-poirier",
+            id: "dustin-poirier",
+            label: "Dustin Poirier",
+            name: "Dustin Poirier",
+            division: "Lightweight",
+            record: "29-8-0 (1 NC)",
+            total_fights: 38,
+            latest_event_date: "2024-01-20",
+            image_url: null,
+          },
+          {
+            fighter_id: "justin-gaethje",
+            id: "justin-gaethje",
+            label: "Justin Gaethje",
+            name: "Justin Gaethje",
+            division: "Lightweight",
+            record: "25-5-0",
+            total_fights: 30,
+            latest_event_date: "2023-07-29",
+            image_url: null,
+          },
+          {
+            fighter_id: "charles-oliveira",
+            id: "charles-oliveira",
+            label: "Charles Oliveira",
+            name: "Charles Oliveira",
+            division: "Lightweight",
+            record: "34-9-0 (1 NC)",
+            total_fights: 44,
+            latest_event_date: "2023-10-21",
+            image_url: null,
+          },
+          {
+            fighter_id: "islam-makhachev",
+            id: "islam-makhachev",
+            label: "Islam Makhachev",
+            name: "Islam Makhachev",
+            division: "Lightweight",
+            record: "25-1-0",
+            total_fights: 26,
+            latest_event_date: "2023-10-21",
+            image_url: null,
+          },
+          {
+            fighter_id: "beneil-dariush",
+            id: "beneil-dariush",
+            label: "Beneil Dariush",
+            name: "Beneil Dariush",
+            division: "Lightweight",
+            record: "22-6-1",
+            total_fights: 29,
+            latest_event_date: "2023-06-10",
+            image_url: null,
+          },
+          {
+            fighter_id: "michael-chandler",
+            id: "michael-chandler",
+            label: "Michael Chandler",
+            name: "Michael Chandler",
+            division: "Lightweight",
+            record: "23-8-0",
+            total_fights: 31,
+            latest_event_date: "2022-11-12",
+            image_url: null,
+          },
+          {
+            fighter_id: "tony-ferguson",
+            id: "tony-ferguson",
+            label: "Tony Ferguson",
+            name: "Tony Ferguson",
+            division: "Lightweight",
+            record: "25-9-0",
+            total_fights: 34,
+            latest_event_date: "2023-12-16",
+            image_url: null,
+          },
+          {
+            fighter_id: "rafael-dos-anjos",
+            id: "rafael-dos-anjos",
+            label: "Rafael dos Anjos",
+            name: "Rafael dos Anjos",
+            division: "Lightweight",
+            record: "32-15-0",
+            total_fights: 47,
+            latest_event_date: "2023-12-16",
+            image_url: null,
+          },
+          {
+            fighter_id: "dan-hooker",
+            id: "dan-hooker",
+            label: "Dan Hooker",
+            name: "Dan Hooker",
+            division: "Lightweight",
+            record: "23-12-0",
+            total_fights: 35,
+            latest_event_date: "2023-07-08",
+            image_url: null,
+          },
+        ],
+        links: [
+          { source: "conor-mcgregor", target: "dustin-poirier", weight: 3 },
+          { source: "conor-mcgregor", target: "michael-chandler", weight: 1 },
+          { source: "dustin-poirier", target: "justin-gaethje", weight: 2 },
+          { source: "dustin-poirier", target: "charles-oliveira", weight: 1 },
+          { source: "charles-oliveira", target: "islam-makhachev", weight: 1 },
+          { source: "charles-oliveira", target: "justin-gaethje", weight: 1 },
+          { source: "islam-makhachev", target: "beneil-dariush", weight: 1 },
+          { source: "beneil-dariush", target: "michael-chandler", weight: 1 },
+          { source: "michael-chandler", target: "dan-hooker", weight: 1 },
+          { source: "tony-ferguson", target: "rafael-dos-anjos", weight: 1 },
+          { source: "tony-ferguson", target: "justin-gaethje", weight: 1 },
+          { source: "dan-hooker", target: "rafael-dos-anjos", weight: 1 },
+        ],
+        metadata: {
+          generated_at: "2025-11-13",
+          description: "Bundled sample graph for the combined force-directed prototype.",
+          division: "Lightweight",
+        },
+      };
+
+      const latestEventFormatter = new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+
+      /**
+       * Format an ISO-8601 date string from the graph payload into a localized label.
+       * Returns null for missing or invalid values so callers can easily guard their UI.
+       * @param {string | null | undefined} isoDate
+       * @returns {string | null}
+       */
+      function formatLatestEventDate(isoDate) {
+        if (typeof isoDate !== "string" || isoDate.trim() === "") {
+          return null;
+        }
+        const parsed = new Date(isoDate);
+        if (Number.isNaN(parsed.getTime())) {
+          return null;
+        }
+        return latestEventFormatter.format(parsed);
+      }
+
+      /**
+       * Deep clone the bundled sample graph so downstream steps can mutate state safely.
+       * @returns {{ nodes: any[]; links: any[]; metadata: Record<string, unknown> }}
+       */
+      function cloneSampleGraph() {
+        return JSON.parse(JSON.stringify(SAMPLE_GRAPH));
+      }
 
       /**
        * Update status text area with progress cues
@@ -995,12 +1180,25 @@
             if (first.userData.node) {
               const { node } = first.userData;
               hovered.add(first);
-              tooltipElement.innerHTML = `
-                <strong>${node.label ?? node.id}</strong><br />
-                Division: ${node.division ?? "Unknown"}<br />
-                Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
-                Recent activity: ${node.year ?? "Unknown"}
-              `;
+              const tooltipLines = [
+                `<strong>${node.label ?? node.id}</strong>`,
+                `Division: ${node.division ?? "Unknown"}`,
+              ];
+
+              const recordLabel =
+                typeof node.record === "string" && node.record.trim() !== ""
+                  ? node.record
+                  : "Unknown";
+              tooltipLines.push(`Record: ${recordLabel}`);
+
+              const recentActivityLabel = formatLatestEventDate(
+                node.latest_event_date
+              );
+              if (recentActivityLabel) {
+                tooltipLines.push(`Recent activity: ${recentActivityLabel}`);
+              }
+
+              tooltipElement.innerHTML = tooltipLines.join("<br />");
             }
           } else if (tooltipsEnabled) {
             tooltipElement.innerHTML = "Hover a fighter node to inspect details.";
@@ -1075,15 +1273,20 @@
       // Form submit handler
       controlsForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const apiBaseUrl = apiBaseInput.value.trim();
-        if (!apiBaseUrl) {
-          updateStatus("Please supply an API base URL before loading the graph.", true);
-          return;
-        }
+        const rawBaseUrl = apiBaseInput.value.trim();
+        const useSampleData =
+          rawBaseUrl.length === 0 || rawBaseUrl.toLowerCase() === "sample";
 
         try {
-          updateStatus("Preparing simulation...");
-          const graph = await fetchFightGraph(apiBaseUrl, readFilters());
+          let graph;
+          if (useSampleData) {
+            updateStatus("Using bundled sample fight graph for preview...");
+            graph = cloneSampleGraph();
+          } else {
+            updateStatus("Preparing simulation...");
+            graph = await fetchFightGraph(rawBaseUrl, readFilters());
+          }
+
           const { nodes, links } = await simulateLayout(graph);
 
           // Hydrate links with node references
@@ -1098,7 +1301,9 @@
 
           renderGraph({ nodes, links: hydratedLinks });
           updateStatus(
-            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts. Use keyboard shortcuts!`
+            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts${
+              useSampleData ? " from bundled sample data" : ""
+            }. Use keyboard shortcuts!`
           );
         } catch (error) {
           console.error(error);
