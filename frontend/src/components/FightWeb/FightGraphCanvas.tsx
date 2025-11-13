@@ -85,13 +85,18 @@ function FightGraphCanvasInner({
     return createDivisionColorScale(data.nodes);
   }, [data, paletteProp]);
 
-  const { nodes, links, stats, updateWorkerOptions } = useFightLayout(data, {
-    workerOptions: {
+  const workerOptions = useMemo(
+    () => ({
       linkDistance: 200,
       chargeStrength: -45,
       updateIntervalMs: 26,
       zScale: 0.85,
-    },
+    }),
+    [],
+  );
+
+  const { nodes, links, stats, updateWorkerOptions } = useFightLayout(data, {
+    workerOptions,
   });
 
   const focusNodeId = hoverState?.nodeId ?? selectedNodeId ?? null;
@@ -171,12 +176,18 @@ function FightGraphCanvasInner({
         ref={containerRef}
         className="relative h-full w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950/70"
       >
-        {isLoading ? (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 text-sm text-slate-300">
-            Computing layout…
+        {!isLoading && nodes.length === 0 ? (
+          <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+            We could not find enough data to construct the fight network.
           </div>
-        ) : null}
-        <FightGraphScene
+        ) : (
+          <>
+            {isLoading ? (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 text-sm text-slate-300">
+                Computing layout…
+              </div>
+            ) : null}
+            <FightGraphScene
           nodes={nodes}
           links={filteredLinks}
           nodeColorMap={nodeColorMap ?? null}
@@ -189,20 +200,22 @@ function FightGraphCanvasInner({
           onPerformanceDrop={handlePerformanceDrop}
           onPerformanceRecover={handlePerformanceRecover}
         />
-        {hoveredNode && tooltipPosition ? (
-          <div
-            className="pointer-events-none absolute z-30 rounded-lg border border-slate-800 bg-slate-900/90 px-3 py-2 text-xs text-slate-100 shadow-lg"
-            style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
-          >
-            <div className="font-semibold">{hoveredNode.name}</div>
-            {hoveredNode.record ? (
-              <div className="text-slate-300">{hoveredNode.record}</div>
+            {hoveredNode && tooltipPosition ? (
+              <div
+                className="pointer-events-none absolute z-30 rounded-lg border border-slate-800 bg-slate-900/90 px-3 py-2 text-xs text-slate-100 shadow-lg"
+                style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
+              >
+                <div className="font-semibold">{hoveredNode.name}</div>
+                {hoveredNode.record ? (
+                  <div className="text-slate-300">{hoveredNode.record}</div>
+                ) : null}
+                <div className="text-slate-400">
+                  Total fights: {hoveredNode.total_fights}
+                </div>
+              </div>
             ) : null}
-            <div className="text-slate-400">
-              Total fights: {hoveredNode.total_fights}
-            </div>
-          </div>
-        ) : null}
+          </>
+        )}
       </div>
     </div>
   );

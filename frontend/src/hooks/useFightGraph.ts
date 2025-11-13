@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 
 import { getFightGraph } from "@/lib/api";
 import type { ApiError } from "@/lib/errors";
@@ -51,7 +55,7 @@ export function useFightGraph(
     enabled,
     staleTime: FIGHT_GRAPH_STALE_TIME_MS,
     refetchOnWindowFocus: false,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     initialData: initialData ?? undefined,
   });
 }
