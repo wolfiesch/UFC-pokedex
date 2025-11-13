@@ -3,12 +3,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import time
 from collections.abc import Sequence
 from functools import lru_cache
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any
+
+from backend.settings import settings
 
 try:
     from redis.exceptions import ConnectionError as RedisConnectionError
@@ -39,11 +40,12 @@ _redis_client: RedisClient | None = None
 _client_lock = asyncio.Lock()
 _redis_disabled: float | None = None
 # Duration (in seconds) that the cache layer waits before retrying a failed Redis connection.
-_REDIS_RETRY_DELAY_SECONDS = 30.0
 
 
 def _redis_url() -> str:
-    return os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    """Return the Redis connection URL supplied via shared settings."""
+
+    return settings.redis_url
 
 
 def detail_key(fighter_id: str) -> str:
@@ -166,9 +168,9 @@ async def get_redis() -> RedisClient | None:
             return _redis_client
         except Exception as exc:  # type: ignore[broad-except]
             if _is_redis_connection_error(exc):
-                backoff_until = time.monotonic() + _REDIS_RETRY_DELAY_SECONDS
+                backoff_duration = settings.redis_retry_backoff_seconds
+                backoff_until = time.monotonic() + backoff_duration
                 _redis_disabled = backoff_until
-                backoff_duration = _REDIS_RETRY_DELAY_SECONDS
                 logger.warning(
                     "Redis connection failed: %s. Retrying after %.2fs cool-down.",
                     exc,
@@ -184,13 +186,13 @@ def _load_redis_components() -> tuple[RedisClient | None, type[BaseException]]:
     """Return the Redis asyncio client class and connection error type."""
 
     try:  # pragma: no cover - optional dependency import
-        from redis.asyncio import Redis as redis_class  # type: ignore
-        from redis.exceptions import ConnectionError as real_error
+        from redis.asyncio import Redis as RedisClientType  # type: ignore
+        from redis.exceptions import ConnectionError as RedisConnectionErrorType
     except ModuleNotFoundError:  # pragma: no cover - optional dependency
         return None, RedisConnectionError
 
-    globals()["RedisConnectionError"] = real_error  # type: ignore[assignment]
-    return redis_class, real_error
+    globals()["RedisConnectionError"] = RedisConnectionErrorType  # type: ignore[assignment]
+    return RedisClientType, RedisConnectionErrorType
 
 
 def _is_redis_connection_error(exc: BaseException) -> bool:
