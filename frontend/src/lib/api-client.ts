@@ -101,8 +101,19 @@ async function fetchWithRetry(
   maxRetries = MAX_RETRY_ATTEMPTS
 ): Promise<Response> {
   let lastError: Error | null = null;
-  const method = init?.method || "GET";
-  const url = input.toString();
+  
+  // Extract URL properly from Request objects, URL objects, or strings
+  let url: string;
+  if (input instanceof Request) {
+    url = input.url;
+  } else if (input instanceof URL) {
+    url = input.toString();
+  } else {
+    url = String(input);
+  }
+  
+  // Extract method from init or Request object
+  const method = init?.method || (input instanceof Request ? input.method : "GET");
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {

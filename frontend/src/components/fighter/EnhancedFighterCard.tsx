@@ -179,10 +179,12 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
     }
     return null;
   })();
-  const streak = details
+  // Only use detailed streak when actively fetching/hovering, otherwise use lightweight streak
+  const detailedStreak = details && detailsEnabled
     ? calculateStreak(details.fight_history)
-    : listStreak;
-  const lastFight = details ? getLastFight(details.fight_history) : null;
+    : null;
+  const streak = detailedStreak || listStreak;
+  const lastFight = details && detailsEnabled ? getLastFight(details.fight_history) : null;
 
   // Division color coding
   const getDivisionColor = (division?: string | null) => {

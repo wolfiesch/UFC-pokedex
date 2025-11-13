@@ -66,10 +66,8 @@ fi
 REMOTE_FRONTEND_URL="https://${FRONTEND_SUBDOMAIN}"
 REMOTE_API_URL="https://${API_SUBDOMAIN}"
 
-# Check whether the remote URLs are actually reachable (e.g., network or DNS
-# restrictions inside the runtime sandbox). If we cannot reach Cloudflare,
-# fall back to local loopback addresses so that `make dev` still works.
-if curl -sS --connect-timeout 2 --max-time 5 -o /dev/null "$REMOTE_API_URL"; then
+# Check whether the remote URLs are actually reachable
+if curl -sS --connect-timeout 2 --max-time 5 -o /dev/null "$REMOTE_FRONTEND_URL"; then
     FRONTEND_URL="$REMOTE_FRONTEND_URL"
     API_URL="$REMOTE_API_URL"
     echo -e "${GREEN}✓ Tunnel started successfully!${NC}"
@@ -77,11 +75,10 @@ if curl -sS --connect-timeout 2 --max-time 5 -o /dev/null "$REMOTE_API_URL"; the
 else
     FRONTEND_URL="$LOCAL_FRONTEND_URL"
     API_URL="$LOCAL_API_URL"
-    echo -e "${YELLOW}⚠️  Unable to reach ${REMOTE_API_URL}. Falling back to local URLs.${NC}"
+    echo -e "${YELLOW}⚠️  Unable to reach ${REMOTE_FRONTEND_URL}. Falling back to local URLs.${NC}"
 fi
 
-# Ensure frontend/.env.local matches whichever origin we're using so that the
-# browser runtime hits the same API as the server components.
+# Ensure frontend/.env.local matches whichever origin we're using
 write_env_file "$API_URL" "$API_URL"
 
 # Output URLs in machine-readable format (for Make to parse)

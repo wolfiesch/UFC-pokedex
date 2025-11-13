@@ -202,38 +202,39 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                         # td_cells[2] is the "..." dash
                         closing_range_end = await td_cells[3].text_content()
 
-                    # DEBUG: Check all cells to find the bar chart icon
-                    all_tds = await row.query_selector_all("td")
-                    self.logger.info(f"  Row has {len(all_tds)} td cells total")
-
-                    # Check last few cells for debugging
-                    for i in range(max(0, len(all_tds) - 3), len(all_tds)):
-                        cell_html = await all_tds[i].evaluate("el => el.outerHTML")
-                        self.logger.info(f"  Cell {i} HTML: {cell_html[:200]}")
-
-                    # The bar chart icon should be a clickable element
-                    # It might be an <a> with onclick, or an <img> inside the sparkline cell
-                    chart_link = None
-
-                    # Try looking for the sparkline chart itself - it might be clickable
-                    chart_cell = await row.query_selector("td.chart-cell")
-                    if chart_cell:
-                        # Try clicking the chart cell directly
-                        chart_link = chart_cell
-                        self.logger.info(f"  Found chart-cell, will try clicking it")
-                    else:
-                        self.logger.warning(f"  No chart-cell found for {opponent_name}")
-
-                    if not chart_link:
-                        self.logger.warning(f"  No clickable chart element found for {opponent_name} - skipping")
+                    # Find the chart cell with data-li attribute
+                    chart_cell = await row.query_selector("td.chart-cell[data-li]")
+                    if not chart_cell:
+                        self.logger.warning(f"  No chart-cell with data-li found for {opponent_name} - skipping")
                         continue
 
-                    # Click the bar chart icon to open the modal
-                    await chart_link.click()
-                    await page.wait_for_timeout(1500)  # Wait for modal to open and chart to render
+                    # Get the data-li attribute to identify this chart
+                    data_li = await chart_cell.get_attribute("data-li")
+                    self.logger.info(f"  Found chart-cell with data-li={data_li}")
+
+                    # Scroll to the element to ensure it's visible
+                    await chart_cell.scroll_into_view_if_needed()
+                    await page.wait_for_timeout(500)
+
+                    # Try clicking the chart cell - this should open a modal with the full time-series chart
+                    # Use force=True in case there are overlays
+                    try:
+                        await chart_cell.click(timeout=5000, force=True)
+                        self.logger.info(f"  Clicked chart cell")
+                        await page.wait_for_timeout(2000)  # Wait for modal to open and chart to render
+                    except Exception as e:
+                        self.logger.error(f"  Failed to click chart cell: {e}")
+                        continue
 
                     # Extract mean odds data from the modal's Highcharts
                     mean_odds_data = await self._extract_mean_odds_chart(page)
+
+                    if mean_odds_data:
+                        self.logger.info(f"  Extracted chart data: {mean_odds_data.get('error', 'success')}")
+                        if 'debug' in mean_odds_data:
+                            self.logger.info(f"  Debug info: {mean_odds_data['debug']}")
+                        if 'series' in mean_odds_data and mean_odds_data['series']:
+                            self.logger.info(f"  Got {len(mean_odds_data['series'][0].get('data', []))} data points")
 
                     # Close the modal
                     await self._close_chart_modal(page)
@@ -256,13 +257,18 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                     }
 
                     # Add mean odds time-series data if available
-                    if mean_odds_data and 'data_points' in mean_odds_data:
-                        result["mean_odds_history"] = mean_odds_data["data_points"]
-                        result["num_odds_points"] = len(mean_odds_data["data_points"])
-                        result["series_name"] = mean_odds_data.get("series_name")
+                    if mean_odds_data and 'series' in mean_odds_data and len(mean_odds_data['series']) > 0:
+                        # Extract data from first series (mean odds)
+                        series_data = mean_odds_data['series'][0]
+                        result["mean_odds_history"] = series_data.get('data', [])
+                        result["num_odds_points"] = len(series_data.get('data', []))
+                        result["series_name"] = series_data.get('name')
+                        result["chart_title"] = mean_odds_data.get('title')
                     else:
                         result["mean_odds_history"] = []
                         result["num_odds_points"] = 0
+                        if mean_odds_data and 'error' in mean_odds_data:
+                            result["extraction_error"] = mean_odds_data['error']
 
                     yield result
 

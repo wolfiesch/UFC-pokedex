@@ -27,21 +27,80 @@ make db-upgrade                         # Run database migrations
 ```
 
 ### Running Services
+
 ```bash
-make dev-local      # Start backend + frontend with localhost (recommended for local dev)
-                    # Overwrites frontend/.env.local with localhost URLs
-make dev            # Start backend + frontend + Cloudflare tunnels together
-                    # Overwrites frontend/.env.local with Cloudflare tunnel URLs
+# Development modes (choose one)
+make dev-local      # Localhost only (recommended for local dev)
+make dev-tunnel     # Public HTTPS via Cloudflare tunnel
+make dev            # Alias for dev-tunnel
+
+# Individual services
 make api            # Start FastAPI backend only (port 8000)
 make frontend       # Start Next.js frontend only (port 3000)
+
+# Utility commands
 make stop           # Stop all running services (backend, frontend, tunnels)
 make dev-clean      # Clean frontend caches and restart (fixes webpack cache issues)
-make scraper        # Run Scrapy spider (fighters_list)
 ```
 
-**Recommended for local development:** Use `make dev-local` - it keeps everything on localhost and automatically prepares `frontend/.env.local` with the right URLs each time.
+#### Development Mode Comparison
+
+| Command | Use Case | Public Access | SSL/HTTPS | Auto-Config |
+|---------|----------|---------------|-----------|-------------|
+| `make dev-local` | Local development | ❌ No | ❌ No | ✅ Yes |
+| `make dev-tunnel` | Share with others / test on phone | ✅ Yes | ✅ Yes | ✅ Yes |
+
+**Recommended for local development:** Use `make dev-local` - it keeps everything on localhost and automatically configures `frontend/.env.local`.
+
+**For public access:** Use `make dev-tunnel` - it starts a Cloudflare tunnel and auto-configures the frontend to use the tunnel's proxy pattern (see Tunnel Troubleshooting below).
 
 **Troubleshooting dev build crashes:** If you encounter webpack cache issues, MODULE_NOT_FOUND errors, or chunk 404s, run `make dev-clean` to clear all frontend build caches and restart cleanly.
+
+### Cloudflare Tunnel Troubleshooting
+
+#### Common Issue: "Network request failed" or SSL errors
+
+**Symptoms:**
+```
+ERR_SSL_VERSION_OR_CIPHER_MISMATCH
+ERR_NAME_NOT_RESOLVED
+Mixed Content warnings
+```
+
+**Root Cause:** Cloudflare's free tunnel doesn't support second-level subdomains with valid SSL certificates.
+
+- ✅ Works: `random-id.trycloudflare.com` (covered by wildcard cert)
+- ❌ Fails: `api.random-id.trycloudflare.com` (not covered)
+
+**Solution:** The project uses **Next.js as a proxy** to route all requests through a single tunnel:
+
+```
+Browser → https://tunnel-url.com/api/* → Next.js (port 3000) → Backend (port 8000)
+```
+
+This is handled automatically by `make dev-tunnel`, which:
+1. Starts Cloudflare tunnel on port 3000
+2. Configures `frontend/.env.local` with `/api` proxy URLs
+3. Next.js rewrites `/api/*` → `http://localhost:8000/*`
+
+**If you encounter tunnel issues:**
+```bash
+# 1. Stop everything
+make stop
+
+# 2. Restart with tunnel (regenerates correct config)
+make dev-tunnel
+
+# 3. Verify the config
+cat frontend/.env.local
+# Should show:
+#   NEXT_PUBLIC_API_BASE_URL=https://random-id.trycloudflare.com/api
+#   NEXT_API_REWRITE_BASE_URL=http://localhost:8000
+```
+
+**Never manually edit `.env.local`!** It's auto-generated and git-ignored. Always use `make` commands to switch modes.
+
+**For detailed tunnel documentation:** See [docs/TUNNEL.md](../../docs/TUNNEL.md)
 
 ## Database Setup: PostgreSQL vs SQLite
 
