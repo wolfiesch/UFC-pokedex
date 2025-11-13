@@ -23,9 +23,7 @@ export function FightWebSearch({
   const datalistId = useId();
 
   const options = useMemo(() => {
-    return [...nodes]
-      .map((node) => ({ id: node.fighter_id, name: node.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return nodes.map((node) => ({ id: node.fighter_id, name: node.name }));
   }, [nodes]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

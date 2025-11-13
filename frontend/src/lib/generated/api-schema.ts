@@ -271,6 +271,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Fighters
+         * @description Search fighters by name, nickname, or location.
+         *
+         *     Examples:
+         *         /search/?q=dublin      # Finds fighters from Dublin
+         *         /search/?q=aka         # Finds fighters from AKA gym
+         *         /search/?q=brazilian   # Finds Brazilian fighters
+         */
+        get: operations["search_fighters_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stats/summary": {
         parameters: {
             query?: never;
@@ -2531,6 +2556,54 @@ export interface operations {
         };
     };
     search_fighters_search__get: {
+        parameters: {
+            query?: {
+                /** @description Fighter name, nickname, or location query. */
+                q?: string;
+                /** @description Optional stance filter. */
+                stance?: string | null;
+                /** @description Optional division filter. */
+                division?: string | null;
+                /** @description Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic). */
+                champion_statuses?: string[] | null;
+                /** @description Filter by streak type. Options: 'win', 'loss'. */
+                streak_type?: ("win" | "loss") | null;
+                /** @description Minimum streak count (only used when streak_type is specified). */
+                min_streak_count?: number | null;
+                /** @description Include location fields in search (birthplace, nationality, training gym). */
+                include_locations?: boolean;
+                /** @description Number of results to return. */
+                limit?: number;
+                /** @description Number of matches to skip. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedFightersResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_fighters_search_get: {
         parameters: {
             query?: {
                 /** @description Fighter name, nickname, or location query. */

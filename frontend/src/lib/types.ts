@@ -199,6 +199,11 @@ export interface FightGraphNode {
   latest_event_date?: string | null;
 }
 
+export type FightWebSortOption =
+  | "most_active"
+  | "alphabetical"
+  | "most_recent";
+
 export type FightGraphResultBreakdown = Record<
   string,
   {
@@ -235,6 +240,7 @@ export interface FightGraphQueryParams {
   endYear?: number | null;
   limit?: number | null;
   includeUpcoming?: boolean;
+  sortBy?: FightWebSortOption | null;
 }
 
 export interface FighterComparisonEntry {

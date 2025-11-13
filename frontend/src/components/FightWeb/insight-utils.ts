@@ -147,6 +147,7 @@ function deriveRivalries(
  */
 export function extractFightWebInsights(
   graph: FightGraphResponse | null,
+  sortedNodes?: FightGraphNode[],
 ): FightWebInsights {
   if (!graph) {
     return defaultInsights();
@@ -238,25 +239,21 @@ export function extractFightWebInsights(
     };
   }
 
-  const nodeLookup = new Map(
-    graph.nodes.map((node) => [node.fighter_id, node]),
-  );
+  const nodes = sortedNodes && sortedNodes.length > 0 ? sortedNodes : graph.nodes;
+  const nodeLookup = new Map(nodes.map((node) => [node.fighter_id, node]));
   const degreeMap = deriveDegreeMap(graph.links);
-  const totalFights = graph.nodes.reduce(
-    (acc, node) => acc + node.total_fights,
-    0,
-  );
+  const totalFights = nodes.reduce((acc, node) => acc + node.total_fights, 0);
 
   return {
     averageFightsPerFighter: Number(
-      (totalFights / Math.max(1, graph.nodes.length)).toFixed(2),
+      (totalFights / Math.max(1, nodes.length)).toFixed(2),
     ),
     networkDensity: calculateNetworkDensity(
-      graph.nodes.length,
+      nodes.length,
       graph.links.length,
     ),
-    divisionBreakdown: deriveDivisionBreakdown(graph.nodes),
-    topFighters: deriveTopFighters(graph.nodes, degreeMap),
+    divisionBreakdown: deriveDivisionBreakdown(nodes),
+    topFighters: deriveTopFighters(nodes, degreeMap),
     busiestRivalries: deriveRivalries(graph.links, nodeLookup),
   };
 }

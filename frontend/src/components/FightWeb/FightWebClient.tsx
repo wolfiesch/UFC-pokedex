@@ -5,7 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { useFightGraph } from "@/hooks/useFightGraph";
-import type { FightGraphQueryParams, FightGraphResponse } from "@/lib/types";
+import type {
+  FightGraphQueryParams,
+  FightGraphResponse,
+  FightWebSortOption,
+} from "@/lib/types";
 
 import { FightGraphCanvas } from "./FightGraphCanvas";
 import { FightWebFilters } from "./FightWebFilters";
@@ -16,6 +20,11 @@ import { FightWebSelectedFighter } from "./FightWebSelectedFighter";
 import { FightWebSummary } from "./FightWebSummary";
 import { clampLimit, filtersEqual, normalizeFilters } from "./filter-utils";
 import { extractFightWebInsights } from "./insight-utils";
+import {
+  DEFAULT_SORT,
+  isValidFightWebSortOption,
+  sortFightWebNodes,
+} from "./sort-utils";
 import {
   createDivisionColorScale,
   createRecencyColorScale,
@@ -35,6 +44,7 @@ const SEARCH_PARAM_KEYS = {
   endYear: "endYear",
   limit: "limit",
   includeUpcoming: "upcoming",
+  sortBy: "sortBy",
 } as const;
 
 /**
@@ -54,6 +64,7 @@ function parseFiltersFromQueryString(
     endYear: defaults.endYear ?? null,
     limit: defaults.limit ?? null,
     includeUpcoming: defaults.includeUpcoming ?? false,
+    sortBy: defaults.sortBy ?? DEFAULT_SORT,
   };
 
   const divisionParam = params.get(SEARCH_PARAM_KEYS.division);
@@ -99,6 +110,11 @@ function parseFiltersFromQueryString(
     }
   }
 
+  const sortParam = params.get(SEARCH_PARAM_KEYS.sortBy);
+  if (sortParam && isValidFightWebSortOption(sortParam)) {
+    base.sortBy = sortParam;
+  }
+
   return base;
 }
 
@@ -129,6 +145,11 @@ function createSearchParamsFromFilters(
 
   if (filters.includeUpcoming) {
     params.set(SEARCH_PARAM_KEYS.includeUpcoming, "true");
+  }
+
+  const sortValue = filters.sortBy ?? DEFAULT_SORT;
+  if (sortValue !== DEFAULT_SORT) {
+    params.set(SEARCH_PARAM_KEYS.sortBy, sortValue);
   }
 
   return params;
@@ -170,6 +191,7 @@ export function FightWebClient({
           endYear: initialFilters?.endYear ?? null,
           limit: fallbackLimit,
           includeUpcoming: initialFilters?.includeUpcoming ?? false,
+          sortBy: initialFilters?.sortBy ?? DEFAULT_SORT,
         },
         fallbackLimit,
       ),
@@ -179,6 +201,7 @@ export function FightWebClient({
       initialFilters?.endYear,
       initialFilters?.includeUpcoming,
       initialFilters?.startYear,
+      initialFilters?.sortBy,
     ],
   );
 
@@ -368,9 +391,17 @@ export function FightWebClient({
     return createRecencyColorScale(graphData.nodes, divisionColor);
   }, [isSingleDivision, graphData, appliedFilters.division, palette]);
 
+  const sortedNodes = useMemo(() => {
+    if (!graphData) {
+      return [];
+    }
+    const sortBy = appliedFilters.sortBy ?? DEFAULT_SORT;
+    return sortFightWebNodes(graphData.nodes, sortBy);
+  }, [appliedFilters.sortBy, graphData]);
+
   const insights = useMemo(
-    () => extractFightWebInsights(graphData),
-    [graphData],
+    () => extractFightWebInsights(graphData, graphData ? sortedNodes : undefined),
+    [graphData, sortedNodes],
   );
 
   const nodeById = useMemo(() => {
@@ -479,7 +510,7 @@ export function FightWebClient({
           />
 
           <FightWebSearch
-            nodes={graphData?.nodes ?? []}
+            nodes={sortedNodes}
             onSelect={handleSelectFighter}
             onClear={() => setSelectedNodeId(null)}
           />
