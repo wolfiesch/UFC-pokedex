@@ -74,8 +74,7 @@ def resolve_postgres_url(raw_url: str) -> str:
     url = make_url(raw_url)
     if url.get_backend_name() != "postgresql":
         raise SystemExit(
-            "This importer now requires a PostgreSQL DATABASE_URL. "
-            "Found backend: " + url.get_backend_name()
+            f"This importer now requires a PostgreSQL DATABASE_URL. Found backend: {url.get_backend_name()}"
         )
 
     # Always coerce to the psycopg (psycopg3) driver for consistency across
