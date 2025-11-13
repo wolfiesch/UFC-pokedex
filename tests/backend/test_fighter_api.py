@@ -6,9 +6,13 @@ import sys
 import types
 from collections.abc import AsyncIterator, Iterator
 from datetime import date
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
+
+
+POSTGRES_TEST_URL = "postgresql+psycopg://tester:secret@localhost/ufc"
 
 
 # Provide lightweight redis stubs before importing ``backend.main`` so that the
@@ -58,6 +62,7 @@ sys.modules.setdefault("redis.exceptions", redis_exceptions_module)
 
 # Import backend modules after the Redis stubs are registered to avoid optional dependency errors.
 from backend.main import app  # noqa: E402
+import backend.main as backend_main  # noqa: E402
 from backend.schemas.fighter import FighterDetail  # noqa: E402
 from backend.services.dependencies import get_fighter_query_service  # noqa: E402
 
@@ -138,10 +143,18 @@ def client(
 
     monkeypatch.setattr(backend_main, "get_engine", lambda: stub_engine, raising=False)
     monkeypatch.setattr(
-        backend_main, "get_database_type", lambda: "sqlite", raising=False
+        backend_main, "get_database_type", lambda: "postgresql", raising=False
+    )
+    monkeypatch.setattr(
+        backend_main, "get_database_url", lambda: POSTGRES_TEST_URL, raising=False
     )
     monkeypatch.setattr("backend.db.connection.get_engine", lambda: stub_engine)
-    monkeypatch.setattr("backend.db.connection.get_database_type", lambda: "sqlite")
+    monkeypatch.setattr("backend.db.connection.get_database_type", lambda: "postgresql")
+    monkeypatch.setattr(
+        "backend.db.connection.get_database_url", lambda: POSTGRES_TEST_URL
+    )
+    monkeypatch.setattr("backend.warmup.warmup_all", AsyncMock(), raising=False)
+    monkeypatch.setattr("backend.cache.close_redis", AsyncMock(), raising=False)
 
     with TestClient(app) as test_client:
         yield test_client

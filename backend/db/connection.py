@@ -5,6 +5,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
+from urllib.parse import urlsplit
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -12,95 +13,112 @@ from sqlalchemy.orm import sessionmaker
 logger = logging.getLogger(__name__)
 
 
-def get_database_url() -> str:
-    """Get database URL from environment or fallback to SQLite.
+def _validate_postgres_url(database_url: str) -> str:
+    """Normalize and validate a PostgreSQL connection string.
 
-    Returns:
-        Database URL string. Falls back to SQLite if DATABASE_URL is not set
-        or if USE_SQLITE=1 is set in environment.
+    The helper keeps the validation logic concentrated in one place so callers
+    can rely on a single, well-documented error message surface.  It upgrades
+    legacy DSNs—such as ``postgres://``—to SQLAlchemy's async driver syntax and
+    performs lightweight structural checks using :func:`urllib.parse.urlsplit`.
     """
-    # Force SQLite mode if USE_SQLITE=1 is set
-    use_sqlite = os.getenv("USE_SQLITE", "").strip() == "1"
 
-    if use_sqlite:
-        return "sqlite+aiosqlite:///./data/app.db"
+    normalized_url = database_url.strip()
+    if not normalized_url:
+        raise RuntimeError(
+            "DATABASE_URL is set but empty. Provide a valid PostgreSQL connection string."
+        )
 
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        # Fallback to SQLite when DATABASE_URL is not set
-        return "sqlite+aiosqlite:///./data/app.db"
+    if normalized_url.startswith("postgres://"):
+        normalized_url = normalized_url.replace(
+            "postgres://", "postgresql+psycopg://", 1
+        )
+    elif normalized_url.startswith("postgresql://"):
+        normalized_url = normalized_url.replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
 
-    # Auto-convert standard PostgreSQL URLs to async psycopg format. The
-    # ``postgres://`` URI scheme is still common in legacy Heroku setups, so we
-    # normalize it alongside ``postgresql://`` for compatibility.
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+psycopg://", 1)
-    elif url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    elif not url.startswith("postgresql+psycopg://"):
-        raise RuntimeError(f"Expected PostgreSQL URL, got {url}")
+    if not normalized_url.startswith("postgresql+psycopg://"):
+        raise RuntimeError(
+            "DATABASE_URL must use the PostgreSQL scheme. "
+            "Expected a URL beginning with 'postgresql://', 'postgres://', or 'postgresql+psycopg://'."
+        )
 
-    return url
+    parts = urlsplit(normalized_url)
+    if not parts.hostname or not parts.path:
+        raise RuntimeError(
+            "DATABASE_URL appears malformed. Verify the host and database name are present."
+        )
+
+    return normalized_url
+
+
+def get_database_url() -> str:
+    """Return the PostgreSQL database URL required by the application.
+
+    Accessing the value centralizes configuration validation and ensures every
+    code path observes the same high-quality error message when ``DATABASE_URL``
+    is missing or malformed.
+    """
+
+    database_url = os.getenv("DATABASE_URL")
+    if database_url is None:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Configure it with a PostgreSQL connection string before starting the API."
+        )
+
+    return _validate_postgres_url(database_url)
 
 
 def get_database_type() -> str:
-    """Detect database type from URL.
+    """Return the active database backend identifier.
 
-    Returns:
-        "sqlite" or "postgresql"
+    Raising a ``RuntimeError`` for anything other than PostgreSQL guarantees
+    that downstream callers—such as FastAPI's lifespan hooks—fail immediately
+    rather than quietly defaulting to an unsupported engine.
     """
+
     url = get_database_url()
-    if url.startswith("sqlite"):
-        return "sqlite"
+    if not url.startswith("postgresql+psycopg://"):
+        raise RuntimeError("Only PostgreSQL connections are supported by the API.")
     return "postgresql"
 
 
 def create_engine() -> AsyncEngine:
-    """Create async database engine with optimized connection pooling.
+    """Create the async SQLAlchemy engine for PostgreSQL.
 
-    For PostgreSQL:
-    - pool_size=10: Maintain 10 warm connections
-    - max_overflow=20: Allow up to 30 total connections
-    - pool_pre_ping=True: Validate connections before use
-    - pool_recycle=1800: Recycle connections every 30 minutes
-
-    For SQLite:
-    - No pooling parameters (not supported)
+    The pooling parameters mirror the previous implementation so deployment
+    characteristics remain unchanged while the function now enforces a strict
+    PostgreSQL-only contract.
     """
-    db_type = get_database_type()
+
     url = get_database_url()
+    if not url.startswith("postgresql+psycopg://"):
+        raise RuntimeError("create_engine only supports PostgreSQL URLs.")
 
-    if db_type == "postgresql":
-        # PostgreSQL: Optimize connection pooling
-        engine = create_async_engine(
-            url,
-            future=True,
-            echo=False,
-            pool_size=10,  # Maintain 10 warm connections
-            max_overflow=20,  # Allow up to 30 total connections
-            pool_pre_ping=True,  # Validate connections before use
-            pool_recycle=1800,  # Recycle connections every 30 min
-            pool_timeout=30,  # Timeout for getting connection from pool
+    engine = create_async_engine(
+        url,
+        future=True,
+        echo=False,
+        pool_size=10,  # Maintain 10 warm connections
+        max_overflow=20,  # Allow up to 30 total connections
+        pool_pre_ping=True,  # Validate connections before use
+        pool_recycle=1800,  # Recycle connections every 30 min
+        pool_timeout=30,  # Timeout for getting connection from pool
+    )
+
+    try:
+        from backend.monitoring import setup_query_monitoring
+
+        slow_query_threshold = float(os.getenv("SLOW_QUERY_THRESHOLD", "0.1"))
+        setup_query_monitoring(
+            engine,
+            slow_query_threshold=slow_query_threshold,
+            log_pool_stats=False,
         )
+    except Exception as exc:  # pragma: no cover - monitoring is optional at runtime
+        logger.warning(f"Failed to enable query monitoring: {exc}")
 
-        # Enable query performance monitoring for PostgreSQL
-        try:
-            from backend.monitoring import setup_query_monitoring
-
-            # Get slow query threshold from environment (default: 100ms)
-            slow_query_threshold = float(os.getenv("SLOW_QUERY_THRESHOLD", "0.1"))
-            setup_query_monitoring(
-                engine,
-                slow_query_threshold=slow_query_threshold,
-                log_pool_stats=False,  # Disable verbose pool logging by default
-            )
-        except Exception as e:
-            logger.warning(f"Failed to enable query monitoring: {e}")
-
-        return engine
-
-    # SQLite: No pooling needed
-    return create_async_engine(url, future=True, echo=False)
+    return engine
 
 
 def create_session_factory(engine: AsyncEngine) -> sessionmaker[AsyncSession]:

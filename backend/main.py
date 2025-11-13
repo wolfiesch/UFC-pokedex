@@ -25,7 +25,6 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.db.connection import begin_engine_transaction
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
 )
@@ -165,9 +164,6 @@ async def lifespan(app: FastAPI):
     # same warnings previously emitted at import time remain visible to operators.
     validate_environment()
 
-    # Startup: Initialize database tables for SQLite
-    from backend.db.models import Base
-
     db_type = get_database_type()
     db_url = get_database_url()
     sanitized_url = _sanitize_database_url(db_url)
@@ -179,19 +175,14 @@ async def lifespan(app: FastAPI):
     logger.info(f"Database Type: {db_type.upper()}")
     logger.info(f"Database URL: {sanitized_url}")
 
-    if db_type == "sqlite":
-        logger.info("Mode: DEVELOPMENT (SQLite is not recommended for production)")
-        logger.info("SQLite mode - tables will be auto-created via create_all()")
+    if db_type != "postgresql":
+        raise RuntimeError(
+            "Unsupported database type detected. Configure DATABASE_URL for PostgreSQL before starting the API."
+        )
 
-        # For SQLite, create tables automatically (bypass Alembic)
-        engine = get_engine()
-        async with begin_engine_transaction(engine) as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("✓ SQLite tables initialized successfully")
-    else:
-        logger.info("Mode: PRODUCTION")
-        logger.info("PostgreSQL mode - using Alembic migrations")
-        logger.info("Ensure migrations are up to date (run: make db-upgrade)")
+    logger.info("Mode: PRODUCTION")
+    logger.info("PostgreSQL mode - using Alembic migrations")
+    logger.info("Ensure migrations are up to date (run: make db-upgrade)")
 
     logger.info("=" * 60)
 

@@ -15,23 +15,15 @@ def cleanup_environment() -> Generator[None, None, None]:
     """Ensure database-related environment variables do not leak between tests."""
 
     original_database_url = os.environ.get("DATABASE_URL")
-    original_use_sqlite = os.environ.get("USE_SQLITE")
     try:
         if "DATABASE_URL" in os.environ:
             del os.environ["DATABASE_URL"]
-        if "USE_SQLITE" in os.environ:
-            del os.environ["USE_SQLITE"]
         yield
     finally:
         if original_database_url is not None:
             os.environ["DATABASE_URL"] = original_database_url
         else:
             os.environ.pop("DATABASE_URL", None)
-
-        if original_use_sqlite is not None:
-            os.environ["USE_SQLITE"] = original_use_sqlite
-        else:
-            os.environ.pop("USE_SQLITE", None)
 
 
 def test_get_database_url_normalizes_legacy_postgres_scheme() -> None:
