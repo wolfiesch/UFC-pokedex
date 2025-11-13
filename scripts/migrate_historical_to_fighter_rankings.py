@@ -15,6 +15,8 @@ Usage:
     python scripts/migrate_historical_to_fighter_rankings.py
     python scripts/migrate_historical_to_fighter_rankings.py --dry-run
     python scripts/migrate_historical_to_fighter_rankings.py --limit 100
+
+PostgreSQL is required; the script intentionally aborts when SQLite is configured.
 """
 
 import argparse
@@ -22,13 +24,14 @@ import asyncio
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import TypedDict
 from uuid import uuid4
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import create_engine, text, select
-from sqlalchemy.orm import Session
+from sqlalchemy.engine import Engine, make_url
 
 # Import database connection and models
 from backend.db.connection import get_database_url, get_session
@@ -71,28 +74,47 @@ async def load_fighters_for_matching():
     """
     async with get_session() as session:
         result = await session.execute(
-            select(Fighter.id, Fighter.name, Fighter.nickname, Fighter.record, Fighter.division)
+            select(
+                Fighter.id,
+                Fighter.name,
+                Fighter.nickname,
+                Fighter.record,
+                Fighter.division,
+            )
         )
         rows = result.all()
 
         fighters_db = []
         for row in rows:
-            fighters_db.append({
-                "id": row.id,
-                "name": row.name,
-                "nickname": row.nickname,
-                "record": row.record,
-                "division": row.division,
-            })
+            fighters_db.append(
+                {
+                    "id": row.id,
+                    "name": row.name,
+                    "nickname": row.nickname,
+                    "record": row.record,
+                    "division": row.division,
+                }
+            )
 
         return fighters_db
 
 
+class MigrationStats(TypedDict):
+    """Typed structure summarising migration outcomes for logging."""
+
+    total_historical: int
+    matched_fighters: int
+    unmatched_fighters: int
+    inserted: int
+    duplicates_skipped: int
+    errors: int
+
+
 async def migrate_historical_rankings_async(
-    engine,
+    engine: Engine,
     dry_run: bool = False,
     limit: int | None = None,
-) -> dict:
+) -> MigrationStats:
     """
     Migrate historical rankings to fighter_rankings table.
 
@@ -104,13 +126,13 @@ async def migrate_historical_rankings_async(
     Returns:
         Dict with migration stats
     """
-    stats = {
-        'total_historical': 0,
-        'matched_fighters': 0,
-        'unmatched_fighters': 0,
-        'inserted': 0,
-        'duplicates_skipped': 0,
-        'errors': 0,
+    stats: MigrationStats = {
+        "total_historical": 0,
+        "matched_fighters": 0,
+        "unmatched_fighters": 0,
+        "inserted": 0,
+        "duplicates_skipped": 0,
+        "errors": 0,
     }
 
     # Load fighters for name matching
@@ -128,13 +150,14 @@ async def migrate_historical_rankings_async(
         # Count total historical rankings
         count_query = text("SELECT COUNT(*) FROM historical_rankings")
         result = conn.execute(count_query)
-        stats['total_historical'] = result.scalar()
+        stats["total_historical"] = result.scalar()
 
         print(f"📊 Total historical rankings: {stats['total_historical']:,}")
         print()
 
         # Fetch historical rankings (WITHOUT joining to fighters table)
-        query = text("""
+        query = text(
+            """
             SELECT
                 hr.fighter_name,
                 hr.division_code,
@@ -145,13 +168,16 @@ async def migrate_historical_rankings_async(
             ORDER BY hr.issue_date, hr.division_code, hr.rank
             {limit_clause}
         """.format(
-            limit_clause=f"LIMIT {limit}" if limit else ""
-        ))
+                limit_clause=f"LIMIT {limit}" if limit else ""
+            )
+        )
 
         result = conn.execute(query)
         rows = result.fetchall()
 
-        print(f"📦 Processing {len(rows):,} ranking records with fuzzy name matching...")
+        print(
+            f"📦 Processing {len(rows):,} ranking records with fuzzy name matching..."
+        )
         print()
 
         # Process each ranking
@@ -166,48 +192,53 @@ async def migrate_historical_rankings_async(
             fighter_id, confidence, reason = matcher.match_fighter(
                 fighter_name,
                 division=standard_division,
-                min_confidence=75.0  # Slightly lower threshold for historical data
+                min_confidence=75.0,  # Slightly lower threshold for historical data
             )
 
             # Track matched vs unmatched
             if fighter_id:
-                stats['matched_fighters'] += 1
+                stats["matched_fighters"] += 1
             else:
-                stats['unmatched_fighters'] += 1
+                stats["unmatched_fighters"] += 1
                 # Skip fighters we can't match
                 continue
 
             if dry_run:
                 if i <= 5:  # Show first 5 for dry run
-                    print(f"   [DRY RUN] Would insert: {fighter_name} | {standard_division} | Rank {rank} | {issue_date}")
+                    print(
+                        f"   [DRY RUN] Would insert: {fighter_name} | {standard_division} | Rank {rank} | {issue_date}"
+                    )
                 continue
 
             # Check if this ranking already exists
-            check_query = text("""
+            check_query = text(
+                """
                 SELECT COUNT(*)
                 FROM fighter_rankings
                 WHERE fighter_id = :fighter_id
                   AND division = :division
                   AND rank_date = :rank_date
                   AND source = 'fightmatrix'
-            """)
+            """
+            )
 
             exists = conn.execute(
                 check_query,
                 {
-                    'fighter_id': fighter_id,
-                    'division': standard_division,
-                    'rank_date': issue_date,
-                }
+                    "fighter_id": fighter_id,
+                    "division": standard_division,
+                    "rank_date": issue_date,
+                },
             ).scalar()
 
             if exists > 0:
-                stats['duplicates_skipped'] += 1
+                stats["duplicates_skipped"] += 1
                 continue
 
             # Insert into fighter_rankings
             try:
-                insert_query = text("""
+                insert_query = text(
+                    """
                     INSERT INTO fighter_rankings (
                         id, fighter_id, division, rank,
                         previous_rank, rank_date, source,
@@ -217,29 +248,30 @@ async def migrate_historical_rankings_async(
                         NULL, :rank_date, 'fightmatrix',
                         :is_interim, CURRENT_TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 conn.execute(
                     insert_query,
                     {
-                        'id': str(uuid4()),
-                        'fighter_id': fighter_id,
-                        'division': standard_division,
-                        'rank': rank,
-                        'rank_date': issue_date,
-                        'is_interim': False,  # Default to false, can be inferred later
-                    }
+                        "id": str(uuid4()),
+                        "fighter_id": fighter_id,
+                        "division": standard_division,
+                        "rank": rank,
+                        "rank_date": issue_date,
+                        "is_interim": False,  # Default to false, can be inferred later
+                    },
                 )
 
-                stats['inserted'] += 1
+                stats["inserted"] += 1
 
                 # Progress indicator
-                if stats['inserted'] % 1000 == 0:
+                if stats["inserted"] % 1000 == 0:
                     print(f"   ✓ Inserted {stats['inserted']:,} rankings...")
 
             except Exception as e:
                 print(f"   ⚠️  Error inserting {fighter_name}: {e}")
-                stats['errors'] += 1
+                stats["errors"] += 1
 
         if not dry_run:
             conn.commit()
@@ -247,19 +279,30 @@ async def migrate_historical_rankings_async(
     return stats
 
 
-def main():
+def resolve_postgres_url(raw_url: str) -> str:
+    """Validate and normalise the DATABASE_URL for synchronous PostgreSQL access."""
+
+    url = make_url(raw_url)
+    if url.get_backend_name() != "postgresql":
+        raise SystemExit(
+            "Historical ranking migrations require PostgreSQL; "
+            f"detected backend '{url.get_backend_name()}'"
+        )
+
+    return str(url.set(drivername="postgresql+psycopg"))
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description='Migrate historical rankings to fighter_rankings table'
+        description="Migrate Fight Matrix historical rankings into PostgreSQL"
     )
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be migrated without actually inserting data'
+        "--dry-run",
+        action="store_true",
+        help="Show what would be migrated without actually inserting data",
     )
     parser.add_argument(
-        '--limit',
-        type=int,
-        help='Limit number of records to process (for testing)'
+        "--limit", type=int, help="Limit number of records to process (for testing)"
     )
 
     args = parser.parse_args()
@@ -271,29 +314,22 @@ def main():
         print("⚠️  DRY RUN MODE - No data will be inserted")
         print()
 
-    # Get database URL and convert from async to sync
-    database_url = get_database_url()
+    # Resolve PostgreSQL URL without supporting legacy SQLite fallbacks.
+    database_url = resolve_postgres_url(get_database_url())
 
-    # Convert async URLs to sync versions for migration script
-    if database_url.startswith("postgresql+psycopg://"):
-        database_url = database_url.replace(
-            "postgresql+psycopg://",
-            "postgresql+psycopg2://"
-        )
-    elif database_url.startswith("sqlite+aiosqlite://"):
-        database_url = database_url.replace(
-            "sqlite+aiosqlite://",
-            "sqlite://"
-        )
-
-    print(f"📊 Database: {database_url.split('@')[-1] if '@' in database_url else database_url.split(':///')[-1]}")
+    print(
+        f"📊 Database: {database_url.split('@')[-1] if '@' in database_url else database_url.split(':///')[-1]}"
+    )
+    print("🛡️  PostgreSQL URL validated")
     print()
 
     engine = create_engine(database_url)
 
     # Run migration (async to use name matcher)
     start_time = datetime.now()
-    stats = asyncio.run(migrate_historical_rankings_async(engine, args.dry_run, args.limit))
+    stats = asyncio.run(
+        migrate_historical_rankings_async(engine, args.dry_run, args.limit)
+    )
     duration = (datetime.now() - start_time).total_seconds()
 
     # Print results
@@ -314,10 +350,17 @@ def main():
         print("💡 Run without --dry-run to perform the actual migration")
         print()
 
-    if stats['unmatched_fighters'] > 0:
-        match_rate = (stats['matched_fighters'] / (stats['matched_fighters'] + stats['unmatched_fighters'])) * 100
-        print(f"ℹ️  Match rate: {match_rate:.1f}% ({stats['unmatched_fighters']:,} fighters not in database)")
-        print("   This is expected - Fight Matrix includes non-UFC fighters (Bellator, Pride, etc.)")
+    if stats["unmatched_fighters"] > 0:
+        match_rate = (
+            stats["matched_fighters"]
+            / (stats["matched_fighters"] + stats["unmatched_fighters"])
+        ) * 100
+        print(
+            f"ℹ️  Match rate: {match_rate:.1f}% ({stats['unmatched_fighters']:,} fighters not in database)"
+        )
+        print(
+            "   This is expected - Fight Matrix includes non-UFC fighters (Bellator, Pride, etc.)"
+        )
         print()
 
 
