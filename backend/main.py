@@ -222,7 +222,7 @@ app = FastAPI(
 
 
 def _default_origins() -> list[str]:
-    ports = list(range(3000, 3011)) + [5173]
+    ports = list(range(3000, 3011)) + [5173, 8877]
     origins = []
     for host in ("localhost", "127.0.0.1"):
         origins.extend([f"http://{host}:{port}" for port in ports])

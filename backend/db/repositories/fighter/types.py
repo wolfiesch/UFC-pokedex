@@ -20,6 +20,7 @@ class FighterSearchFilters:
     query: str | None
     stance: str | None
     division: str | None
+    nationality: str | None
     champion_statuses: tuple[str, ...] | None
     streak_type: StreakType | None
     min_streak_count: int | None

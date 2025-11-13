@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      UFC Pokedex Fight Graph 3D Prototype
+      -------------------------------------------------------------------------
+      Usage:
+      1. Serve this file from the repo root (e.g. `cd frontend/public && python -m http.server 4173`).
+      2. Visit http://localhost:4173/prototypes/fight-graph-3d.html in a browser.
+      3. Use the filter controls to tailor the query before pressing "Load Graph".
+      4. Hover nodes to inspect fighter metadata and spin the scene with OrbitControls.
+      5. Keyboard/Mouse shortcuts are documented in the "Interaction Cheatsheet" section below.
+      6. The prototype fetches `/fightweb/graph` via the client base URL resolver, mirroring
+         the production app fallbacks (`window.FIGHT_GRAPH_BASE_URL`, location origin, localhost).
+      7. No bundlers are required—scripts are pulled via CDN and the entire scene bootstraps
+         after `DOMContentLoaded`.
+    -->
+    <title>UFC Fight Graph 3D Prototype</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 60%, #000 100%);
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+          "header header"
+          "sidebar main";
+        gap: 0;
+      }
+
+      header {
+        grid-area: header;
+        padding: 1rem 1.5rem;
+        background: rgba(15, 23, 42, 0.92);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        letter-spacing: 0.01em;
+      }
+
+      header p {
+        margin: 0;
+        color: #cbd5f5;
+      }
+
+      aside {
+        grid-area: sidebar;
+        padding: 1.25rem 1.5rem;
+        background: rgba(15, 23, 42, 0.75);
+        border-right: 1px solid rgba(148, 163, 184, 0.2);
+        overflow-y: auto;
+      }
+
+      main {
+        grid-area: main;
+        position: relative;
+      }
+
+      #render-target {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      form {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+
+      input,
+      select,
+      button {
+        background: rgba(30, 41, 59, 0.9);
+        color: inherit;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+      }
+
+      input:focus,
+      select:focus,
+      button:focus {
+        outline: 2px solid #38bdf8;
+        outline-offset: 2px;
+      }
+
+      button {
+        cursor: pointer;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3);
+      }
+
+      fieldset {
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      fieldset legend {
+        padding: 0 0.5rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .status-panel {
+        margin-top: 1.25rem;
+        padding: 0.85rem 1rem;
+        border-radius: 0.75rem;
+        background: rgba(15, 118, 110, 0.3);
+        border: 1px solid rgba(45, 212, 191, 0.35);
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      .status-panel.error {
+        background: rgba(190, 18, 60, 0.2);
+        border-color: rgba(244, 63, 94, 0.45);
+      }
+
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        min-width: 220px;
+        box-shadow: 0 12px 32px rgba(2, 132, 199, 0.4);
+        opacity: 0;
+        transform: translate(-50%, -140%);
+        transition: opacity 120ms ease;
+        z-index: 5;
+      }
+
+      .tooltip h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+        color: #f8fafc;
+      }
+
+      .tooltip dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+      }
+
+      .tooltip dt {
+        color: #94a3b8;
+      }
+
+      .tooltip dd {
+        margin: 0;
+      }
+
+      details {
+        background: rgba(30, 41, 59, 0.55);
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        padding: 0.75rem 1rem;
+      }
+
+      details summary {
+        cursor: pointer;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.5rem;
+      }
+
+      details ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        display: grid;
+        gap: 0.25rem;
+        color: #cbd5f5;
+      }
+
+      @media (max-width: 1100px) {
+        body {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+          grid-template-areas:
+            "header"
+            "sidebar"
+            "main";
+        }
+
+        aside {
+          border-right: none;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+      }
+    </style>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/d3-force-3d@3.0.5/dist/d3-force-3d.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Fight Graph 3D Prototype</h1>
+      <p>
+        Exploratory rendering of the fight network using raw API data, Three.js geometry, and
+        lightweight 3D force physics. Designed for quick iteration without Next.js bundling.
+      </p>
+    </header>
+    <aside>
+      <form id="filter-form">
+        <fieldset>
+          <legend>Query Filters</legend>
+          <label>
+            Division
+            <select name="division" id="division-select">
+              <option value="">All Divisions</option>
+              <option>Flyweight</option>
+              <option>Bantamweight</option>
+              <option>Featherweight</option>
+              <option>Lightweight</option>
+              <option>Welterweight</option>
+              <option>Middleweight</option>
+              <option>Light Heavyweight</option>
+              <option>Heavyweight</option>
+              <option>Women's Strawweight</option>
+              <option>Women's Flyweight</option>
+              <option>Women's Bantamweight</option>
+              <option>Women's Featherweight</option>
+            </select>
+          </label>
+          <label>
+            Start Year
+            <input type="number" name="startYear" min="1990" max="2099" step="1" placeholder="e.g. 2015" />
+          </label>
+          <label>
+            End Year
+            <input type="number" name="endYear" min="1990" max="2099" step="1" placeholder="e.g. 2024" />
+          </label>
+          <label>
+            Node Limit
+            <input type="number" name="limit" min="10" max="1000" step="10" value="250" />
+          </label>
+          <label style="flex-direction: row; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" name="includeUpcoming" value="true" />
+            Include Upcoming Fights
+          </label>
+          <button type="submit">Load Graph</button>
+        </fieldset>
+      </form>
+      <section class="status-panel" id="status-panel">
+        Ready. Submit the form to pull fight data. Console logs include payload summaries for
+        debugging.
+      </section>
+      <details open>
+        <summary>Interaction Cheatsheet</summary>
+        <ul>
+          <li><strong>Left click + drag</strong>: orbit camera</li>
+          <li><strong>Right click + drag</strong>: pan camera</li>
+          <li><strong>Scroll</strong>: zoom in/out</li>
+          <li><strong>Spacebar</strong>: toggle auto-orbit animation</li>
+          <li><strong>H</strong>: toggle fighter hover tooltips</li>
+          <li><strong>R</strong>: reset camera focus</li>
+        </ul>
+      </details>
+    </aside>
+    <main>
+      <canvas id="render-target"></canvas>
+      <div class="tooltip" id="tooltip"></div>
+    </main>
+    <script>
+      (function () {
+        const COLOR_PALETTE = [
+          "#2563eb",
+          "#f97316",
+          "#10b981",
+          "#a855f7",
+          "#ec4899",
+          "#facc15",
+          "#14b8a6",
+          "#f43f5e",
+          "#0ea5e9",
+          "#22c55e",
+        ];
+        const DEFAULT_NODE_COLOR = "#64748b";
+        const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
+        const SAMPLE_GRAPH = {
+          nodes: [
+            {
+              fighter_id: "sample-01",
+              name: "Alex \"The Hammer\" Rivera",
+              division: "Lightweight",
+              record: "12-3-0",
+              total_fights: 15,
+              latest_event_date: "2024-02-10",
+            },
+            {
+              fighter_id: "sample-02",
+              name: "Brooke Chen",
+              division: "Lightweight",
+              record: "9-2-0",
+              total_fights: 11,
+              latest_event_date: "2023-11-12",
+            },
+            {
+              fighter_id: "sample-03",
+              name: "Carlos Mendes",
+              division: "Welterweight",
+              record: "18-6-1",
+              total_fights: 25,
+              latest_event_date: "2024-03-05",
+            },
+            {
+              fighter_id: "sample-04",
+              name: "Dana Solis",
+              division: "Welterweight",
+              record: "14-4-0",
+              total_fights: 18,
+              latest_event_date: "2023-12-01",
+            },
+            {
+              fighter_id: "sample-05",
+              name: "Ethan Price",
+              division: "Featherweight",
+              record: "21-7-0",
+              total_fights: 28,
+              latest_event_date: "2022-08-18",
+            },
+            {
+              fighter_id: "sample-06",
+              name: "Farah Nunes",
+              division: "Featherweight",
+              record: "7-1-0",
+              total_fights: 8,
+              latest_event_date: "2024-05-22",
+            },
+          ],
+          links: [
+            { source: "sample-01", target: "sample-02", weight: 3 },
+            { source: "sample-02", target: "sample-03", weight: 1 },
+            { source: "sample-03", target: "sample-04", weight: 2 },
+            { source: "sample-01", target: "sample-05", weight: 1 },
+            { source: "sample-05", target: "sample-06", weight: 2 },
+            { source: "sample-04", target: "sample-06", weight: 1 },
+          ],
+          metadata: {},
+        };
+
+        function resolveApiBaseUrl(rawUrl, fallbackUrl) {
+          const ensureAbsoluteUrl = (value) => {
+            const parsed = new URL(value, window.location.origin);
+            if (parsed.origin === "null") {
+              throw new TypeError(
+                `URL "${value}" is missing a valid scheme and cannot be resolved.`
+              );
+            }
+            const normalizedPath = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/$/, "");
+            return `${parsed.origin}${normalizedPath}`;
+          };
+
+          let normalizedFallback = fallbackUrl;
+          try {
+            normalizedFallback = ensureAbsoluteUrl(fallbackUrl);
+          } catch (error) {
+            throw new Error(`Invalid fallback API base URL "${fallbackUrl}": ${String(error)}`);
+          }
+
+          const trimmed = typeof rawUrl === "string" ? rawUrl.trim() : "";
+          if (!trimmed) {
+            return normalizedFallback;
+          }
+
+          const schemeRegex = /^[a-zA-Z][\w+.-]*:\/\//;
+          const localPrefixes = ["localhost", "127.", "0.0.0.0", "[::1]"];
+          const isLikelyLocalAddress = (value) => {
+            const lower = value.toLowerCase();
+            return localPrefixes.some((prefix) => lower.startsWith(prefix));
+          };
+
+          const candidates = [trimmed];
+          if (!schemeRegex.test(trimmed)) {
+            const scheme = isLikelyLocalAddress(trimmed) ? "http://" : "https://";
+            candidates.push(`${scheme}${trimmed}`);
+          }
+
+          for (const candidate of candidates) {
+            try {
+              return ensureAbsoluteUrl(candidate);
+            } catch (error) {
+              console.warn(`resolveApiBaseUrl: ignoring candidate "${candidate}" — ${error}`);
+            }
+          }
+
+          console.warn(
+            `resolveApiBaseUrl: invalid API base URL "${trimmed}", falling back to "${normalizedFallback}".`
+          );
+          return normalizedFallback;
+        }
+
+        function inferBrowserApiBaseUrl() {
+          if (typeof window === "undefined" || !window.location) {
+            return undefined;
+          }
+          const { origin, hostname } = window.location;
+          if (!origin || !hostname) {
+            return undefined;
+          }
+          const localHostRegex = /^(?:localhost|127(?:\.\d+){3}|0\.0\.0\.0|\[::1\])$/i;
+          if (localHostRegex.test(hostname)) {
+            return undefined;
+          }
+          const nextData = window.__NEXT_DATA__ || {};
+          const assetPrefix = typeof nextData.assetPrefix === "string" ? nextData.assetPrefix : "";
+          let basePath = "";
+          if (assetPrefix) {
+            try {
+              const parsed = new URL(assetPrefix, "http://example.com");
+              basePath = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/$/, "");
+            } catch (error) {
+              const safe = assetPrefix.startsWith("/") ? assetPrefix : `/${assetPrefix}`;
+              basePath = safe.replace(/\/$/, "");
+              console.warn(`inferBrowserApiBaseUrl: assetPrefix fallback engaged — ${error}`);
+            }
+          }
+          const apiPath = `${basePath}/api`.replace(/\/{2,}/g, "/");
+          return `${origin}${apiPath.startsWith("/") ? apiPath : `/${apiPath}`}`;
+        }
+
+        function resolveClientApiBaseUrl(configuredUrl, fallbackUrl = DEFAULT_CLIENT_API_BASE_URL) {
+          if (configuredUrl && configuredUrl.trim()) {
+            return resolveApiBaseUrl(configuredUrl, fallbackUrl);
+          }
+          const inferred = inferBrowserApiBaseUrl();
+          if (inferred) {
+            try {
+              return resolveApiBaseUrl(inferred, fallbackUrl);
+            } catch (error) {
+              console.warn(
+                `resolveClientApiBaseUrl: Ignoring inferred base URL "${inferred}" – ${String(error)}`
+              );
+            }
+          }
+          return resolveApiBaseUrl(undefined, fallbackUrl);
+        }
+
+        function buildQueryParams(formData) {
+          const params = new URLSearchParams();
+          const division = formData.get("division");
+          if (division) {
+            params.set("division", division);
+          }
+          const startYear = formData.get("startYear");
+          if (startYear) {
+            params.set("start_year", startYear);
+          }
+          const endYear = formData.get("endYear");
+          if (endYear) {
+            params.set("end_year", endYear);
+          }
+          const limit = formData.get("limit");
+          if (limit) {
+            params.set("limit", limit);
+          }
+          if (formData.get("includeUpcoming")) {
+            params.set("include_upcoming", "true");
+          }
+          return params;
+        }
+
+        function createDivisionPalette(nodes) {
+          const palette = new Map();
+          let paletteIndex = 0;
+          for (const node of nodes) {
+            const division = node.division && node.division.trim() ? node.division.trim() : null;
+            if (!division || palette.has(division)) {
+              continue;
+            }
+            palette.set(division, COLOR_PALETTE[paletteIndex % COLOR_PALETTE.length]);
+            paletteIndex += 1;
+          }
+          return palette;
+        }
+
+        function colorForDivision(division, palette) {
+          if (!division) {
+            return DEFAULT_NODE_COLOR;
+          }
+          return palette.get(division) || DEFAULT_NODE_COLOR;
+        }
+
+        function runForceSimulation(nodes, links) {
+          if (!window.d3) {
+            console.warn("d3-force-3d is unavailable; skipping simulation.");
+            const jittered = nodes.map((node) => ({
+              ...node,
+              x: (Math.random() - 0.5) * 600,
+              y: (Math.random() - 0.5) * 600,
+              z: (Math.random() - 0.5) * 60,
+            }));
+            return jittered;
+          }
+          const simulationNodes = nodes.map((node) => ({
+            ...node,
+            x: (Math.random() - 0.5) * 600,
+            y: (Math.random() - 0.5) * 600,
+            z: 0,
+          }));
+          const nodeIds = new Set(simulationNodes.map((node) => node.fighter_id));
+          const simulationLinks = links
+            .filter((link) => nodeIds.has(link.source) && nodeIds.has(link.target))
+            .map((link) => ({
+              source: link.source,
+              target: link.target,
+              weight: link.weight || 1,
+            }));
+
+          const simulation = window.d3
+            .forceSimulation(simulationNodes)
+            .force(
+              "link",
+              window.d3
+                .forceLink(simulationLinks)
+                .id((d) => d.fighter_id)
+                .distance((link) =>
+                  Math.max(60, 160 - Math.min(40, link.weight || 0) * 4)
+                )
+                .strength(0.08)
+            )
+            .force("charge", window.d3.forceManyBody().strength(-80))
+            .force("center", window.d3.forceCenter(0, 0, 0))
+            .force("z", window.d3.forceZ().strength(0.15))
+            .force("collision", window.d3.forceCollide(18));
+
+          for (let i = 0; i < 300; i += 1) {
+            simulation.tick();
+          }
+          simulation.stop();
+
+          return simulationNodes.map((node) => ({
+            ...node,
+            x: node.x || 0,
+            y: node.y || 0,
+            z: (node.z || 0) + (Math.random() - 0.5) * 20,
+          }));
+        }
+
+        function buildThreeGraph(graph) {
+          const palette = createDivisionPalette(graph.nodes);
+          const group = new THREE.Group();
+          const nodeGeometry = new THREE.SphereGeometry(6, 16, 16);
+          const nodeMaterials = new Map();
+          const nodeMeshes = [];
+
+          const positionedNodes = runForceSimulation(graph.nodes, graph.links);
+          const nodeLookup = new Map();
+          for (const node of positionedNodes) {
+            const color = colorForDivision(node.division, palette);
+            let material = nodeMaterials.get(color);
+            if (!material) {
+              material = new THREE.MeshStandardMaterial({
+                color,
+                roughness: 0.4,
+                metalness: 0.15,
+                emissive: color,
+                emissiveIntensity: 0.25,
+              });
+              nodeMaterials.set(color, material);
+            }
+            const mesh = new THREE.Mesh(nodeGeometry, material);
+            const basePosition = new THREE.Vector3(node.x || 0, node.y || 0, node.z || 0);
+            mesh.position.copy(basePosition);
+            mesh.userData = {
+              node,
+              basePosition,
+              jitterPhase: Math.random() * Math.PI * 2,
+            };
+            group.add(mesh);
+            nodeMeshes.push(mesh);
+            nodeLookup.set(node.fighter_id, mesh);
+          }
+
+          const edgeMaterial = new THREE.LineBasicMaterial({
+            color: 0x334155,
+            opacity: 0.55,
+            transparent: true,
+          });
+          const segments = new THREE.BufferGeometry();
+          const positions = [];
+          const linkPairs = [];
+          for (const link of graph.links) {
+            const sourceMesh = nodeLookup.get(link.source);
+            const targetMesh = nodeLookup.get(link.target);
+            if (!sourceMesh || !targetMesh) {
+              continue;
+            }
+            const startIndex = positions.length;
+            positions.push(
+              sourceMesh.position.x,
+              sourceMesh.position.y,
+              sourceMesh.position.z,
+              targetMesh.position.x,
+              targetMesh.position.y,
+              targetMesh.position.z
+            );
+            linkPairs.push({ source: sourceMesh, target: targetMesh, startIndex });
+          }
+          const positionArray = new Float32Array(positions);
+          segments.setAttribute("position", new THREE.BufferAttribute(positionArray, 3));
+          const lines = new THREE.LineSegments(segments, edgeMaterial);
+          lines.frustumCulled = false;
+          group.add(lines);
+
+          return { group, nodeMeshes, palette, linkPairs, lineGeometry: segments, linePositions: positionArray };
+        }
+
+        function formatNodeTooltip(node) {
+          const latestDate = node.latest_event_date ? new Date(node.latest_event_date).toDateString() : "—";
+          return `
+            <h3>${node.name}</h3>
+            <dl>
+              <dt>Division</dt><dd>${node.division || "Unknown"}</dd>
+              <dt>Record</dt><dd>${node.record || "Unknown"}</dd>
+              <dt>Total fights</dt><dd>${node.total_fights}</dd>
+              <dt>Latest event</dt><dd>${latestDate}</dd>
+              <dt>Fighter ID</dt><dd>${node.fighter_id}</dd>
+            </dl>
+          `;
+        }
+
+        function updateStatus(message, isError = false) {
+          const panel = document.getElementById("status-panel");
+          panel.textContent = message;
+          panel.classList.toggle("error", Boolean(isError));
+        }
+
+        function initializeScene() {
+          const canvas = document.getElementById("render-target");
+          const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          renderer.setPixelRatio(window.devicePixelRatio);
+          const resizeRenderer = () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            renderer.setSize(width, height, false);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+          };
+
+          const scene = new THREE.Scene();
+          scene.fog = new THREE.FogExp2(0x020617, 0.0009);
+          const camera = new THREE.PerspectiveCamera(60, 1, 1, 5000);
+          camera.position.set(0, 0, 900);
+
+          const controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.06;
+          controls.rotateSpeed = 0.4;
+          controls.minDistance = 150;
+          controls.maxDistance = 2200;
+
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.65);
+          directionalLight.position.set(300, 500, 800);
+          scene.add(ambientLight, directionalLight);
+
+          const raycaster = new THREE.Raycaster();
+          const pointer = new THREE.Vector2();
+          const pointerScreen = { x: 0, y: 0 };
+          const tooltip = document.getElementById("tooltip");
+          let hoverEnabled = true;
+          let autoOrbitEnabled = true;
+          let activeGraph = null;
+          let orbitPhase = 0;
+
+          function clearScene() {
+            if (!activeGraph) {
+              return;
+            }
+            scene.remove(activeGraph.group);
+            activeGraph.group.traverse((object) => {
+              if (object.geometry) {
+                object.geometry.dispose();
+              }
+              if (object.material) {
+                if (Array.isArray(object.material)) {
+                  object.material.forEach((mat) => mat.dispose());
+                } else {
+                  object.material.dispose();
+                }
+              }
+            });
+            activeGraph = null;
+            tooltip.style.opacity = 0;
+          }
+
+          function onPointerMove(event) {
+            const bounds = canvas.getBoundingClientRect();
+            pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+            pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+            pointerScreen.x = event.clientX;
+            pointerScreen.y = event.clientY;
+          }
+
+          function onPointerLeave() {
+            tooltip.style.opacity = 0;
+          }
+
+          function animate() {
+            requestAnimationFrame(animate);
+            if (autoOrbitEnabled && activeGraph) {
+              orbitPhase += 0.0025;
+              const radius = 900;
+              camera.position.x = Math.cos(orbitPhase) * radius;
+              camera.position.z = Math.sin(orbitPhase) * radius;
+              camera.lookAt(scene.position);
+            }
+            controls.update();
+            if (hoverEnabled && activeGraph) {
+              raycaster.setFromCamera(pointer, camera);
+              const intersections = raycaster.intersectObjects(activeGraph.nodeMeshes);
+              if (intersections.length > 0) {
+                const target = intersections[0].object.userData.node;
+                tooltip.innerHTML = formatNodeTooltip(target);
+                tooltip.style.left = `${pointerScreen.x}px`;
+                tooltip.style.top = `${pointerScreen.y - 24}px`;
+                tooltip.style.opacity = 1;
+              } else {
+                tooltip.style.opacity = 0;
+              }
+            }
+            if (activeGraph) {
+              const elapsed = performance.now() * 0.001;
+              for (const mesh of activeGraph.nodeMeshes) {
+                const { basePosition, jitterPhase } = mesh.userData;
+                mesh.position.z = basePosition.z + Math.sin(elapsed * 0.8 + jitterPhase) * 6;
+              }
+              if (activeGraph.linkPairs.length > 0) {
+                for (const pair of activeGraph.linkPairs) {
+                  const { source, target, startIndex } = pair;
+                  activeGraph.linePositions[startIndex] = source.position.x;
+                  activeGraph.linePositions[startIndex + 1] = source.position.y;
+                  activeGraph.linePositions[startIndex + 2] = source.position.z;
+                  activeGraph.linePositions[startIndex + 3] = target.position.x;
+                  activeGraph.linePositions[startIndex + 4] = target.position.y;
+                  activeGraph.linePositions[startIndex + 5] = target.position.z;
+                }
+                activeGraph.lineGeometry.attributes.position.needsUpdate = true;
+              }
+            }
+            renderer.render(scene, camera);
+          }
+          animate();
+
+          canvas.addEventListener("pointermove", onPointerMove);
+          canvas.addEventListener("pointerleave", onPointerLeave);
+          window.addEventListener("resize", resizeRenderer);
+          resizeRenderer();
+
+          window.addEventListener("keydown", (event) => {
+            if (event.code === "Space") {
+              autoOrbitEnabled = !autoOrbitEnabled;
+              updateStatus(`Auto-orbit ${autoOrbitEnabled ? "enabled" : "disabled"}.`, false);
+            }
+            if (event.code === "KeyH") {
+              hoverEnabled = !hoverEnabled;
+              tooltip.style.opacity = 0;
+              updateStatus(`Hover tooltips ${hoverEnabled ? "enabled" : "disabled"}.`, false);
+            }
+            if (event.code === "KeyR") {
+              controls.reset();
+              camera.position.set(0, 0, 900);
+              updateStatus("Camera reset.", false);
+            }
+          });
+
+          return {
+            scene,
+            camera,
+            controls,
+            clearScene,
+            setGraph(graph) {
+              clearScene();
+              scene.add(graph.group);
+              activeGraph = graph;
+            },
+          };
+        }
+
+        function bootstrap() {
+          const baseUrl = resolveClientApiBaseUrl(window.FIGHT_GRAPH_BASE_URL);
+          const sceneHandle = initializeScene();
+          const form = document.getElementById("filter-form");
+
+          async function loadGraph(formData) {
+            try {
+              updateStatus("Fetching fight graph…");
+              const params = buildQueryParams(formData);
+              const querySuffix = params.toString() ? `?${params.toString()}` : "";
+              const response = await fetch(`${baseUrl}/fightweb/graph${querySuffix}`);
+              if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+              }
+              const graph = await response.json();
+              console.info("Fight graph response", graph);
+              const threeGraph = buildThreeGraph(graph);
+              sceneHandle.setGraph(threeGraph);
+              updateStatus(
+                `Loaded ${graph.nodes.length} fighters and ${graph.links.length} links from ${baseUrl}.`
+              );
+            } catch (error) {
+              console.error("Failed to load fight graph", error);
+              const fallbackGraph = JSON.parse(JSON.stringify(SAMPLE_GRAPH));
+              const threeGraph = buildThreeGraph(fallbackGraph);
+              sceneHandle.setGraph(threeGraph);
+              updateStatus(
+                `Fallback sample graph rendered (${fallbackGraph.nodes.length} fighters). Original error: ${error}`,
+                true
+              );
+            }
+          }
+
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            loadGraph(formData);
+          });
+
+          // Auto-load default dataset on first paint for convenience.
+          loadGraph(new FormData(form));
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", bootstrap);
+        } else {
+          bootstrap();
+        }
+      })();
+    </script>
+  </body>
+</html>

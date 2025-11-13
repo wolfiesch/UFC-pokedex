@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<!--
+  UFC Fight Graph 3D Prototype
+  ----------------------------------
+  Usage instructions:
+  1. Serve this file via a static server (e.g., `python -m http.server 8001`) and open it in a modern browser.
+  2. Optional query parameters:
+     - `division`, `startYear`, `endYear`, `limit`, `includeUpcoming` mirror the React client's filters.
+     - `apiBase` overrides the API root (defaults to http://localhost:8000).
+     - `linkDistance`, `repulsion`, and `depth` seed the layout controls.
+  3. The page fetches `/fightweb/graph` from the configured API and renders a 3D force-directed view.
+  4. Use the control panel to toggle 2D/3D, tune layout forces, and inspect fighter metadata via hover tooltips.
+  5. Orbit with the mouse (drag to rotate, scroll to zoom, right-click to pan) courtesy of Three.js OrbitControls.
+  This prototype is self-contained: no build step is required, and all dependencies load from CDN.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>UFC Fight Graph 3D Prototype</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        --panel-width: 360px;
+        --panel-bg: rgba(15, 23, 42, 0.9);
+        --accent: #38bdf8;
+        --border: rgba(148, 163, 184, 0.25);
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #0f172a, #020617 65%);
+        color: #e2e8f0;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: var(--panel-width) 1fr;
+        overflow: hidden;
+      }
+
+      header {
+        grid-column: 1 / span 2;
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(10px);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: 0.03em;
+      }
+
+      #controls {
+        padding: 1.25rem 1.5rem 1.5rem;
+        background: var(--panel-bg);
+        border-right: 1px solid var(--border);
+        overflow-y: auto;
+      }
+
+      #controls h2 {
+        font-size: 1rem;
+        margin: 1.25rem 0 0.5rem;
+      }
+
+      #controls h2:first-of-type {
+        margin-top: 0;
+      }
+
+      #controls label {
+        display: block;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.4rem;
+      }
+
+      #controls input[type="range"],
+      #controls input[type="number"],
+      #controls select {
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+
+      #controls button {
+        appearance: none;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+        width: 100%;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+
+      #controls button.active,
+      #controls button:hover {
+        background: var(--accent);
+        color: #0f172a;
+      }
+
+      #visualization-container {
+        position: relative;
+        overflow: hidden;
+      }
+
+      #visualization {
+        width: 100%;
+        height: calc(100vh - 64px);
+      }
+
+      #metadata {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        border-top: 1px solid var(--border);
+        padding-top: 1rem;
+        margin-top: 1rem;
+        color: #cbd5f5;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem 1rem;
+      }
+
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        min-width: 200px;
+        transform: translate(-50%, -120%);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.45);
+        opacity: 0;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+      }
+
+      .tooltip.visible {
+        opacity: 1;
+        transform: translate(-50%, -110%);
+      }
+
+      .tooltip strong {
+        display: block;
+        font-size: 0.95rem;
+        margin-bottom: 0.35rem;
+        color: #f8fafc;
+      }
+
+      .tooltip span {
+        display: block;
+        color: #94a3b8;
+        font-size: 0.75rem;
+      }
+
+      #status {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 1rem;
+        min-height: 1.5rem;
+      }
+
+      @media (max-width: 960px) {
+        body {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+        }
+
+        #controls {
+          order: 2;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        #visualization {
+          height: 60vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>UFC Fight Graph 3D Force Prototype</h1>
+    </header>
+    <section id="controls" aria-label="Visualization Controls">
+      <div>
+        <button id="toggle-mode" type="button">Switch to 3D Layout</button>
+        <button id="reload-data" type="button">Reload Graph Data</button>
+      </div>
+
+      <h2>Layout Parameters</h2>
+      <label for="link-distance">Link Distance (spring rest length)</label>
+      <input
+        id="link-distance"
+        type="range"
+        min="60"
+        max="360"
+        step="10"
+        value="180"
+      />
+      <label for="repulsion-strength">Repulsion Strength</label>
+      <input
+        id="repulsion-strength"
+        type="range"
+        min="200"
+        max="6000"
+        step="100"
+        value="2000"
+      />
+      <label for="depth-strength">Depth Strength (Z-axis spread)</label>
+      <input
+        id="depth-strength"
+        type="range"
+        min="0"
+        max="600"
+        step="10"
+        value="240"
+      />
+      <label for="iterations">Solver Iterations</label>
+      <input id="iterations" type="range" min="60" max="600" step="20" value="240" />
+
+      <h2>Query Parameters</h2>
+      <div class="stat-grid" id="query-params"></div>
+
+      <div id="metadata"></div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+    <section id="visualization-container">
+      <div id="visualization"></div>
+      <div id="tooltip" class="tooltip" role="presentation"></div>
+    </section>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      /**
+       * @typedef {Object} FightGraphNode
+       * @property {string} fighter_id
+       * @property {string} name
+       * @property {string | null} division
+       * @property {string | null} latest_event_name
+       * @property {string | null} latest_event_date
+       * @property {string | null} record
+       */
+
+      /**
+       * @typedef {Object} FightGraphLink
+       * @property {string} source
+       * @property {string} target
+       * @property {number} weight
+       */
+
+      /**
+       * @typedef {Object} LayoutNode2D
+       * @property {string} id
+       * @property {number} x
+       * @property {number} y
+       * @property {number} degree
+       * @property {FightGraphNode} source
+       */
+
+      /**
+       * @typedef {Object} LayoutNode3D
+       * @property {string} id
+       * @property {number} x
+       * @property {number} y
+       * @property {number} z
+       * @property {number} degree
+       * @property {FightGraphNode} source
+       */
+
+      /**
+       * @typedef {Object} ForceLayoutOptions
+       * @property {number} [iterations]
+       * @property {number} [repulsionStrength]
+       * @property {number} [linkDistance]
+       * @property {number} [springStrength]
+       * @property {number} [damping]
+       * @property {number} [centerStrength]
+       * @property {number} [timeStep]
+       */
+
+      const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
+      const params = new URLSearchParams(window.location.search);
+      const apiBase = (params.get("apiBase") || DEFAULT_CLIENT_API_BASE_URL).trim().replace(/\/$/, "");
+
+      const initialOptions = {
+        linkDistance: Number(params.get("linkDistance")) || 180,
+        repulsionStrength: Number(params.get("repulsion")) || 2000,
+        depthStrength: Number(params.get("depth")) || 240,
+        iterations: Number(params.get("iterations")) || 240,
+      };
+
+      /**
+       * Convert query parameters to API compliant format, mirroring getFightGraph.
+       * @returns {{ apiUrl: string, rawParams: Record<string, string> }}
+       */
+      function buildApiUrl() {
+        /** @type {Record<string, string>} */
+        const queryEntries = {};
+
+        const division = params.get("division");
+        if (division && division.trim().length > 0) {
+          queryEntries.division = division.trim();
+        }
+
+        const startYear = params.get("startYear");
+        if (startYear && !Number.isNaN(Number(startYear))) {
+          queryEntries.start_year = String(Number(startYear));
+        }
+
+        const endYear = params.get("endYear");
+        if (endYear && !Number.isNaN(Number(endYear))) {
+          queryEntries.end_year = String(Number(endYear));
+        }
+
+        const limit = params.get("limit");
+        if (limit && !Number.isNaN(Number(limit))) {
+          queryEntries.limit = String(Number(limit));
+        }
+
+        const includeUpcoming = params.get("includeUpcoming");
+        if (includeUpcoming && includeUpcoming.trim().length > 0) {
+          const normalized = includeUpcoming.toLowerCase();
+          if (["1", "true", "yes", "on"].includes(normalized)) {
+            queryEntries.include_upcoming = "true";
+          } else if (["0", "false", "no", "off"].includes(normalized)) {
+            queryEntries.include_upcoming = "false";
+          }
+        }
+
+        const search = new URLSearchParams(queryEntries);
+        const url = `${apiBase || DEFAULT_CLIENT_API_BASE_URL}/fightweb/graph${search.size > 0 ? `?${search.toString()}` : ""}`;
+
+        return { apiUrl: url, rawParams: queryEntries };
+      }
+
+      /**
+       * Render the active query parameters in the control panel for easy reference.
+       * @param {Record<string, string>} qp
+       */
+      function renderQueryParams(qp) {
+        const container = document.getElementById("query-params");
+        container.innerHTML = "";
+        if (Object.keys(qp).length === 0) {
+          container.innerHTML = "<p>No filters applied.</p>";
+          return;
+        }
+        for (const [key, value] of Object.entries(qp)) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = `<strong>${key}</strong><span>${value}</span>`;
+          container.appendChild(wrapper);
+        }
+      }
+
+      /**
+       * Compute a 2D force-directed layout based on the React implementation.
+       * @param {FightGraphNode[]} nodes
+       * @param {FightGraphLink[]} links
+       * @param {ForceLayoutOptions} [options]
+       */
+      function computeForceLayout2D(nodes, links, options = {}) {
+        if (nodes.length === 0) {
+          return { nodes: [], edges: [], bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 } };
+        }
+
+        const iterations = options.iterations ?? Math.min(280, Math.max(120, nodes.length * 4));
+        const repulsionStrength = options.repulsionStrength ?? 2000;
+        const linkDistance = options.linkDistance ?? 180;
+        const springStrength = options.springStrength ?? 0.06;
+        const damping = options.damping ?? 0.6;
+        const centerStrength = options.centerStrength ?? 0.005;
+        const timeStep = options.timeStep ?? 0.4;
+        const EPSILON = 1e-3;
+
+        /** @type {Array<{id: string, source: FightGraphNode, x: number, y: number, vx: number, vy: number, ax: number, ay: number, neighbors: Set<string>}>} */
+        const mutableNodes = nodes.map((node, index) => {
+          const angle = (index / Math.max(1, nodes.length)) * Math.PI * 2;
+          const radius = 200 + nodes.length * 1.5;
+          return {
+            id: node.fighter_id,
+            source: node,
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius,
+            vx: 0,
+            vy: 0,
+            ax: 0,
+            ay: 0,
+            neighbors: new Set(),
+          };
+        });
+
+        const lookup = new Map(mutableNodes.map((node) => [node.id, node]));
+        /** @type {FightGraphLink[]} */
+        const filteredLinks = [];
+
+        for (const link of links) {
+          const source = lookup.get(link.source);
+          const target = lookup.get(link.target);
+          if (!source || !target || source.id === target.id) {
+            continue;
+          }
+          source.neighbors.add(target.id);
+          target.neighbors.add(source.id);
+          filteredLinks.push(link);
+        }
+
+        for (let iteration = 0; iteration < iterations; iteration += 1) {
+          for (const node of mutableNodes) {
+            node.ax = 0;
+            node.ay = 0;
+          }
+
+          for (let i = 0; i < mutableNodes.length; i += 1) {
+            const nodeA = mutableNodes[i];
+            for (let j = i + 1; j < mutableNodes.length; j += 1) {
+              const nodeB = mutableNodes[j];
+              let dx = nodeB.x - nodeA.x;
+              let dy = nodeB.y - nodeA.y;
+              let distanceSq = dx * dx + dy * dy + EPSILON;
+              const distance = Math.sqrt(distanceSq);
+              const force = repulsionStrength / distanceSq;
+              dx /= distance;
+              dy /= distance;
+              nodeA.ax -= force * dx;
+              nodeA.ay -= force * dy;
+              nodeB.ax += force * dx;
+              nodeB.ay += force * dy;
+            }
+          }
+
+          for (const link of filteredLinks) {
+            const source = lookup.get(link.source);
+            const target = lookup.get(link.target);
+            if (!source || !target) {
+              continue;
+            }
+            let dx = target.x - source.x;
+            let dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || EPSILON;
+            const displacement = distance - linkDistance;
+            const force = springStrength * displacement;
+            dx /= distance;
+            dy /= distance;
+            source.ax += force * dx;
+            source.ay += force * dy;
+            target.ax -= force * dx;
+            target.ay -= force * dy;
+          }
+
+          for (const node of mutableNodes) {
+            node.ax -= node.x * centerStrength;
+            node.ay -= node.y * centerStrength;
+          }
+
+          for (const node of mutableNodes) {
+            node.vx = (node.vx + node.ax * timeStep) * damping;
+            node.vy = (node.vy + node.ay * timeStep) * damping;
+            node.x += node.vx * timeStep;
+            node.y += node.vy * timeStep;
+          }
+        }
+
+        let minX = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+
+        for (const node of mutableNodes) {
+          if (node.x < minX) minX = node.x;
+          if (node.x > maxX) maxX = node.x;
+          if (node.y < minY) minY = node.y;
+          if (node.y > maxY) maxY = node.y;
+        }
+
+        if (!Number.isFinite(minX)) minX = -1;
+        if (!Number.isFinite(maxX)) maxX = 1;
+        if (!Number.isFinite(minY)) minY = -1;
+        if (!Number.isFinite(maxY)) maxY = 1;
+
+        if (Math.abs(maxX - minX) < EPSILON) {
+          minX -= 1;
+          maxX += 1;
+        }
+        if (Math.abs(maxY - minY) < EPSILON) {
+          minY -= 1;
+          maxY += 1;
+        }
+
+        const layoutNodes = mutableNodes.map((node) => ({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          degree: node.neighbors.size,
+          source: node.source,
+        }));
+
+        return { nodes: layoutNodes, edges: filteredLinks.slice(), bounds: { minX, maxX, minY, maxY } };
+      }
+
+      /**
+       * Compute a 3D layout by extending the 2D solver with a Z axis.
+       * @param {FightGraphNode[]} nodes
+       * @param {FightGraphLink[]} links
+       * @param {ForceLayoutOptions & { depthStrength?: number }} options
+       */
+      function computeForceLayout3D(nodes, links, options = {}) {
+        if (nodes.length === 0) {
+          return {
+            nodes: [],
+            edges: [],
+            bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0, minZ: 0, maxZ: 0 },
+          };
+        }
+
+        const iterations = options.iterations ?? Math.min(320, Math.max(160, nodes.length * 4));
+        const repulsionStrength = options.repulsionStrength ?? 2400;
+        const linkDistance = options.linkDistance ?? 200;
+        const springStrength = options.springStrength ?? 0.065;
+        const damping = options.damping ?? 0.62;
+        const centerStrength = options.centerStrength ?? 0.0045;
+        const timeStep = options.timeStep ?? 0.38;
+        const depthStrength = options.depthStrength ?? 200;
+        const EPSILON = 1e-3;
+
+        /** @type {Array<{id: string, source: FightGraphNode, x: number, y: number, z: number, vx: number, vy: number, vz: number, ax: number, ay: number, az: number, neighbors: Set<string>}>} */
+        const mutableNodes = nodes.map((node, index) => {
+          const angle = (index / Math.max(1, nodes.length)) * Math.PI * 2;
+          const radius = 220 + nodes.length * 1.3;
+          const depthWave = Math.sin(index * 0.618) * depthStrength * 0.25;
+          return {
+            id: node.fighter_id,
+            source: node,
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius,
+            z: depthWave,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            ax: 0,
+            ay: 0,
+            az: 0,
+            neighbors: new Set(),
+          };
+        });
+
+        const lookup = new Map(mutableNodes.map((node) => [node.id, node]));
+        /** @type {FightGraphLink[]} */
+        const filteredLinks = [];
+
+        for (const link of links) {
+          const source = lookup.get(link.source);
+          const target = lookup.get(link.target);
+          if (!source || !target || source.id === target.id) {
+            continue;
+          }
+          source.neighbors.add(target.id);
+          target.neighbors.add(source.id);
+          filteredLinks.push(link);
+        }
+
+        for (let iteration = 0; iteration < iterations; iteration += 1) {
+          for (const node of mutableNodes) {
+            node.ax = 0;
+            node.ay = 0;
+            node.az = 0;
+          }
+
+          for (let i = 0; i < mutableNodes.length; i += 1) {
+            const nodeA = mutableNodes[i];
+            for (let j = i + 1; j < mutableNodes.length; j += 1) {
+              const nodeB = mutableNodes[j];
+              let dx = nodeB.x - nodeA.x;
+              let dy = nodeB.y - nodeA.y;
+              let dz = nodeB.z - nodeA.z;
+              let distanceSq = dx * dx + dy * dy + dz * dz + EPSILON;
+              const distance = Math.sqrt(distanceSq);
+              const force = repulsionStrength / distanceSq;
+              dx /= distance;
+              dy /= distance;
+              dz /= distance;
+              nodeA.ax -= force * dx;
+              nodeA.ay -= force * dy;
+              nodeA.az -= force * dz;
+              nodeB.ax += force * dx;
+              nodeB.ay += force * dy;
+              nodeB.az += force * dz;
+            }
+          }
+
+          for (const link of filteredLinks) {
+            const source = lookup.get(link.source);
+            const target = lookup.get(link.target);
+            if (!source || !target) {
+              continue;
+            }
+            let dx = target.x - source.x;
+            let dy = target.y - source.y;
+            let dz = target.z - source.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || EPSILON;
+            const displacement = distance - linkDistance;
+            const force = springStrength * displacement;
+            dx /= distance;
+            dy /= distance;
+            dz /= distance;
+            source.ax += force * dx;
+            source.ay += force * dy;
+            source.az += force * dz;
+            target.ax -= force * dx;
+            target.ay -= force * dy;
+            target.az -= force * dz;
+          }
+
+          for (const node of mutableNodes) {
+            node.ax -= node.x * centerStrength;
+            node.ay -= node.y * centerStrength;
+            node.az -= node.z * (centerStrength * 1.35);
+            node.az += Math.sin(node.x * 0.001 + node.y * 0.001) * depthStrength * 0.0008;
+          }
+
+          for (const node of mutableNodes) {
+            node.vx = (node.vx + node.ax * timeStep) * damping;
+            node.vy = (node.vy + node.ay * timeStep) * damping;
+            node.vz = (node.vz + node.az * timeStep) * damping;
+            node.x += node.vx * timeStep;
+            node.y += node.vy * timeStep;
+            node.z += node.vz * timeStep;
+          }
+        }
+
+        let minX = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        let minZ = Number.POSITIVE_INFINITY;
+        let maxZ = Number.NEGATIVE_INFINITY;
+
+        for (const node of mutableNodes) {
+          if (node.x < minX) minX = node.x;
+          if (node.x > maxX) maxX = node.x;
+          if (node.y < minY) minY = node.y;
+          if (node.y > maxY) maxY = node.y;
+          if (node.z < minZ) minZ = node.z;
+          if (node.z > maxZ) maxZ = node.z;
+        }
+
+        if (!Number.isFinite(minX)) minX = -1;
+        if (!Number.isFinite(maxX)) maxX = 1;
+        if (!Number.isFinite(minY)) minY = -1;
+        if (!Number.isFinite(maxY)) maxY = 1;
+        if (!Number.isFinite(minZ)) minZ = -1;
+        if (!Number.isFinite(maxZ)) maxZ = 1;
+
+        if (Math.abs(maxX - minX) < EPSILON) {
+          minX -= 1;
+          maxX += 1;
+        }
+        if (Math.abs(maxY - minY) < EPSILON) {
+          minY -= 1;
+          maxY += 1;
+        }
+        if (Math.abs(maxZ - minZ) < EPSILON) {
+          minZ -= 1;
+          maxZ += 1;
+        }
+
+        const layoutNodes = mutableNodes.map((node) => ({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          z: node.z,
+          degree: node.neighbors.size,
+          source: node.source,
+        }));
+
+        return {
+          nodes: layoutNodes,
+          edges: filteredLinks.slice(),
+          bounds: { minX, maxX, minY, maxY, minZ, maxZ },
+        };
+      }
+
+      /**
+       * Normalize layout coordinates to fit the scene.
+       * @param {{nodes: LayoutNode2D[], edges: FightGraphLink[], bounds: {minX: number, maxX: number, minY: number, maxY: number}}} layout
+       * @returns {{ nodes: Map<string, LayoutNode2D>, edges: FightGraphLink[], scale: number, center: {x:number,y:number} }}
+       */
+      function normalize2DLayout(layout) {
+        const { minX, maxX, minY, maxY } = layout.bounds;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const rangeX = Math.max(1, maxX - minX);
+        const rangeY = Math.max(1, maxY - minY);
+        const scale = 450 / Math.max(rangeX, rangeY);
+        const result = new Map();
+        for (const node of layout.nodes) {
+          result.set(node.id, {
+            ...node,
+            x: (node.x - centerX) * scale,
+            y: (node.y - centerY) * scale,
+          });
+        }
+        return { nodes: result, edges: layout.edges, scale, center: { x: centerX, y: centerY } };
+      }
+
+      /**
+       * Normalize 3D layout coordinates to fit the scene volume.
+       * @param {{nodes: LayoutNode3D[], edges: FightGraphLink[], bounds: {minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number}}} layout
+       */
+      function normalize3DLayout(layout) {
+        const { minX, maxX, minY, maxY, minZ, maxZ } = layout.bounds;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const centerZ = (minZ + maxZ) / 2;
+        const rangeX = Math.max(1, maxX - minX);
+        const rangeY = Math.max(1, maxY - minY);
+        const rangeZ = Math.max(1, maxZ - minZ);
+        const scale = 480 / Math.max(rangeX, rangeY, rangeZ);
+        const result = new Map();
+        for (const node of layout.nodes) {
+          result.set(node.id, {
+            ...node,
+            x: (node.x - centerX) * scale,
+            y: (node.y - centerY) * scale,
+            z: (node.z - centerZ) * scale,
+          });
+        }
+        return { nodes: result, edges: layout.edges, scale, center: { x: centerX, y: centerY, z: centerZ } };
+      }
+
+      const COLOR_PALETTE = [
+        "#2563eb",
+        "#f97316",
+        "#10b981",
+        "#a855f7",
+        "#ec4899",
+        "#facc15",
+        "#14b8a6",
+        "#f43f5e",
+        "#0ea5e9",
+        "#22c55e",
+      ];
+      const DEFAULT_NODE_COLOR = "#64748b";
+
+      /**
+       * Assign colors per division for fast lookup.
+       * @param {FightGraphNode[]} nodes
+       */
+      function buildDivisionColorMap(nodes) {
+        const map = new Map();
+        let index = 0;
+        for (const node of nodes) {
+          const division = node.division && node.division.trim();
+          if (!division || map.has(division)) continue;
+          map.set(division, COLOR_PALETTE[index % COLOR_PALETTE.length]);
+          index += 1;
+        }
+        return map;
+      }
+
+      /**
+       * @param {string | null | undefined} division
+       * @param {Map<string, string>} palette
+       */
+      function colorForDivision(division, palette) {
+        if (!division) return DEFAULT_NODE_COLOR;
+        return palette.get(division.trim()) || DEFAULT_NODE_COLOR;
+      }
+
+      /**
+       * Build mesh materials for nodes.
+       * @param {FightGraphNode[]} nodes
+       */
+      function buildNodeMaterials(nodes) {
+        const palette = buildDivisionColorMap(nodes);
+        const materialCache = new Map();
+        const divisionMaterials = new Map();
+        for (const node of nodes) {
+          const division = node.division && node.division.trim();
+          const color = colorForDivision(division, palette);
+          if (!materialCache.has(color)) {
+            materialCache.set(
+              color,
+              new THREE.MeshStandardMaterial({
+                color,
+                roughness: 0.35,
+                metalness: 0.2,
+                emissive: new THREE.Color(color).multiplyScalar(0.25),
+              })
+            );
+          }
+          if (division && !divisionMaterials.has(division)) {
+            divisionMaterials.set(division, materialCache.get(color));
+          }
+        }
+        return { materialCache, palette, divisionMaterials };
+      }
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const visualizationEl = document.getElementById("visualization");
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(visualizationEl.clientWidth, visualizationEl.clientHeight);
+      visualizationEl.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#020617");
+
+      const camera = new THREE.PerspectiveCamera(
+        55,
+        visualizationEl.clientWidth / visualizationEl.clientHeight,
+        0.1,
+        5000
+      );
+      camera.position.set(0, 0, 900);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.55;
+      controls.zoomSpeed = 0.9;
+      controls.panSpeed = 0.7;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.75);
+      keyLight.position.set(260, 400, 500);
+      scene.add(keyLight);
+      const rimLight = new THREE.PointLight(0x38bdf8, 0.85, 1800);
+      rimLight.position.set(-360, -240, -420);
+      scene.add(rimLight);
+
+      const nodeGroup = new THREE.Group();
+      const edgeGroup = new THREE.Group();
+      scene.add(edgeGroup);
+      scene.add(nodeGroup);
+
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      let hoveredNodeId = null;
+      const tooltipEl = document.getElementById("tooltip");
+
+      /** @type {{ nodes: Map<string, LayoutNode2D>, edges: FightGraphLink[] }} */
+      let layout2D = { nodes: new Map(), edges: [] };
+      /** @type {{ nodes: Map<string, LayoutNode3D>, edges: FightGraphLink[] }} */
+      let layout3D = { nodes: new Map(), edges: [] };
+      /** @type {Map<string, THREE.Mesh>} */
+      const nodeMeshes = new Map();
+      /** @type {Map<string, { source: string, target: string }>} */
+      const edgeList = new Map();
+      /** @type {THREE.LineSegments | null} */
+      let edgeLines = null;
+      const statusEl = document.getElementById("status");
+      const metadataEl = document.getElementById("metadata");
+
+      let interpolationTarget = 0;
+      let interpolationValue = 0;
+
+      /**
+       * Create or update meshes to reflect the latest graph state.
+       * @param {FightGraphNode[]} nodes
+       * @param {FightGraphLink[]} edges
+       */
+      function rebuildGraph(nodes, edges) {
+        nodeGroup.clear();
+        edgeGroup.clear();
+        nodeMeshes.clear();
+        edgeList.clear();
+
+        const { materialCache, palette } = buildNodeMaterials(nodes);
+
+        const sphereGeometry = new THREE.SphereGeometry(6, 32, 32);
+
+        for (const node of nodes) {
+          const division = node.division && node.division.trim();
+          const color = colorForDivision(division, palette);
+          const material = materialCache.get(color);
+          const mesh = new THREE.Mesh(sphereGeometry, material);
+          mesh.userData = { node };
+          nodeGroup.add(mesh);
+          nodeMeshes.set(node.fighter_id, mesh);
+        }
+
+        const positions = new Float32Array(edges.length * 6);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x1f2937, transparent: true, opacity: 0.45 });
+        edgeLines = new THREE.LineSegments(geometry, lineMaterial);
+        edgeGroup.add(edgeLines);
+
+        edges.forEach((edge, index) => {
+          edgeList.set(`${edge.source}-${edge.target}-${index}`, {
+            source: edge.source,
+            target: edge.target,
+          });
+        });
+      }
+
+      /**
+       * Fetch API data, recompute layouts, and refresh the scene.
+       */
+      async function refreshData() {
+        const { apiUrl, rawParams } = buildApiUrl();
+        renderQueryParams(rawParams);
+        statusEl.textContent = `Loading graph from ${apiUrl}`;
+        try {
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+          const payload = await response.json();
+          const nodes = payload.nodes ?? [];
+          const edges = payload.links ?? payload.edges ?? [];
+
+          if (!Array.isArray(nodes) || !Array.isArray(edges)) {
+            throw new Error("Unexpected graph payload shape");
+          }
+
+          const options2D = {
+            iterations: Number(document.getElementById("iterations").value) || initialOptions.iterations,
+            linkDistance: Number(document.getElementById("link-distance").value) || initialOptions.linkDistance,
+            repulsionStrength: Number(document.getElementById("repulsion-strength").value) || initialOptions.repulsionStrength,
+          };
+
+          const options3D = {
+            ...options2D,
+            depthStrength: Number(document.getElementById("depth-strength").value) || initialOptions.depthStrength,
+          };
+
+          const computed2D = computeForceLayout2D(nodes, edges, options2D);
+          const computed3D = computeForceLayout3D(nodes, edges, options3D);
+          layout2D = normalize2DLayout(computed2D);
+          layout3D = normalize3DLayout(computed3D);
+
+          rebuildGraph(nodes, computed2D.edges);
+          updateMetadata(nodes, edges);
+          interpolationTarget = interpolationValue;
+          statusEl.textContent = `Loaded ${nodes.length} fighters and ${edges.length} bouts.`;
+        } catch (error) {
+          console.error(error);
+          statusEl.textContent = `Failed to load graph: ${String(error)}`;
+        }
+      }
+
+      /**
+       * Update metadata block with summary.
+       * @param {FightGraphNode[]} nodes
+       * @param {FightGraphLink[]} edges
+       */
+      function updateMetadata(nodes, edges) {
+        const divisions = new Set();
+        let recentDate = null;
+        for (const node of nodes) {
+          if (node.division) divisions.add(node.division);
+          if (node.latest_event_date) {
+            const date = new Date(node.latest_event_date);
+            if (!Number.isNaN(date.getTime())) {
+              if (!recentDate || date > recentDate) {
+                recentDate = date;
+              }
+            }
+          }
+        }
+        metadataEl.innerHTML = `
+          <h2>Graph Summary</h2>
+          <div class="stat-grid">
+            <div><strong>Fighters</strong><span>${nodes.length}</span></div>
+            <div><strong>Bouts</strong><span>${edges.length}</span></div>
+            <div><strong>Divisions</strong><span>${divisions.size}</span></div>
+            <div><strong>Newest Bout</strong><span>${recentDate ? recentDate.toLocaleDateString() : "Unknown"}</span></div>
+          </div>
+        `;
+      }
+
+      function onPointerMove(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      }
+
+      renderer.domElement.addEventListener("pointermove", onPointerMove);
+
+      function updateTooltip() {
+        if (!hoveredNodeId || !layout2D.nodes.has(hoveredNodeId)) {
+          tooltipEl.classList.remove("visible");
+          return;
+        }
+        const mesh = nodeMeshes.get(hoveredNodeId);
+        if (!mesh) {
+          tooltipEl.classList.remove("visible");
+          return;
+        }
+        const { node } = mesh.userData;
+        tooltipEl.innerHTML = `
+          <strong>${node.name}</strong>
+          <span>${node.record || "Record unavailable"}</span>
+          <span>${node.division || "Division unknown"}</span>
+          <span>${node.latest_event_name || "Latest event unknown"}</span>
+        `;
+        tooltipEl.style.left = `${pointer.x * 50 + 50}%`;
+        tooltipEl.style.top = `${(-pointer.y) * 50 + 50}%`;
+        tooltipEl.classList.add("visible");
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+
+        interpolationValue += (interpolationTarget - interpolationValue) * 0.08;
+
+        if (edgeLines && layout2D.nodes.size > 0 && layout3D.nodes.size > 0) {
+          const positions = edgeLines.geometry.getAttribute("position").array;
+          let index = 0;
+          edgeList.forEach(({ source, target }) => {
+            const node2Source = layout2D.nodes.get(source);
+            const node2Target = layout2D.nodes.get(target);
+            const node3Source = layout3D.nodes.get(source);
+            const node3Target = layout3D.nodes.get(target);
+            if (!node2Source || !node2Target || !node3Source || !node3Target) {
+              positions[index++] = 0;
+              positions[index++] = 0;
+              positions[index++] = 0;
+              positions[index++] = 0;
+              positions[index++] = 0;
+              positions[index++] = 0;
+              return;
+            }
+            const sx = THREE.MathUtils.lerp(node2Source.x, node3Source.x, interpolationValue);
+            const sy = THREE.MathUtils.lerp(node2Source.y, node3Source.y, interpolationValue);
+            const sz = THREE.MathUtils.lerp(0, node3Source.z, interpolationValue);
+            const tx = THREE.MathUtils.lerp(node2Target.x, node3Target.x, interpolationValue);
+            const ty = THREE.MathUtils.lerp(node2Target.y, node3Target.y, interpolationValue);
+            const tz = THREE.MathUtils.lerp(0, node3Target.z, interpolationValue);
+            positions[index++] = sx;
+            positions[index++] = sy;
+            positions[index++] = sz;
+            positions[index++] = tx;
+            positions[index++] = ty;
+            positions[index++] = tz;
+          });
+          edgeLines.geometry.getAttribute("position").needsUpdate = true;
+        }
+
+        nodeMeshes.forEach((mesh, id) => {
+          const node2 = layout2D.nodes.get(id);
+          const node3 = layout3D.nodes.get(id);
+          if (!node2 || !node3) return;
+          mesh.position.set(
+            THREE.MathUtils.lerp(node2.x, node3.x, interpolationValue),
+            THREE.MathUtils.lerp(node2.y, node3.y, interpolationValue),
+            THREE.MathUtils.lerp(0, node3.z, interpolationValue)
+          );
+        });
+
+        raycaster.setFromCamera(pointer, camera);
+        const intersections = raycaster.intersectObjects(Array.from(nodeMeshes.values()));
+        if (intersections.length > 0) {
+          const mesh = intersections[0].object;
+          hoveredNodeId = mesh.userData?.node?.fighter_id ?? null;
+        } else {
+          hoveredNodeId = null;
+        }
+        updateTooltip();
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      window.addEventListener("resize", () => {
+        const width = visualizationEl.clientWidth;
+        const height = visualizationEl.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      });
+
+      document.getElementById("toggle-mode").addEventListener("click", (event) => {
+        interpolationTarget = interpolationTarget === 1 ? 0 : 1;
+        const button = /** @type {HTMLButtonElement} */ (event.currentTarget);
+        if (interpolationTarget === 1) {
+          button.textContent = "Switch to 2D Layout";
+          button.classList.add("active");
+        } else {
+          button.textContent = "Switch to 3D Layout";
+          button.classList.remove("active");
+        }
+      });
+
+      const sliderIds = ["link-distance", "repulsion-strength", "depth-strength", "iterations"];
+      sliderIds.forEach((id) => {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+        slider.addEventListener("input", () => {
+          statusEl.textContent = "Recomputing layout…";
+          refreshData();
+        });
+      });
+
+      document.getElementById("reload-data").addEventListener("click", () => {
+        refreshData();
+      });
+
+      refreshData();
+    </script>
+  </body>
+</html>

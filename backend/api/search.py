@@ -7,12 +7,29 @@ from backend.services.search_service import SearchService, get_search_service
 
 router = APIRouter()
 
+# Map ISO country codes to full country names for nationality filtering
+COUNTRY_CODE_MAP = {
+    "US": "United States",
+    "BR": "Brazil",
+    "IE": "Ireland",
+    "RU": "Russia",
+    "CA": "Canada",
+    "GB": "United Kingdom",
+    "MX": "Mexico",
+    "AU": "Australia",
+    "PL": "Poland",
+    "FR": "France",
+    "NL": "Netherlands",
+    "SE": "Sweden",
+}
+
 
 @router.get("/", response_model=PaginatedFightersResponse)
 async def search_fighters(
     q: str = Query("", description="Fighter name, nickname, or location query."),
     stance: str | None = Query(None, description="Optional stance filter."),
     division: str | None = Query(None, description="Optional division filter."),
+    nationality: str | None = Query(None, description="Optional nationality filter."),
     champion_statuses: list[str] | None = Query(
         None,
         description=(
@@ -53,10 +70,16 @@ async def search_fighters(
             detail="streak_type and min_streak_count must be provided together"
         )
 
+    # Convert ISO country code to full country name if provided
+    resolved_nationality = None
+    if nationality:
+        resolved_nationality = COUNTRY_CODE_MAP.get(nationality, nationality)
+
     return await service.search_fighters(
         query=q or None,
         stance=stance,
         division=division,
+        nationality=resolved_nationality,
         champion_statuses=champion_statuses,
         streak_type=streak_type,
         min_streak_count=min_streak_count,

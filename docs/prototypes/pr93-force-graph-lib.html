@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>UFC Fight Graph Prototype (2D &amp; 3D)</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        --accent: #e10600;
+        --bg: #080808;
+        --panel: #111;
+        --panel-border: #1f1f1f;
+        --text-muted: #a0a0a0;
+        --success: #30d158;
+        --warning: #ffd60a;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        background: radial-gradient(circle at top, #111 0%, #000 65%);
+        color: white;
+      }
+
+      header {
+        padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 2rem;
+        align-items: center;
+        border-bottom: 1px solid var(--panel-border);
+        background: rgba(8, 8, 8, 0.85);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      .controls input,
+      .controls select {
+        margin-top: 0.35rem;
+        min-width: 8rem;
+        padding: 0.45rem 0.65rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        color: inherit;
+        font-size: 0.9rem;
+      }
+
+      .controls button {
+        padding: 0.6rem 1.15rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: linear-gradient(135deg, var(--accent), #ff6a00);
+        color: white;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .controls button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(225, 6, 0, 0.35);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(18rem, 24rem) 1fr;
+        overflow: hidden;
+      }
+
+      aside {
+        padding: 1.25rem clamp(1rem, 3vw, 2rem);
+        border-right: 1px solid var(--panel-border);
+        background: rgba(14, 14, 14, 0.92);
+        display: grid;
+        gap: 1.25rem;
+        overflow-y: auto;
+      }
+
+      .panel {
+        padding: 1rem 1.25rem;
+        border-radius: 1rem;
+        background: linear-gradient(
+          140deg,
+          rgba(22, 22, 22, 0.95) 0%,
+          rgba(10, 10, 10, 0.85) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      .panel pre {
+        white-space: pre-wrap;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        margin: 0;
+        color: #f9fafb;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .view-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 999px;
+        padding: 0.3rem;
+        gap: 0.3rem;
+      }
+
+      .view-tabs button {
+        border: none;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: background 150ms ease, color 150ms ease;
+      }
+
+      .view-tabs button.active {
+        background: rgba(225, 6, 0, 0.2);
+        color: white;
+      }
+
+      .stage {
+        position: relative;
+        min-height: min(70vh, 900px);
+        background: radial-gradient(circle at center, #161616 0%, #050505 100%);
+      }
+
+      .renderer {
+        position: absolute;
+        inset: 0;
+        display: none;
+      }
+
+      .renderer.active {
+        display: block;
+      }
+
+      .notice {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      footer {
+        padding: 0.85rem clamp(1rem, 3vw, 2rem);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-top: 1px solid var(--panel-border);
+        background: rgba(8, 8, 8, 0.75);
+      }
+
+      @media (max-width: 1080px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          border-right: none;
+          border-bottom: 1px solid var(--panel-border);
+        }
+      }
+    </style>
+    <!--
+      External dependencies are loaded via CDN to keep the prototype completely standalone.
+      The `force-graph` package powers the 2D view, while `3d-force-graph` builds on top of
+      Three.js to provide a 3D force-directed layout. OrbitControls from Three.js are exposed
+      automatically via the 3D library for intuitive navigation.
+    -->
+    <script type="module">
+      import ForceGraph2D from "https://cdn.skypack.dev/force-graph@1.45.3";
+      import ForceGraph3D from "https://cdn.skypack.dev/3d-force-graph@1.73.4";
+
+      /**
+       * Regular expression describing hostnames that should be considered "local".
+       * If the prototype is served from one of these hostnames we will not try to
+       * infer a Next.js-style `/api` rewrite and instead fall back to localhost.
+       */
+      const LOCAL_HOSTNAME_REGEX = /^(?:localhost|127(?:\.\d+){3}|0\.0\.0\.0|\[::1\])$/i;
+
+      /**
+       * Default API base URL used whenever a better option cannot be inferred.
+       * Mirrors `DEFAULT_CLIENT_API_BASE_URL` from the production React frontend.
+       */
+      const DEFAULT_API_BASE_URL = "http://localhost:8000";
+
+      /**
+       * Small helper that safely reads URL query parameters using the modern URL API.
+       * @returns {URLSearchParams}
+       */
+      function getQueryParams() {
+        return new URLSearchParams(window.location.search);
+      }
+
+      /**
+       * Resolve the API base URL using the same heuristics as the React frontend:
+       *   1. Respect an explicit `apiBase` query string override.
+       *   2. If hosted on a non-local origin, reuse that origin plus the `/api` prefix
+       *      to mimic the Next.js rewrite configuration.
+       *   3. Fall back to `http://localhost:8000` for local development usage.
+       * @returns {string}
+       */
+      function resolveApiBaseUrl() {
+        const params = getQueryParams();
+        const override = params.get("apiBase");
+        if (override && override.trim().length > 0) {
+          return override.trim();
+        }
+
+        const { origin, hostname } = window.location;
+        if (origin && hostname && !LOCAL_HOSTNAME_REGEX.test(hostname)) {
+          return `${origin.replace(/\/$/, "")}/api`;
+        }
+
+        return DEFAULT_API_BASE_URL;
+      }
+
+      /**
+       * Shape describing the fight graph payload returned by the backend.
+       * These typedefs mirror the OpenAPI schema and allow IDEs to understand
+       * the data as we manipulate it.
+       * @typedef {Object} FightGraphNode
+       * @property {string} id - Stable fighter identifier used by the API.
+       * @property {string} name - Fighter's display name.
+       * @property {string} division - Weight class where the fighter competes.
+       * @property {number} wins - Number of victories.
+       * @property {number} losses - Number of losses.
+       * @property {number} draws - Number of draws.
+       * @property {number} upcomingFights - Count of scheduled bouts.
+       *
+       * @typedef {Object} FightGraphLink
+       * @property {string} source - Source fighter ID.
+       * @property {string} target - Target fighter ID.
+       * @property {number} fights - Number of fights between the pair.
+       *
+       * @typedef {Object} FightGraphResponse
+       * @property {FightGraphNode[]} nodes
+       * @property {FightGraphLink[]} links
+       * @property {{ division?: string | null; start_year?: number | null; end_year?: number | null; limit?: number | null; include_upcoming?: boolean | null; }} filters
+       * @property {{ busiest_rivalries?: { fighters: string[]; fights: number }[] }} insights
+       */
+
+      /**
+       * Utility ensuring numeric inputs fall back to `undefined` when the field is empty.
+       * @param {string} value - Raw input value coming from a text field.
+       * @returns {number | undefined}
+       */
+      function parseOptionalNumber(value) {
+        if (value.trim().length === 0) {
+          return undefined;
+        }
+        const asNumber = Number(value);
+        return Number.isFinite(asNumber) ? asNumber : undefined;
+      }
+
+      /**
+       * Retrieve the current filter form selections.
+       * @returns {{ division?: string; startYear?: number; endYear?: number; limit?: number; includeUpcoming?: boolean }}
+       */
+      function getActiveFilters() {
+        /** @type {HTMLSelectElement} */
+        const divisionSelect = document.querySelector("#division-select");
+        /** @type {HTMLInputElement} */
+        const startYearInput = document.querySelector("#start-year-input");
+        /** @type {HTMLInputElement} */
+        const endYearInput = document.querySelector("#end-year-input");
+        /** @type {HTMLInputElement} */
+        const limitInput = document.querySelector("#limit-input");
+        /** @type {HTMLInputElement} */
+        const upcomingToggle = document.querySelector("#include-upcoming-toggle");
+
+        const filters = {};
+        if (divisionSelect?.value) {
+          filters.division = divisionSelect.value;
+        }
+        const startYear = startYearInput ? parseOptionalNumber(startYearInput.value) : undefined;
+        const endYear = endYearInput ? parseOptionalNumber(endYearInput.value) : undefined;
+        const limit = limitInput ? parseOptionalNumber(limitInput.value) : undefined;
+        const includeUpcoming = upcomingToggle ? upcomingToggle.checked : undefined;
+
+        if (typeof startYear === "number") {
+          filters.startYear = startYear;
+        }
+        if (typeof endYear === "number") {
+          filters.endYear = endYear;
+        }
+        if (typeof limit === "number") {
+          filters.limit = limit;
+        }
+        if (typeof includeUpcoming === "boolean") {
+          filters.includeUpcoming = includeUpcoming;
+        }
+        return filters;
+      }
+
+      /**
+       * Build a query string that only includes defined values. The backend expects snake_case
+       * parameter names, so we mirror the mapping from the React API client.
+       * @param {{ division?: string; startYear?: number; endYear?: number; limit?: number; includeUpcoming?: boolean }} filters
+       * @returns {string}
+       */
+      function buildQueryString(filters) {
+        const params = new URLSearchParams();
+        if (filters.division) {
+          params.set("division", filters.division);
+        }
+        if (typeof filters.startYear === "number") {
+          params.set("start_year", String(filters.startYear));
+        }
+        if (typeof filters.endYear === "number") {
+          params.set("end_year", String(filters.endYear));
+        }
+        if (typeof filters.limit === "number") {
+          params.set("limit", String(filters.limit));
+        }
+        if (typeof filters.includeUpcoming === "boolean") {
+          params.set("include_upcoming", filters.includeUpcoming ? "true" : "false");
+        }
+        const query = params.toString();
+        return query.length > 0 ? `?${query}` : "";
+      }
+
+      /**
+       * Fetch the fight graph payload directly from the live API.
+       * @param {{ division?: string; startYear?: number; endYear?: number; limit?: number; includeUpcoming?: boolean }} filters
+       * @returns {Promise<FightGraphResponse>}
+       */
+      async function fetchFightGraph(filters) {
+        const baseUrl = resolveApiBaseUrl();
+        const query = buildQueryString(filters);
+        const response = await fetch(`${baseUrl}/fightweb/graph${query}`, {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to load fight graph: ${response.status} ${response.statusText} — ${errorText}`
+          );
+        }
+
+        /** @type {FightGraphResponse} */
+        const data = await response.json();
+        return data;
+      }
+
+      /**
+       * Render textual insights pulled from the API into the sidebar.
+       * @param {FightGraphResponse} graph
+       */
+      function renderInsights(graph) {
+        /** @type {HTMLDivElement} */
+        const filterSummary = document.querySelector("#filter-summary");
+        /** @type {HTMLPreElement} */
+        const insightsBlock = document.querySelector("#insights-block");
+
+        const summaryLines = ["Active Filters:"];
+        const { filters } = graph;
+        if (filters?.division) {
+          summaryLines.push(`• Division: ${filters.division}`);
+        }
+        if (typeof filters?.start_year === "number" || typeof filters?.end_year === "number") {
+          summaryLines.push(
+            `• Years: ${filters?.start_year ?? "—"} → ${filters?.end_year ?? "—"}`
+          );
+        }
+        if (typeof filters?.limit === "number") {
+          summaryLines.push(`• Node Limit: ${filters.limit}`);
+        }
+        if (typeof filters?.include_upcoming === "boolean") {
+          summaryLines.push(
+            `• Upcoming Bouts: ${filters.include_upcoming ? "Included" : "Excluded"}`
+          );
+        }
+        filterSummary.textContent = summaryLines.join("\n");
+
+        const rivalries = graph.insights?.busiest_rivalries ?? [];
+        if (rivalries.length === 0) {
+          insightsBlock.textContent = "No rivalry insights available for this slice.";
+          return;
+        }
+
+        const formatted = rivalries
+          .map((rivalry, index) => `${index + 1}. ${rivalry.fighters.join(" vs ")} (${rivalry.fights} fights)`)
+          .join("\n");
+        insightsBlock.textContent = formatted;
+      }
+
+      /**
+       * Prepare hover tooltips for both the 2D and 3D canvases.
+       * @param {FightGraphNode} node
+       * @returns {string}
+       */
+      function formatNodeTooltip(node) {
+        return [
+          `<strong>${node.name}</strong>`,
+          `${node.division} • ${node.wins}-${node.losses}-${node.draws}`,
+          node.upcomingFights ? `${node.upcomingFights} scheduled fights` : undefined,
+        ]
+          .filter(Boolean)
+          .join("<br />");
+      }
+
+      /**
+       * Keep track of the graph instances so we can update them without re-initializing.
+       * @type {{ graph2D: import('force-graph').ForceGraphInstance | null; graph3D: import('3d-force-graph').ForceGraph3DInstance | null }}
+       */
+      const graphInstances = {
+        graph2D: null,
+        graph3D: null,
+      };
+
+      /**
+       * Initialize the 2D force-directed canvas if it has not been created yet.
+       * @param {FightGraphResponse} graph
+       */
+      function ensure2DGraph(graph) {
+        const container = document.querySelector("#graph-2d");
+        if (!container || graphInstances.graph2D) {
+          return;
+        }
+
+        const instance = ForceGraph2D()(container)
+          .width(container.clientWidth)
+          .height(container.clientHeight)
+          .backgroundColor("rgba(0, 0, 0, 0)")
+          .nodeRelSize(6)
+          .nodeLabel(formatNodeTooltip)
+          .nodeColor((node) => (node.upcomingFights ? "#ffd60a" : "#e10600"))
+          .linkColor(() => "rgba(255,255,255,0.15)")
+          .linkOpacity(0.6)
+          .linkDirectionalParticles(2)
+          .linkDirectionalParticleWidth((link) => Math.max(1, link.fights || 1))
+          .onNodeClick((node) => focusNode(node));
+
+        graphInstances.graph2D = instance;
+        window.addEventListener("resize", () => {
+          instance.width(container.clientWidth);
+          instance.height(container.clientHeight);
+        });
+        instance.graphData(graph);
+      }
+
+      /**
+       * Initialize the 3D force-directed canvas powered by Three.js.
+       * @param {FightGraphResponse} graph
+       */
+      function ensure3DGraph(graph) {
+        const container = document.querySelector("#graph-3d");
+        if (!container || graphInstances.graph3D) {
+          return;
+        }
+
+        const instance = ForceGraph3D()(container)
+          .width(container.clientWidth)
+          .height(container.clientHeight)
+          .backgroundColor("rgba(0, 0, 0, 0)")
+          .nodeLabel(formatNodeTooltip)
+          .nodeColor((node) => (node.upcomingFights ? "#ffd60a" : "#30d158"))
+          .nodeRelSize(5)
+          .linkColor(() => "rgba(255,255,255,0.1)")
+          .linkOpacity(0.45)
+          .linkWidth((link) => Math.max(1, (link.fights || 1) * 0.5))
+          .onNodeClick((node) => focusNode(node));
+
+        const controls = instance.controls();
+        if (controls) {
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.08;
+          controls.autoRotate = true;
+          controls.autoRotateSpeed = 1.2;
+        }
+
+        graphInstances.graph3D = instance;
+        window.addEventListener("resize", () => {
+          instance.width(container.clientWidth);
+          instance.height(container.clientHeight);
+        });
+        instance.graphData(graph);
+      }
+
+      /**
+       * Update both graph views with fresh data. If the renderers already exist we simply
+       * swap the dataset; otherwise we create them on demand.
+       * @param {FightGraphResponse} graph
+       */
+      function updateGraphs(graph) {
+        if (!graphInstances.graph2D) {
+          ensure2DGraph(graph);
+        }
+        if (!graphInstances.graph3D) {
+          ensure3DGraph(graph);
+        }
+        graphInstances.graph2D?.graphData(graph);
+        graphInstances.graph3D?.graphData(graph);
+      }
+
+      /**
+       * Smoothly move the camera in both views toward the selected node.
+       * @param {FightGraphNode} node
+       */
+      function focusNode(node) {
+        if (!node) return;
+        const distance = 140;
+        if (graphInstances.graph2D) {
+          graphInstances.graph2D.centerAt(node.x || 0, node.y || 0, 1000);
+          graphInstances.graph2D.zoom(4, 1000);
+        }
+        if (graphInstances.graph3D) {
+          const { x = 0, y = 0, z = 0 } = /** @type {{ x?: number; y?: number; z?: number }} */ (node);
+          graphInstances.graph3D.cameraPosition(
+            { x: x + distance, y: y + distance, z: z + distance },
+            { x, y, z },
+            1500
+          );
+        }
+        renderNodeDetails(node);
+      }
+
+      /**
+       * Populate the fighter details panel in the sidebar.
+       * @param {FightGraphNode} node
+       */
+      function renderNodeDetails(node) {
+        /** @type {HTMLDivElement} */
+        const detailsPanel = document.querySelector("#fighter-details");
+        if (!detailsPanel) return;
+        detailsPanel.innerHTML = `
+          <h2>Selected Fighter</h2>
+          <p><strong>${node.name}</strong></p>
+          <p>${node.division}</p>
+          <p>Record: ${node.wins}-${node.losses}-${node.draws}</p>
+          <p>Upcoming fights: ${node.upcomingFights ?? 0}</p>
+          <p class="notice">Rotate the 3D view with the mouse, scroll to zoom, and click any node to refocus.</p>
+        `;
+      }
+
+      /**
+       * Simple loading state helper that updates the call-to-action button.
+       * @param {boolean} loading
+       */
+      function setLoading(loading) {
+        /** @type {HTMLButtonElement} */
+        const loadButton = document.querySelector("#load-button");
+        if (!loadButton) return;
+        loadButton.disabled = loading;
+        loadButton.textContent = loading ? "Loading…" : "Refresh Graph";
+      }
+
+      /**
+       * Bootstrap sequence: fetch the initial graph slice and attach UI listeners.
+       */
+      async function initialize() {
+        const toggleButtons = document.querySelectorAll("[data-view-toggle]");
+        toggleButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const target = button.getAttribute("data-view-toggle");
+            if (!target) return;
+            document
+              .querySelectorAll(".renderer")
+              .forEach((element) => element.classList.toggle("active", element.id === target));
+            toggleButtons.forEach((other) => other.classList.toggle("active", other === button));
+          });
+        });
+
+        const form = document.querySelector("#filter-form");
+        form?.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          await refreshGraph();
+        });
+
+        await refreshGraph();
+      }
+
+      /**
+       * Fetch a new graph from the API and push it into the renderers.
+       */
+      async function refreshGraph() {
+        try {
+          setLoading(true);
+          const filters = getActiveFilters();
+          const graph = await fetchFightGraph(filters);
+          updateGraphs(graph);
+          renderInsights(graph);
+        } catch (error) {
+          console.error(error);
+          const message = error instanceof Error ? error.message : String(error);
+          window.alert(message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", initialize);
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Fight Graph Exploration Prototype</h1>
+      <form id="filter-form" class="controls">
+        <label>
+          Division
+          <select id="division-select">
+            <option value="">All</option>
+            <option value="Flyweight">Flyweight</option>
+            <option value="Bantamweight">Bantamweight</option>
+            <option value="Featherweight">Featherweight</option>
+            <option value="Lightweight" selected>Lightweight</option>
+            <option value="Welterweight">Welterweight</option>
+            <option value="Middleweight">Middleweight</option>
+            <option value="Light Heavyweight">Light Heavyweight</option>
+            <option value="Heavyweight">Heavyweight</option>
+            <option value="Women's Strawweight">Women's Strawweight</option>
+            <option value="Women's Flyweight">Women's Flyweight</option>
+            <option value="Women's Bantamweight">Women's Bantamweight</option>
+            <option value="Women's Featherweight">Women's Featherweight</option>
+          </select>
+        </label>
+        <label>
+          Start Year
+          <input
+            id="start-year-input"
+            type="number"
+            min="1993"
+            max="2099"
+            step="1"
+            placeholder="e.g. 2015"
+          />
+        </label>
+        <label>
+          End Year
+          <input
+            id="end-year-input"
+            type="number"
+            min="1993"
+            max="2099"
+            step="1"
+            placeholder="e.g. 2024"
+          />
+        </label>
+        <label>
+          Node Limit
+          <input id="limit-input" type="number" min="25" max="500" step="25" value="150" />
+        </label>
+        <label>
+          Upcoming
+          <input id="include-upcoming-toggle" type="checkbox" />
+        </label>
+        <button id="load-button" type="submit">Refresh Graph</button>
+      </form>
+    </header>
+    <main>
+      <aside>
+        <section class="panel">
+          <h2>Prototype Notes</h2>
+          <p class="notice">
+            This standalone page reuses the live API powering the Next.js experience. Adjust filters
+            to request a new graph slice, then toggle between 2D and 3D layouts to explore the
+            network structure.
+          </p>
+          <p class="notice">
+            Use the <code>?apiBase=&lt;url&gt;</code> query string to point at staging or production
+            backends without editing the file.
+          </p>
+        </section>
+        <section class="panel">
+          <h2>Data Snapshot</h2>
+          <pre id="filter-summary">Loading filters…</pre>
+        </section>
+        <section class="panel">
+          <h2>Rivalry Insights</h2>
+          <pre id="insights-block">Loading insights…</pre>
+        </section>
+        <section id="fighter-details" class="panel">
+          <h2>Selected Fighter</h2>
+          <p>Click a node in either view to see fighter details.</p>
+        </section>
+      </aside>
+      <section class="stage">
+        <div class="view-tabs">
+          <button type="button" class="active" data-view-toggle="graph-2d">2D View</button>
+          <button type="button" data-view-toggle="graph-3d">3D View</button>
+        </div>
+        <div id="graph-2d" class="renderer active"></div>
+        <div id="graph-3d" class="renderer"></div>
+      </section>
+    </main>
+    <footer>
+      Built with Three.js + ForceGraph libraries for UFC Pokedex experimentation.
+    </footer>
+  </body>
+</html>

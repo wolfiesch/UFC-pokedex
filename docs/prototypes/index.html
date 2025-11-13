@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UFC Fight Graph 3D Prototypes - Comparison</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: radial-gradient(circle at top, #0f172a, #020617 65%);
+        color: #e2e8f0;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        margin-bottom: 3rem;
+      }
+
+      .prototypes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+      }
+
+      .prototype-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .prototype-card:hover {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: #38bdf8;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+      }
+
+      .prototype-card h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.3rem;
+        color: #f8fafc;
+      }
+
+      .prototype-card .pr-number {
+        display: inline-block;
+        background: rgba(56, 189, 248, 0.2);
+        color: #38bdf8;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      .prototype-card .lines {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .prototype-card .tech {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+      }
+
+      .features {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+      }
+
+      .features li {
+        padding: 0.4rem 0;
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .features li:before {
+        content: "✓ ";
+        color: #10b981;
+        font-weight: bold;
+        margin-right: 0.5rem;
+      }
+
+      .prototype-card a {
+        display: inline-block;
+        background: linear-gradient(135deg, #38bdf8, #818cf8);
+        color: white;
+        text-decoration: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        transition: transform 0.2s ease;
+      }
+
+      .prototype-card a:hover {
+        transform: scale(1.05);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-left: 0.5rem;
+      }
+
+      .badge.best {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+      }
+
+      .badge.smallest {
+        background: rgba(129, 140, 248, 0.2);
+        color: #818cf8;
+      }
+
+      .badge.unique {
+        background: rgba(251, 146, 60, 0.2);
+        color: #fb923c;
+      }
+
+      .info-section {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-top: 2rem;
+      }
+
+      .info-section h2 {
+        margin-top: 0;
+        color: #f8fafc;
+      }
+
+      .info-section p {
+        color: #cbd5e1;
+        line-height: 1.6;
+      }
+
+      .comparison-link {
+        display: inline-block;
+        color: #38bdf8;
+        text-decoration: none;
+        border-bottom: 1px dashed #38bdf8;
+        margin-top: 1rem;
+      }
+
+      .comparison-link:hover {
+        border-bottom-style: solid;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>UFC Fight Graph 3D Prototypes</h1>
+      <p class="subtitle">
+        Compare 5 different approaches to 3D visualization of the UFC fight network
+      </p>
+
+      <div class="prototypes-grid">
+        <!-- PR 90 -->
+        <div class="prototype-card">
+          <div class="pr-number">PR 90</div>
+          <h2>
+            Custom Force Layout
+            <span class="badge best">BEST OVERALL</span>
+            <span class="badge unique">UNIQUE</span>
+          </h2>
+          <div class="lines">1,119 lines</div>
+          <div class="tech"><strong>Tech:</strong> Three.js + Custom Physics</div>
+          <ul class="features">
+            <li>Smooth 2D⟷3D interpolation</li>
+            <li>4 physics control sliders</li>
+            <li>Custom force algorithm</li>
+            <li>Most customizable</li>
+          </ul>
+          <a href="pr90-custom-force-2d3d.html">Launch Prototype →</a>
+        </div>
+
+        <!-- PR 91 -->
+        <div class="prototype-card">
+          <div class="pr-number">PR 91</div>
+          <h2>D3-Force (Script Tags)</h2>
+          <div class="lines">872 lines</div>
+          <div class="tech"><strong>Tech:</strong> Three.js + d3-force-3d (scripts)</div>
+          <ul class="features">
+            <li>Proven physics library</li>
+            <li>Interaction cheatsheet</li>
+            <li>Legacy script approach</li>
+            <li>Good documentation</li>
+          </ul>
+          <a href="pr91-d3-force-scripts.html">Launch Prototype →</a>
+        </div>
+
+        <!-- PR 92 -->
+        <div class="prototype-card">
+          <div class="pr-number">PR 92</div>
+          <h2>
+            D3-Force Clean
+            <span class="badge smallest">SMALLEST</span>
+            <span class="badge best">PRODUCTION</span>
+          </h2>
+          <div class="lines">627 lines</div>
+          <div class="tech"><strong>Tech:</strong> Three.js + d3-force-3d (ES modules)</div>
+          <ul class="features">
+            <li>Most concise code</li>
+            <li>Modern ES modules</li>
+            <li>Easy to maintain</li>
+            <li>Clean architecture</li>
+          </ul>
+          <a href="pr92-d3-force-clean.html">Launch Prototype →</a>
+        </div>
+
+        <!-- PR 93 -->
+        <div class="prototype-card">
+          <div class="pr-number">PR 93</div>
+          <h2>Force-Graph Library</h2>
+          <div class="lines">757 lines</div>
+          <div class="tech"><strong>Tech:</strong> force-graph + 3d-force-graph</div>
+          <ul class="features">
+            <li>Highest abstraction</li>
+            <li>2D & 3D support</li>
+            <li>Minimal custom code</li>
+            <li>Rapid prototyping</li>
+          </ul>
+          <a href="pr93-force-graph-lib.html">Launch Prototype →</a>
+        </div>
+
+        <!-- PR 94 -->
+        <div class="prototype-card">
+          <div class="pr-number">PR 94</div>
+          <h2>D3-Force Refined</h2>
+          <div class="lines">804 lines</div>
+          <div class="tech"><strong>Tech:</strong> Three.js + d3-force-3d (refined)</div>
+          <ul class="features">
+            <li>Modern ES modules</li>
+            <li>Refined OrbitControls</li>
+            <li>Production API support</li>
+            <li>Polished implementation</li>
+          </ul>
+          <a href="pr94-d3-force-refined.html">Launch Prototype →</a>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h2>🎯 Quick Recommendations</h2>
+        <p>
+          <strong>Maximum Control & Features:</strong> Choose <strong>PR 90</strong> for the unique 2D⟷3D toggle
+          and extensive physics controls.
+        </p>
+        <p>
+          <strong>Production Ready:</strong> Choose <strong>PR 92</strong> for the cleanest, most maintainable code
+          with proven physics.
+        </p>
+        <p>
+          <strong>Rapid Iteration:</strong> Choose <strong>PR 93</strong> for the fastest way to experiment with
+          minimal custom code.
+        </p>
+        <a href="/tmp/fight-graph-comparison-analysis.md" class="comparison-link">
+          View Full Comparison Analysis →
+        </a>
+      </div>
+
+      <div class="info-section">
+        <h2>💡 "Frankenstein" Approach</h2>
+        <p>
+          For the ultimate prototype, start with <strong>PR 92's clean base</strong>, add
+          <strong>PR 90's 2D⟷3D interpolation and control sliders</strong>, use <strong>PR 93's import maps</strong>,
+          and polish with <strong>PR 94's OrbitControls settings</strong>. This creates an ~850-900 line prototype
+          with all the best features from each version.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
