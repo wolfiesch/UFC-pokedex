@@ -20,10 +20,13 @@
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
+    "@react-three/drei": "^9.105.6",
+    "@react-three/fiber": "^8.15.17",
     "@tanstack/react-query": "^5.90.6",
     "clsx": "^2.1.0",
     "cmdk": "^1.1.1",
     "country-flag-icons": "^1.5.21",
+    "d3-force-3d": "^3.0.6",
     "d3-quadtree": "^3.0.1",
     "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0",
@@ -38,6 +41,7 @@
     "recharts": "^2.12.7",
     "sonner": "^2.0.7",
     "tailwindcss": "^3.4.3",
+    "three": "^0.181.1",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
