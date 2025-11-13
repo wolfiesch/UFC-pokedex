@@ -2,132 +2,104 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterable
-from types import SimpleNamespace
-from typing import Any
-from unittest.mock import AsyncMock
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Final
 
 import pytest
-from sqlalchemy.sql import literal
+from sqlalchemy import cast, func
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.api import image_validation
+from backend.db import connection as db_connection
+from backend.db.models import Base, Fighter
+from tests.backend.postgres import TemporaryPostgresSchema
 
 
-class _StubScalarResult:
-    """Mimic SQLAlchemy's scalar result wrapper for asynchronous contexts."""
+@asynccontextmanager
+async def _session_scope(
+    schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Yield an :class:`AsyncSession` bound to a dedicated PostgreSQL schema."""
 
-    def __init__(self, values: list[Any]) -> None:
-        self._values = values
+    engine = schema.create_async_engine()
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 
-    def all(self) -> list[Any]:
-        """Return the collected scalar values."""
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with session_factory() as session:
+        try:
+            yield session
+        finally:
+            await session.rollback()
 
-        return list(self._values)
-
-
-class _StubResult:
-    """Provide the minimal interface consumed by ``get_fighters_by_flag``."""
-
-    def __init__(
-        self,
-        *,
-        scalars: list[Any] | None = None,
-        scalar_one: Any | None = None,
-        rows: list[Any] | None = None,
-    ) -> None:
-        self._scalar_values = scalars or []
-        self._scalar_one = scalar_one
-        self._rows = rows if rows is not None else self._scalar_values
-
-    def scalars(self) -> _StubScalarResult:
-        """Return a helper exposing ``all()`` over the configured values."""
-
-        return _StubScalarResult(self._scalar_values)
-
-    def scalar_one(self) -> Any:
-        """Return the singular scalar result for count queries."""
-
-        if self._scalar_one is None:
-            raise RuntimeError("No scalar value configured for this stub result.")
-        return self._scalar_one
-
-    def __iter__(self):
-        """Support iteration for duplicate lookup queries."""
-
-        return iter(self._rows)
+    await engine.dispose()
 
 
-def _stub_fighter(
-    fighter_id: str,
-    name: str,
-    *,
-    flags: dict[str, Any] | None,
-    quality: float | None = None,
-    resolution: tuple[int | None, int | None] = (None, None),
-) -> SimpleNamespace:
-    """Create a light-weight fighter namespace used in stubbed query results."""
+async def _seed_flagged_fighters(session: AsyncSession) -> None:
+    """Populate the session with fighters carrying a mix of validation flags."""
 
-    width, height = resolution
-    return SimpleNamespace(
-        id=fighter_id,
-        name=name,
-        image_url=f"https://cdn.example.com/{fighter_id}.jpg",
-        image_quality_score=quality,
-        image_resolution_width=width,
-        image_resolution_height=height,
-        image_validation_flags=flags or {},
-    )
+    low_resolution_details: Final[dict[str, int]] = {"width": 320, "height": 240}
+
+    fighters: list[Fighter] = [
+        Fighter(
+            id="flag-alpha",
+            name="Alpha Flag",
+            image_url="https://cdn.example.com/alpha.jpg",
+            image_resolution_width=640,
+            image_resolution_height=480,
+            image_validation_flags={"low_resolution": low_resolution_details},
+        ),
+        Fighter(
+            id="flag-beta",
+            name="Beta Flag",
+            image_validation_flags={"low_resolution": True, "multiple_faces": 2},
+        ),
+        Fighter(
+            id="flag-gamma",
+            name="Gamma Flag",
+            image_validation_flags={"no_face_detected": True},
+        ),
+        Fighter(
+            id="flag-delta",
+            name="Delta Flag",
+            image_validation_flags=None,
+        ),
+    ]
+
+    session.add_all(fighters)
+    await session.commit()
 
 
 @pytest.mark.asyncio
 async def test_get_fighters_by_flag_filters_via_database_predicate(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_schema: TemporaryPostgresSchema,
 ) -> None:
-    """The API should honour database-side filtering and response shaping."""
+    """The API should delegate JSON flag filtering to the database layer."""
 
-    fighters = [
-        _stub_fighter(
-            "flag-alpha",
-            "Alpha Flag",
-            flags={"low_resolution": {"width": 320, "height": 240}},
-            resolution=(640, 480),
-        ),
-        _stub_fighter(
-            "flag-beta",
-            "Beta Flag",
-            flags={"low_resolution": True},
-        ),
-    ]
-
-    session = AsyncMock()
-    session.execute = AsyncMock(
-        side_effect=[
-            _StubResult(scalars=fighters),
-            _StubResult(scalar_one=2),
-        ]
-    )
-
-    observed_flags: list[str] = []
-
-    def _record_flag(flag: str) -> Any:
-        observed_flags.append(flag)
-        return literal(True)
-
-    monkeypatch.setattr(image_validation, "_build_flag_predicate", _record_flag)
+    postgres_schema.install_as_default(monkeypatch)
+    monkeypatch.setattr(image_validation, "db_connection", db_connection, raising=False)
     monkeypatch.setattr(
         image_validation,
-        "resolve_fighter_image",
-        lambda fighter_id, image_url: image_url,
+        "_build_flag_predicate",
+        lambda flag: func.jsonb_exists(
+            cast(Fighter.image_validation_flags, JSONB), flag
+        ),
+        raising=False,
     )
 
-    response = await image_validation.get_fighters_by_flag(
-        flag="low_resolution",
-        limit=10,
-        offset=0,
-        session=session,
-    )
+    async with _session_scope(postgres_schema) as session:
+        await _seed_flagged_fighters(session)
 
-    assert observed_flags == ["low_resolution"]
+        response = await image_validation.get_fighters_by_flag(
+            flag="low_resolution",
+            limit=10,
+            offset=0,
+            session=session,
+        )
+
     assert response["total"] == 2
     assert response["count"] == 2
     assert response["limit"] == 10
@@ -143,38 +115,30 @@ async def test_get_fighters_by_flag_filters_via_database_predicate(
 @pytest.mark.asyncio
 async def test_get_fighters_by_flag_preserves_total_during_pagination(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_schema: TemporaryPostgresSchema,
 ) -> None:
-    """Paginated responses should retain the overall total count."""
+    """Paginated responses should expose the full result count alongside the slice."""
 
-    paginated = [
-        _stub_fighter("flag-beta", "Beta Flag", flags={"low_resolution": True})
-    ]
-
-    session = AsyncMock()
-    session.execute = AsyncMock(
-        side_effect=[
-            _StubResult(scalars=paginated),
-            _StubResult(scalar_one=2),
-        ]
-    )
-
+    postgres_schema.install_as_default(monkeypatch)
+    monkeypatch.setattr(image_validation, "db_connection", db_connection, raising=False)
     monkeypatch.setattr(
         image_validation,
         "_build_flag_predicate",
-        lambda flag: literal(True),
-    )
-    monkeypatch.setattr(
-        image_validation,
-        "resolve_fighter_image",
-        lambda fighter_id, image_url: image_url,
+        lambda flag: func.jsonb_exists(
+            cast(Fighter.image_validation_flags, JSONB), flag
+        ),
+        raising=False,
     )
 
-    page = await image_validation.get_fighters_by_flag(
-        flag="low_resolution",
-        limit=1,
-        offset=1,
-        session=session,
-    )
+    async with _session_scope(postgres_schema) as session:
+        await _seed_flagged_fighters(session)
+
+        page = await image_validation.get_fighters_by_flag(
+            flag="low_resolution",
+            limit=1,
+            offset=1,
+            session=session,
+        )
 
     assert page["total"] == 2
     assert page["count"] == 1

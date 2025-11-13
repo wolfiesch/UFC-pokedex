@@ -5,12 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import ClassVar, List
+from typing import ClassVar
 
 import pytest
-from redis.exceptions import ConnectionError as RedisConnectionError
 
-from backend import cache
+import backend.cache as cache
 
 
 @dataclass
@@ -23,7 +22,7 @@ class _StubRedis:
     async def ping(self) -> None:
         """Raise a connection error when configured to do so."""
         if self.should_fail:
-            raise RedisConnectionError("Redis unavailable for test")
+            raise cache.RedisConnectionError("Redis unavailable for test")
 
     async def aclose(self) -> None:
         """Mark the client as closed to assert clean-up behavior."""
@@ -33,7 +32,7 @@ class _StubRedis:
 class _StubRedisFactory:
     """Factory that mimics :meth:`redis.Redis.from_url` with queued outcomes."""
 
-    failures: ClassVar[List[bool]] = []
+    failures: ClassVar[list[bool]] = []
     created_clients: ClassVar[list[_StubRedis]] = []
     on_instantiate: ClassVar[Callable[[], None] | None] = None
 
@@ -61,7 +60,7 @@ async def test_get_redis_retries_after_cooldown(
     _StubRedisFactory.created_clients = []
 
     # Guard against unexpected reconnect attempts by counting instantiations.
-    attempts: dict[str, int] = {"count": 0}
+    attempts = {"count": 0}
 
     def _increment_attempts() -> None:
         attempts["count"] += 1
@@ -71,12 +70,7 @@ async def test_get_redis_retries_after_cooldown(
     monkeypatch.setattr(
         cache,
         "_load_redis_components",
-        lambda: (_StubRedisFactory, RedisConnectionError),
-    )
-    monkeypatch.setattr(
-        cache,
-        "_is_redis_connection_error",
-        lambda exc: isinstance(exc, RedisConnectionError),
+        lambda: (_StubRedisFactory, cache.RedisConnectionError),
     )
 
     current_time: dict[str, float] = {"value": 0.0}
@@ -123,12 +117,7 @@ async def test_close_redis_clears_backoff(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(
         cache,
         "_load_redis_components",
-        lambda: (_StubRedisFactory, RedisConnectionError),
-    )
-    monkeypatch.setattr(
-        cache,
-        "_is_redis_connection_error",
-        lambda exc: isinstance(exc, RedisConnectionError),
+        lambda: (_StubRedisFactory, cache.RedisConnectionError),
     )
     monkeypatch.setattr(cache.time, "monotonic", lambda: 0.0)
 
