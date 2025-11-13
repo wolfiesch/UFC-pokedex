@@ -28,7 +28,10 @@ export interface FightGraphSceneProps {
   selectedNodeId?: string | null;
   hoveredNodeId?: string | null;
   defaultColor?: string;
-  onNodeHover?: (nodeId: string | null, event?: ThreeEvent<PointerEvent>) => void;
+  onNodeHover?: (
+    nodeId: string | null,
+    event?: ThreeEvent<PointerEvent>,
+  ) => void;
   onNodeSelect?: (nodeId: string | null) => void;
   onPerformanceDrop?: () => void;
   onPerformanceRecover?: () => void;
@@ -81,7 +84,12 @@ function Nodes({
       {nodes.map((node) => {
         const isSelected = selectedNodeId === node.id;
         const isHovered = hoveredNodeId === node.id;
-        const color = resolveColor(node, nodeColorMap ?? null, palette ?? null, defaultColor);
+        const color = resolveColor(
+          node,
+          nodeColorMap ?? null,
+          palette ?? null,
+          defaultColor,
+        );
         const size = 0.8 + (node.degree / Math.max(1, maxDegree)) * 1.8;
         const emphasisScale = isSelected || isHovered ? 1.4 : 1;
 
@@ -104,7 +112,11 @@ function Nodes({
             scale={emphasisScale}
           >
             <sphereGeometry args={[size, 12, 12]} />
-            <meshStandardMaterial color={color} emissive={isHovered ? color : "#000000"} emissiveIntensity={isHovered ? 0.4 : 0} />
+            <meshStandardMaterial
+              color={color}
+              emissive={isHovered ? color : "#000000"}
+              emissiveIntensity={isHovered ? 0.4 : 0}
+            />
           </mesh>
         );
       })}
@@ -142,14 +154,16 @@ function Edges({
             <bufferGeometry>
               <bufferAttribute
                 attach="attributes-position"
-                array={new Float32Array([
-                  source.x,
-                  source.y,
-                  source.z * depthFactor,
-                  target.x,
-                  target.y,
-                  target.z * depthFactor,
-                ])}
+                array={
+                  new Float32Array([
+                    source.x,
+                    source.y,
+                    source.z * depthFactor,
+                    target.x,
+                    target.y,
+                    target.z * depthFactor,
+                  ])
+                }
                 itemSize={3}
               />
             </bufferGeometry>
@@ -167,11 +181,23 @@ function FightGraphCameras(): JSX.Element {
   const { mode } = useFightGraphView();
   if (mode === "3d") {
     return (
-      <PerspectiveCamera makeDefault position={[0, 0, 380]} fov={55} near={0.1} far={2000} />
+      <PerspectiveCamera
+        makeDefault
+        position={[0, 0, 380]}
+        fov={55}
+        near={0.1}
+        far={2000}
+      />
     );
   }
   return (
-    <OrthographicCamera makeDefault position={[0, 0, 500]} zoom={1.2} near={-1000} far={1000} />
+    <OrthographicCamera
+      makeDefault
+      position={[0, 0, 500]}
+      zoom={1.2}
+      near={-1000}
+      far={1000}
+    />
   );
 }
 
@@ -179,8 +205,19 @@ function FightGraphLights(): JSX.Element {
   return (
     <>
       <ambientLight intensity={0.65} />
-      <spotLight position={[120, 260, 340]} angle={0.45} penumbra={0.5} intensity={1.2} castShadow />
-      <spotLight position={[-150, -220, -320]} angle={0.35} penumbra={0.3} intensity={0.8} />
+      <spotLight
+        position={[120, 260, 340]}
+        angle={0.45}
+        penumbra={0.5}
+        intensity={1.2}
+        castShadow
+      />
+      <spotLight
+        position={[-150, -220, -320]}
+        angle={0.35}
+        penumbra={0.3}
+        intensity={0.8}
+      />
     </>
   );
 }
@@ -210,7 +247,13 @@ export function FightGraphScene({
         onIncline={() => onPerformanceRecover?.()}
         debounce={500}
       />
-      <OrbitControls enableRotate={mode === "3d"} enableZoom enablePan minDistance={120} maxDistance={700} />
+      <OrbitControls
+        enableRotate={mode === "3d"}
+        enableZoom
+        enablePan
+        minDistance={120}
+        maxDistance={700}
+      />
       <Edges nodes={nodes} links={links} depthFactor={depthFactor} />
       <Nodes
         nodes={nodes}

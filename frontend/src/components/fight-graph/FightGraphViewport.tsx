@@ -41,7 +41,9 @@ export function FightGraphViewport({
             <p className="text-sm font-semibold uppercase tracking-[0.4em] text-cyan-200">
               Loading fight graph
             </p>
-            <p className="text-xs text-slate-400/80">Fetching latest connections from the API…</p>
+            <p className="text-xs text-slate-400/80">
+              Fetching latest connections from the API…
+            </p>
           </div>
         </div>
       )}
@@ -52,9 +54,7 @@ export function FightGraphViewport({
             <h3 className="text-sm font-semibold uppercase tracking-[0.4em]">
               Failed to load graph
             </h3>
-            <p className="text-xs text-red-100/80">
-              {error.message}
-            </p>
+            <p className="text-xs text-red-100/80">{error.message}</p>
           </div>
         </div>
       )}

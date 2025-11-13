@@ -44,7 +44,7 @@ const SEARCH_PARAM_KEYS = {
  */
 function parseFiltersFromQueryString(
   queryString: string,
-  defaults: FightGraphQueryParams
+  defaults: FightGraphQueryParams,
 ): FightGraphQueryParams {
   const params = new URLSearchParams(queryString);
 
@@ -90,7 +90,9 @@ function parseFiltersFromQueryString(
       if (normalized === "1" || normalized === "true" || normalized === "yes") {
         base.includeUpcoming = true;
       } else if (
-        normalized === "0" || normalized === "false" || normalized === "no"
+        normalized === "0" ||
+        normalized === "false" ||
+        normalized === "no"
       ) {
         base.includeUpcoming = false;
       }
@@ -105,7 +107,7 @@ function parseFiltersFromQueryString(
  * can update the address bar without manual string concatenation.
  */
 function createSearchParamsFromFilters(
-  filters: FightGraphQueryParams
+  filters: FightGraphQueryParams,
 ): URLSearchParams {
   const params = new URLSearchParams();
 
@@ -198,10 +200,13 @@ export function FightWebClient({
     return filtersEqual(appliedFilters, defaultFilters) ? initialData : null;
   }, [appliedFilters, defaultFilters, initialData]);
 
-  const { data, status, error: queryError, refetch, isFetching } = useFightGraph(
-    appliedFilters,
-    { initialData: hydratedInitialData },
-  );
+  const {
+    data,
+    status,
+    error: queryError,
+    refetch,
+    isFetching,
+  } = useFightGraph(appliedFilters, { initialData: hydratedInitialData });
 
   const graphData = data ?? null;
   const isLoading = status === "pending" && !graphData;

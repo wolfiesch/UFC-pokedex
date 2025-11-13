@@ -9,10 +9,7 @@ import {
   type SimulationNodeDatum,
 } from "d3-force-3d";
 
-import type {
-  FightGraphLink,
-  FightGraphNode,
-} from "../lib/types";
+import type { FightGraphLink, FightGraphNode } from "../lib/types";
 import type {
   FightLayoutLinkPosition,
   FightLayoutNodePosition,
@@ -58,7 +55,10 @@ let meanTickMs = 0;
 let lastTickDuration = 0;
 let emittedStable = false;
 
-function buildWorkerNodes(source: FightGraphNode[], graphLinks: FightGraphLink[]): WorkerNode[] {
+function buildWorkerNodes(
+  source: FightGraphNode[],
+  graphLinks: FightGraphLink[],
+): WorkerNode[] {
   const degreeMap = new Map<string, number>();
   for (const link of graphLinks) {
     degreeMap.set(link.source, (degreeMap.get(link.source) ?? 0) + link.fights);
@@ -87,7 +87,10 @@ function buildWorkerLinks(graphLinks: FightGraphLink[]): WorkerLink[] {
   }));
 }
 
-function emitUpdate(type: FightLayoutWorkerResponse["type"], alpha: number): void {
+function emitUpdate(
+  type: FightLayoutWorkerResponse["type"],
+  alpha: number,
+): void {
   const positions: FightLayoutNodePosition[] = nodes.map((node) => ({
     id: node.id,
     name: node.name,
@@ -148,9 +151,10 @@ function resetSimulation(
     simulation.stop();
   }
 
-  const linkForce: ForceLink<WorkerNode, WorkerLink> = forceLink<WorkerNode, WorkerLink>(
-    links,
-  )
+  const linkForce: ForceLink<WorkerNode, WorkerLink> = forceLink<
+    WorkerNode,
+    WorkerLink
+  >(links)
     .id((node) => node.id)
     .distance(currentOptions.linkDistance)
     .strength((link) => Math.max(0.02, Math.min(1, link.fights / 5)));
@@ -175,7 +179,10 @@ function resetSimulation(
       emittedStable = false;
     }
 
-    if (!emittedStable && (simulation?.alpha() ?? 0) < COOLING_ALPHA_THRESHOLD) {
+    if (
+      !emittedStable &&
+      (simulation?.alpha() ?? 0) < COOLING_ALPHA_THRESHOLD
+    ) {
       emittedStable = true;
       emitUpdate("STABLE", simulation?.alpha() ?? 0);
     }
@@ -193,7 +200,10 @@ function updateSimulationOptions(options: FightLayoutWorkerOptions): void {
     return;
   }
 
-  const linkForce = simulation.force("link") as ForceLink<WorkerNode, WorkerLink> | null;
+  const linkForce = simulation.force("link") as ForceLink<
+    WorkerNode,
+    WorkerLink
+  > | null;
   if (linkForce) {
     if (typeof currentOptions.linkDistance === "number") {
       linkForce.distance(currentOptions.linkDistance);

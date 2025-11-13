@@ -37,7 +37,7 @@ interface UseFightGraphResult {
  * forms can re-run the query without triggering duplicate requests.
  */
 export function useFightGraph(
-  options: UseFightGraphOptions = {}
+  options: UseFightGraphOptions = {},
 ): UseFightGraphResult {
   const { initialParams = {}, autoFetch = true } = options;
 

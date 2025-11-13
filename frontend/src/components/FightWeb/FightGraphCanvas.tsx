@@ -46,7 +46,10 @@ function useFilteredLinks(
 ): FightLayoutLinkPosition[] {
   return useMemo(() => {
     return links.filter((link) => {
-      if (focusNodeId && (link.source === focusNodeId || link.target === focusNodeId)) {
+      if (
+        focusNodeId &&
+        (link.source === focusNodeId || link.target === focusNodeId)
+      ) {
         return true;
       }
       return link.fights >= minFightsThreshold;
@@ -92,7 +95,11 @@ function FightGraphCanvasInner({
   });
 
   const focusNodeId = hoverState?.nodeId ?? selectedNodeId ?? null;
-  const filteredLinks = useFilteredLinks(links, focusNodeId, minFightsThreshold);
+  const filteredLinks = useFilteredLinks(
+    links,
+    focusNodeId,
+    minFightsThreshold,
+  );
 
   const hoveredNode = useMemo(() => {
     if (!hoverState) {
@@ -155,7 +162,8 @@ function FightGraphCanvasInner({
         </Button>
         {stats ? (
           <div className="text-xs text-slate-400">
-            tick {stats.tickCount.toFixed(0)} · avg {stats.meanTickMs.toFixed(2)} ms
+            tick {stats.tickCount.toFixed(0)} · avg{" "}
+            {stats.meanTickMs.toFixed(2)} ms
           </div>
         ) : null}
       </div>
@@ -187,8 +195,12 @@ function FightGraphCanvasInner({
             style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
           >
             <div className="font-semibold">{hoveredNode.name}</div>
-            {hoveredNode.record ? <div className="text-slate-300">{hoveredNode.record}</div> : null}
-            <div className="text-slate-400">Total fights: {hoveredNode.total_fights}</div>
+            {hoveredNode.record ? (
+              <div className="text-slate-300">{hoveredNode.record}</div>
+            ) : null}
+            <div className="text-slate-400">
+              Total fights: {hoveredNode.total_fights}
+            </div>
           </div>
         ) : null}
       </div>

@@ -24,7 +24,10 @@ interface UseFightLayoutOptions {
 }
 
 export interface UseFightLayoutResult extends FightLayoutState {
-  refresh: (data: FightGraphResponse, overrides?: FightLayoutWorkerOptions) => void;
+  refresh: (
+    data: FightGraphResponse,
+    overrides?: FightLayoutWorkerOptions,
+  ) => void;
   updateWorkerOptions: (options: FightLayoutWorkerOptions) => void;
 }
 
@@ -33,9 +36,12 @@ function createWorker(): Worker | null {
     return null;
   }
 
-  return new Worker(new URL("../workers/fightLayout.worker.ts", import.meta.url), {
-    type: "module",
-  });
+  return new Worker(
+    new URL("../workers/fightLayout.worker.ts", import.meta.url),
+    {
+      type: "module",
+    },
+  );
 }
 
 export function useFightLayout(
@@ -95,13 +101,16 @@ export function useFightLayout(
     [workerOptions],
   );
 
-  const updateWorkerOptions = useCallback((options: FightLayoutWorkerOptions) => {
-    const worker = workerRef.current;
-    if (!worker) {
-      return;
-    }
-    worker.postMessage({ type: "UPDATE_OPTIONS", options });
-  }, []);
+  const updateWorkerOptions = useCallback(
+    (options: FightLayoutWorkerOptions) => {
+      const worker = workerRef.current;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({ type: "UPDATE_OPTIONS", options });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!data) {
@@ -120,6 +129,13 @@ export function useFightLayout(
       refresh,
       updateWorkerOptions,
     }),
-    [refresh, state.links, state.nodes, state.stats, state.isRunning, updateWorkerOptions],
+    [
+      refresh,
+      state.links,
+      state.nodes,
+      state.stats,
+      state.isRunning,
+      updateWorkerOptions,
+    ],
   );
 }

@@ -57,7 +57,8 @@ export function FightGraphControls({
           Configure
         </h2>
         <p className="text-sm text-slate-300/80">
-          Adjust the query to focus on specific weight divisions, time ranges, or rivalry counts.
+          Adjust the query to focus on specific weight divisions, time ranges,
+          or rivalry counts.
         </p>
       </header>
 

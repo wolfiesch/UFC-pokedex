@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { DEFAULT_CLIENT_API_BASE_URL, resolveClientApiBaseUrl } from "../api-base-url";
+import {
+  DEFAULT_CLIENT_API_BASE_URL,
+  resolveClientApiBaseUrl,
+} from "../api-base-url";
 import { ApiError } from "../errors";
 import type { FightGraphQueryParams, FightGraphResponse } from "../types";
 
@@ -14,12 +17,7 @@ const fightGraphNodeSchema = z.object({
   name: z.string().min(1, "name is required"),
   division: z.string().nullable().optional(),
   record: z.string().nullable().optional(),
-  image_url: z
-    .string()
-    .url()
-    .or(z.string().length(0))
-    .nullable()
-    .optional(),
+  image_url: z.string().url().or(z.string().length(0)).nullable().optional(),
   total_fights: z.number().int().nonnegative(),
   latest_event_date: z.string().nullable().optional(),
 });
@@ -29,14 +27,16 @@ const fightGraphNodeSchema = z.object({
  * must be a non-negative integer if present, preserving backend semantics.
  */
 const fightResultBreakdownSchema = z.record(
-  z.object({
-    win: z.number().int().nonnegative().optional(),
-    loss: z.number().int().nonnegative().optional(),
-    draw: z.number().int().nonnegative().optional(),
-    nc: z.number().int().nonnegative().optional(),
-    upcoming: z.number().int().nonnegative().optional(),
-    other: z.number().int().nonnegative().optional(),
-  }).catchall(z.number().int().nonnegative().optional()),
+  z
+    .object({
+      win: z.number().int().nonnegative().optional(),
+      loss: z.number().int().nonnegative().optional(),
+      draw: z.number().int().nonnegative().optional(),
+      nc: z.number().int().nonnegative().optional(),
+      upcoming: z.number().int().nonnegative().optional(),
+      other: z.number().int().nonnegative().optional(),
+    })
+    .catchall(z.number().int().nonnegative().optional()),
 );
 
 /**
@@ -76,7 +76,10 @@ function prepareQueryParams(
     query.division = params.division.trim();
   }
 
-  if (typeof params.startYear === "number" && Number.isFinite(params.startYear)) {
+  if (
+    typeof params.startYear === "number" &&
+    Number.isFinite(params.startYear)
+  ) {
     query.start_year = params.startYear;
   }
 
@@ -100,7 +103,9 @@ function prepareQueryParams(
  * values are skipped. This helper keeps the fetch logic focused on HTTP
  * concerns rather than string manipulation.
  */
-function toQueryString(query: Record<string, string | number | boolean>): string {
+function toQueryString(
+  query: Record<string, string | number | boolean>,
+): string {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query)) {
@@ -161,7 +166,7 @@ export async function fetchFightGraph(
     throw new ApiError("Failed to reach the FightWeb service", {
       statusCode: 503,
       detail: error instanceof Error ? error.message : undefined,
-      context: "fightGraphClient", 
+      context: "fightGraphClient",
     });
   }
 

@@ -43,7 +43,7 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
             <dl className="mt-3 space-y-2 text-sm text-slate-200">
               {typeof insights.network_density === "number" && (
                 <div className="flex items-center justify-between rounded-xl bg-slate-950/60 px-3 py-2">
-                  <dt className="uppercase tracking-[0.3em] text-xs text-slate-400">
+                  <dt className="text-xs uppercase tracking-[0.3em] text-slate-400">
                     Density
                   </dt>
                   <dd className="font-mono text-base">
@@ -53,7 +53,7 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
               )}
               {typeof insights.average_fights_per_fighter === "number" && (
                 <div className="flex items-center justify-between rounded-xl bg-slate-950/60 px-3 py-2">
-                  <dt className="uppercase tracking-[0.3em] text-xs text-slate-400">
+                  <dt className="text-xs uppercase tracking-[0.3em] text-slate-400">
                     Avg fights / fighter
                   </dt>
                   <dd className="font-mono text-base">
@@ -64,28 +64,29 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
             </dl>
           </section>
 
-          {insights.division_breakdown && insights.division_breakdown.length > 0 && (
-            <section className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">
-                Division Breakdown
-              </h3>
-              <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                {insights.division_breakdown.map((entry) => (
-                  <li
-                    key={entry.division}
-                    className="flex items-center justify-between rounded-xl bg-slate-950/60 px-3 py-2"
-                  >
-                    <span className="uppercase tracking-[0.3em] text-xs text-slate-400">
-                      {entry.division}
-                    </span>
-                    <span className="font-mono text-base">
-                      {entry.count} ({entry.percentage}%)
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          {insights.division_breakdown &&
+            insights.division_breakdown.length > 0 && (
+              <section className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">
+                  Division Breakdown
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  {insights.division_breakdown.map((entry) => (
+                    <li
+                      key={entry.division}
+                      className="flex items-center justify-between rounded-xl bg-slate-950/60 px-3 py-2"
+                    >
+                      <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                        {entry.division}
+                      </span>
+                      <span className="font-mono text-base">
+                        {entry.count} ({entry.percentage}%)
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
           {insights.top_fighters && insights.top_fighters.length > 0 && (
             <section className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-4">
@@ -116,31 +117,34 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
             </section>
           )}
 
-          {insights.busiest_rivalries && insights.busiest_rivalries.length > 0 && (
-            <section className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">
-                Rivalries
-              </h3>
-              <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                {insights.busiest_rivalries.map((rivalry) => (
-                  <li
-                    key={`${rivalry.source}-${rivalry.target}`}
-                    className="space-y-1 rounded-xl bg-slate-950/60 px-3 py-2"
-                  >
-                    <p className="text-sm font-semibold text-slate-100">
-                      {rivalry.source_name ?? rivalry.source} vs {rivalry.target_name ?? rivalry.target}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                      {rivalry.fights} fights
-                      {rivalry.last_event_name && ` • ${rivalry.last_event_name}`}
-                      {rivalry.last_event_date &&
-                        ` • ${format(new Date(rivalry.last_event_date), "PP")}`}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          {insights.busiest_rivalries &&
+            insights.busiest_rivalries.length > 0 && (
+              <section className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">
+                  Rivalries
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  {insights.busiest_rivalries.map((rivalry) => (
+                    <li
+                      key={`${rivalry.source}-${rivalry.target}`}
+                      className="space-y-1 rounded-xl bg-slate-950/60 px-3 py-2"
+                    >
+                      <p className="text-sm font-semibold text-slate-100">
+                        {rivalry.source_name ?? rivalry.source} vs{" "}
+                        {rivalry.target_name ?? rivalry.target}
+                      </p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                        {rivalry.fights} fights
+                        {rivalry.last_event_name &&
+                          ` • ${rivalry.last_event_name}`}
+                        {rivalry.last_event_date &&
+                          ` • ${format(new Date(rivalry.last_event_date), "PP")}`}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
         </div>
       ) : (
         <p className="text-sm text-slate-400/80">

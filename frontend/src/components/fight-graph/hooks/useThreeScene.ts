@@ -19,7 +19,7 @@ interface UseThreeSceneOptions {
 export function useThreeScene(
   containerRef: React.RefObject<HTMLDivElement>,
   graph: FightGraphResponse | null,
-  { mode }: UseThreeSceneOptions
+  { mode }: UseThreeSceneOptions,
 ) {
   const requestRef = useRef<number>();
 
@@ -38,7 +38,7 @@ export function useThreeScene(
       60,
       container.clientWidth / Math.max(container.clientHeight, 1),
       0.1,
-      1000
+      1000,
     );
     camera.position.set(0, 60, 160);
 
@@ -114,7 +114,7 @@ export function useThreeScene(
         const position = new THREE.Vector3(
           Math.cos(theta) * radialDistance * radius,
           mode === "3d" ? y * radius : 0,
-          Math.sin(theta) * radialDistance * radius
+          Math.sin(theta) * radialDistance * radius,
         );
 
         nodePositions.set(node.fighter_id, position);
@@ -122,7 +122,7 @@ export function useThreeScene(
         const geometry = new THREE.SphereGeometry(2.4, 24, 24);
         const mesh = new THREE.Mesh(
           geometry,
-          node.total_fights > 10 ? highlightMaterial : nodeMaterial
+          node.total_fights > 10 ? highlightMaterial : nodeMaterial,
         );
         mesh.position.copy(position);
         mesh.userData = node;
@@ -144,10 +144,7 @@ export function useThreeScene(
           target.z,
         ]);
         const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-          "position",
-          new THREE.BufferAttribute(points, 3)
-        );
+        geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
         const line = new THREE.Line(geometry, linkMaterial);
         line.userData = link;
         linksGroup.add(line);

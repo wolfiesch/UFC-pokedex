@@ -30,9 +30,14 @@ interface FightGraphViewContextValue extends FightGraphViewState {
   toggleMode: () => void;
 }
 
-const FightGraphViewContext = createContext<FightGraphViewContextValue | null>(null);
+const FightGraphViewContext = createContext<FightGraphViewContextValue | null>(
+  null,
+);
 
-function reducer(state: FightGraphViewState, action: FightGraphViewAction): FightGraphViewState {
+function reducer(
+  state: FightGraphViewState,
+  action: FightGraphViewAction,
+): FightGraphViewState {
   switch (action.type) {
     case "SET_MODE":
       return action.mode && action.mode !== state.mode
@@ -57,7 +62,8 @@ function animateDepth(
   const step = () => {
     frameRef.current = requestAnimationFrame(() => {
       const delta = target - depthRef.current;
-      const next = Math.abs(delta) < 0.001 ? target : depthRef.current + delta * 0.12;
+      const next =
+        Math.abs(delta) < 0.001 ? target : depthRef.current + delta * 0.12;
       depthRef.current = next;
       dispatch({ type: "SET_DEPTH", depthFactor: next });
 
@@ -72,7 +78,11 @@ function animateDepth(
   step();
 }
 
-export function FightGraphViewProvider({ children }: { children: ReactNode }): ReactNode {
+export function FightGraphViewProvider({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
   const [state, dispatch] = useReducer(reducer, { mode: "2d", depthFactor: 0 });
   const frameRef = useRef<number | null>(null);
   const targetRef = useRef<number>(0);
@@ -100,22 +110,29 @@ export function FightGraphViewProvider({ children }: { children: ReactNode }): R
     dispatch({ type: "SET_MODE", mode: state.mode === "2d" ? "3d" : "2d" });
   }, [state.mode]);
 
-  const value = useMemo<FightGraphViewContextValue>(() => ({
-    mode: state.mode,
-    depthFactor: state.depthFactor,
-    setMode,
-    toggleMode,
-  }), [setMode, state.depthFactor, state.mode, toggleMode]);
+  const value = useMemo<FightGraphViewContextValue>(
+    () => ({
+      mode: state.mode,
+      depthFactor: state.depthFactor,
+      setMode,
+      toggleMode,
+    }),
+    [setMode, state.depthFactor, state.mode, toggleMode],
+  );
 
   return (
-    <FightGraphViewContext.Provider value={value}>{children}</FightGraphViewContext.Provider>
+    <FightGraphViewContext.Provider value={value}>
+      {children}
+    </FightGraphViewContext.Provider>
   );
 }
 
 export function useFightGraphView(): FightGraphViewContextValue {
   const context = useContext(FightGraphViewContext);
   if (!context) {
-    throw new Error("useFightGraphView must be used within a FightGraphViewProvider");
+    throw new Error(
+      "useFightGraphView must be used within a FightGraphViewProvider",
+    );
   }
   return context;
 }
