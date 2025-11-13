@@ -6,7 +6,7 @@ Backend code lives in `backend/` (FastAPI + SQLAlchemy) with migrations under `a
 ## Build, Test, and Development Commands
 - `make bootstrap` – installs Python (via `uv`) and Node dependencies; run after cloning.
 - `make dev-local` – brings up FastAPI and Next.js on localhost using your current database.
-- `make api:dev` / `make frontend` – start either side independently (SQLite fallback if `DATABASE_URL` is absent).
+- `make api:dev` / `make frontend` – start either side independently with PostgreSQL (requires `DATABASE_URL`).
 - `make lint`, `make format`, `make test` – run Ruff + Next lint, apply formatters, then execute pytest and Vitest.
 - `make scraper`, `make reload-data` – rebuild the fighter corpus; pair these with `make api:seed` for quick sample data.
 
@@ -20,4 +20,4 @@ Python follows Ruff defaults: 4-space indents, 100-character lines, and type-ann
 Commits mirror the existing log: imperative, descriptive subject lines (e.g., “Add Sherdog fight history workflow”) with focused scope. Group unrelated work into separate commits to keep reverts trivial. Each PR should describe the change, list test commands you ran, attach before/after screenshots for UI tweaks, and link the relevant issue or runbook step. Ensure CI-critical targets (`make lint`, `make test`) pass locally before requesting review.
 
 ## Security & Configuration Tips
-Copy `.env.example` to `.env` and never commit secrets—Docker, Railway, and Cloudflare credentials stay in your local environment managers. Use `make ensure-docker` before scraping or seeding so PostgreSQL/Redis are ready. Large data pulls can overwhelm SQLite; prefer PostgreSQL (`docker compose up -d`) when working on migrations, Sherdog workflows, or anything under `data/processed/`.
+Copy `.env.example` to `.env` and never commit secrets—Docker, Railway, and Cloudflare credentials stay in your local environment managers. Use `make ensure-docker` before scraping or seeding so PostgreSQL/Redis are ready. The project now requires PostgreSQL for all workflows, so ensure `docker compose up -d` is running before touching migrations, Sherdog workflows, or anything under `data/processed/`.
