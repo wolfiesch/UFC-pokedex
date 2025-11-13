@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import {
   groupEventsByMonth,
   formatMonthYear,
@@ -8,6 +8,7 @@ import {
   normalizeEventType,
   type EventType,
 } from "@/lib/event-utils";
+import { CalendarDays, Clock3, MapPin, Sparkles } from "lucide-react";
 
 interface Event {
   event_id: string;
@@ -38,73 +39,105 @@ export default function EventTimeline({ events }: EventTimelineProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-16">
       {sortedMonths.map(([monthKey, monthEvents]) => (
-        <div key={monthKey}>
-          {/* Month Header */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-900 to-gray-800 border-l-4 border-blue-600 pl-4 py-2 mb-4 rounded-r-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-white">{formatMonthYear(monthKey)}</h2>
-            <p className="text-sm text-gray-400">{monthEvents.length} {monthEvents.length === 1 ? "event" : "events"}</p>
+        <section key={monthKey} className="relative">
+          <div className="sticky top-28 z-20 mx-auto mb-10 flex w-fit items-center gap-3 rounded-full border border-white/15 bg-slate-950/90 px-6 py-3 text-xs uppercase tracking-[0.35em] text-slate-200 shadow-xl shadow-black/40 backdrop-blur">
+            <Sparkles className="h-4 w-4 text-sky-300" aria-hidden />
+            {formatMonthYear(monthKey)} · {monthEvents.length} {monthEvents.length === 1 ? "event" : "events"}
           </div>
 
-          {/* Events for this month */}
-          <div className="space-y-3 ml-8">
-            {monthEvents.map((event) => {
-              const eventType =
-                normalizeEventType(event.event_type ?? null) ??
-                detectEventType(event.name);
-              const typeConfig = getEventTypeConfig(eventType);
-              const isUpcoming = event.status === "upcoming";
-              const isPPV = eventType === "ppv";
+          <div className="relative mx-auto flex max-w-5xl flex-col gap-10 overflow-hidden rounded-[3rem] border border-white/10 bg-slate-950/70 p-8 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-slate-700/60 to-transparent" aria-hidden />
 
-              return (
-                <Link
-                  key={event.event_id}
-                  href={`/events/${event.event_id}`}
-                  className="block group"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Timeline connector */}
-                    <div className="flex-shrink-0 flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${isPPV ? "bg-amber-400" : "bg-blue-500"} group-hover:scale-125 transition-transform shadow-lg`} />
-                      <div className="w-0.5 h-full bg-gray-700 mt-1" />
+            <div className="grid gap-16 snap-y snap-mandatory">
+              {monthEvents.map((event, index) => {
+                const eventType =
+                  normalizeEventType(event.event_type ?? null) ?? detectEventType(event.name);
+                const typeConfig = getEventTypeConfig(eventType);
+                const isUpcoming = event.status === "upcoming";
+                const isLeft = index % 2 === 0;
+                const previousEvent = monthEvents[index - 1];
+                const daysBetween = previousEvent
+                  ? Math.abs(
+                      differenceInCalendarDays(
+                        parseISO(event.date),
+                        parseISO(previousEvent.date)
+                      )
+                    )
+                  : null;
+
+                return (
+                  <article
+                    key={event.event_id}
+                    className={`group relative grid scroll-mt-36 snap-start items-center gap-6 lg:grid-cols-[1fr_minmax(0,360px)] ${
+                      isLeft ? "lg:text-right" : ""
+                    }`}
+                  >
+                    <div className={`flex flex-col gap-3 ${isLeft ? "lg:items-end" : ""}`}>
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400">
+                        <CalendarDays className="h-4 w-4" aria-hidden />
+                        {format(parseISO(event.date), "EEE MMM d" )}
+                        {daysBetween !== null && (
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-slate-300">
+                            <Clock3 className="h-3 w-3" aria-hidden />
+                            +{daysBetween} days
+                          </span>
+                        )}
+                      </div>
+                      <h3 className={`text-xl font-semibold text-white ${isLeft ? "lg:ml-auto" : ""}`}>
+                        {event.name}
+                      </h3>
+                      <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+                        isUpcoming
+                          ? "border-emerald-400/60 bg-emerald-500/10 text-emerald-100"
+                          : "border-white/10 bg-white/5 text-slate-200"
+                      } ${isLeft ? "lg:ml-auto" : ""}`}>
+                        {typeConfig.label}
+                      </div>
+                      {event.location && (
+                        <p className={`flex items-center gap-2 text-sm text-slate-300 ${isLeft ? "lg:justify-end" : ""}`}>
+                          <MapPin className="h-4 w-4 text-slate-400" aria-hidden />
+                          <span className="truncate">{event.location}</span>
+                        </p>
+                      )}
+                      <Link
+                        href={`/events/${event.event_id}`}
+                        className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-sky-200 transition-all hover:text-sky-100 ${
+                          isLeft ? "lg:ml-auto" : ""
+                        }`}
+                      >
+                        View fight card →
+                      </Link>
                     </div>
 
-                    {/* Event content */}
-                    <div className={`flex-1 p-4 rounded-lg border transition-all duration-200 ${typeConfig.bgClass} group-hover:scale-[1.01] group-hover:shadow-lg`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-xs ${isPPV ? "text-amber-300 font-medium" : "text-gray-400"}`}>
-                              {format(parseISO(event.date), "MMM d")}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs ${typeConfig.badgeClass}`}>
-                              {typeConfig.label}
-                            </span>
-                            {isUpcoming && (
-                              <span className="px-2 py-0.5 bg-green-700 text-white rounded-full text-xs font-semibold">
-                                Upcoming
-                              </span>
-                            )}
+                    <div className={`relative flex items-center ${isLeft ? "lg:justify-start" : "lg:justify-end"}`}>
+                      <div className={`relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 ${typeConfig.cardGradient} p-6 shadow-lg shadow-black/30 transition-transform duration-300 group-hover:scale-[1.02]`}>
+                        <div className="absolute inset-0 opacity-30" style={{
+                          backgroundImage:
+                            "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 55%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.1), transparent 60%)",
+                        }} aria-hidden />
+                        <div className="relative space-y-3 text-sm text-slate-200">
+                          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+                            Tale of the tape preview
+                          </p>
+                          <p>
+                            {event.venue ? `Hosted at ${event.venue}` : "Venue TBA"}
+                          </p>
+                          {event.broadcast && <p>Broadcast: {event.broadcast}</p>}
+                          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-slate-200">
+                            <Sparkles className="h-3 w-3 text-sky-300" aria-hidden />
+                            {isUpcoming ? "Upcoming" : "Replay"}
                           </div>
-                          <h3 className={`font-bold ${isPPV ? "text-amber-200 text-lg" : "text-white"} line-clamp-1 mb-1`}>
-                            {event.name}
-                          </h3>
-                          {event.location && (
-                            <p className={`text-sm flex items-center gap-1 ${isPPV ? "text-amber-200" : "text-gray-300"}`}>
-                              <span className="text-gray-400">📍</span>
-                              <span className="truncate">{event.location}</span>
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
+                  </article>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </section>
       ))}
     </div>
   );
