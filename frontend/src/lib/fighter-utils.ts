@@ -75,7 +75,29 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
     return dateB - dateA;
   });
 
-  const firstFight = sortedFights[0];
+  // Filter out upcoming fights and non-contest results for streak calculation
+  const completedFights = sortedFights.filter((fight) => {
+    const result = fight.result.toLowerCase().trim();
+    // Exclude upcoming fights (result contains "next" or "vs" or date is in future)
+    if (result.includes("next") || result.includes("vs")) {
+      return false;
+    }
+    // Exclude no contest and other non-streak-counting results
+    if (result === "nc" || result.includes("no contest")) {
+      return false;
+    }
+    // Check if fight is in the future
+    if (fight.event_date && new Date(fight.event_date) > new Date()) {
+      return false;
+    }
+    return true;
+  });
+
+  if (completedFights.length === 0) {
+    return { type: "none", count: 0, label: "No fights" };
+  }
+
+  const firstFight = completedFights[0];
   if (!firstFight) {
     return { type: "none", count: 0, label: "No fights" };
   }
@@ -99,7 +121,7 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
 
   // Count consecutive results of the same type
   let count = 0;
-  for (const fight of sortedFights) {
+  for (const fight of completedFights) {
     const result = fight.result.toLowerCase().trim();
 
     // Handle various result formats: "win"/"w", "loss"/"l", "draw"/"d"
