@@ -6,6 +6,7 @@ import {
   normalizeEventType,
   type EventType,
 } from "@/lib/event-utils";
+import { CalendarDays, MapPin, PlayCircle, Tv, Building2, ArrowRight } from "lucide-react";
 
 interface EventCardProps {
   event: {
@@ -29,79 +30,111 @@ export default function EventCard({ event }: EventCardProps) {
   const isUpcoming = event.status === "upcoming";
   const isPPV = eventType === "ppv";
 
+  const eventDate = parseISO(event.date);
+  const readableDate = format(eventDate, "MMMM d, yyyy");
+
+  // Attempt to split the event name into promotion + headliners for storytelling layout.
+  const [promotion, headlinerSegment] = event.name.split(":");
+  const headliners = headlinerSegment?.trim() ?? "";
+
+  const headlinerParts = headliners
+    .split("vs")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const locationSummary = event.location?.split(",").slice(-2).join(", ") ?? null;
+
+  const posterSeed = Math.abs(event.event_id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)) % 5;
+  const posterTextures = [
+    "bg-[url('https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=800&q=80')]",
+    "bg-[url('https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?auto=format&fit=crop&w=800&q=80')]",
+    "bg-[url('https://images.unsplash.com/photo-1508261303786-0a0d0c1f4a80?auto=format&fit=crop&w=800&q=80')]",
+    "bg-[url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=800&q=80')]",
+    "bg-[url('https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=800&q=80')]",
+  ];
+
   return (
     <Link
       href={`/events/${event.event_id}`}
-      className={`block p-6 rounded-lg transition-all duration-200 border hover:scale-[1.01] hover:shadow-lg ${typeConfig.bgClass} ${
-        isPPV ? "shadow-amber-900/20" : ""
-      }`}
+      className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_45px_80px_-40px_rgba(15,23,42,0.9)] ${typeConfig.backdropTexture}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Event Name */}
-          <div className="flex items-start gap-3 mb-3">
-            <h2 className={`text-xl font-bold ${isPPV ? "text-amber-200" : "text-white"} line-clamp-2`}>
-              {event.name}
-            </h2>
+      <div className="absolute inset-0 opacity-40 transition duration-500 group-hover:opacity-60">
+        <div className={`absolute inset-0 ${posterTextures[posterSeed]} bg-cover bg-center blur-sm`} />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/90" />
+      </div>
+      <div className={`absolute -left-12 top-0 h-full w-24 skew-x-[-12deg] opacity-60 ${typeConfig.spineClass}`} aria-hidden="true" />
+      <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold tracking-wide text-white shadow ${typeConfig.badgeClass}`}>
+              {typeConfig.label}
+            </span>
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                isUpcoming ? "bg-emerald-500/10 text-emerald-200" : "bg-slate-700/60 text-slate-200"
+              }`}
+            >
+              <PlayCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              {isUpcoming ? "Upcoming" : "Completed"}
+            </span>
           </div>
 
-          {/* Event Metadata */}
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400">📅</span>
-              <span className={isPPV ? "text-amber-200 font-medium" : "text-gray-300"}>
-                {format(parseISO(event.date), "MMMM d, yyyy")}
-              </span>
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-300/70">{promotion?.trim() ?? "UFC"}</p>
+            <h2 className="mt-2 text-3xl font-extrabold text-white drop-shadow-sm sm:text-4xl">
+              {headliners || event.name}
+            </h2>
+            {headlinerParts.length >= 2 && (
+              <p className="mt-3 text-sm font-medium uppercase tracking-widest text-slate-200/80">
+                {headlinerParts.join(" • ")}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 sm:grid-cols-2">
+            <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2">
+              <CalendarDays className="h-4 w-4 text-cyan-300" aria-hidden="true" />
+              <span className="font-medium">{readableDate}</span>
             </div>
-
-            {event.location && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">📍</span>
-                <span className={isPPV ? "text-amber-200" : "text-gray-300"}>{event.location}</span>
+            {locationSummary && (
+              <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2">
+                <MapPin className="h-4 w-4 text-rose-300" aria-hidden="true" />
+                <span className="truncate">{locationSummary}</span>
               </div>
             )}
-
             {event.venue && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">🏟️</span>
-                <span className={`truncate ${isPPV ? "text-amber-200" : "text-gray-300"}`}>{event.venue}</span>
+              <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2">
+                <Building2 className="h-4 w-4 text-amber-300" aria-hidden="true" />
+                <span className="truncate">{event.venue}</span>
               </div>
             )}
-
             {event.broadcast && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">📺</span>
-                <span className={isPPV ? "text-amber-200" : "text-gray-300"}>{event.broadcast}</span>
+              <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2">
+                <Tv className="h-4 w-4 text-indigo-300" aria-hidden="true" />
+                <span className="truncate">{event.broadcast}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Status and Type Badges */}
-        <div className="flex flex-col gap-2 items-end flex-shrink-0">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${
-              isUpcoming ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            {isUpcoming ? "Upcoming" : "Completed"}
-          </span>
-
-          {/* Event Type Badge */}
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${typeConfig.badgeClass}`}>
-            {typeConfig.label}
-          </span>
+        <div className="flex flex-col justify-between gap-4 rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-200/70">Storyline</p>
+            <p className="text-sm text-slate-100/90">
+              {isPPV
+                ? "Premier card with global spotlights and championship stakes. Dive into the narratives before the fighters walk."
+                : "Stacked lineup packed with prospects and veterans. Explore tales behind every matchup."}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-200">
+            <span className="uppercase tracking-[0.25em] text-slate-200/70">Dive Deeper</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-semibold text-slate-50 transition group-hover:bg-white/20">
+              See Fight Card
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </span>
+          </div>
         </div>
       </div>
-
-      {/* PPV Special Indicator */}
-      {isPPV && (
-        <div className="mt-4 pt-4 border-t border-amber-600/40">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-bold text-amber-300">⭐ Pay-Per-View Event</span>
-          </div>
-        </div>
-      )}
     </Link>
   );
 }
