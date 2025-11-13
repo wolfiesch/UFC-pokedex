@@ -52,13 +52,13 @@ http://localhost:8877/pr90-custom-force-2d3d.html?apiBase=http://localhost:8000
 
 ## Prototypes Overview
 
-| File | PR | Lines | Description | Best For |
-|------|-----|-------|-------------|----------|
-| **pr90-custom-force-2d3d.html** | 90 | 1,119 | Custom physics with 2D⟷3D interpolation | Maximum control, unique features |
-| **pr91-d3-force-scripts.html** | 91 | 872 | D3-Force-3D (legacy script tags) | Legacy browser support |
-| **pr92-d3-force-clean.html** | 92 | 627 | D3-Force-3D (ES modules) - Cleanest | Production use, maintainability |
-| **pr93-force-graph-lib.html** | 93 | 757 | High-level force-graph libraries | Rapid prototyping, 2D+3D views |
-| **pr94-d3-force-refined.html** | 94 | 804 | D3-Force-3D (refined controls) | Polished experience |
+| File | PR | Lines | Status | Description | Best For |
+|------|-----|-------|--------|-------------|----------|
+| **pr90-custom-force-2d3d.html** | 90 | 1,119 | ✅ **Working** | Custom physics with 2D⟷3D interpolation | Maximum control, unique features |
+| **pr91-d3-force-scripts.html** | 91 | 872 | ⚠️ Broken | D3-Force-3D (legacy script tags) | Legacy browser support |
+| **pr92-d3-force-clean.html** | 92 | 627 | ✅ **Working** | D3-Force-3D (ES modules) - Cleanest | Production use, maintainability |
+| **pr93-force-graph-lib.html** | 93 | 757 | ⚠️ Broken | High-level force-graph libraries | Rapid prototyping, 2D+3D views |
+| **pr94-d3-force-refined.html** | 94 | 804 | ⚠️ Broken | D3-Force-3D (refined controls) | Polished experience |
 
 ## Feature Comparison
 
@@ -124,15 +124,26 @@ For the ultimate version, combine:
 
 Estimated result: ~850-900 lines with all the best features.
 
+## Test Results (as of 12/11/2025)
+
+### ✅ Working Prototypes
+- **PR 90 (Custom Force):** Loads 200 fighters, 623 bouts with colored spheres. Custom physics and 2D/3D toggle work perfectly.
+- **PR 92 (D3-Force Clean):** Loads 200 fighters, 623 bouts. Cleanest codebase, uses Skypack CDN for d3-force-3d.
+
+### ⚠️ Known Issues
+- **PR 91:** Missing d3-timer dependency. The d3-force-3d library requires d3-timer which isn't loaded via CDN.
+- **PR 93:** High-level force-graph libraries not available as proper ES modules via CDN. Multiple CDN approaches failed.
+- **PR 94:** Node ID mismatch - d3-force throws "node not found" error. API returns `fighter_id` but simulation expects `id` field.
+
 ## Troubleshooting
 
 ### "Failed to fetch" Error
 - **Cause:** CORS issue - backend not allowing requests from prototype server
-- **Fix:** Add `http://localhost:8877` to backend CORS allowed origins
+- **Fix:** Add `http://localhost:8877` to backend CORS allowed origins (already done in `backend/main.py`)
 
 ### Module Import Errors
 - **Cause:** Browser doesn't support import maps or CDN is unreachable
-- **Fix:** Use PR 91 (script tags) or check internet connection
+- **Fix:** Check internet connection, use working prototypes (PR 90, PR 92)
 
 ### Blank Canvas
 - **Cause:** No API data loaded (CORS or backend not running)
