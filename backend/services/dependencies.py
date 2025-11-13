@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
+from backend.db.repositories import PostgreSQLEventRepository
 from backend.db.repositories.fighter_repository import FighterRepository
+from backend.services.event_service import EventService
 from backend.services.fighter_query_service import FighterQueryService
 
 
@@ -32,4 +34,14 @@ def get_fighter_query_service(
     return FighterQueryService(repository, cache=cache)
 
 
-__all__ = ["get_fighter_query_service"]
+def get_event_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheClient = Depends(get_cache_client),
+) -> EventService:
+    """Provide a fully-wired :class:`EventService` instance for FastAPI routers."""
+
+    repository = PostgreSQLEventRepository(session)
+    return EventService(repository, cache=cache)
+
+
+__all__ = ["get_fighter_query_service", "get_event_service"]

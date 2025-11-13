@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from backend.schemas.event import EventDetail, EventListItem, PaginatedEventsResponse
-from backend.services.event_service import EventService, get_event_service
+from backend.services.dependencies import get_event_service
+from backend.services.event_service import EventService
 
 router = APIRouter()
 
