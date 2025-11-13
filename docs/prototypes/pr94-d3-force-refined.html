@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>UFC Fight Graph 3D Prototype</title>
+    <style>
+      /*
+        Layout primitives ensure the document remains readable even without executing JavaScript.
+        The page occupies the full viewport height to provide ample space for the 3D canvas,
+        while the control panel remains anchored to the top for quick experiment tweaks.
+      */
+      :root {
+        color-scheme: dark;
+        --background: #05070f;
+        --surface: #0f1629;
+        --surface-alt: #18213b;
+        --accent: #66d9ef;
+        --accent-strong: #f92672;
+        --text-primary: #f8f8f2;
+        --text-muted: #a6accd;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #101a32 0%, #05070f 60%);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 1.5rem clamp(1rem, 3vw, 3rem);
+        background: linear-gradient(135deg, rgba(15, 22, 41, 0.95), rgba(24, 33, 59, 0.7));
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(102, 217, 239, 0.16);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      p {
+        margin: 0.25rem 0 0;
+        color: var(--text-muted);
+      }
+
+      main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) 1fr;
+        gap: 0;
+        overflow: hidden;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem clamp(1rem, 3vw, 3rem);
+        background: rgba(15, 22, 41, 0.78);
+        border-right: 1px solid rgba(102, 217, 239, 0.12);
+        overflow-y: auto;
+      }
+
+      fieldset {
+        display: grid;
+        gap: 0.75rem;
+        border: 1px solid rgba(102, 217, 239, 0.1);
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        background: rgba(24, 33, 59, 0.6);
+      }
+
+      legend {
+        padding: 0 0.5rem;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        gap: 0.4rem;
+      }
+
+      input,
+      select {
+        background: rgba(5, 7, 15, 0.8);
+        border: 1px solid rgba(102, 217, 239, 0.35);
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(102, 217, 239, 0.2);
+      }
+
+      button {
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, rgba(102, 217, 239, 0.9), rgba(249, 38, 114, 0.9));
+        color: var(--text-primary);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(102, 217, 239, 0.3);
+      }
+
+      #status {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        white-space: pre-line;
+      }
+
+      .graph-container {
+        position: relative;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .legend {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: rgba(5, 7, 15, 0.75);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid rgba(102, 217, 239, 0.2);
+        font-size: 0.85rem;
+        max-width: min(320px, 40vw);
+        line-height: 1.6;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .legend strong {
+        color: var(--accent);
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+
+        form {
+          border-right: none;
+          border-bottom: 1px solid rgba(102, 217, 239, 0.12);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>UFC Fight Graph &mdash; 3D Prototype</h1>
+      <p>
+        Experiment with a Three.js rendering of the fight network. Use live data from the
+        production API or point the prototype to your local FastAPI instance.
+      </p>
+    </header>
+    <main>
+      <form id="controls" autocomplete="off">
+        <fieldset>
+          <legend>API Source</legend>
+          <label>
+            Base URL
+            <input
+              type="url"
+              id="apiBaseInput"
+              name="apiBase"
+              placeholder="https://api.example.com"
+              required
+            />
+          </label>
+          <p id="status">
+            Provide the API origin hosting /fightweb/graph. Defaults to localhost if omitted.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Graph Filters</legend>
+          <label>
+            Division (optional)
+            <input
+              type="text"
+              id="divisionInput"
+              name="division"
+              placeholder="Lightweight"
+            />
+          </label>
+          <label>
+            Start Year
+            <input type="number" id="startYearInput" name="startYear" placeholder="2015" />
+          </label>
+          <label>
+            End Year
+            <input type="number" id="endYearInput" name="endYear" placeholder="2024" />
+          </label>
+          <label>
+            Fighter Limit
+            <input type="number" id="limitInput" name="limit" placeholder="150" />
+          </label>
+          <label>
+            Include Upcoming Bouts
+            <select id="upcomingSelect" name="includeUpcoming">
+              <option value="">Follow API default</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <button type="submit">Load Fight Graph</button>
+      </form>
+      <section class="graph-container" aria-live="polite">
+        <div class="legend" id="legend">
+          <strong>Usage tips</strong>
+          <ul>
+            <li>Scroll to zoom, drag to orbit, right-click to pan.</li>
+            <li>
+              Nodes are scaled by degree centrality; edges glow brighter for recent fights
+              (based on year data where available).
+            </li>
+            <li>
+              Hover any node to see fighter metadata at the bottom-left tooltip overlay.
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      // Import the ES module variants of Three.js and helper utilities.
+      import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
+      import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js";
+      import {
+        forceSimulation,
+        forceManyBody,
+        forceLink,
+        forceCenter,
+      } from "https://cdn.jsdelivr.net/npm/d3-force-3d@3/+esm";
+
+      /**
+       * @typedef {Object} FightGraphNode
+       * @property {string} id - Unique fighter identifier used in the API response.
+       * @property {string} label - Fighter display name.
+       * @property {string} division - Weight class descriptor.
+       * @property {number | undefined} wins - Aggregated win total (optional field).
+       * @property {number | undefined} losses - Aggregated loss total (optional field).
+       * @property {number | undefined} draws - Aggregated draw total (optional field).
+       * @property {number | undefined} year - Latest fight year (optional metadata utilised for styling).
+       * @property {number} [degree] - Computed degree centrality used for node scaling.
+       * @property {number} [x] - Calculated X coordinate derived from force simulation.
+       * @property {number} [y] - Calculated Y coordinate derived from force simulation.
+       * @property {number} [z] - Calculated Z coordinate derived from force simulation.
+       */
+
+      /**
+       * @typedef {Object} FightGraphLink
+       * @property {string} source - Source fighter identifier.
+       * @property {string} target - Target fighter identifier.
+       * @property {number | undefined} weight - Weighted edge value used to modulate edge brightness.
+       * @property {number | undefined} year - Fight year to influence recency shading.
+       */
+
+      /**
+       * @typedef {Object} FightGraphResponse
+       * @property {FightGraphNode[]} nodes
+       * @property {FightGraphLink[]} links
+       */
+
+      /** @type {HTMLFormElement} */
+      const controlsForm = document.getElementById("controls");
+      /** @type {HTMLInputElement} */
+      const apiBaseInput = document.getElementById("apiBaseInput");
+      /** @type {HTMLInputElement} */
+      const divisionInput = document.getElementById("divisionInput");
+      /** @type {HTMLInputElement} */
+      const startYearInput = document.getElementById("startYearInput");
+      /** @type {HTMLInputElement} */
+      const endYearInput = document.getElementById("endYearInput");
+      /** @type {HTMLInputElement} */
+      const limitInput = document.getElementById("limitInput");
+      /** @type {HTMLSelectElement} */
+      const upcomingSelect = document.getElementById("upcomingSelect");
+      /** @type {HTMLParagraphElement} */
+      const statusElement = document.getElementById("status");
+      /** @type {HTMLElement} */
+      const graphContainer = document.querySelector(".graph-container");
+
+      const params = new URLSearchParams(window.location.search);
+      const providedBaseUrl = params.get("apiBaseUrl") ?? "";
+      const defaultBaseUrl = providedBaseUrl || "http://localhost:8000";
+      apiBaseInput.value = defaultBaseUrl;
+
+      if (divisionInput && params.get("division")) {
+        divisionInput.value = params.get("division") || "";
+      }
+      if (startYearInput && params.get("startYear")) {
+        startYearInput.value = params.get("startYear") || "";
+      }
+      if (endYearInput && params.get("endYear")) {
+        endYearInput.value = params.get("endYear") || "";
+      }
+      if (limitInput && params.get("limit")) {
+        limitInput.value = params.get("limit") || "";
+      }
+      if (upcomingSelect && params.get("includeUpcoming")) {
+        upcomingSelect.value = params.get("includeUpcoming") || "";
+      }
+
+      /**
+       * Mutably update the status text area with helpful progress cues.
+       *
+       * @param {string} text - Informational or error message to present to the user.
+       * @param {boolean} [isError=false] - Whether the message should be emphasised as an error.
+       */
+      function updateStatus(text, isError = false) {
+        statusElement.textContent = text;
+        statusElement.style.color = isError ? "var(--accent-strong)" : "var(--text-muted)";
+      }
+
+      /**
+       * Convert the form fields into query parameters accepted by the FastAPI endpoint.
+       * Only populated values are included to mirror behaviour in the Next.js client.
+       *
+       * @returns {Record<string, string>} Key/value pairs ready for URLSearchParams usage.
+       */
+      function readFilters() {
+        /** @type {Record<string, string>} */
+        const query = {};
+        if (divisionInput.value.trim()) {
+          query.division = divisionInput.value.trim();
+        }
+        if (startYearInput.value) {
+          query.start_year = startYearInput.value;
+        }
+        if (endYearInput.value) {
+          query.end_year = endYearInput.value;
+        }
+        if (limitInput.value) {
+          query.limit = limitInput.value;
+        }
+        if (upcomingSelect.value) {
+          query.include_upcoming = upcomingSelect.value;
+        }
+        return query;
+      }
+
+      /**
+       * Fetch the fight graph payload using the same REST endpoint utilised by the React UI.
+       * This helper keeps the prototype aligned with production semantics.
+       *
+       * @param {string} apiBaseUrl - Fully qualified base URL pointing at the FastAPI server.
+       * @param {Record<string, string>} query - Optional filtering criteria.
+       * @returns {Promise<FightGraphResponse>} Parsed fight graph response.
+       */
+      async function fetchFightGraph(apiBaseUrl, query) {
+        const origin = apiBaseUrl.replace(/\/?$/, "");
+        const url = new URL("/fightweb/graph", origin);
+        const params = new URLSearchParams(query);
+        if ([...params.keys()].length > 0) {
+          url.search = params.toString();
+        }
+
+        updateStatus(`Fetching graph from ${url.toString()} ...`);
+        const response = await fetch(url.toString(), {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(`Request failed with ${response.status}: ${detail}`);
+        }
+
+        /** @type {FightGraphResponse} */
+        const payload = await response.json();
+        updateStatus(
+          `Loaded ${payload.nodes.length} fighters and ${payload.links.length} bouts.`
+        );
+        return payload;
+      }
+
+      /**
+       * Compute node centrality and populate missing coordinates before rendering.
+       * Utilises d3-force-3d so the physics simulation roughly mirrors the 2D fight web.
+       *
+       * @param {FightGraphResponse} graph
+       * @returns {Promise<FightGraphResponse>}
+       */
+      async function simulateLayout(graph) {
+        const nodes = graph.nodes.map((node) => ({ ...node }));
+        const links = graph.links.map((link) => ({ ...link }));
+
+        const adjacency = new Map();
+        for (const link of links) {
+          adjacency.set(link.source, (adjacency.get(link.source) || 0) + 1);
+          adjacency.set(link.target, (adjacency.get(link.target) || 0) + 1);
+        }
+        for (const node of nodes) {
+          node.degree = adjacency.get(node.id) || 0;
+        }
+
+        const simulation = forceSimulation(nodes)
+          .force(
+            "charge",
+            forceManyBody()
+              .strength(-40)
+              .theta(0.9)
+          )
+          .force(
+            "link",
+            forceLink(links)
+              .id((d) => d.id)
+              .strength((d) => (d.weight ? Math.min(1, d.weight / 5) : 0.2))
+              .distance((d) => (d.weight ? 60 / Math.max(1, d.weight) : 75))
+          )
+          .force("center", forceCenter(0, 0, 0))
+          .alphaDecay(0.05);
+
+        await new Promise((resolve) => {
+          simulation.on("end", resolve);
+        });
+
+        simulation.stop();
+        return { nodes, links };
+      }
+
+      /**
+       * Maintain references to reusable Three.js primitives so subsequent reloads dispose properly.
+       */
+      let renderer;
+      let scene;
+      let camera;
+      let controls;
+      let nodeGroup;
+      let linkGroup;
+      let animationId;
+      let tooltip;
+      let resizeHandler;
+
+      /**
+       * Clean up any WebGL resources so repeated fetches do not leak GPU memory.
+       */
+      function teardownScene() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = undefined;
+        }
+        if (controls) {
+          controls.dispose();
+          controls = undefined;
+        }
+        if (renderer) {
+          renderer.dispose();
+          renderer.forceContextLoss?.();
+          renderer.domElement.remove();
+          renderer = undefined;
+        }
+        scene = undefined;
+        camera = undefined;
+        nodeGroup = undefined;
+        linkGroup = undefined;
+        if (tooltip) {
+          tooltip.remove();
+          tooltip = undefined;
+        }
+        if (resizeHandler) {
+          window.removeEventListener("resize", resizeHandler);
+          resizeHandler = undefined;
+        }
+      }
+
+      /**
+       * Create the HTML element that mirrors the hover tooltip experience from the React UI.
+       */
+      function ensureTooltip() {
+        if (tooltip) {
+          return tooltip;
+        }
+        const el = document.createElement("aside");
+        el.style.position = "absolute";
+        el.style.left = "1.5rem";
+        el.style.bottom = "1.5rem";
+        el.style.padding = "1rem 1.25rem";
+        el.style.background = "rgba(5, 7, 15, 0.85)";
+        el.style.border = "1px solid rgba(102, 217, 239, 0.2)";
+        el.style.borderRadius = "0.75rem";
+        el.style.minWidth = "260px";
+        el.style.pointerEvents = "none";
+        el.style.fontSize = "0.9rem";
+        el.style.lineHeight = "1.4";
+        el.style.color = "var(--text-primary)";
+        el.innerHTML = "Hover a fighter node to inspect details.";
+        graphContainer.appendChild(el);
+        tooltip = el;
+        return el;
+      }
+
+      /**
+       * Given simulation results, initialise a new Three.js scene graph and attach it to the DOM.
+       *
+       * @param {FightGraphResponse} graph - Graph payload containing layout coordinates.
+       */
+      function renderGraph(graph) {
+        teardownScene();
+
+        const width = graphContainer.clientWidth;
+        const height = graphContainer.clientHeight;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0);
+        graphContainer.appendChild(renderer.domElement);
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03050d, 0.0035);
+
+        camera = new THREE.PerspectiveCamera(60, width / height, 1, 4000);
+        camera.position.set(0, 0, 450);
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 80;
+        controls.maxDistance = 1200;
+        controls.enablePan = true;
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+        scene.add(ambient);
+        const directional = new THREE.DirectionalLight(0x66d9ef, 0.6);
+        directional.position.set(120, 180, 220);
+        scene.add(directional);
+
+        nodeGroup = new THREE.Group();
+        linkGroup = new THREE.Group();
+        scene.add(linkGroup);
+        scene.add(nodeGroup);
+
+        const edgeMaterialCache = new Map();
+        const nodeMaterialCache = new Map();
+
+        const recentYear = Math.max(
+          ...graph.links.map((link) => link.year || 0),
+          new Date().getFullYear()
+        );
+
+        const nodeGeometry = new THREE.SphereGeometry(1, 16, 16);
+
+        const tooltipElement = ensureTooltip();
+
+        for (const node of graph.nodes) {
+          const radius = 4 + Math.sqrt(node.degree || 0) * 0.9;
+          const colorKey = node.division || "default";
+          if (!nodeMaterialCache.has(colorKey)) {
+            const palette = [
+              0x66d9ef,
+              0xf92672,
+              0xa6e22e,
+              0xfd971f,
+              0xae81ff,
+              0xf4bf75,
+            ];
+            const hash = [...colorKey].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const color = palette[hash % palette.length];
+            const material = new THREE.MeshStandardMaterial({
+              color,
+              emissive: color,
+              emissiveIntensity: 0.2,
+              roughness: 0.45,
+              metalness: 0.05,
+            });
+            nodeMaterialCache.set(colorKey, material);
+          }
+
+          const mesh = new THREE.Mesh(nodeGeometry, nodeMaterialCache.get(colorKey));
+          mesh.scale.setScalar(radius);
+          mesh.position.set(node.x || 0, node.y || 0, node.z || 0);
+          mesh.userData.node = node;
+          mesh.userData.baseScale = radius;
+          nodeGroup.add(mesh);
+
+          const labelCanvas = document.createElement("canvas");
+          labelCanvas.width = 256;
+          labelCanvas.height = 64;
+          const labelContext = labelCanvas.getContext("2d");
+          if (labelContext) {
+            labelContext.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+            labelContext.fillStyle = "rgba(5, 7, 15, 0.7)";
+            labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+            labelContext.fillStyle = "#66d9ef";
+            labelContext.font = "600 26px 'Inter', sans-serif";
+            labelContext.fillText(node.label ?? node.id, 16, 38);
+          }
+
+          const texture = new THREE.CanvasTexture(labelCanvas);
+          texture.needsUpdate = true;
+          const spriteMaterial = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+          });
+          const sprite = new THREE.Sprite(spriteMaterial);
+          sprite.scale.set(60, 15, 1);
+          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3, node.z || 0);
+          nodeGroup.add(sprite);
+        }
+
+        if (graph.nodes.length >= 3) {
+          const curve = new THREE.CatmullRomCurve3(
+            graph.nodes.slice(0, 6).map((node) => new THREE.Vector3(node.x || 0, node.y || 0, node.z || 0))
+          );
+          const tubeGeometry = new THREE.TubeGeometry(curve, 120, 0.2, 8, false);
+          const tubeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x1f2937,
+            transparent: true,
+            opacity: 0.35,
+          });
+          const backgroundTube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+          backgroundTube.name = "background-tube";
+          scene.add(backgroundTube);
+        }
+
+        for (const link of graph.links) {
+          const key = link.weight ? Math.round(Math.min(Number(link.weight), 10)) : 1;
+          if (!edgeMaterialCache.has(key)) {
+            const opacity = Math.min(0.85, 0.2 + key * 0.08);
+            const hue = 200 - key * 6;
+            const color = new THREE.Color(`hsl(${hue}, 75%, 65%)`);
+            const material = new THREE.LineBasicMaterial({
+              color,
+              transparent: true,
+              opacity,
+              linewidth: 1.2,
+            });
+            edgeMaterialCache.set(key, material);
+          }
+          const sourceNode = /** @type {FightGraphNode} */ (link.source);
+          const targetNode = /** @type {FightGraphNode} */ (link.target);
+          const geometry = new THREE.BufferGeometry();
+          const points = new Float32Array([
+            sourceNode.x || 0,
+            sourceNode.y || 0,
+            sourceNode.z || 0,
+            targetNode.x || 0,
+            targetNode.y || 0,
+            targetNode.z || 0,
+          ]);
+          geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
+          const line = new THREE.Line(geometry, edgeMaterialCache.get(key));
+          linkGroup.add(line);
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const hovered = new Set();
+
+        function handlePointerMove(event) {
+          const bounds = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+          pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+        }
+
+        renderer.domElement.addEventListener("pointermove", handlePointerMove);
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+          animationId = requestAnimationFrame(animate);
+          const elapsed = clock.getElapsedTime();
+
+          raycaster.setFromCamera(pointer, camera);
+          const intersections = raycaster.intersectObjects(nodeGroup.children, false);
+          hovered.clear();
+
+          if (intersections.length > 0) {
+            const first = intersections[0].object;
+            const { node } = first.userData;
+            hovered.add(first);
+            tooltipElement.innerHTML = `
+              <strong>${node.label ?? node.id}</strong><br />
+              Division: ${node.division ?? "Unknown"}<br />
+              Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
+              Recent activity: ${node.year ?? "Unknown"}
+            `;
+          } else {
+            tooltipElement.innerHTML = "Hover a fighter node to inspect details.";
+          }
+
+          nodeGroup.children.forEach((child) => {
+            const isSprite = child.isSprite;
+            if (isSprite) {
+              child.lookAt(camera.position);
+              return;
+            }
+            if (hovered.has(child)) {
+              const targetScale = (child.userData.baseScale || 1) * 1.6;
+              child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, targetScale, 0.2));
+            } else {
+              const baseScale = child.userData.baseScale || 1;
+              child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, baseScale, 0.1));
+            }
+          });
+
+          const tubeMesh = scene.getObjectByName("background-tube");
+          if (tubeMesh) {
+            tubeMesh.rotation.y = elapsed * 0.02;
+            tubeMesh.rotation.x = elapsed * 0.01;
+          }
+
+          controls.update();
+          renderer.render(scene, camera);
+        }
+
+        animate();
+
+        resizeHandler = () => {
+          if (!renderer || !camera) {
+            return;
+          }
+          const { clientWidth, clientHeight } = graphContainer;
+          renderer.setSize(clientWidth, clientHeight);
+          camera.aspect = clientWidth / clientHeight;
+          camera.updateProjectionMatrix();
+        };
+
+        window.addEventListener("resize", resizeHandler);
+      }
+
+      controlsForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const apiBaseUrl = apiBaseInput.value.trim();
+        if (!apiBaseUrl) {
+          updateStatus("Please supply an API base URL before loading the graph.", true);
+          return;
+        }
+
+        try {
+          updateStatus("Preparing simulation...");
+          const graph = await fetchFightGraph(apiBaseUrl, readFilters());
+          const { nodes, links } = await simulateLayout(graph);
+
+          // Link objects reference nodes by identifier; we attach coordinate references before rendering.
+          const nodeIndex = new Map(nodes.map((node) => [node.id, node]));
+          const hydratedLinks = links
+            .map((link) => ({
+              ...link,
+              source: nodeIndex.get(link.source) ?? link.source,
+              target: nodeIndex.get(link.target) ?? link.target,
+            }))
+            .filter((link) => typeof link.source === "object" && typeof link.target === "object");
+
+          renderGraph({ nodes, links: hydratedLinks });
+          updateStatus(
+            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts. Adjust the controls and reload to iterate.`
+          );
+        } catch (error) {
+          console.error(error);
+          updateStatus(`Failed to render graph: ${error instanceof Error ? error.message : error}`, true);
+        }
+      });
+
+      // Perform an initial fetch so the prototype loads immediately when opened.
+      controlsForm.dispatchEvent(new Event("submit"));
+    </script>
+  </body>
+</html>
