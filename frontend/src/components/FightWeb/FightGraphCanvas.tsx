@@ -1,8 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 
+import { useFighterDetails } from "@/hooks/useFighterDetails";
 import type { FightGraphResponse } from "@/lib/types";
+
+import {
+  FighterInsightCard,
+  type FighterInsightMetadata,
+  type UpcomingBoutSummary,
+} from "../fight-graph/FighterInsightCard";
 
 import {
   colorForDivision,
@@ -17,16 +33,11 @@ type FightGraphCanvasProps = {
   isLoading?: boolean;
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
+  onFilterDivisionRequest?: (division: string) => void;
   palette?: Map<string, string> | null;
   nodeColorMap?: Map<string, string> | null;
   minFightsThreshold?: number; // Add this prop
 };
-
-type TooltipState = {
-  x: number;
-  y: number;
-  node: RenderNode;
-} | null;
 
 interface RenderNode extends LayoutNode {
   px: number;
@@ -47,6 +58,7 @@ export function FightGraphCanvas({
   isLoading = false,
   selectedNodeId = null,
   onSelectNode,
+  onFilterDivisionRequest,
   palette: paletteProp = null,
   nodeColorMap = null,
   minFightsThreshold = 2, // Default: show edges with 2+ fights
@@ -58,7 +70,13 @@ export function FightGraphCanvas({
     height: CANVAS_HEIGHT,
   });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [tooltip, setTooltip] = useState<TooltipState>(null);
+  const [cardNodeId, setCardNodeId] = useState<string | null>(null);
+  const [cardInteractionMode, setCardInteractionMode] = useState<
+    "pointer" | "keyboard" | "selection" | null
+  >(null);
+  const [cardSize, setCardSize] = useState<{ width: number; height: number }>(
+    { width: 0, height: 0 },
+  );
   const [transform, setTransform] = useState<{
     scale: number;
     translateX: number;
@@ -69,6 +87,51 @@ export function FightGraphCanvas({
     translateY: 0,
   });
   const [isPanning, setIsPanning] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const cardInteractionRef = useRef(false);
+  const hideTimerRef = useRef<number | null>(null);
+  const hoveredNodeRef = useRef<string | null>(null);
+  const selectedNodeRef = useRef<string | null>(null);
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current !== null) {
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleCardClose = useCallback(() => {
+    clearHideTimer();
+    hideTimerRef.current = window.setTimeout(() => {
+      if (cardInteractionRef.current) {
+        return;
+      }
+      const selected = selectedNodeRef.current;
+      if (selected) {
+        setCardNodeId(selected);
+        setCardInteractionMode((mode) => mode ?? "selection");
+        return;
+      }
+      if (!hoveredNodeRef.current) {
+        setCardNodeId(null);
+        setCardInteractionMode(null);
+      }
+    }, 160);
+  }, [clearHideTimer]);
+
+  useEffect(() => {
+    hoveredNodeRef.current = hoveredNodeId;
+  }, [hoveredNodeId]);
+
+  useEffect(() => {
+    selectedNodeRef.current = selectedNodeId;
+  }, [selectedNodeId]);
+
+  useEffect(() => {
+    return () => {
+      clearHideTimer();
+    };
+  }, [clearHideTimer]);
   const panOrigin = useRef<{
     x: number;
     y: number;
@@ -193,47 +256,258 @@ export function FightGraphCanvas({
   }, [focusNodeId, nodeMap]);
 
   useEffect(() => {
-    if (!selectedNodeId) {
-      setTooltip((current) =>
-        current && current.node.id === selectedNodeId ? null : current,
-      );
+    if (selectedNodeId) {
+      setCardNodeId(selectedNodeId);
+      setCardInteractionMode((mode) => mode ?? "selection");
+      return;
     }
-  }, [selectedNodeId]);
+    if (!hoveredNodeId && !cardInteractionRef.current) {
+      setCardNodeId(null);
+      setCardInteractionMode(null);
+    }
+  }, [hoveredNodeId, selectedNodeId]);
 
   const handleNodePointerEnter = useCallback(
-    (node: RenderNode, event: React.PointerEvent<SVGCircleElement>) => {
+    (node: RenderNode) => {
+      clearHideTimer();
+      cardInteractionRef.current = false;
       setHoveredNodeId(node.id);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) {
-        setTooltip({ node, x: node.px, y: node.py });
-        return;
-      }
-      setTooltip({
-        node,
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      });
+      setCardNodeId(node.id);
+      setCardInteractionMode("pointer");
     },
-    [],
+    [clearHideTimer],
   );
 
   const handleNodePointerLeave = useCallback(() => {
     setHoveredNodeId(null);
-    setTooltip(null);
-  }, []);
+    scheduleCardClose();
+  }, [scheduleCardClose]);
 
   const handleNodeClick = useCallback(
     (node: RenderNode, event: React.MouseEvent<SVGCircleElement>) => {
       event.stopPropagation();
       const next = selectedNodeId === node.id ? null : node.id;
       onSelectNode?.(next);
+      if (next) {
+        setCardNodeId(next);
+        setCardInteractionMode("selection");
+      } else if (!hoveredNodeRef.current) {
+        setCardNodeId(null);
+        setCardInteractionMode(null);
+      }
     },
     [onSelectNode, selectedNodeId],
   );
 
   const handleBackgroundClick = useCallback(() => {
     onSelectNode?.(null);
+    if (!hoveredNodeRef.current) {
+      setCardNodeId(null);
+      setCardInteractionMode(null);
+    }
   }, [onSelectNode]);
+
+  const handleNodeFocus = useCallback(
+    (node: RenderNode) => {
+      clearHideTimer();
+      cardInteractionRef.current = false;
+      setHoveredNodeId(node.id);
+      setCardNodeId(node.id);
+      setCardInteractionMode("keyboard");
+    },
+    [clearHideTimer],
+  );
+
+  const handleNodeBlur = useCallback(() => {
+    scheduleCardClose();
+  }, [scheduleCardClose]);
+
+  const handleNodeKeyDown = useCallback(
+    (node: RenderNode, event: KeyboardEvent<SVGCircleElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelectNode?.(node.id);
+        setCardNodeId(node.id);
+        setCardInteractionMode("keyboard");
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        onSelectNode?.(null);
+        if (!hoveredNodeRef.current) {
+          setCardNodeId(null);
+          setCardInteractionMode(null);
+        }
+      }
+    },
+    [onSelectNode],
+  );
+
+  // Determine the node powering the floating insight card. When the lookup fails the
+  // card is hidden to avoid rendering stale metadata for nodes no longer in view.
+  const cardNode = cardNodeId ? nodeMap.get(cardNodeId) ?? null : null;
+
+  useEffect(() => {
+    if (cardNodeId && !cardNode) {
+      setCardNodeId(null);
+    }
+  }, [cardNode, cardNodeId]);
+
+  const {
+    details,
+    isLoading: detailsLoading,
+    error: detailsError,
+  } = useFighterDetails(cardNodeId ?? "", Boolean(cardNodeId));
+
+  // Upcoming fights are derived from the fighter details payload which reuses the fight
+  // history data structure.  We surface only entries marked as "next"/"upcoming" to keep
+  // the card focused on future bookings.
+  const upcomingBouts = useMemo<UpcomingBoutSummary[] | null>(() => {
+    if (!details || !details.fight_history) {
+      return null;
+    }
+    return details.fight_history
+      .filter((fight) => {
+        const normalized = fight.result?.toLowerCase() ?? "";
+        return (
+          normalized === "next" ||
+          normalized === "upcoming" ||
+          normalized === "scheduled"
+        );
+      })
+      .map((fight) => ({
+        opponent: fight.opponent ?? null,
+        event: fight.event_name ?? null,
+        date:
+          typeof fight.event_date === "string"
+            ? fight.event_date
+            : fight.event_date ?? null,
+      }));
+  }, [details]);
+
+  const streakSummary = useMemo(() => {
+    const type = details?.current_streak_type ?? "none";
+    const count = details?.current_streak_count ?? 0;
+    if (type === "none" || count <= 0) {
+      return { type: "none" as const, label: null };
+    }
+    const descriptor =
+      type === "win"
+        ? "Win streak"
+        : type === "loss"
+          ? "Loss streak"
+          : "Draw streak";
+    return { type, label: `${descriptor} · ${count}` };
+  }, [details?.current_streak_count, details?.current_streak_type]);
+
+  // Compose the metadata bundle expected by the card.  We merge live detail data with the
+  // lightweight graph node so the card still renders meaningful information during loading.
+  const fighterMetadata = useMemo<FighterInsightMetadata | null>(() => {
+    if (!cardNode) {
+      return null;
+    }
+    return {
+      id: cardNode.id,
+      name: cardNode.name,
+      imageUrl: cardNode.image_url ?? null,
+      record: details?.record ?? cardNode.record ?? null,
+      division: details?.division ?? cardNode.division ?? null,
+      streakLabel: streakSummary.label,
+      streakType: streakSummary.type,
+      upcomingBouts,
+    };
+  }, [cardNode, details?.division, details?.record, upcomingBouts, streakSummary.label, streakSummary.type]);
+
+  // Translate force-layout coordinates into container-relative pixel positions.  This keeps the
+  // overlay aligned with the node even as the user pans or zooms the canvas.
+  const projectNodeToScreen = useCallback(
+    (node: RenderNode) => {
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      const offsetX =
+        svgRect && containerRect ? svgRect.left - containerRect.left : 0;
+      const offsetY =
+        svgRect && containerRect ? svgRect.top - containerRect.top : 0;
+      return {
+        x: node.px * transform.scale + transform.translateX + offsetX,
+        y: node.py * transform.scale + transform.translateY + offsetY,
+      };
+    },
+    [transform.scale, transform.translateX, transform.translateY],
+  );
+
+  const cardAnchor = useMemo(() => {
+    if (!cardNode) {
+      return null;
+    }
+    return projectNodeToScreen(cardNode);
+  }, [cardNode, projectNodeToScreen]);
+
+  useLayoutEffect(() => {
+    if (!cardRef.current) {
+      return;
+    }
+    const rect = cardRef.current.getBoundingClientRect();
+    const nextSize = { width: rect.width, height: rect.height };
+    setCardSize((prev) =>
+      prev.width === nextSize.width && prev.height === nextSize.height
+        ? prev
+        : nextSize,
+    );
+  }, [cardNodeId, cardAnchor, details, detailsLoading, upcomingBouts]);
+
+  // Calculate the final card position with a small offset and clamp the result so the overlay
+  // never renders outside the viewport bounds.
+  const cardPosition = useMemo(() => {
+    if (!cardAnchor) {
+      return null;
+    }
+    const offset = 16;
+    const containerWidth = size.width;
+    const containerHeight = size.height;
+    let left = cardAnchor.x + offset;
+    let top = cardAnchor.y + offset;
+
+    if (left + cardSize.width > containerWidth - offset) {
+      left = Math.max(offset, cardAnchor.x - cardSize.width - offset);
+    }
+    left = Math.max(offset, Math.min(left, containerWidth - offset));
+
+    if (top + cardSize.height > containerHeight - offset) {
+      top = Math.max(offset, cardAnchor.y - cardSize.height - offset);
+    }
+    top = Math.max(offset, Math.min(top, containerHeight - offset));
+
+    return { left, top };
+  }, [cardAnchor, cardSize.height, cardSize.width, size.height, size.width]);
+
+  const statusMessage = useMemo(() => {
+    if (detailsError) {
+      return "Failed to load details";
+    }
+    if (detailsLoading) {
+      return "Loading details…";
+    }
+    return null;
+  }, [detailsError, detailsLoading]);
+
+  const router = useRouter();
+
+  const handleOpenProfile = useCallback(() => {
+    if (!cardNodeId) {
+      return;
+    }
+    router.push(`/fighters/${cardNodeId}`);
+  }, [cardNodeId, router]);
+
+  const handleFilterDivision = useCallback(() => {
+    if (!onFilterDivisionRequest) {
+      return;
+    }
+    const division = (details?.division ?? cardNode?.division ?? "").trim();
+    if (!division) {
+      return;
+    }
+    onFilterDivisionRequest(division);
+  }, [cardNode?.division, details?.division, onFilterDivisionRequest]);
 
   const handleWheel = useCallback((event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
@@ -264,7 +538,11 @@ export function FightGraphCanvas({
       if (target && target.closest("[data-node]")) {
         return;
       }
-      setTooltip(null);
+      cardInteractionRef.current = false;
+      if (!selectedNodeRef.current) {
+        setCardNodeId(null);
+        setCardInteractionMode(null);
+      }
       setIsPanning(true);
       panOrigin.current = {
         x: event.clientX,
@@ -439,14 +717,20 @@ export function FightGraphCanvas({
                     stroke="var(--background)"
                     strokeWidth={strokeWidth}
                     opacity={opacity}
-                    onPointerEnter={(event) =>
-                      handleNodePointerEnter(node, event)
-                    }
-                    onPointerMove={(event) =>
-                      handleNodePointerEnter(node, event)
-                    }
+                    onPointerEnter={() => handleNodePointerEnter(node)}
+                    onPointerMove={() => handleNodePointerEnter(node)}
                     onPointerLeave={handleNodePointerLeave}
                     onClick={(event) => handleNodeClick(node, event)}
+                    onFocus={() => handleNodeFocus(node)}
+                    onBlur={handleNodeBlur}
+                    onKeyDown={(event) => handleNodeKeyDown(node, event)}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={selectedNodeId === node.id}
+                    aria-label={`${node.name}${
+                      node.record ? `, record ${node.record}` : ""
+                    }`}
+                    focusable="true"
                   />
                   {isFocus ? (
                     <circle
@@ -466,25 +750,55 @@ export function FightGraphCanvas({
           </g>
         </svg>
 
-        {tooltip ? (
+        {cardNode && fighterMetadata && cardPosition ? (
           <div
-            style={{
-              left: tooltip.x + 12,
-              top: tooltip.y + 12,
+            ref={(element) => {
+              cardRef.current = element;
             }}
-            className="pointer-events-none absolute z-20 max-w-xs rounded-xl border border-border/80 bg-background/95 p-3 text-xs shadow-lg"
+            style={{
+              left: cardPosition.left,
+              top: cardPosition.top,
+            }}
+            className="pointer-events-auto absolute z-30"
+            onPointerEnter={() => {
+              cardInteractionRef.current = true;
+              clearHideTimer();
+            }}
+            onPointerLeave={() => {
+              cardInteractionRef.current = false;
+              if (!hoveredNodeRef.current && !selectedNodeRef.current) {
+                scheduleCardClose();
+              }
+            }}
+            onFocusCapture={() => {
+              cardInteractionRef.current = true;
+              clearHideTimer();
+            }}
+            onBlurCapture={(event) => {
+              if (
+                event.currentTarget.contains(
+                  (event.relatedTarget as Node | null) ?? null,
+                )
+              ) {
+                return;
+              }
+              cardInteractionRef.current = false;
+              if (!hoveredNodeRef.current && !selectedNodeRef.current) {
+                scheduleCardClose();
+              }
+            }}
           >
-            <div className="font-semibold">{tooltip.node.name}</div>
-            <div className="text-muted-foreground">
-              {tooltip.node.record ?? "Record unavailable"}
-            </div>
-            <div className="mt-1 text-muted-foreground/80">
-              {tooltip.node.division ?? "Unknown division"}
-            </div>
-            <div className="mt-2 flex items-center justify-between text-muted-foreground/70">
-              <span>Fights</span>
-              <span>{tooltip.node.total_fights}</span>
-            </div>
+            <FighterInsightCard
+              fighter={fighterMetadata}
+              statusMessage={statusMessage}
+              isLoading={detailsLoading}
+              onOpenProfile={handleOpenProfile}
+              onFilterDivision={handleFilterDivision}
+              interactionMode={cardInteractionMode}
+              registerCard={(element) => {
+                cardRef.current = element;
+              }}
+            />
           </div>
         ) : null}
 
