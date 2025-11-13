@@ -54,6 +54,7 @@ http://localhost:8877/pr90-custom-force-2d3d.html?apiBase=http://localhost:8000
 
 | File | PR | Lines | Status | Description | Best For |
 |------|-----|-------|--------|-------------|----------|
+| **🎯 fight-graph-3d-combined.html** | - | ~850 | ✅ **Recommended** | Best of all: 2D/3D toggle + refined rendering + keyboard shortcuts | **Production ready - use this!** |
 | **pr90-custom-force-2d3d.html** | 90 | 1,119 | ✅ **Working** | Custom physics with 2D⟷3D interpolation | Maximum control, unique features |
 | **pr91-d3-force-scripts.html** | 91 | 872 | ❌ Broken | D3-Force-3D (legacy script tags) | Legacy browser support |
 | **pr92-d3-force-clean.html** | 92 | 627 | ✅ **Working** | D3-Force-3D (ES modules) - Cleanest | Production use, maintainability |
@@ -114,19 +115,43 @@ All prototypes use ES modules with either:
 - Modern browsers with ES module support (Chrome 61+, Firefox 60+, Safari 11+, Edge 16+)
 - PR 91 supports older browsers via script tags
 
-## "Frankenstein" Recommendation
+## 🎯 Combined "Frankenstein" Prototype
 
-For the ultimate version, combine:
-1. **Base:** PR 92's clean ES module structure (627 lines)
-2. **Add:** PR 90's 2D⟷3D interpolation and control sliders
-3. **Add:** PR 93's import maps for cleaner dependency management
-4. **Polish:** PR 94's refined OrbitControls settings and lighting
+**File:** `fight-graph-3d-combined.html` (~850 lines)
 
-Estimated result: ~850-900 lines with all the best features.
+This is the **recommended production-ready version** that combines the best aspects of all working prototypes:
+
+### What's Included:
+✅ **From PR 94:** Battle-tested d3-force-3d physics, refined scene (lighting, fog), form-based controls
+✅ **From PR 90:** 2D ⟷ 3D toggle with smooth z-coordinate interpolation, keyboard shortcuts (Spacebar, R, H), auto-orbit animation
+✅ **From PR 92:** Clean sidebar design with interaction tips, simplified messaging
+
+### Key Features:
+- **2D/3D Toggle Button** - Smooth animated transition between flat 2D and full 3D layouts
+- **Keyboard Shortcuts:**
+  - `Spacebar`: Toggle auto-orbit animation
+  - `R`: Reset camera to default position
+  - `H`: Toggle hover tooltips on/off
+- **Production-Ready Physics** - Uses d3-force-3d (not custom physics)
+- **Refined Visuals** - Professional lighting, fog, and OrbitControls from PR 94
+- **Clean Interface** - Form-based controls with clear tips sidebar
+- **Degree Centrality Node Sizing** - Larger nodes = more connections
+- **Hover Tooltips** - Fighter details on hover with toggle option
+
+### Why This Version?
+- ✅ Maintains PR 94's refinement (lighting, fog, controls)
+- ✅ Adds PR 90's unique 2D/3D toggle feature
+- ✅ Includes power-user keyboard shortcuts
+- ✅ Uses battle-tested d3-force-3d library
+- ✅ More maintainable than PR 90's custom physics (~850 lines vs 1,119)
+- ✅ Production-ready with clean code structure
+
+**Use this version for production deployment!**
 
 ## Test Results (as of 12/11/2025)
 
-### ✅ Working Prototypes (3 of 5)
+### ✅ Working Prototypes (4 of 6)
+- **🎯 Combined Frankenstein:** Loads 200 fighters, 623 bouts. Perfect blend of all best features with 2D/3D toggle, keyboard shortcuts, and refined rendering. **RECOMMENDED FOR PRODUCTION.**
 - **PR 90 (Custom Force):** Loads 200 fighters, 623 bouts with colored spheres. Custom physics and 2D/3D toggle work perfectly. Import map added for Three.js modules.
 - **PR 92 (D3-Force Clean):** Loads 200 fighters, 623 bouts. Cleanest codebase, uses Skypack CDN for d3-force-3d. Import map + Skypack fix applied.
 - **PR 94 (D3-Force Refined):** Loads 200 fighters, 623 bouts with labels and refined controls. Fixed node ID mapping (fighter_id → id) for d3-force compatibility.
