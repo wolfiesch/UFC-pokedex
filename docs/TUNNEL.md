@@ -60,7 +60,7 @@ This way:
 ```bash
 # Start individual services
 make api         # Backend only (with Docker)
-make api-dev     # Backend only (without Docker, uses SQLite)
+make api-dev     # Backend only with PostgreSQL auto-reload
 make frontend    # Frontend only
 
 # Stop everything

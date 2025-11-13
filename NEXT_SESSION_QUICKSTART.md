@@ -126,7 +126,7 @@ After location scraping completes, you should see:
 docker-compose ps  # Check if db is running
 ```
 
-**Scripts using SQLite instead of PostgreSQL?**
+**Scripts missing the PostgreSQL connection string?**
 ```bash
 # Always prefix with DATABASE_URL:
 DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex \
