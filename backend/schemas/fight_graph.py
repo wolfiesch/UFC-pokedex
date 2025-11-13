@@ -14,6 +14,33 @@ class FightGraphNode(BaseModel):
     image_url: str | None = None
     total_fights: int = 0
     latest_event_date: date | None = None
+    current_rank: int | None = Field(
+        default=None,
+        description="Latest published divisional rank for the fighter (0=champion).",
+    )
+    current_rank_date: date | None = Field(
+        default=None, description="Date associated with the current ranking snapshot."
+    )
+    current_rank_division: str | None = Field(
+        default=None, description="Division linked to the current ranking snapshot."
+    )
+    current_rank_source: str | None = Field(
+        default=None, description="Ranking provider used for the current rank."
+    )
+    peak_rank: int | None = Field(
+        default=None,
+        description="Best historical divisional rank achieved (0=champion).",
+    )
+    peak_rank_date: date | None = Field(
+        default=None,
+        description="Date when the fighter recorded the peak ranking position.",
+    )
+    peak_rank_division: str | None = Field(
+        default=None, description="Division tied to the peak ranking achievement."
+    )
+    peak_rank_source: str | None = Field(
+        default=None, description="Ranking provider for the peak ranking snapshot."
+    )
 
 
 class FightGraphLink(BaseModel):

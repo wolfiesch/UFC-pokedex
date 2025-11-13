@@ -20,6 +20,7 @@ from backend.db.repositories.base import (
     _empty_breakdown,
     _normalize_result_category,
 )
+from backend.db.repositories.fighter.rankings import FighterRankingMixin
 from backend.schemas.fight_graph import (
     FightGraphLink,
     FightGraphNode,
@@ -28,7 +29,7 @@ from backend.schemas.fight_graph import (
 from backend.services.image_resolver import resolve_fighter_image_cropped
 
 
-class FightGraphRepository(BaseRepository):
+class FightGraphRepository(FighterRankingMixin, BaseRepository):
     """Repository for fight relationship graph operations."""
 
     async def get_fight_graph(
@@ -80,17 +81,14 @@ class FightGraphRepository(BaseRepository):
         latest_map = {row.fighter_id: row.latest_event_date for row in fight_counts}
 
         if not id_order:
-            fallback_query = (
-                select(
-                    Fighter.id,
-                    Fighter.name,
-                    Fighter.division,
-                    Fighter.record,
-                    Fighter.image_url,
-                    Fighter.cropped_image_url,
-                )
-                .order_by(Fighter.name, Fighter.id)
-            )
+            fallback_query = select(
+                Fighter.id,
+                Fighter.name,
+                Fighter.division,
+                Fighter.record,
+                Fighter.image_url,
+                Fighter.cropped_image_url,
+            ).order_by(Fighter.name, Fighter.id)
             if division:
                 fallback_query = fallback_query.where(Fighter.division == division)
             if limit is not None:
@@ -136,11 +134,15 @@ class FightGraphRepository(BaseRepository):
         fighters = fighters_result.all()
         fighter_map = {row.id: row for row in fighters}
 
+        ranking_summaries = await self._fetch_ranking_summaries(id_order)
+
         nodes: list[FightGraphNode] = []
         for fighter_id in id_order:
             fighter_row = fighter_map.get(fighter_id)
             if fighter_row is None:
                 continue
+
+            ranking = ranking_summaries.get(fighter_row.id)
             nodes.append(
                 FightGraphNode(
                     fighter_id=fighter_row.id,
@@ -154,6 +156,18 @@ class FightGraphRepository(BaseRepository):
                     ),
                     total_fights=count_map.get(fighter_row.id, 0),
                     latest_event_date=latest_map.get(fighter_row.id),
+                    current_rank=ranking.current_rank if ranking else None,
+                    current_rank_date=ranking.current_rank_date if ranking else None,
+                    current_rank_division=(
+                        ranking.current_rank_division if ranking else None
+                    ),
+                    current_rank_source=(
+                        ranking.current_rank_source if ranking else None
+                    ),
+                    peak_rank=ranking.peak_rank if ranking else None,
+                    peak_rank_date=ranking.peak_rank_date if ranking else None,
+                    peak_rank_division=ranking.peak_rank_division if ranking else None,
+                    peak_rank_source=ranking.peak_rank_source if ranking else None,
                 )
             )
 
@@ -258,6 +272,10 @@ class FightGraphRepository(BaseRepository):
             "link_count": len(links),
             "limit": limit,
         }
+
+        ranking_source = self._ranking_source()
+        if ranking_source:
+            metadata["ranking_source"] = ranking_source
 
         if earliest_event is not None or latest_event is not None:
             metadata["event_window"] = {

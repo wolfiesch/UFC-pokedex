@@ -13,10 +13,11 @@ import { FightWebSelectedFighter } from "./FightWebSelectedFighter";
 import { FightWebSummary } from "./FightWebSummary";
 import { clampLimit, normalizeFilters } from "./filter-utils";
 import { extractFightWebInsights } from "./insight-utils";
+import { getDivisionColorRamp, type DivisionColorRamp } from "@/constants/divisionColors";
+import { useColorVisionMode } from "@/hooks/useColorVisionMode";
 import {
   createDivisionColorScale,
   createRecencyColorScale,
-  DEFAULT_NODE_COLOR,
   deriveEventYearBounds,
 } from "./graph-layout";
 
@@ -57,6 +58,7 @@ export function FightWebClient({
   initialFilters,
   initialError,
 }: FightWebClientProps) {
+  const colorVisionMode = useColorVisionMode();
   const fallbackLimit = useMemo(
     () => clampLimit(initialFilters?.limit ?? initialData?.nodes.length ?? 150),
     [initialData?.nodes.length, initialFilters?.limit],
@@ -91,6 +93,7 @@ export function FightWebClient({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isolatedDivision, setIsolatedDivision] = useState<string | null>(null);
 
   const requestIdRef = useRef(0);
 
@@ -156,10 +159,19 @@ export function FightWebClient({
 
   const palette = useMemo(() => {
     if (!graphData) {
-      return new Map<string, string>();
+      return new Map<string, DivisionColorRamp>();
     }
     return createDivisionColorScale(graphData.nodes);
   }, [graphData]);
+
+  useEffect(() => {
+    if (!isolatedDivision) {
+      return;
+    }
+    if (!palette.has(isolatedDivision)) {
+      setIsolatedDivision(null);
+    }
+  }, [isolatedDivision, palette]);
 
   // Detect if we're filtered to a single division
   const isSingleDivision = useMemo(() => {
@@ -193,13 +205,26 @@ export function FightWebClient({
       return null;
     }
 
-    // Get the division's base color from the palette
-    const divisionColor =
-      palette.get(appliedFilters.division.trim()) ?? DEFAULT_NODE_COLOR;
+    const normalizedDivision = appliedFilters.division.trim();
+    if (normalizedDivision.length === 0) {
+      return null;
+    }
 
-    // Create recency-based color scale
-    return createRecencyColorScale(graphData.nodes, divisionColor);
-  }, [isSingleDivision, graphData, appliedFilters.division, palette]);
+    const divisionRamp =
+      palette.get(normalizedDivision) ?? getDivisionColorRamp(normalizedDivision);
+
+    return createRecencyColorScale(
+      graphData.nodes,
+      divisionRamp,
+      colorVisionMode,
+    );
+  }, [
+    isSingleDivision,
+    graphData,
+    appliedFilters.division,
+    palette,
+    colorVisionMode,
+  ]);
 
   const insights = useMemo(
     () => extractFightWebInsights(graphData),
@@ -253,6 +278,15 @@ export function FightWebClient({
 
     return connections;
   }, [graphData, nodeById, selectedNodeId]);
+
+  const handleToggleIsolation = useCallback(
+    (division: string | null) => {
+      setIsolatedDivision((current) =>
+        current && current === division ? null : division,
+      );
+    },
+    [],
+  );
 
   const selectedNode = useMemo(() => {
     if (!graphData || !selectedNodeId) {
@@ -318,6 +352,8 @@ export function FightWebClient({
           <FightWebLegend
             palette={palette}
             breakdown={insights.divisionBreakdown}
+            isolatedDivision={isolatedDivision}
+            onIsolate={handleToggleIsolation}
           />
         </div>
 
@@ -329,6 +365,7 @@ export function FightWebClient({
             onSelectNode={setSelectedNodeId}
             palette={palette}
             nodeColorMap={nodeColorMap}
+            isolatedDivision={isolatedDivision}
           />
 
           <FightWebSelectedFighter

@@ -197,6 +197,22 @@ export interface FightGraphNode {
   image_url?: string | null;
   total_fights: number;
   latest_event_date?: string | null;
+  /** Current divisional ranking where 0 represents the champion slot. */
+  current_rank?: number | null;
+  /** Source identifier for the ranking snapshot (e.g., "ufc"). */
+  current_rank_source?: string | null;
+  /** Division associated with the current ranking snapshot. */
+  current_rank_division?: string | null;
+  /** ISO date representing when the current ranking was recorded. */
+  current_rank_date?: string | null;
+  /** All-time best divisional ranking achieved (0 = champion). */
+  peak_rank?: number | null;
+  /** Provider name associated with the peak ranking snapshot. */
+  peak_rank_source?: string | null;
+  /** Division tied to the peak ranking achievement. */
+  peak_rank_division?: string | null;
+  /** ISO date describing when the peak ranking was captured. */
+  peak_rank_date?: string | null;
 }
 
 export type FightGraphResultBreakdown = Record<
