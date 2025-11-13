@@ -65,7 +65,9 @@ class ImageBitmapCache {
    * @param name - Full name to extract initials from
    * @returns ImageBitmap with colored circle and initials
    */
-  private async createInitialsPlaceholder(name: string): Promise<ImageBitmap | null> {
+  private async createInitialsPlaceholder(
+    name: string,
+  ): Promise<ImageBitmap | null> {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = 32;
@@ -75,7 +77,7 @@ class ImageBitmapCache {
       if (!ctx) return this.placeholderBitmap;
 
       // Generate color from name hash
-      const hash = name.split('').reduce((acc, char) => {
+      const hash = name.split("").reduce((acc, char) => {
         return char.charCodeAt(0) + ((acc << 5) - acc);
       }, 0);
       const hue = Math.abs(hash) % 360;
@@ -193,7 +195,7 @@ class ImageBitmapCache {
   private async createCircularCrop(
     bitmap: ImageBitmap,
     size: number = 40,
-    detectFace: boolean = true
+    detectFace: boolean = true,
   ): Promise<ImageBitmap | null> {
     try {
       const canvas = document.createElement("canvas");
@@ -221,7 +223,7 @@ class ImageBitmapCache {
               0,
               0,
               bitmap.width,
-              bitmap.height
+              bitmap.height,
             );
             const center = detectSubjectCenter(imageData);
             centerX = center.x;
@@ -240,11 +242,11 @@ class ImageBitmapCache {
       // Ensure crop stays within bounds
       const clampedSourceX = Math.max(
         0,
-        Math.min(sourceX, bitmap.width - sourceSize)
+        Math.min(sourceX, bitmap.width - sourceSize),
       );
       const clampedSourceY = Math.max(
         0,
-        Math.min(sourceY, bitmap.height - sourceSize)
+        Math.min(sourceY, bitmap.height - sourceSize),
       );
 
       // Create circular clip
@@ -263,7 +265,7 @@ class ImageBitmapCache {
         0,
         0,
         size,
-        size
+        size,
       );
 
       ctx.restore();
@@ -331,7 +333,7 @@ class ImageBitmapCache {
   async loadBitmapWithCrop(
     url: string,
     size: number = 40,
-    detectFace: boolean = true
+    detectFace: boolean = true,
   ): Promise<ImageBitmap | null> {
     const cacheKey = `${url}:crop:${size}:${detectFace}`;
 
@@ -350,7 +352,7 @@ class ImageBitmapCache {
     const croppedBitmap = await this.createCircularCrop(
       originalBitmap,
       size,
-      detectFace
+      detectFace,
     );
 
     if (croppedBitmap) {
@@ -370,7 +372,7 @@ class ImageBitmapCache {
   async getOpponentBitmap(
     opponentId: string,
     url: string | null,
-    opponentName?: string
+    opponentName?: string,
   ): Promise<ImageBitmap | null> {
     const imageUrl = url || `/img/opponents/${opponentId}-32.webp`;
 
@@ -392,8 +394,12 @@ class ImageBitmapCache {
       }
 
       // Create new initials placeholder
-      const initialsPlaceholder = await this.createInitialsPlaceholder(opponentName);
-      if (initialsPlaceholder && initialsPlaceholder !== this.placeholderBitmap) {
+      const initialsPlaceholder =
+        await this.createInitialsPlaceholder(opponentName);
+      if (
+        initialsPlaceholder &&
+        initialsPlaceholder !== this.placeholderBitmap
+      ) {
         // Cache it with a special key
         this.set(placeholderKey, initialsPlaceholder);
         return initialsPlaceholder;
@@ -424,9 +430,9 @@ class ImageBitmapCache {
 
     const cleanup = () => {
       cancelled = true;
-      timeoutIds.forEach(id => clearTimeout(id));
-      idleCallbackIds.forEach(id => {
-        if ('cancelIdleCallback' in window) {
+      timeoutIds.forEach((id) => clearTimeout(id));
+      idleCallbackIds.forEach((id) => {
+        if ("cancelIdleCallback" in window) {
           (window as any).cancelIdleCallback(id);
         }
       });
@@ -451,7 +457,10 @@ class ImageBitmapCache {
             const id = requestIdleCallback(() => loadNext(index + 1));
             idleCallbackIds.push(id);
           } else {
-            const id = setTimeout(() => loadNext(index + 1), 16) as unknown as number;
+            const id = setTimeout(
+              () => loadNext(index + 1),
+              16,
+            ) as unknown as number;
             timeoutIds.push(id);
           }
         });
@@ -463,7 +472,10 @@ class ImageBitmapCache {
           const id = requestIdleCallback(() => loadNext(index + 1));
           idleCallbackIds.push(id);
         } else {
-          const id = setTimeout(() => loadNext(index + 1), 16) as unknown as number;
+          const id = setTimeout(
+            () => loadNext(index + 1),
+            16,
+          ) as unknown as number;
           timeoutIds.push(id);
         }
       }
@@ -531,7 +543,7 @@ export async function loadBitmap(url: string): Promise<ImageBitmap | null> {
 export async function getOpponentBitmap(
   opponentId: string,
   url: string | null = null,
-  opponentName?: string
+  opponentName?: string,
 ): Promise<ImageBitmap | null> {
   return imageCache.getOpponentBitmap(opponentId, url, opponentName);
 }

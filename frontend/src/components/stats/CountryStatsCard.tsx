@@ -68,17 +68,20 @@ export function CountryStatsCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Flag className="h-5 w-5" />
-          Top Countries {groupBy === "birthplace" ? "(by Birthplace)" : "(by Nationality)"}
+          Top Countries{" "}
+          {groupBy === "birthplace" ? "(by Birthplace)" : "(by Nationality)"}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">Loading statistics...</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              Loading statistics...
+            </span>
           </div>
         ) : error ? (
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         ) : stats && stats.length > 0 ? (
@@ -87,7 +90,7 @@ export function CountryStatsCard({
               <Link
                 key={stat.country}
                 href={`/?${groupBy === "birthplace" ? "birthplace_country" : "nationality"}=${encodeURIComponent(stat.country)}`}
-                className="flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors"
+                className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
@@ -105,7 +108,7 @@ export function CountryStatsCard({
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">No data available</p>
           </div>
         )}

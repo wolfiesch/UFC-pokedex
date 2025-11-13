@@ -74,7 +74,11 @@ const applyThemeToDocument = (nextTheme: ThemeVariant): void => {
  * preference when available. Any component rendered beneath it can read the
  * current theme or toggle it via the exposed context value.
  */
-export function ThemeProvider({ children }: { readonly children: ReactNode }): JSX.Element {
+export function ThemeProvider({
+  children,
+}: {
+  readonly children: ReactNode;
+}): JSX.Element {
   const [theme, setThemeState] = useState<ThemeVariant>("dark");
 
   useEffect(() => {
@@ -94,7 +98,9 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }): J
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((previousTheme) => (previousTheme === "dark" ? "light" : "dark"));
+    setThemeState((previousTheme) =>
+      previousTheme === "dark" ? "light" : "dark",
+    );
   }, []);
 
   const contextValue = useMemo<ThemeContextValue>(
@@ -106,7 +112,11 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }): J
     [theme, setTheme, toggleTheme],
   );
 
-  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 /**

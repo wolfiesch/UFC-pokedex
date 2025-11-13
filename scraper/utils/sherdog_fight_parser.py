@@ -48,16 +48,16 @@ def parse_sherdog_date(date_str: str | None) -> str | None:
         return None
 
     # Remove extra whitespace around slashes
-    text = re.sub(r'\s*/\s*', '/', text)
+    text = re.sub(r"\s*/\s*", "/", text)
 
     # Try multiple date formats
     formats = [
-        "%b/%d/%Y",       # Nov/26/2022
-        "%B/%d/%Y",       # November/26/2022
-        "%b %d, %Y",      # Nov 26, 2022
-        "%B %d, %Y",      # November 26, 2022
-        "%Y-%m-%d",       # 2022-11-26
-        "%m/%d/%Y",       # 11/26/2022
+        "%b/%d/%Y",  # Nov/26/2022
+        "%B/%d/%Y",  # November/26/2022
+        "%b %d, %Y",  # Nov 26, 2022
+        "%B %d, %Y",  # November 26, 2022
+        "%Y-%m-%d",  # 2022-11-26
+        "%m/%d/%Y",  # 11/26/2022
     ]
 
     for fmt in formats:
@@ -184,7 +184,7 @@ def parse_event(event_elem) -> dict[str, Any]:
             # Try to extract promotion from event name
             # Common formats: "UFC 300", "Bellator 301", "PFL 2023"
             if event_name:
-                promotion_match = re.match(r'^([A-Z]+(?:\s+[A-Z]+)?)\s*[-:]?\s*', event_name)
+                promotion_match = re.match(r"^([A-Z]+(?:\s+[A-Z]+)?)\s*[-:]?\s*", event_name)
                 if promotion_match:
                     promotion = promotion_match.group(1).strip()
 
@@ -222,7 +222,9 @@ def parse_method(method_elem) -> dict[str, Any]:
     }
 
 
-def parse_sherdog_fight_history(response: Selector, fighter_sherdog_id: int | None = None) -> list[dict[str, Any]]:
+def parse_sherdog_fight_history(
+    response: Selector, fighter_sherdog_id: int | None = None
+) -> list[dict[str, Any]]:
     """Parse complete fight history from Sherdog fighter page.
 
     Args:

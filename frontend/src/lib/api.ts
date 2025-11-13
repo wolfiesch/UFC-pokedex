@@ -82,7 +82,7 @@ function getErrorDetail(error: unknown): string | undefined {
 function throwApiError(
   error: unknown,
   defaultMessage: string,
-  context?: string
+  context?: string,
 ): never {
   const statusCode = getStatusCode(error);
   const detail = getErrorDetail(error);
@@ -109,7 +109,7 @@ function throwApiErrorWithNotFound(
   resourceType: string,
   notFoundMessage: string,
   defaultMessage: string,
-  context?: string
+  context?: string,
 ): never {
   const statusCode = getStatusCode(error);
 
@@ -131,7 +131,7 @@ function throwApiErrorWithNotFound(
 export function getApiBaseUrl(): string {
   return resolveClientApiBaseUrl(
     process.env.NEXT_PUBLIC_API_BASE_URL,
-    DEFAULT_CLIENT_API_BASE_URL
+    DEFAULT_CLIENT_API_BASE_URL,
   );
 }
 
@@ -150,10 +150,7 @@ export function getApiBaseUrl(): string {
  * console.log(fighters.total);    // Total count
  * ```
  */
-export async function getFighters(
-  limit = 20,
-  offset = 0
-) {
+export async function getFighters(limit = 20, offset = 0) {
   const { data, error } = await client.GET("/fighters/", {
     params: {
       query: {
@@ -214,7 +211,7 @@ export async function searchFighters(
   streakType: "win" | "loss" | null = null,
   minStreakCount: number | null = null,
   limit = 20,
-  offset = 0
+  offset = 0,
 ) {
   const trimmed = query.trim();
 
@@ -319,7 +316,7 @@ export async function getFighter(fighterId: string) {
       error,
       "Fighter",
       `Fighter with ID "${fighterId}" not found`,
-      "Failed to fetch fighter"
+      "Failed to fetch fighter",
     );
   }
 
@@ -348,7 +345,11 @@ export async function getStatsSummary() {
   const { data, error } = await client.GET("/stats/summary");
 
   if (error) {
-    throwApiError(error, "Unable to load stats summary metrics", "stats_summary");
+    throwApiError(
+      error,
+      "Unable to load stats summary metrics",
+      "stats_summary",
+    );
   }
 
   if (!data) {
@@ -382,7 +383,11 @@ export async function getStatsLeaderboards() {
   const { data, error } = await client.GET("/stats/leaderboards");
 
   if (error) {
-    throwApiError(error, "Unable to load stats leaderboards", "stats_leaderboards");
+    throwApiError(
+      error,
+      "Unable to load stats leaderboards",
+      "stats_leaderboards",
+    );
   }
 
   if (!data) {
@@ -444,9 +449,7 @@ export async function getStatsTrends() {
  * });
  * ```
  */
-export async function getFavoriteCollections(
-  userId: string
-) {
+export async function getFavoriteCollections(userId: string) {
   const { data, error } = await client.GET("/favorites/collections", {
     params: {
       query: {
@@ -490,7 +493,7 @@ export async function getFavoriteCollections(
  */
 export async function getFavoriteCollectionDetail(
   collectionId: number,
-  userId?: string
+  userId?: string,
 ) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
@@ -506,7 +509,7 @@ export async function getFavoriteCollectionDetail(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-    }
+    },
   );
 
   if (error) {
@@ -514,7 +517,7 @@ export async function getFavoriteCollectionDetail(
       error,
       "FavoriteCollection",
       `Collection ${collectionId} not found`,
-      "Failed to fetch collection"
+      "Failed to fetch collection",
     );
   }
 
@@ -526,11 +529,12 @@ export async function getFavoriteCollectionDetail(
   return {
     ...data,
     collection_id: data.id,
-    entries: data.entries?.map((entry) => ({
-      ...entry,
-      entry_id: entry.id,
-      collection_id: data.id,
-    })) ?? [],
+    entries:
+      data.entries?.map((entry) => ({
+        ...entry,
+        entry_id: entry.id,
+        collection_id: data.id,
+      })) ?? [],
   } as FavoriteCollectionDetail;
 }
 
@@ -553,7 +557,7 @@ export async function getFavoriteCollectionDetail(
  * ```
  */
 export async function createFavoriteCollection(
-  payload: FavoriteCollectionCreatePayload
+  payload: FavoriteCollectionCreatePayload,
 ) {
   const { data, error } = await client.POST("/favorites/collections", {
     body: payload,
@@ -571,11 +575,12 @@ export async function createFavoriteCollection(
   return {
     ...data,
     collection_id: data.id,
-    entries: data.entries?.map((entry) => ({
-      ...entry,
-      entry_id: entry.id,
-      collection_id: data.id,
-    })) ?? [],
+    entries:
+      data.entries?.map((entry) => ({
+        ...entry,
+        entry_id: entry.id,
+        collection_id: data.id,
+      })) ?? [],
   } as FavoriteCollectionDetail;
 }
 
@@ -600,7 +605,7 @@ export async function createFavoriteCollection(
 export async function addFavoriteEntry(
   collectionId: number,
   payload: FavoriteEntryCreatePayload,
-  userId?: string
+  userId?: string,
 ) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
@@ -617,7 +622,7 @@ export async function addFavoriteEntry(
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
       body: payload,
-    }
+    },
   );
 
   if (error) {
@@ -655,7 +660,7 @@ export async function addFavoriteEntry(
 export async function reorderFavoriteEntries(
   collectionId: number,
   payload: FavoriteEntryReorderPayload,
-  userId?: string
+  userId?: string,
 ) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
@@ -672,7 +677,7 @@ export async function reorderFavoriteEntries(
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
       body: payload,
-    }
+    },
   );
 
   if (error) {
@@ -687,11 +692,12 @@ export async function reorderFavoriteEntries(
   return {
     ...data,
     collection_id: data.id,
-    entries: data.entries?.map((entry) => ({
-      ...entry,
-      entry_id: entry.id,
-      collection_id: data.id,
-    })) ?? [],
+    entries:
+      data.entries?.map((entry) => ({
+        ...entry,
+        entry_id: entry.id,
+        collection_id: data.id,
+      })) ?? [],
   } as FavoriteCollectionDetail;
 }
 
@@ -717,7 +723,7 @@ export async function updateFavoriteEntry(
   collectionId: number,
   entryId: number,
   payload: FavoriteEntryUpdatePayload,
-  userId?: string
+  userId?: string,
 ) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
@@ -735,7 +741,7 @@ export async function updateFavoriteEntry(
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
       body: payload,
-    }
+    },
   );
 
   if (error) {
@@ -772,7 +778,7 @@ export async function updateFavoriteEntry(
 export async function deleteFavoriteEntry(
   collectionId: number,
   entryId: number,
-  userId?: string
+  userId?: string,
 ) {
   const queryParams: Record<string, string> = {};
   if (userId && userId.trim().length > 0) {
@@ -789,7 +795,7 @@ export async function deleteFavoriteEntry(
         },
         query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
       },
-    }
+    },
   );
 
   if (error) {
@@ -816,9 +822,7 @@ export async function deleteFavoriteEntry(
  * console.log(`Graph has ${graph.links.length} connections`);
  * ```
  */
-export async function getFightGraph(
-  params: FightGraphQueryParams = {}
-) {
+export async function getFightGraph(params: FightGraphQueryParams = {}) {
   const queryParams: Record<string, string | number | boolean> = {};
 
   if (params.division && params.division.trim().length > 0) {
@@ -870,9 +874,7 @@ export async function getFightGraph(
  * });
  * ```
  */
-export async function compareFighters(
-  fighterIds: string[]
-) {
+export async function compareFighters(fighterIds: string[]) {
   if (fighterIds.length < 2) {
     throw new ApiError("Select at least two fighters to compare.", {
       statusCode: 400,

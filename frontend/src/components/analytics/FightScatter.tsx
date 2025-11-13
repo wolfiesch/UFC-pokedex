@@ -125,7 +125,7 @@ export function FightScatter({
       scaleTime()
         .domain([new Date(domain.xMin), new Date(domain.xMax)])
         .range([40, dimensions.width - 40]),
-    [domain.xMin, domain.xMax, dimensions.width]
+    [domain.xMin, domain.xMax, dimensions.width],
   );
 
   const yScale = useMemo(
@@ -133,7 +133,7 @@ export function FightScatter({
       scaleLinear()
         .domain([domain.yMax, domain.yMin]) // Inverted: lower time at top
         .range([40, dimensions.height - 40]),
-    [domain.yMin, domain.yMax, dimensions.height]
+    [domain.yMin, domain.yMax, dimensions.height],
   );
 
   // Compute rendered fights with screen coordinates
@@ -168,7 +168,7 @@ export function FightScatter({
           return imageCache.getOpponentBitmap(
             fight.opponent_id,
             fight.headshot_url,
-            fight.opponent_name
+            fight.opponent_name,
           );
         }
         return Promise.resolve(null);
@@ -188,7 +188,7 @@ export function FightScatter({
     }
 
     const worker = new Worker(
-      new URL("../../workers/trendWorker.ts", import.meta.url)
+      new URL("../../workers/trendWorker.ts", import.meta.url),
     );
     workerRef.current = worker;
 
@@ -329,8 +329,7 @@ export function FightScatter({
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
     // Check if filters are active
-    const hasFilters =
-      filterResults.length > 0 || filterMethods.length > 0;
+    const hasFilters = filterResults.length > 0 || filterMethods.length > 0;
 
     // Render each fight
     for (const fight of renderedFights) {
@@ -347,8 +346,12 @@ export function FightScatter({
       const opacity = hasFilters && !matches ? VISUAL_CONFIG.FILTER_OPACITY : 1;
 
       // Get image from cache (already preloaded with initials)
-      const placeholderKey = fight.opponent_id ? `placeholder:${fight.opponent_id}` : "";
-      const bitmap = imageCache.get(placeholderKey) || imageCache.get(fight.headshot_url || "");
+      const placeholderKey = fight.opponent_id
+        ? `placeholder:${fight.opponent_id}`
+        : "";
+      const bitmap =
+        imageCache.get(placeholderKey) ||
+        imageCache.get(fight.headshot_url || "");
 
       const radius = VISUAL_CONFIG.MARKER_SIZE / 2;
 
@@ -367,7 +370,7 @@ export function FightScatter({
           x - radius,
           y - radius,
           VISUAL_CONFIG.MARKER_SIZE,
-          VISUAL_CONFIG.MARKER_SIZE
+          VISUAL_CONFIG.MARKER_SIZE,
         );
       } else {
         // Fallback: gray circle
@@ -410,7 +413,7 @@ export function FightScatter({
         ctx.fillText(
           METHOD_ABBREV[method],
           badgeX + badgeSize / 2,
-          badgeY + badgeSize / 2
+          badgeY + badgeSize / 2,
         );
         ctx.restore();
       }
@@ -446,8 +449,11 @@ export function FightScatter({
 
       for (let i = 0; i < trendPoints.length; i++) {
         const point = trendPoints[i];
-        const x = (xScale(new Date(point.x)) || 0) * transform.scale + transform.translateX;
-        const y = (yScale(point.y) || 0) * transform.scale + transform.translateY;
+        const x =
+          (xScale(new Date(point.x)) || 0) * transform.scale +
+          transform.translateX;
+        const y =
+          (yScale(point.y) || 0) * transform.scale + transform.translateY;
 
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -498,7 +504,7 @@ export function FightScatter({
         setTooltip(null);
       }
     },
-    [quadTree]
+    [quadTree],
   );
 
   // Handle pointer leave
@@ -523,13 +529,16 @@ export function FightScatter({
         onSelectFight(nearest.id);
       }
     },
-    [quadTree, onSelectFight]
+    [quadTree, onSelectFight],
   );
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Canvas layers */}
-      <div className="relative" style={{ width: "100%", height: `${height}px` }}>
+      <div
+        className="relative"
+        style={{ width: "100%", height: `${height}px` }}
+      >
         <canvas
           ref={heatmapCanvasRef}
           className="absolute left-0 top-0"
@@ -543,7 +552,7 @@ export function FightScatter({
 
         {/* X-Axis Timeline */}
         <svg
-          className="absolute left-0 top-0 pointer-events-none"
+          className="pointer-events-none absolute left-0 top-0"
           style={{ width: "100%", height: "100%" }}
         >
           {/* Generate monthly tick marks */}
@@ -553,15 +562,20 @@ export function FightScatter({
             const endDate = new Date(domain.xMax);
 
             // Round to start of month
-            const current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+            const current = new Date(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              1,
+            );
 
             while (current <= endDate) {
-              const x = (xScale(current) || 0) * transform.scale + transform.translateX;
+              const x =
+                (xScale(current) || 0) * transform.scale + transform.translateX;
               const month = current.getMonth();
               const year = current.getFullYear();
 
               // Determine tick hierarchy
-              const isYearStart = month === 0;      // January
+              const isYearStart = month === 0; // January
               const isQuarterly = month === 2 || month === 5 || month === 8; // Mar, Jun, Sep
 
               // Skip ticks that are outside visible area
@@ -594,7 +608,7 @@ export function FightScatter({
                         {year}
                       </text>
                     )}
-                  </g>
+                  </g>,
                 );
               }
 

@@ -23,7 +23,8 @@ export default function EventFilters({
   onLocationChange,
   onEventTypeChange,
 }: EventFiltersProps) {
-  const hasActiveFilters = selectedYear || selectedLocation || selectedEventType;
+  const hasActiveFilters =
+    selectedYear || selectedLocation || selectedEventType;
 
   const clearFilters = () => {
     onYearChange(null);
@@ -32,13 +33,13 @@ export default function EventFilters({
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-lg border border-gray-700 bg-gray-800 p-6">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-sm text-blue-400 transition-colors hover:text-blue-300"
           >
             Clear all
           </button>
@@ -48,11 +49,15 @@ export default function EventFilters({
       <div className="space-y-6">
         {/* Year Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">Year</label>
+          <label className="mb-2 block text-sm font-medium text-gray-400">
+            Year
+          </label>
           <select
             value={selectedYear?.toString() || ""}
-            onChange={(e) => onYearChange(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+            onChange={(e) =>
+              onYearChange(e.target.value ? parseInt(e.target.value) : null)
+            }
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-white transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="">All years</option>
             {years.map((year) => (
@@ -65,11 +70,15 @@ export default function EventFilters({
 
         {/* Event Type Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">Event Type</label>
+          <label className="mb-2 block text-sm font-medium text-gray-400">
+            Event Type
+          </label>
           <select
             value={selectedEventType || ""}
-            onChange={(e) => onEventTypeChange((e.target.value as EventType) || null)}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+            onChange={(e) =>
+              onEventTypeChange((e.target.value as EventType) || null)
+            }
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-white transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="">All types</option>
             {Object.entries(EVENT_TYPE_CONFIGS).map(([key, config]) => (
@@ -82,11 +91,13 @@ export default function EventFilters({
 
         {/* Location Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">Location</label>
+          <label className="mb-2 block text-sm font-medium text-gray-400">
+            Location
+          </label>
           <select
             value={selectedLocation || ""}
             onChange={(e) => onLocationChange(e.target.value || null)}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-white transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="">All locations</option>
             {locations.map((location) => (
@@ -100,14 +111,14 @@ export default function EventFilters({
 
       {/* Active Filters Display */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
+        <div className="mt-4 border-t border-gray-700 pt-4">
           <div className="flex flex-wrap gap-2">
             {selectedYear && (
-              <span className="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full flex items-center gap-1">
+              <span className="flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs text-blue-300">
                 {selectedYear}
                 <button
                   onClick={() => onYearChange(null)}
-                  className="hover:text-blue-100 transition-colors"
+                  className="transition-colors hover:text-blue-100"
                   aria-label="Remove year filter"
                 >
                   ✕
@@ -115,11 +126,11 @@ export default function EventFilters({
               </span>
             )}
             {selectedEventType && (
-              <span className="px-2 py-1 bg-purple-900 text-purple-300 text-xs rounded-full flex items-center gap-1">
+              <span className="flex items-center gap-1 rounded-full bg-purple-900 px-2 py-1 text-xs text-purple-300">
                 {EVENT_TYPE_CONFIGS[selectedEventType].label}
                 <button
                   onClick={() => onEventTypeChange(null)}
-                  className="hover:text-purple-100 transition-colors"
+                  className="transition-colors hover:text-purple-100"
                   aria-label="Remove event type filter"
                 >
                   ✕
@@ -127,11 +138,13 @@ export default function EventFilters({
               </span>
             )}
             {selectedLocation && (
-              <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full flex items-center gap-1">
-                {selectedLocation.length > 20 ? `${selectedLocation.substring(0, 20)}...` : selectedLocation}
+              <span className="flex items-center gap-1 rounded-full bg-green-900 px-2 py-1 text-xs text-green-300">
+                {selectedLocation.length > 20
+                  ? `${selectedLocation.substring(0, 20)}...`
+                  : selectedLocation}
                 <button
                   onClick={() => onLocationChange(null)}
-                  className="hover:text-green-100 transition-colors"
+                  className="transition-colors hover:text-green-100"
                   aria-label="Remove location filter"
                 >
                   ✕

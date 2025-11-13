@@ -26,11 +26,7 @@ class FighterManagementMixin:
 
         fighter_id = fighter_data.get("id")
 
-        query = (
-            select(Fighter)
-            .options(load_only(Fighter.id))
-            .where(Fighter.id == fighter_id)
-        )
+        query = select(Fighter).options(load_only(Fighter.id)).where(Fighter.id == fighter_id)
         result = await self._session.execute(query)
         existing_fighter = result.scalar_one_or_none()
 
@@ -92,9 +88,7 @@ class FighterManagementMixin:
             update_values["needs_manual_review"] = needs_manual_review
 
         if update_values:
-            stmt = (
-                update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
-            )
+            stmt = update(Fighter).where(Fighter.id == fighter_id).values(**update_values)
             await self._session.execute(stmt)
 
     async def update_fighter_nationality(
@@ -104,11 +98,7 @@ class FighterManagementMixin:
     ) -> None:
         """Update fighter nationality from Sherdog data."""
 
-        stmt = (
-            update(Fighter)
-            .where(Fighter.id == fighter_id)
-            .values(nationality=nationality)
-        )
+        stmt = update(Fighter).where(Fighter.id == fighter_id).values(nationality=nationality)
         await self._session.execute(stmt)
 
     async def get_fighters_without_ufc_com_data(self) -> Sequence[Fighter]:

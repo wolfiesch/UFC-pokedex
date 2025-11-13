@@ -82,7 +82,7 @@ class LeaderboardEntry(BaseModel):
     detail_url: str | None = None
     fight_count: int | None = Field(
         default=None,
-        description="Number of UFC fights used to calculate this metric (data quality indicator)"
+        description="Number of UFC fights used to calculate this metric (data quality indicator)",
     )
 
 

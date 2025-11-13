@@ -185,8 +185,7 @@ class FavoriteEntryReorderRequest(BaseModel):
     entry_ids: list[int] = Field(
         ...,
         description=(
-            "Ordered list of entry identifiers representing the desired"
-            " front-end arrangement."
+            "Ordered list of entry identifiers representing the desired front-end arrangement."
         ),
     )
 

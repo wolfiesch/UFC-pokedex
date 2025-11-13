@@ -23,18 +23,14 @@ class RankingEntry(BaseModel):
         default=0,
         description="Rank movement delta (positive=moved up, negative=moved down)",
     )
-    is_interim: bool = Field(
-        default=False, description="Whether this is an interim championship"
-    )
+    is_interim: bool = Field(default=False, description="Whether this is an interim championship")
 
 
 class CurrentRankingsResponse(BaseModel):
     """Current rankings for a specific division."""
 
     division: str = Field(description="Weight class (e.g., 'Lightweight')")
-    source: str = Field(
-        description="Ranking source: 'ufc', 'fightmatrix', 'tapology'"
-    )
+    source: str = Field(description="Ranking source: 'ufc', 'fightmatrix', 'tapology'")
     rank_date: date = Field(description="Date of this ranking snapshot")
     rankings: list[RankingEntry] = Field(
         default_factory=list, description="List of ranked fighters"
@@ -47,9 +43,7 @@ class RankingHistoryEntry(BaseModel):
 
     ranking_id: str = Field(description="Unique ranking record ID")
     division: str = Field(description="Weight class")
-    rank: int | None = Field(
-        description="Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked"
-    )
+    rank: int | None = Field(description="Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked")
     previous_rank: int | None = Field(None, description="Previous rank")
     rank_movement: int = Field(default=0, description="Rank movement delta")
     is_interim: bool = Field(default=False, description="Interim championship flag")
@@ -85,9 +79,7 @@ class PeakRankingResponse(BaseModel):
 class DivisionListResponse(BaseModel):
     """List of divisions with rankings available."""
 
-    divisions: list[str] = Field(
-        default_factory=list, description="Available division names"
-    )
+    divisions: list[str] = Field(default_factory=list, description="Available division names")
     source: str = Field(description="Ranking source")
     total_divisions: int = Field(description="Total number of divisions")
 

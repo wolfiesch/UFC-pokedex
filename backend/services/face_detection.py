@@ -75,9 +75,7 @@ class FaceDetectionService:
         except Exception as e:
             logger.warning(f"Failed to load CNN detector: {e}")
 
-    def detect_faces(
-        self, image_path: str | Path, use_cnn: bool = False
-    ) -> list[FaceBox]:
+    def detect_faces(self, image_path: str | Path, use_cnn: bool = False) -> list[FaceBox]:
         """
         Detect all faces in an image.
 
@@ -106,9 +104,7 @@ class FaceDetectionService:
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         except Exception as exc:
-            raise ValueError(
-                f"Error loading image {image_path}: {exc}"
-            ) from exc
+            raise ValueError(f"Error loading image {image_path}: {exc}") from exc
 
         # Detect faces
         faces = []
@@ -217,9 +213,7 @@ class FaceDetectionService:
 
         return primary
 
-    def calculate_confidence(
-        self, face: FaceBox, image: np.ndarray
-    ) -> float:
+    def calculate_confidence(self, face: FaceBox, image: np.ndarray) -> float:
         """
         Estimate detection confidence based on face characteristics.
 
@@ -247,10 +241,9 @@ class FaceDetectionService:
         image_center_x, image_center_y = width // 2, height // 2
 
         center_dist = np.sqrt(
-            (face_center_x - image_center_x) ** 2 +
-            (face_center_y - image_center_y) ** 2
+            (face_center_x - image_center_x) ** 2 + (face_center_y - image_center_y) ** 2
         )
-        max_dist = np.sqrt(image_center_x ** 2 + image_center_y ** 2)
+        max_dist = np.sqrt(image_center_x**2 + image_center_y**2)
         position_score = 1.0 - (center_dist / max_dist)
 
         # Factor 3: Aspect ratio (should be somewhat square)
@@ -260,11 +253,7 @@ class FaceDetectionService:
         aspect_score = max(0, min(aspect_score, 1.0))
 
         # Combine factors (weighted average)
-        confidence = (
-            0.4 * size_score +
-            0.3 * position_score +
-            0.3 * aspect_score
-        )
+        confidence = 0.4 * size_score + 0.3 * position_score + 0.3 * aspect_score
 
         # If the face has its own confidence (from CNN), factor that in
         if face.confidence < 1.0:

@@ -71,7 +71,7 @@ export default function LeaderboardFilters({
             <Label htmlFor="min-fights-filter" className="text-sm font-medium">
               Minimum UFC Fights
             </Label>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-mono font-semibold">
+            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold">
               {minFights}
             </span>
           </div>
@@ -112,7 +112,7 @@ export default function LeaderboardFilters({
               onDivisionChange(null);
               onMinFightsChange(0);
             }}
-            className="ml-auto text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            className="ml-auto text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
           >
             Clear all
           </button>

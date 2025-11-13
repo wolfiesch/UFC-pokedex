@@ -30,21 +30,15 @@ async def stats_summary(
 
 @router.get("/leaderboards", response_model=LeaderboardsResponse)
 async def stats_leaderboards(
-    limit: int = Query(
-        10, ge=1, le=100, description="Maximum entries per leaderboard."
-    ),
-    offset: int = Query(
-        0, ge=0, description="Pagination offset for leaderboard entries."
-    ),
+    limit: int = Query(10, ge=1, le=100, description="Maximum entries per leaderboard."),
+    offset: int = Query(0, ge=0, description="Pagination offset for leaderboard entries."),
     accuracy_metric: Annotated[
         LeaderboardMetricId,
         Query(description="fighter_stats.metric name representing accuracy to rank."),
     ] = "sig_strikes_accuracy_pct",
     submissions_metric: Annotated[
         LeaderboardMetricId,
-        Query(
-            description="fighter_stats.metric name representing submissions to rank."
-        ),
+        Query(description="fighter_stats.metric name representing submissions to rank."),
     ] = "avg_submissions",
     division: str | None = Query(
         None,
@@ -153,9 +147,7 @@ async def get_gym_stats(
     min_fighters: int = Query(5, ge=1, description="Minimum number of fighters"),
     sort_by: Annotated[
         str,
-        Query(
-            pattern="^(fighters|name)$", description="Sort by fighter count or gym name"
-        ),
+        Query(pattern="^(fighters|name)$", description="Sort by fighter count or gym name"),
     ] = "fighters",
     service: StatsService = Depends(get_stats_service),
 ) -> GymStatsResponse:
@@ -165,6 +157,4 @@ async def get_gym_stats(
         /stats/gyms?min_fighters=10
         /stats/gyms?country=United States&sort_by=fighters
     """
-    return await service.get_gym_stats(
-        country=country, min_fighters=min_fighters, sort_by=sort_by
-    )
+    return await service.get_gym_stats(country=country, min_fighters=min_fighters, sort_by=sort_by)

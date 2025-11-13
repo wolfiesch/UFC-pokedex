@@ -25,7 +25,7 @@ export default function ChampionStatusFilter({
           return (
             <label
               key={option.value}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition hover:bg-accent/50 focus-within:ring-2 focus-within:ring-ring"
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition focus-within:ring-2 focus-within:ring-ring hover:bg-accent/50"
             >
               <input
                 type="checkbox"

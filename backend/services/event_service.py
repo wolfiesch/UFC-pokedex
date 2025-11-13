@@ -72,9 +72,7 @@ class EventService:
                     )
 
         # Fetch from repository
-        events = await self._repository.list_events(
-            status=status, limit=limit, offset=offset
-        )
+        events = await self._repository.list_events(status=status, limit=limit, offset=offset)
         event_list = list(events)
 
         # Cache result

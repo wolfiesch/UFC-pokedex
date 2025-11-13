@@ -22,8 +22,10 @@ export const EVENT_TYPE_CONFIGS: Record<EventType, EventTypeConfig> = {
   ppv: {
     label: "PPV",
     color: "gold",
-    bgClass: "bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 border-amber-600",
-    badgeClass: "bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold",
+    bgClass:
+      "bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 border-amber-600",
+    badgeClass:
+      "bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold",
   },
   fight_night: {
     label: "Fight Night",
@@ -99,17 +101,23 @@ export function detectEventType(eventName: string): EventType {
   return "other";
 }
 
-export function getEventTypeLabel(eventType: EventType | null | undefined): string {
+export function getEventTypeLabel(
+  eventType: EventType | null | undefined,
+): string {
   if (!eventType) return "Other";
   return EVENT_TYPE_CONFIGS[eventType]?.label || "Other";
 }
 
-export function getEventTypeConfig(eventType: EventType | null | undefined): EventTypeConfig {
+export function getEventTypeConfig(
+  eventType: EventType | null | undefined,
+): EventTypeConfig {
   if (!eventType) return EVENT_TYPE_CONFIGS.other;
   return EVENT_TYPE_CONFIGS[eventType] || EVENT_TYPE_CONFIGS.other;
 }
 
-export function normalizeEventType(value: string | null | undefined): EventType | null {
+export function normalizeEventType(
+  value: string | null | undefined,
+): EventType | null {
   if (!value) {
     return null;
   }
@@ -126,7 +134,7 @@ export function isPPVEvent(eventName: string): boolean {
 }
 
 export function groupEventsByMonth<T extends { date: string }>(
-  events: T[]
+  events: T[],
 ): Map<string, T[]> {
   const grouped = new Map<string, T[]>();
 

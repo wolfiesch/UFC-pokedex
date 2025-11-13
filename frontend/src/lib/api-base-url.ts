@@ -8,7 +8,9 @@ type NextData = {
 };
 
 function isBrowserEnvironment(): boolean {
-  return typeof window !== "undefined" && typeof window.location !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.location !== "undefined"
+  );
 }
 
 function getBasePathFromNextData(nextData?: NextData): string {
@@ -42,9 +44,11 @@ function inferBrowserApiBaseUrl(): string | undefined {
     return undefined;
   }
 
-  const nextData = (globalThis as typeof globalThis & {
-    __NEXT_DATA__?: NextData;
-  }).__NEXT_DATA__;
+  const nextData = (
+    globalThis as typeof globalThis & {
+      __NEXT_DATA__?: NextData;
+    }
+  ).__NEXT_DATA__;
 
   const basePath = getBasePathFromNextData(nextData);
   const apiPath = `${basePath}/api`.replace(/\/{2,}/g, "/");
@@ -68,7 +72,7 @@ export const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
  */
 export function resolveClientApiBaseUrl(
   configuredUrl: string | undefined,
-  fallbackUrl = DEFAULT_CLIENT_API_BASE_URL
+  fallbackUrl = DEFAULT_CLIENT_API_BASE_URL,
 ): string {
   if (configuredUrl?.trim()) {
     return resolveApiBaseUrl(configuredUrl, fallbackUrl);
@@ -82,8 +86,8 @@ export function resolveClientApiBaseUrl(
       if (typeof console !== "undefined") {
         console.warn(
           `resolveClientApiBaseUrl: Ignoring inferred base URL "${inferred}" – ${String(
-            error
-          )}`
+            error,
+          )}`,
         );
       }
     }

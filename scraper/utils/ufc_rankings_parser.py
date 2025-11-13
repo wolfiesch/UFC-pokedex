@@ -58,15 +58,17 @@ def _parse_table_layout(selector: Selector, rank_date: date) -> list[dict[str, A
         if champion_block:
             champion_name = champion_block.css(".info a::text").get()
             if champion_name:
-                rankings.append({
-                    "fighter_name": champion_name.strip(),
-                    "division": division_name,
-                    "rank": 0,
-                    "previous_rank": None,
-                    "is_interim": _check_if_interim(champion_block[0]),
-                    "rank_date": rank_date,
-                    "source": "ufc",
-                })
+                rankings.append(
+                    {
+                        "fighter_name": champion_name.strip(),
+                        "division": division_name,
+                        "rank": 0,
+                        "previous_rank": None,
+                        "is_interim": _check_if_interim(champion_block[0]),
+                        "rank_date": rank_date,
+                        "source": "ufc",
+                    }
+                )
 
         for row in section.css("tbody tr"):
             rank = _safe_parse_rank(row.css("td:nth-child(1)::text").get())
@@ -77,15 +79,17 @@ def _parse_table_layout(selector: Selector, rank_date: date) -> list[dict[str, A
 
             previous_rank = _extract_previous_rank_from_row(row)
 
-            rankings.append({
-                "fighter_name": fighter_name.strip(),
-                "division": division_name,
-                "rank": rank,
-                "previous_rank": previous_rank,
-                "is_interim": False,
-                "rank_date": rank_date,
-                "source": "ufc",
-            })
+            rankings.append(
+                {
+                    "fighter_name": fighter_name.strip(),
+                    "division": division_name,
+                    "rank": rank,
+                    "previous_rank": previous_rank,
+                    "is_interim": False,
+                    "rank_date": rank_date,
+                    "source": "ufc",
+                }
+            )
 
     return rankings
 
@@ -119,15 +123,17 @@ def _parse_legacy_layout(selector: Selector, rank_date: date) -> list[dict[str, 
         if champion_elem:
             champion_name = _extract_fighter_name(champion_elem[0])
             if champion_name:
-                rankings.append({
-                    "fighter_name": champion_name,
-                    "division": division_name,
-                    "rank": 0,
-                    "previous_rank": None,
-                    "is_interim": _check_if_interim(champion_elem[0]),
-                    "rank_date": rank_date,
-                    "source": "ufc",
-                })
+                rankings.append(
+                    {
+                        "fighter_name": champion_name,
+                        "division": division_name,
+                        "rank": 0,
+                        "previous_rank": None,
+                        "is_interim": _check_if_interim(champion_elem[0]),
+                        "rank_date": rank_date,
+                        "source": "ufc",
+                    }
+                )
 
         ranked_fighters = section.css(".rankings-athlete-list-item, .athlete-item, .fighter-row")
         for fighter_elem in ranked_fighters:
@@ -141,15 +147,17 @@ def _parse_legacy_layout(selector: Selector, rank_date: date) -> list[dict[str, 
 
             previous_rank = _extract_previous_rank(fighter_elem)
 
-            rankings.append({
-                "fighter_name": fighter_name,
-                "division": division_name,
-                "rank": rank_value,
-                "previous_rank": previous_rank,
-                "is_interim": False,
-                "rank_date": rank_date,
-                "source": "ufc",
-            })
+            rankings.append(
+                {
+                    "fighter_name": fighter_name,
+                    "division": division_name,
+                    "rank": rank_value,
+                    "previous_rank": previous_rank,
+                    "is_interim": False,
+                    "rank_date": rank_date,
+                    "source": "ufc",
+                }
+            )
 
     return rankings
 
@@ -178,11 +186,11 @@ def _extract_fighter_name(fighter_elem: Selector) -> str | None:
     """
     # Try multiple selectors
     name = (
-        fighter_elem.css('.athlete-name::text').get()
-        or fighter_elem.css('.fighter-name::text').get()
-        or fighter_elem.css('.name::text').get()
-        or fighter_elem.css('a::text').get()
-        or fighter_elem.xpath('.//text()[normalize-space()]').get()
+        fighter_elem.css(".athlete-name::text").get()
+        or fighter_elem.css(".fighter-name::text").get()
+        or fighter_elem.css(".name::text").get()
+        or fighter_elem.css("a::text").get()
+        or fighter_elem.xpath(".//text()[normalize-space()]").get()
     )
 
     if name:
@@ -201,10 +209,10 @@ def _extract_rank(fighter_elem: Selector) -> int | None:
         Rank as integer (1-15) or None
     """
     rank_text = (
-        fighter_elem.css('.rank::text').get()
-        or fighter_elem.css('.number::text').get()
+        fighter_elem.css(".rank::text").get()
+        or fighter_elem.css(".number::text").get()
         or fighter_elem.css('[class*="rank"]::text').get()
-        or fighter_elem.attrib.get('data-rank')
+        or fighter_elem.attrib.get("data-rank")
     )
 
     if not rank_text:
@@ -232,9 +240,9 @@ def _extract_previous_rank(fighter_elem: Selector) -> int | None:
         Previous rank or None
     """
     prev_rank_text = (
-        fighter_elem.css('.previous-rank::text').get()
+        fighter_elem.css(".previous-rank::text").get()
         or fighter_elem.css('[class*="prev"]::text').get()
-        or fighter_elem.attrib.get('data-previous-rank')
+        or fighter_elem.attrib.get("data-previous-rank")
     )
 
     if not prev_rank_text:

@@ -72,9 +72,7 @@ class RankingRepository:
                 "nickname": fighter.nickname,
                 "rank": ranking.rank,
                 "previous_rank": ranking.previous_rank,
-                "rank_movement": self._calculate_rank_movement(
-                    ranking.rank, ranking.previous_rank
-                ),
+                "rank_movement": self._calculate_rank_movement(ranking.rank, ranking.previous_rank),
                 "is_interim": ranking.is_interim,
                 "rank_date": ranking.rank_date,
                 "source": ranking.source,
@@ -117,9 +115,7 @@ class RankingRepository:
                 "division": ranking.division,
                 "rank": ranking.rank,
                 "previous_rank": ranking.previous_rank,
-                "rank_movement": self._calculate_rank_movement(
-                    ranking.rank, ranking.previous_rank
-                ),
+                "rank_movement": self._calculate_rank_movement(ranking.rank, ranking.previous_rank),
                 "is_interim": ranking.is_interim,
                 "rank_date": ranking.rank_date,
                 "source": ranking.source,
@@ -211,9 +207,7 @@ class RankingRepository:
             await self.session.flush()
             return ranking
 
-    async def bulk_upsert_rankings(
-        self, rankings_data: list[dict[str, Any]]
-    ) -> int:
+    async def bulk_upsert_rankings(self, rankings_data: list[dict[str, Any]]) -> int:
         """Bulk insert/update multiple rankings efficiently.
 
         Args:
@@ -249,9 +243,7 @@ class RankingRepository:
         result = await self.session.execute(query)
         return [row[0] for row in result.all()]
 
-    async def get_latest_ranking_date(
-        self, source: str = "ufc"
-    ) -> date | None:
+    async def get_latest_ranking_date(self, source: str = "ufc") -> date | None:
         """Get the most recent ranking date in the database.
 
         Args:
@@ -260,17 +252,12 @@ class RankingRepository:
         Returns:
             Most recent ranking date or None
         """
-        query = (
-            select(func.max(FighterRanking.rank_date))
-            .where(FighterRanking.source == source)
-        )
+        query = select(func.max(FighterRanking.rank_date)).where(FighterRanking.source == source)
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    def _calculate_rank_movement(
-        self, current_rank: int | None, previous_rank: int | None
-    ) -> int:
+    def _calculate_rank_movement(self, current_rank: int | None, previous_rank: int | None) -> int:
         """Calculate rank movement (positive = moved up, negative = moved down).
 
         Args:

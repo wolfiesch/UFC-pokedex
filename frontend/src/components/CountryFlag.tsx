@@ -1,5 +1,5 @@
-import React from 'react';
-import * as flags from 'country-flag-icons/react/3x2';
+import React from "react";
+import * as flags from "country-flag-icons/react/3x2";
 
 interface CountryFlagProps {
   /** ISO 3166-1 alpha-2 country code (e.g., "US", "BR", "IE") */
@@ -21,7 +21,7 @@ interface CountryFlagProps {
 export default function CountryFlag({
   countryCode,
   alt,
-  className = '',
+  className = "",
   width = 24,
   height = 16,
 }: CountryFlagProps) {

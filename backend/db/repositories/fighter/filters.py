@@ -41,9 +41,7 @@ def normalize_search_filters(
     champion_tuple: tuple[str, ...] | None = None
     if champion_statuses:
         champion_set = {
-            status.strip().lower()
-            for status in champion_statuses
-            if status and status.strip()
+            status.strip().lower() for status in champion_statuses if status and status.strip()
         }
         if champion_set:
             champion_tuple = tuple(sorted(champion_set))
@@ -57,9 +55,7 @@ def normalize_search_filters(
             raise ValueError(msg)
 
     normalized_count = (
-        min_streak_count
-        if (min_streak_count is not None and min_streak_count > 0)
-        else None
+        min_streak_count if (min_streak_count is not None and min_streak_count > 0) else None
     )
 
     return FighterSearchFilters(
@@ -92,9 +88,7 @@ def filter_roster_entries(
 
         matches_query = True
         if query_lower:
-            haystack = " ".join(
-                part for part in (name_value, nickname_value) if part
-            ).lower()
+            haystack = " ".join(part for part in (name_value, nickname_value) if part).lower()
             matches_query = query_lower in haystack
 
         matches_stance = True
@@ -121,8 +115,7 @@ def filter_roster_entries(
             streak_type = getattr(fighter, "current_streak_type", "none") or "none"
             streak_count = int(getattr(fighter, "current_streak_count", 0) or 0)
             matches_streak = (
-                streak_type == filters.streak_type
-                and streak_count >= filters.min_streak_count
+                streak_type == filters.streak_type and streak_count >= filters.min_streak_count
             )
 
         if (

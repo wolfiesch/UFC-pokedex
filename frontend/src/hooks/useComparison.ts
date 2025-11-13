@@ -48,7 +48,7 @@ export function useComparison(): UseComparisonResult {
         });
       }
     },
-    [store]
+    [store],
   );
 
   const removeFromComparison = useCallback(
@@ -61,7 +61,7 @@ export function useComparison(): UseComparisonResult {
           : "Fighter removed from comparison list",
       });
     },
-    [store]
+    [store],
   );
 
   const toggleComparison = useCallback(
@@ -72,7 +72,7 @@ export function useComparison(): UseComparisonResult {
         addToComparison(fighterId, fighterName);
       }
     },
-    [store, addToComparison, removeFromComparison]
+    [store, addToComparison, removeFromComparison],
   );
 
   const clearComparison = useCallback(() => {

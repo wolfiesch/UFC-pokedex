@@ -72,7 +72,7 @@ class SherdogImagesSpider(scrapy.Spider):
 
             # Check if image already exists (any extension)
             existing_image = None
-            for ext in ['jpg', 'png', 'gif']:
+            for ext in ["jpg", "png", "gif"]:
                 image_path = self.images_dir / f"{ufc_id}.{ext}"
                 if image_path.exists():
                     existing_image = image_path

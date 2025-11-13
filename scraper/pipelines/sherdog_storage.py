@@ -48,6 +48,4 @@ class SherdogStoragePipeline:
             with self.output_file.open("w", encoding="utf-8") as f:
                 json.dump(self.matches, f, indent=2)
 
-            spider.logger.info(
-                f"Wrote {len(self.matches)} fighter matches to {self.output_file}"
-            )
+            spider.logger.info(f"Wrote {len(self.matches)} fighter matches to {self.output_file}")

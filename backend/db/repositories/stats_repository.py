@@ -109,15 +109,11 @@ class StatsRepository(BaseRepository):
                     id="avg_fight_duration_minutes",
                     label=SUMMARY_METRIC_LABELS["avg_fight_duration_minutes"],
                     value=round(avg_duration_seconds / 60.0, 1),
-                    description=SUMMARY_METRIC_DESCRIPTIONS[
-                        "avg_fight_duration_minutes"
-                    ],
+                    description=SUMMARY_METRIC_DESCRIPTIONS["avg_fight_duration_minutes"],
                 )
             )
 
-        top_streaks = await self._calculate_win_streaks(
-            start_date=None, end_date=None, limit=1
-        )
+        top_streaks = await self._calculate_win_streaks(start_date=None, end_date=None, limit=1)
         if top_streaks:
             longest = top_streaks[0]
             metrics.append(
@@ -284,9 +280,7 @@ class StatsRepository(BaseRepository):
 
         numeric_value = self._numeric_stat_value()
 
-        fight_exists = select(Fight.id).where(
-            Fight.fighter_id == fighter_stats.c.fighter_id
-        )
+        fight_exists = select(Fight.id).where(Fight.fighter_id == fighter_stats.c.fighter_id)
         if start_date is not None:
             fight_exists = fight_exists.where(Fight.event_date >= start_date)
         if end_date is not None:
@@ -462,9 +456,7 @@ class StatsRepository(BaseRepository):
                 ordered_cte.c.division,
                 ordered_cte.c.event_date,
                 ordered_cte.c.is_win,
-                (ordered_cte.c.row_number - ordered_cte.c.wins_to_date).label(
-                    "streak_group"
-                ),
+                (ordered_cte.c.row_number - ordered_cte.c.wins_to_date).label("streak_group"),
             )
         ).cte("streak_groups")
 
@@ -591,9 +583,7 @@ class StatsRepository(BaseRepository):
                 AverageFightDuration(
                     division=row.division,
                     bucket_start=bucket_start_date,
-                    bucket_label=self._format_bucket_label(
-                        bucket_start_date, time_bucket
-                    ),
+                    bucket_label=self._format_bucket_label(bucket_start_date, time_bucket),
                     average_duration_seconds=float(row.avg_duration),
                     average_duration_minutes=float(row.avg_duration) / 60.0,
                 )
@@ -621,9 +611,7 @@ class StatsRepository(BaseRepository):
         round_index = func.coalesce(Fight.round, 1)
         completed_rounds = case((round_index > 1, round_index - 1), else_=0)
         elapsed_before_round = completed_rounds * 300
-        elapsed_this_round = cast(minute_text, Integer) * 60 + cast(
-            second_text, Integer
-        )
+        elapsed_this_round = cast(minute_text, Integer) * 60 + cast(second_text, Integer)
 
         return case(
             (valid_time, cast(elapsed_before_round + elapsed_this_round, Float)),

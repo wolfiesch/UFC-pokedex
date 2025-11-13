@@ -27,7 +27,10 @@ function resolveErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export type StatsSummaryQueryResult = UseQueryResult<StatsSummaryResponse, ApiError> & {
+export type StatsSummaryQueryResult = UseQueryResult<
+  StatsSummaryResponse,
+  ApiError
+> & {
   /** Derived, human-readable error string bound to Stats Hub summary widgets. */
   errorMessage: string | null;
 };
@@ -49,7 +52,10 @@ export function useStatsSummaryQuery(): StatsSummaryQueryResult {
   return {
     ...query,
     errorMessage: query.error
-      ? resolveErrorMessage(query.error, "Unable to load stats summary metrics.")
+      ? resolveErrorMessage(
+          query.error,
+          "Unable to load stats summary metrics.",
+        )
       : null,
   };
 }
@@ -85,7 +91,10 @@ export function useStatsLeaderboardsQuery(): StatsLeaderboardsQueryResult {
   };
 }
 
-export type StatsTrendsQueryResult = UseQueryResult<StatsTrendsResponse, ApiError> & {
+export type StatsTrendsQueryResult = UseQueryResult<
+  StatsTrendsResponse,
+  ApiError
+> & {
   /** Human-readable message suitable for chart-level alerts when trend requests fail. */
   errorMessage: string | null;
 };

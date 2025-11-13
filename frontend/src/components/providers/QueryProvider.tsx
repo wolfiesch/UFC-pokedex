@@ -18,38 +18,36 @@ export function QueryProvider({ children }: { children: ReactNode }) {
    * configuration keeps fighter lists warm for five minutes which drastically
    * reduces redundant calls when returning to the roster screen.
    */
-  const [client] = useState(
-    () => {
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            /**
-             * Cache successful queries for five minutes. When a user navigates away
-             * and back to a page, TanStack Query can serve the cached data instantly
-             * without re-requesting from the API.
-             */
-            staleTime: 1000 * 60 * 5,
-            /**
-             * Retain cached fighter data for thirty minutes before garbage collection
-             * so we can benefit from cache hits during longer browsing sessions.
-             */
-            gcTime: 1000 * 60 * 30,
-            /**
-             * Automatically retry transient errors twice which matches our existing
-             * fetchWithRetry behaviour and improves resilience to flaky networks.
-             */
-            retry: 2,
-            /** Provide more granular loading states during background refetches. */
-            refetchOnWindowFocus: false,
-          },
+  const [client] = useState(() => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          /**
+           * Cache successful queries for five minutes. When a user navigates away
+           * and back to a page, TanStack Query can serve the cached data instantly
+           * without re-requesting from the API.
+           */
+          staleTime: 1000 * 60 * 5,
+          /**
+           * Retain cached fighter data for thirty minutes before garbage collection
+           * so we can benefit from cache hits during longer browsing sessions.
+           */
+          gcTime: 1000 * 60 * 30,
+          /**
+           * Automatically retry transient errors twice which matches our existing
+           * fetchWithRetry behaviour and improves resilience to flaky networks.
+           */
+          retry: 2,
+          /** Provide more granular loading states during background refetches. */
+          refetchOnWindowFocus: false,
         },
-      });
+      },
+    });
 
-      registerQueryClient(queryClient);
+    registerQueryClient(queryClient);
 
-      return queryClient;
-    }
-  );
+    return queryClient;
+  });
 
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

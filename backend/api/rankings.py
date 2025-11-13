@@ -21,9 +21,7 @@ router = APIRouter()
 async def _get_fighter_name(session: AsyncSession, fighter_id: str) -> str | None:
     """Return the fighter's display name without loading the full roster payload."""
 
-    result = await session.execute(
-        select(Fighter.name).where(Fighter.id == fighter_id)
-    )
+    result = await session.execute(select(Fighter.name).where(Fighter.id == fighter_id))
     return result.scalar_one_or_none()
 
 
@@ -143,9 +141,7 @@ async def get_fighter_ranking_history(
     if not fighter_name:
         raise HTTPException(status_code=404, detail="Fighter not found")
 
-    response = await service.get_fighter_ranking_history(
-        fighter_id, fighter_name, source, limit
-    )
+    response = await service.get_fighter_ranking_history(fighter_id, fighter_name, source, limit)
 
     if not response.history:
         raise HTTPException(

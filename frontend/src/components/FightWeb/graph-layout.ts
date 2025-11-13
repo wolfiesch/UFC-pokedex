@@ -56,7 +56,7 @@ const EPSILON = 1e-3;
 export function computeForceLayout(
   nodes: FightGraphNode[],
   links: FightGraphLink[],
-  options: ForceLayoutOptions = {}
+  options: ForceLayoutOptions = {},
 ): {
   nodes: LayoutNode[];
   edges: LayoutEdge[];
@@ -72,9 +72,9 @@ export function computeForceLayout(
 
   const iterations =
     options.iterations ?? Math.min(280, Math.max(120, nodes.length * 4));
-  const repulsionStrength = options.repulsionStrength ?? 2000;  // Increased from 1400
-  const linkDistance = options.linkDistance ?? 180;  // Increased from 140 (more spacing)
-  const springStrength = options.springStrength ?? 0.06;  // Reduced from 0.08 (softer springs)
+  const repulsionStrength = options.repulsionStrength ?? 2000; // Increased from 1400
+  const linkDistance = options.linkDistance ?? 180; // Increased from 140 (more spacing)
+  const springStrength = options.springStrength ?? 0.06; // Reduced from 0.08 (softer springs)
   const damping = options.damping ?? 0.6;
   const centerStrength = options.centerStrength ?? 0.005;
   const timeStep = options.timeStep ?? 0.4;
@@ -224,7 +224,7 @@ export function computeForceLayout(
 }
 
 export function createDivisionColorScale(
-  nodes: FightGraphNode[]
+  nodes: FightGraphNode[],
 ): Map<string, string> {
   const palette = new Map<string, string>();
   let paletteIndex = 0;
@@ -246,7 +246,7 @@ export function createDivisionColorScale(
 
 export function colorForDivision(
   division: string | null | undefined,
-  palette: Map<string, string>
+  palette: Map<string, string>,
 ): string {
   if (!division) {
     return DEFAULT_NODE_COLOR;
@@ -331,7 +331,7 @@ function hslToHex(h: number, s: number, l: number): string {
  */
 export function createRecencyColorScale(
   nodes: FightGraphNode[],
-  divisionColor: string
+  divisionColor: string,
 ): Map<string, string> {
   const colorMap = new Map<string, string>();
 
@@ -391,16 +391,14 @@ export function createRecencyColorScale(
       // Missing date - use dimmed color
       colorMap.set(
         node.fighter_id,
-        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4)
+        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4),
       );
       continue;
     }
 
     // Normalize timestamp to 0-1 (1 = most recent, 0 = oldest)
     const normalized =
-      dateRange > 0
-        ? (dateEntry.timestamp - minTimestamp) / dateRange
-        : 1;
+      dateRange > 0 ? (dateEntry.timestamp - minTimestamp) / dateRange : 1;
 
     // Map recency to lightness and saturation:
     // Recent (high normalized): high saturation, high lightness
@@ -422,7 +420,7 @@ export function createRecencyColorScale(
     if (!colorMap.has(node.fighter_id)) {
       colorMap.set(
         node.fighter_id,
-        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4)
+        hslToHex(baseHsl.h, baseHsl.s * 0.3, baseHsl.l * 0.4),
       );
     }
   }
@@ -449,7 +447,7 @@ function parseYear(value: unknown): number | null {
 }
 
 export function deriveEventYearBounds(
-  graph: FightGraphResponse | null
+  graph: FightGraphResponse | null,
 ): { min: number; max: number } | null {
   if (!graph) {
     return null;

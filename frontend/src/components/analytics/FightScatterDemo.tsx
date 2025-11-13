@@ -23,7 +23,7 @@ export function FightScatterDemo({ fightHistory }: FightScatterDemoProps) {
 
   // Convert fight history to scatter points
   const scatterFights = fightHistory.map((fight) =>
-    convertFightToScatterPoint(fight)
+    convertFightToScatterPoint(fight),
   );
 
   const handleSelectFight = (fightId: string) => {
@@ -35,7 +35,7 @@ export function FightScatterDemo({ fightHistory }: FightScatterDemoProps) {
     setFilterResults((prev) =>
       prev.includes(result)
         ? prev.filter((r) => r !== result)
-        : [...prev, result]
+        : [...prev, result],
     );
   };
 
@@ -43,7 +43,7 @@ export function FightScatterDemo({ fightHistory }: FightScatterDemoProps) {
     setFilterMethods((prev) =>
       prev.includes(method)
         ? prev.filter((m) => m !== method)
-        : [...prev, method]
+        : [...prev, method],
     );
   };
 

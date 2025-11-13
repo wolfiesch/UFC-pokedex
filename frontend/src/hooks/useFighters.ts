@@ -16,7 +16,9 @@ type FightersPage = PaginatedFightersResponse;
 /**
  * Flatten all fighters across the paginated response pages.
  */
-function flattenPages(pages: PaginatedFightersResponse[] | undefined): FighterListItem[] {
+function flattenPages(
+  pages: PaginatedFightersResponse[] | undefined,
+): FighterListItem[] {
   if (!pages?.length) {
     return [];
   }
@@ -32,15 +34,23 @@ function flattenPages(pages: PaginatedFightersResponse[] | undefined): FighterLi
  * @param initialDataOrLimit - Either initial page data from SSG or page size limit
  */
 export function useFighters(
-  initialDataOrLimit?: PaginatedFightersResponse | number
+  initialDataOrLimit?: PaginatedFightersResponse | number,
 ) {
   const searchTerm = useFavoritesFiltersStore((state) => state.searchTerm);
   const stance = useFavoritesFiltersStore((state) => state.stanceFilter);
   const division = useFavoritesFiltersStore((state) => state.divisionFilter);
-  const nationality = useFavoritesFiltersStore((state) => state.nationalityFilter);
-  const championStatusFilters = useFavoritesFiltersStore((state) => state.championStatusFilters);
-  const winStreakCount = useFavoritesFiltersStore((state) => state.winStreakCount);
-  const lossStreakCount = useFavoritesFiltersStore((state) => state.lossStreakCount);
+  const nationality = useFavoritesFiltersStore(
+    (state) => state.nationalityFilter,
+  );
+  const championStatusFilters = useFavoritesFiltersStore(
+    (state) => state.championStatusFilters,
+  );
+  const winStreakCount = useFavoritesFiltersStore(
+    (state) => state.winStreakCount,
+  );
+  const lossStreakCount = useFavoritesFiltersStore(
+    (state) => state.lossStreakCount,
+  );
 
   // Support both old API (number) and new API (initialData object)
   const initialData =
@@ -51,11 +61,18 @@ export function useFighters(
   const normalizedSearch = (searchTerm ?? "").trim();
 
   // Determine active streak type and count
-  const streakType: "win" | "loss" | null = winStreakCount !== null ? "win" : lossStreakCount !== null ? "loss" : null;
-  const minStreakCount = winStreakCount !== null ? winStreakCount : lossStreakCount;
+  const streakType: "win" | "loss" | null =
+    winStreakCount !== null ? "win" : lossStreakCount !== null ? "loss" : null;
+  const minStreakCount =
+    winStreakCount !== null ? winStreakCount : lossStreakCount;
 
   const isFiltering = Boolean(
-    normalizedSearch || stance || division || nationality || championStatusFilters.length > 0 || streakType
+    normalizedSearch ||
+      stance ||
+      division ||
+      nationality ||
+      championStatusFilters.length > 0 ||
+      streakType,
   );
 
   const queryKey = useMemo(
@@ -66,13 +83,23 @@ export function useFighters(
         stance: stance ?? null,
         division: division ?? null,
         nationality: nationality ?? null,
-        championStatusFilters: championStatusFilters.length > 0 ? championStatusFilters : null,
+        championStatusFilters:
+          championStatusFilters.length > 0 ? championStatusFilters : null,
         streakType: streakType ?? null,
         minStreakCount: minStreakCount ?? null,
         limit: pageSize,
       },
     ],
-    [normalizedSearch, stance, division, nationality, championStatusFilters, streakType, minStreakCount, pageSize]
+    [
+      normalizedSearch,
+      stance,
+      division,
+      nationality,
+      championStatusFilters,
+      streakType,
+      minStreakCount,
+      pageSize,
+    ],
   );
 
   const {
@@ -110,7 +137,7 @@ export function useFighters(
           streakType,
           minStreakCount,
           pageSize,
-          offset
+          offset,
         );
       }
       return getFighters(pageSize, offset);

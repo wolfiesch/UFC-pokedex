@@ -61,18 +61,14 @@ def filter_major_bookmakers(odds_data: dict) -> dict:
     Returns:
         Filtered odds dict with only major bookmakers
     """
-    if not odds_data or not odds_data.get('bookmakers'):
+    if not odds_data or not odds_data.get("bookmakers"):
         return odds_data
 
     filtered_bookmakers = [
-        bm for bm in odds_data['bookmakers']
-        if is_major_bookmaker(bm.get('bookmaker_id'))
+        bm for bm in odds_data["bookmakers"] if is_major_bookmaker(bm.get("bookmaker_id"))
     ]
 
-    return {
-        'bookmakers': filtered_bookmakers,
-        'count': len(filtered_bookmakers)
-    }
+    return {"bookmakers": filtered_bookmakers, "count": len(filtered_bookmakers)}
 
 
 def filter_tier1_bookmakers(odds_data: dict) -> dict:
@@ -85,15 +81,11 @@ def filter_tier1_bookmakers(odds_data: dict) -> dict:
     Returns:
         Filtered odds dict with only tier 1 bookmakers
     """
-    if not odds_data or not odds_data.get('bookmakers'):
+    if not odds_data or not odds_data.get("bookmakers"):
         return odds_data
 
     filtered_bookmakers = [
-        bm for bm in odds_data['bookmakers']
-        if is_tier1_bookmaker(bm.get('bookmaker_id'))
+        bm for bm in odds_data["bookmakers"] if is_tier1_bookmaker(bm.get("bookmaker_id"))
     ]
 
-    return {
-        'bookmakers': filtered_bookmakers,
-        'count': len(filtered_bookmakers)
-    }
+    return {"bookmakers": filtered_bookmakers, "count": len(filtered_bookmakers)}

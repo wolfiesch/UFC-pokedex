@@ -50,9 +50,7 @@ export default function RelatedEventsWidget({
     <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-5">
       <div className="flex items-center gap-2">
         <span className="text-lg">🔗</span>
-        <h3 className="text-lg font-bold text-white">
-          {reasonLabels[reason]}
-        </h3>
+        <h3 className="text-lg font-bold text-white">{reasonLabels[reason]}</h3>
       </div>
 
       <div className="space-y-2">
@@ -77,7 +75,9 @@ export default function RelatedEventsWidget({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className={`rounded px-2 py-0.5 text-xs font-bold ${typeConfig.badgeClass}`}>
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-bold ${typeConfig.badgeClass}`}
+                    >
                       {typeConfig.label}
                     </span>
                     {event.status === "upcoming" && (
@@ -86,7 +86,7 @@ export default function RelatedEventsWidget({
                       </span>
                     )}
                   </div>
-                  <h4 className="text-sm font-medium text-white line-clamp-2">
+                  <h4 className="line-clamp-2 text-sm font-medium text-white">
                     {event.name}
                   </h4>
                   <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">

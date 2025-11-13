@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { CommandPalette } from "../search/CommandPalette";
 
-export function CommandPaletteProvider({ children }: { children: React.ReactNode }) {
+export function CommandPaletteProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {

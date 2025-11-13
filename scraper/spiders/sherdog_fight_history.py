@@ -80,7 +80,7 @@ class SherdogFightHistorySpider(scrapy.Spider):
 
         logger.info(f"Loaded {len(fighters)} fighters to scrape")
         if self.limit:
-            fighters = fighters[:self.limit]
+            fighters = fighters[: self.limit]
             logger.info(f"Limiting to first {self.limit} fighters")
 
         for fighter in fighters:
@@ -116,6 +116,7 @@ class SherdogFightHistorySpider(scrapy.Spider):
             Sherdog search URL
         """
         from urllib.parse import quote_plus
+
         search_term = quote_plus(fighter_name)
         return f"https://www.sherdog.com/stats/fightfinder?SearchTxt={search_term}"
 
@@ -222,7 +223,8 @@ class SherdogFightHistorySpider(scrapy.Spider):
                     "losses": losses,
                     "draws": draws,
                     "no_contests": ncs,
-                    "record_string": f"{wins}-{losses}-{draws}" + (f" ({ncs} NC)" if ncs > 0 else ""),
+                    "record_string": f"{wins}-{losses}-{draws}"
+                    + (f" ({ncs} NC)" if ncs > 0 else ""),
                 }
 
                 # Identify promotions fought in

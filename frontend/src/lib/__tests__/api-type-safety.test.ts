@@ -1,18 +1,17 @@
 /**
  * Tests for API type safety.
  */
-import { describe, it, expect } from 'vitest';
-import client from '@/lib/api-client';
-import type { paths } from '@/lib/generated/api-schema';
+import { describe, it, expect } from "vitest";
+import client from "@/lib/api-client";
+import type { paths } from "@/lib/generated/api-schema";
 
-
-describe('API Type Safety', () => {
-  it('should enforce correct payload types for favorites', async () => {
+describe("API Type Safety", () => {
+  it("should enforce correct payload types for favorites", async () => {
     // Valid request should compile without errors
-    const { data, error } = await client.POST('/favorites/collections', {
+    const { data, error } = await client.POST("/favorites/collections", {
       body: {
-        user_id: 'test-user',
-        title: 'Test Collection',
+        user_id: "test-user",
+        title: "Test Collection",
         is_public: false,
       },
     });
@@ -23,9 +22,9 @@ describe('API Type Safety', () => {
     expect(true).toBe(true);
   });
 
-  it('should infer correct response types', async () => {
-    const { data } = await client.GET('/fighters/{fighter_id}', {
-      params: { path: { fighter_id: 'test-id' } },
+  it("should infer correct response types", async () => {
+    const { data } = await client.GET("/fighters/{fighter_id}", {
+      params: { path: { fighter_id: "test-id" } },
     });
 
     if (data) {

@@ -184,14 +184,10 @@ class ImageCropper:
 
             # Validate crop quality
             face_percent = (face.area / (crop_box.width * crop_box.height)) * 100
-            quality_score = self.calculate_quality_score(
-                cropped, face, crop_box, confidence
-            )
+            quality_score = self.calculate_quality_score(cropped, face, crop_box, confidence)
 
             if not self.validate_crop_quality(cropped, face_percent):
-                logger.warning(
-                    f"Crop quality validation failed for {image_path.name}"
-                )
+                logger.warning(f"Crop quality validation failed for {image_path.name}")
                 return CropResult(
                     success=False,
                     cropped_path=None,
@@ -392,10 +388,6 @@ class ImageCropper:
         sharpness_score = min(laplacian_var / 100, 1.0)
 
         # Weighted average
-        quality = (
-            0.4 * conf_score +
-            0.3 * size_score +
-            0.3 * sharpness_score
-        )
+        quality = 0.4 * conf_score + 0.3 * size_score + 0.3 * sharpness_score
 
         return float(quality)

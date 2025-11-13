@@ -31,11 +31,7 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    logger.logComponentError(
-      this.constructor.name,
-      error,
-      errorInfo
-    );
+    logger.logComponentError(this.constructor.name, error, errorInfo);
   }
 
   handleReset = (): void => {
@@ -70,12 +66,10 @@ export class ErrorBoundary extends React.Component<
                 </svg>
               </div>
               <div className="flex-1">
-                <h2 className="mb-2 text-xl font-bold">
-                  Something went wrong
-                </h2>
+                <h2 className="mb-2 text-xl font-bold">Something went wrong</h2>
                 <p className="mb-4 text-sm">
-                  The application encountered an unexpected error. This has been logged
-                  for investigation.
+                  The application encountered an unexpected error. This has been
+                  logged for investigation.
                 </p>
 
                 <div className="mb-4 rounded-lg border border-destructive/20 bg-background/50 p-4 font-mono text-xs">

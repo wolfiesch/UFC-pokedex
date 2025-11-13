@@ -93,7 +93,7 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
             event_date = response.css("span.table-header-date::text").get()
             event_url = response.url
 
-            event_id_match = re.search(r'/events/(.+-(\d+))$', event_url)
+            event_id_match = re.search(r"/events/(.+-(\d+))$", event_url)
             event_id = event_id_match.group(1) if event_id_match else None
 
             # Get max clicks limit (for testing)
@@ -128,9 +128,7 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
                 self.logger.info(f"Processing: {fighter_1_name} vs {fighter_2_name}")
 
                 # Find all odds cells for this matchup using data-li attribute
-                odds_cells = await page.query_selector_all(
-                    f'td[data-li*=",{matchup_id}"]'
-                )
+                odds_cells = await page.query_selector_all(f'td[data-li*=",{matchup_id}"]')
 
                 self.logger.info(f"Found {len(odds_cells)} odds cells for matchup {matchup_id}")
 
@@ -151,7 +149,7 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
                         fighter_num = data_li_parsed[1] if len(data_li_parsed) > 1 else None
 
                         self.logger.info(
-                            f"  Clicking cell {i+1}/{len(odds_cells)}: "
+                            f"  Clicking cell {i + 1}/{len(odds_cells)}: "
                             f"bookmaker={bookmaker_id}, fighter={fighter_num}"
                         )
 
@@ -162,25 +160,31 @@ class BestFightOddsLineMovementSpider(scrapy.Spider):
                             if not is_visible:
                                 # Try to scroll into view with short timeout
                                 try:
-                                    await cell.scroll_into_view_if_needed(timeout=3000)  # 3s timeout
+                                    await cell.scroll_into_view_if_needed(
+                                        timeout=3000
+                                    )  # 3s timeout
                                     await page.wait_for_timeout(200)  # Let scroll complete
                                     is_visible = await cell.is_visible()
                                 except:
                                     pass  # Scroll failed, check visibility below
 
                             if not is_visible:
-                                self.logger.warning(f"  Cell {i+1} not visible, skipping")
+                                self.logger.warning(f"  Cell {i + 1} not visible, skipping")
                                 continue
 
                         except Exception as scroll_err:
-                            self.logger.warning(f"  Error checking visibility for cell {i+1}, skipping")
+                            self.logger.warning(
+                                f"  Error checking visibility for cell {i + 1}, skipping"
+                            )
                             continue
 
                         # Click the cell to open chart (with shorter timeout)
                         try:
                             await cell.click(timeout=10000)  # 10s timeout instead of 30s
                         except Exception as click_err:
-                            self.logger.warning(f"  Click timeout on cell {i+1}: {click_err}, skipping")
+                            self.logger.warning(
+                                f"  Click timeout on cell {i + 1}: {click_err}, skipping"
+                            )
                             continue
 
                         await page.wait_for_timeout(2000)  # Wait for chart to load

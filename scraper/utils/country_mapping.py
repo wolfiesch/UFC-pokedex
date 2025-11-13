@@ -105,6 +105,7 @@ def normalize_nationality(country_name: str | None) -> str | None:
 
     # Log unmapped countries for future additions
     import logging
+
     logger = logging.getLogger(__name__)
     logger.warning(f"Unmapped country name: '{country_name}'")
 

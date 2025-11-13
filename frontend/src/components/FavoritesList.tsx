@@ -28,7 +28,9 @@ export default function FavoritesList({ favorites }: Props) {
               <div>
                 <p className="text-lg font-semibold">{fighter.name}</p>
                 {fighter.nickname ? (
-                  <p className="text-sm text-muted-foreground">&ldquo;{fighter.nickname}&rdquo;</p>
+                  <p className="text-sm text-muted-foreground">
+                    &ldquo;{fighter.nickname}&rdquo;
+                  </p>
                 ) : null}
               </div>
               <div className="flex items-center justify-between">

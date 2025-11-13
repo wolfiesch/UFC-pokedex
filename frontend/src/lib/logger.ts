@@ -36,7 +36,7 @@ class Logger {
   private formatMessage(
     level: LogLevel,
     message: string,
-    context?: LogContext
+    context?: LogContext,
   ): string {
     const timestamp = this.getTimestamp();
     const contextStr = context ? ` ${JSON.stringify(context)}` : "";
@@ -112,11 +112,7 @@ class Logger {
   /**
    * Log API request
    */
-  logRequest(
-    method: string,
-    url: string,
-    context?: LogContext
-  ): void {
+  logRequest(method: string, url: string, context?: LogContext): void {
     this.debug(`API Request: ${method} ${url}`, context);
   }
 
@@ -128,12 +124,12 @@ class Logger {
     url: string,
     statusCode: number,
     duration?: number,
-    context?: LogContext
+    context?: LogContext,
   ): void {
     const durationStr = duration !== undefined ? ` (${duration}ms)` : "";
     this.debug(
       `API Response: ${method} ${url} ${statusCode}${durationStr}`,
-      context
+      context,
     );
   }
 
@@ -144,12 +140,12 @@ class Logger {
     method: string,
     url: string,
     error: ApiError,
-    context?: LogContext
+    context?: LogContext,
   ): void {
     this.error(
       `API Error: ${method} ${url} - ${error.getTechnicalSummary()}`,
       error,
-      context
+      context,
     );
   }
 
@@ -161,9 +157,12 @@ class Logger {
     url: string,
     retryCount: number,
     maxRetries: number,
-    context?: LogContext
+    context?: LogContext,
   ): void {
-    this.warn(`Retrying ${method} ${url} (attempt ${retryCount}/${maxRetries})`, context);
+    this.warn(
+      `Retrying ${method} ${url} (attempt ${retryCount}/${maxRetries})`,
+      context,
+    );
   }
 
   /**
@@ -172,15 +171,11 @@ class Logger {
   logComponentError(
     componentName: string,
     error: Error,
-    errorInfo?: React.ErrorInfo
+    errorInfo?: React.ErrorInfo,
   ): void {
-    this.error(
-      `Component Error in ${componentName}: ${error.message}`,
-      error,
-      {
-        componentStack: errorInfo?.componentStack,
-      }
-    );
+    this.error(`Component Error in ${componentName}: ${error.message}`, error, {
+      componentStack: errorInfo?.componentStack,
+    });
   }
 
   /**

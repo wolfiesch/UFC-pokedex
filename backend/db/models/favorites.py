@@ -163,10 +163,7 @@ class FavoriteEntry(Base):
         nullable=False,
         default=dict,
         server_default="{}",
-        doc=(
-            "Semi-structured details such as scouting grades or external"
-            " profile links."
-        ),
+        doc=("Semi-structured details such as scouting grades or external profile links."),
     )
 
     collection: Mapped[FavoriteCollection] = relationship(

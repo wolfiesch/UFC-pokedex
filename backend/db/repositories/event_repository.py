@@ -58,11 +58,7 @@ class PostgreSQLEventRepository:
     async def get_event(self, event_id: str) -> EventDetail | None:
         """Get detailed event information by ID, including fight card."""
         # Query event with fights relationship loaded
-        query = (
-            select(Event)
-            .where(Event.id == event_id)
-            .options(selectinload(Event.fights))
-        )
+        query = select(Event).where(Event.id == event_id).options(selectinload(Event.fights))
         result = await self._session.execute(query)
         event = result.scalar_one_or_none()
 
@@ -73,9 +69,7 @@ class PostgreSQLEventRepository:
         fight_card: list[EventFight] = []
 
         # Aggregate fighter identifiers to avoid N+1 lookups.
-        fighter_ids: set[str] = {
-            fight.fighter_id for fight in event.fights if fight.fighter_id
-        }
+        fighter_ids: set[str] = {fight.fighter_id for fight in event.fights if fight.fighter_id}
         fighter_ids.update(
             opponent_id
             for opponent_id in (fight.opponent_id for fight in event.fights)
@@ -228,9 +222,7 @@ class PostgreSQLEventRepository:
 
         # Filter by event_type after detection (since it's not in DB)
         if event_type:
-            event_list = [
-                event for event in event_list if event.event_type == event_type
-            ]
+            event_list = [event for event in event_list if event.event_type == event_type]
 
         if not apply_manual_pagination:
             return event_list
@@ -258,4 +250,3 @@ class PostgreSQLEventRepository:
         result = await self._session.execute(query)
         locations = result.scalars().all()
         return list(locations)
-

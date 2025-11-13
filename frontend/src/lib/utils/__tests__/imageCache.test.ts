@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { preloadBitmaps } from '../imageCache';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { preloadBitmaps } from "../imageCache";
 
-describe('preloadBitmaps', () => {
+describe("preloadBitmaps", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -11,11 +11,11 @@ describe('preloadBitmaps', () => {
     vi.useRealTimers();
   });
 
-  it('should allow cancellation of preload operation', () => {
+  it("should allow cancellation of preload operation", () => {
     const urls = [
-      'https://example.com/image1.jpg',
-      'https://example.com/image2.jpg',
-      'https://example.com/image3.jpg',
+      "https://example.com/image1.jpg",
+      "https://example.com/image2.jpg",
+      "https://example.com/image3.jpg",
     ];
 
     // Start preload and get cancellation function
@@ -28,11 +28,11 @@ describe('preloadBitmaps', () => {
     vi.advanceTimersByTime(1000);
 
     // Verify no image loading occurred (this will fail until we implement cancellation)
-    expect(document.querySelectorAll('img[data-preload]').length).toBe(0);
+    expect(document.querySelectorAll("img[data-preload]").length).toBe(0);
   });
 
-  it('should clean up when preload completes naturally', async () => {
-    const urls = ['https://example.com/image1.jpg'];
+  it("should clean up when preload completes naturally", async () => {
+    const urls = ["https://example.com/image1.jpg"];
 
     const cancel = preloadBitmaps(urls);
 

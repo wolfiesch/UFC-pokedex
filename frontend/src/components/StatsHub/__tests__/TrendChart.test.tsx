@@ -6,9 +6,9 @@ vi.mock("next/dynamic", () => ({
   default:
     () =>
     // eslint-disable-next-line react/display-name
-      (props: { series: TrendSeries[] }) => (
-        <div data-testid="trend-chart-stub">{props.series.length} series</div>
-      ),
+    (props: { series: TrendSeries[] }) => (
+      <div data-testid="trend-chart-stub">{props.series.length} series</div>
+    ),
 }));
 
 import TrendChart from "../TrendChart";
@@ -32,7 +32,13 @@ describe("TrendChart", () => {
   });
 
   it("renders error message when provided", () => {
-    render(<TrendChart title="Trends" series={sampleSeries} error="Unable to load" />);
+    render(
+      <TrendChart
+        title="Trends"
+        series={sampleSeries}
+        error="Unable to load"
+      />,
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent("Unable to load");
   });
@@ -46,7 +52,9 @@ describe("TrendChart", () => {
   it("renders chart stub when series provided", () => {
     render(<TrendChart title="Trends" series={sampleSeries} />);
 
-    expect(screen.getByTestId("trend-chart-stub")).toHaveTextContent("1 series");
+    expect(screen.getByTestId("trend-chart-stub")).toHaveTextContent(
+      "1 series",
+    );
   });
 
   it("matches snapshot with populated trend data", () => {
@@ -55,7 +63,7 @@ describe("TrendChart", () => {
         title="Trends"
         description="Win streak duration over time"
         series={sampleSeries}
-      />
+      />,
     );
 
     expect(container.firstChild).toMatchSnapshot();

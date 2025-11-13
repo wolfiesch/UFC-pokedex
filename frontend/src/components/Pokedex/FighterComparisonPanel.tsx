@@ -83,13 +83,15 @@ export default function FighterComparisonPanel({
           null,
           null,
           10,
-          0
+          0,
         );
         if (!cancelled) {
           setOptions(
             results.fighters
-              .filter((item: FighterListItem) => item.fighter_id !== primaryFighterId)
-              .slice(0, 6)
+              .filter(
+                (item: FighterListItem) => item.fighter_id !== primaryFighterId,
+              )
+              .slice(0, 6),
           );
         }
       } catch (searchError) {
@@ -117,8 +119,8 @@ export default function FighterComparisonPanel({
     }
     return CATEGORY_KEYS.filter((category) =>
       comparison.entries.some(
-        (entry) => Object.keys(categoryStats(entry, category)).length > 0
-      )
+        (entry) => Object.keys(categoryStats(entry, category)).length > 0,
+      ),
     );
   }, [comparison]);
 
@@ -129,7 +131,10 @@ export default function FighterComparisonPanel({
     setError(null);
     setIsLoading(true);
     try {
-      const response = await compareFighters([primaryFighterId, option.fighter_id]);
+      const response = await compareFighters([
+        primaryFighterId,
+        option.fighter_id,
+      ]);
       if (response.fighters.length === 0) {
         setError("Comparison data is unavailable for the selected fighters.");
         setComparison(null);
@@ -137,7 +142,9 @@ export default function FighterComparisonPanel({
         setComparison({ entries: response.fighters });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to compare fighters");
+      setError(
+        err instanceof Error ? err.message : "Unable to compare fighters",
+      );
       setComparison(null);
     } finally {
       setIsLoading(false);
@@ -156,7 +163,8 @@ export default function FighterComparisonPanel({
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl">Compare Stats</CardTitle>
         <CardDescription>
-          Select another fighter to stack their metrics against {primaryFighterName || "this fighter"}.
+          Select another fighter to stack their metrics against{" "}
+          {primaryFighterName || "this fighter"}.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -186,7 +194,9 @@ export default function FighterComparisonPanel({
                       onClick={() => handleSelect(option)}
                       className="flex w-full flex-col rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-background"
                     >
-                      <span className="text-sm font-semibold">{option.name}</span>
+                      <span className="text-sm font-semibold">
+                        {option.name}
+                      </span>
                       {option.nickname ? (
                         <span className="text-xs text-muted-foreground">
                           &ldquo;{option.nickname}&rdquo;
@@ -197,7 +207,9 @@ export default function FighterComparisonPanel({
                 ))}
               </ul>
             ) : query.trim().length >= 2 ? (
-              <p className="text-xs text-muted-foreground">No fighters matched that search.</p>
+              <p className="text-xs text-muted-foreground">
+                No fighters matched that search.
+              </p>
             ) : null}
           </div>
           <Button
@@ -219,7 +231,10 @@ export default function FighterComparisonPanel({
         ) : null}
 
         {isLoading ? (
-          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+          <div
+            className="py-6 text-center text-sm text-muted-foreground"
+            role="status"
+          >
             Loading comparison…
           </div>
         ) : comparison && visibleCategories.length > 0 ? (
@@ -227,8 +242,8 @@ export default function FighterComparisonPanel({
             {visibleCategories.map((category) => {
               const metrics = new Set<string>();
               comparison.entries.forEach((entry) => {
-                Object.keys(categoryStats(entry, category)).forEach((metricKey) =>
-                  metrics.add(metricKey)
+                Object.keys(categoryStats(entry, category)).forEach(
+                  (metricKey) => metrics.add(metricKey),
                 );
               });
               const rows = Array.from(metrics);
@@ -259,7 +274,9 @@ export default function FighterComparisonPanel({
                               key={`${entry.fighter_id}-${category}-${metricKey}`}
                               className="font-mono text-sm"
                             >
-                              {normaliseValue(categoryStats(entry, category)[metricKey])}
+                              {normaliseValue(
+                                categoryStats(entry, category)[metricKey],
+                              )}
                             </TableCell>
                           ))}
                         </TableRow>

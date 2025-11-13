@@ -5,8 +5,17 @@ import type { FavoriteCollectionDetail, FavoriteEntry } from "@/lib/types";
 /**
  * Serialize the fighters in a collection into a CSV string.
  */
-export function serializeFavoritesToCsv(collection: FavoriteCollectionDetail): string {
-  const header = ["Fighter ID", "Notes", "Tags", "Position", "Created At", "Updated At"].join(",");
+export function serializeFavoritesToCsv(
+  collection: FavoriteCollectionDetail,
+): string {
+  const header = [
+    "Fighter ID",
+    "Notes",
+    "Tags",
+    "Position",
+    "Created At",
+    "Updated At",
+  ].join(",");
 
   const rows = collection.entries.map((entry: FavoriteEntry) => {
     const tags = entry.tags.join("|");
@@ -27,7 +36,9 @@ export function serializeFavoritesToCsv(collection: FavoriteCollectionDetail): s
 /**
  * Trigger a CSV download in the browser for the supplied collection.
  */
-export async function exportFavoritesToCsv(collection: FavoriteCollectionDetail): Promise<void> {
+export async function exportFavoritesToCsv(
+  collection: FavoriteCollectionDetail,
+): Promise<void> {
   const csv = serializeFavoritesToCsv(collection);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -44,6 +55,8 @@ export async function exportFavoritesToCsv(collection: FavoriteCollectionDetail)
  * TODO: Replace this stub once a dedicated PDF export endpoint is available.
  * For now we simply log a message so the UI can surface user feedback.
  */
-export async function exportFavoritesToPdf(collection: FavoriteCollectionDetail): Promise<void> {
+export async function exportFavoritesToPdf(
+  collection: FavoriteCollectionDetail,
+): Promise<void> {
   // Stub: PDF export not yet implemented.
 }

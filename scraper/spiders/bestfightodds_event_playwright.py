@@ -77,9 +77,7 @@ class BestFightOddsEventPlaywrightSpider(scrapy.Spider):
                 urls.extend(self._load_urls_from_file(str(default_file)))
 
         if not urls:
-            self.logger.error(
-                "No event URLs provided. Pass -a event_urls=... or -a input_file=..."
-            )
+            self.logger.error("No event URLs provided. Pass -a event_urls=... or -a input_file=...")
             return
 
         # Make Playwright-enabled requests
@@ -114,7 +112,7 @@ class BestFightOddsEventPlaywrightSpider(scrapy.Spider):
             event_url = response.url
 
             # Extract event ID from URL
-            event_id_match = re.search(r'/events/(.+-(\d+))$', event_url)
+            event_id_match = re.search(r"/events/(.+-(\d+))$", event_url)
             event_id = event_id_match.group(1) if event_id_match else None
 
             # Parse all fight matchups
@@ -141,9 +139,7 @@ class BestFightOddsEventPlaywrightSpider(scrapy.Spider):
 
                 # Extract odds from the matchup row and following row
                 # Odds are in <td> elements with data-bookie attributes
-                odds_data = await self._extract_odds_for_matchup(
-                    page, matchup_id
-                )
+                odds_data = await self._extract_odds_for_matchup(page, matchup_id)
 
                 yield {
                     "event_id": event_id,

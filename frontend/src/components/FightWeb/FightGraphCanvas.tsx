@@ -150,7 +150,10 @@ export function FightGraphCanvas({
     const edges: RenderEdge[] = layout.edges
       .filter((edge) => {
         // Always show edges connected to focused node
-        if (focusNodeId && (edge.source === focusNodeId || edge.target === focusNodeId)) {
+        if (
+          focusNodeId &&
+          (edge.source === focusNodeId || edge.target === focusNodeId)
+        ) {
           return true;
         }
         // Filter by minimum fight threshold
@@ -370,40 +373,47 @@ export function FightGraphCanvas({
               const isConnected =
                 focusNodeId !== null &&
                 (edge.source === focusNodeId || edge.target === focusNodeId);
-              
+
               // Much lower base opacity to reduce visual noise
               const baseOpacity = focusNodeId
-                ? isConnected ? 0.9 : 0.08  // Very dim when not connected
-                : 0.2;  // Lower default opacity (was 0.45)
-              
+                ? isConnected
+                  ? 0.9
+                  : 0.08 // Very dim when not connected
+                : 0.2; // Lower default opacity (was 0.45)
+
               // Thinner edges for weaker connections
-              const strokeWidth = focusNodeId && isConnected
-                ? Math.min(6, 1.5 + Math.log(edge.fights + 1) * 1.2)  // Thicker when focused
-                : Math.min(2, 0.8 + Math.log(edge.fights + 1) * 0.4);  // Thinner by default
-              
+              const strokeWidth =
+                focusNodeId && isConnected
+                  ? Math.min(6, 1.5 + Math.log(edge.fights + 1) * 1.2) // Thicker when focused
+                  : Math.min(2, 0.8 + Math.log(edge.fights + 1) * 0.4); // Thinner by default
+
               // Calculate control point for curve (perpendicular midpoint)
               const dx = edge.targetX - edge.sourceX;
               const dy = edge.targetY - edge.sourceY;
               const midX = (edge.sourceX + edge.targetX) / 2;
               const midY = (edge.sourceY + edge.targetY) / 2;
               const curveOffset = 20; // Curve strength
-              const controlX = midX + (-dy * curveOffset) / Math.sqrt(dx * dx + dy * dy);
-              const controlY = midY + (dx * curveOffset) / Math.sqrt(dx * dx + dy * dy);
-              
+              const controlX =
+                midX + (-dy * curveOffset) / Math.sqrt(dx * dx + dy * dy);
+              const controlY =
+                midY + (dx * curveOffset) / Math.sqrt(dx * dx + dy * dy);
+
               const pathData = `M ${edge.sourceX} ${edge.sourceY} Q ${controlX} ${controlY} ${edge.targetX} ${edge.targetY}`;
-              
+
               return (
                 <path
                   key={`${edge.source}-${edge.target}`}
                   d={pathData}
                   fill="none"
-                  stroke="hsl(var(--foreground) / 0.4)"  // Lighter color
+                  stroke="hsl(var(--foreground) / 0.4)" // Lighter color
                   strokeWidth={strokeWidth}
                   strokeOpacity={baseOpacity}
                   strokeLinecap="round"
                   pointerEvents="none"
                   style={{
-                    transition: focusNodeId ? "opacity 0.2s ease, stroke-width 0.2s ease" : "none",
+                    transition: focusNodeId
+                      ? "opacity 0.2s ease, stroke-width 0.2s ease"
+                      : "none",
                   }}
                 />
               );

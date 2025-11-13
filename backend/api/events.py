@@ -18,9 +18,7 @@ class EventFilterOptions(BaseModel):
 @router.get("", response_model=PaginatedEventsResponse)
 @router.get("/", response_model=PaginatedEventsResponse)
 async def list_events(
-    status: str | None = Query(
-        None, description="Filter by status: 'upcoming' or 'completed'"
-    ),
+    status: str | None = Query(None, description="Filter by status: 'upcoming' or 'completed'"),
     limit: int = Query(20, ge=1, le=100, description="Number of events to return"),
     offset: int = Query(0, ge=0, description="Number of events to skip"),
     service: EventService = Depends(get_event_service),
@@ -44,9 +42,7 @@ async def list_completed_events(
     service: EventService = Depends(get_event_service),
 ) -> PaginatedEventsResponse:
     """List completed UFC events with pagination."""
-    return await service.get_paginated_events(
-        status="completed", limit=limit, offset=offset
-    )
+    return await service.get_paginated_events(status="completed", limit=limit, offset=offset)
 
 
 @router.get("/search/", response_model=PaginatedEventsResponse)
@@ -57,9 +53,7 @@ async def search_events(
     event_type: str | None = Query(
         None, description="Filter by event type (ppv, fight_night, etc.)"
     ),
-    status: str | None = Query(
-        None, description="Filter by status (upcoming, completed)"
-    ),
+    status: str | None = Query(None, description="Filter by status (upcoming, completed)"),
     limit: int = Query(20, ge=1, le=100, description="Number of events to return"),
     offset: int = Query(0, ge=0, description="Number of events to skip"),
     service: EventService = Depends(get_event_service),

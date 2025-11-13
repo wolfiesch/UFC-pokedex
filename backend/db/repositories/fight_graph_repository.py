@@ -80,17 +80,14 @@ class FightGraphRepository(BaseRepository):
         latest_map = {row.fighter_id: row.latest_event_date for row in fight_counts}
 
         if not id_order:
-            fallback_query = (
-                select(
-                    Fighter.id,
-                    Fighter.name,
-                    Fighter.division,
-                    Fighter.record,
-                    Fighter.image_url,
-                    Fighter.cropped_image_url,
-                )
-                .order_by(Fighter.name, Fighter.id)
-            )
+            fallback_query = select(
+                Fighter.id,
+                Fighter.name,
+                Fighter.division,
+                Fighter.record,
+                Fighter.image_url,
+                Fighter.cropped_image_url,
+            ).order_by(Fighter.name, Fighter.id)
             if division:
                 fallback_query = fallback_query.where(Fighter.division == division)
             if limit is not None:

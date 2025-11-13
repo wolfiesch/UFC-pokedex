@@ -56,8 +56,6 @@ class UfcRankingsSpider(scrapy.Spider):
                 ranking_item = FighterRankingItem(**ranking_dict)
                 yield ranking_item
             except Exception as e:
-                self.logger.error(
-                    f"Failed to create FighterRankingItem from {ranking_dict}: {e}"
-                )
+                self.logger.error(f"Failed to create FighterRankingItem from {ranking_dict}: {e}")
 
         self.logger.info("Finished parsing UFC rankings")

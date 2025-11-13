@@ -18,7 +18,9 @@ const fighterDetailQueryOptions = {
   gcTime: 1000 * 60 * 30,
 };
 
-const fetchFighterDetails = async (fighterId: string): Promise<FighterDetail> => {
+const fetchFighterDetails = async (
+  fighterId: string,
+): Promise<FighterDetail> => {
   const { data, error: apiError } = await client.GET("/fighters/{fighter_id}", {
     params: {
       path: {
@@ -51,19 +53,15 @@ const fetchFighterDetails = async (fighterId: string): Promise<FighterDetail> =>
  */
 export function useFighterDetails(
   fighterId: string,
-  enabled: boolean
+  enabled: boolean,
 ): UseFighterDetailsResult {
   const queryClient = useQueryClient();
   const queryKey = useMemo(
     () => [FIGHTER_DETAILS_QUERY_KEY, fighterId] as const,
-    [fighterId]
+    [fighterId],
   );
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey,
     queryFn: () => fetchFighterDetails(fighterId),
     enabled: Boolean(fighterId) && enabled,
@@ -92,7 +90,7 @@ export function clearDetailsCache(): void {
   if (!client) {
     console.warn(
       "[clearDetailsCache] No QueryClient registered. Cache was not cleared. " +
-      "This may indicate that QueryProvider is not mounted or this is a server-side context."
+        "This may indicate that QueryProvider is not mounted or this is a server-side context.",
     );
     return;
   }

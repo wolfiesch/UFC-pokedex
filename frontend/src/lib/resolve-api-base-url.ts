@@ -14,7 +14,7 @@ function ensureAbsoluteUrl(value: string): string {
   // alternative candidates with explicit schemes.
   if (parsed.origin === "null") {
     throw new TypeError(
-      `URL "${value}" is missing a valid scheme and cannot be resolved.`
+      `URL "${value}" is missing a valid scheme and cannot be resolved.`,
     );
   }
   const normalizedPath =
@@ -24,7 +24,7 @@ function ensureAbsoluteUrl(value: string): string {
 
 export function resolveApiBaseUrl(
   rawUrl: string | undefined,
-  fallbackUrl: string
+  fallbackUrl: string,
 ): string {
   let normalizedFallback = fallbackUrl;
   try {
@@ -32,7 +32,7 @@ export function resolveApiBaseUrl(
   } catch (error) {
     // If fallback is ever misconfigured, surface the original error.
     throw new Error(
-      `Invalid fallback API base URL "${fallbackUrl}": ${String(error)}`
+      `Invalid fallback API base URL "${fallbackUrl}": ${String(error)}`,
     );
   }
 
@@ -58,7 +58,7 @@ export function resolveApiBaseUrl(
 
   if (typeof console !== "undefined") {
     console.warn(
-      `resolveApiBaseUrl: invalid API base URL "${trimmed}", falling back to "${normalizedFallback}".`
+      `resolveApiBaseUrl: invalid API base URL "${trimmed}", falling back to "${normalizedFallback}".`,
     );
   }
 

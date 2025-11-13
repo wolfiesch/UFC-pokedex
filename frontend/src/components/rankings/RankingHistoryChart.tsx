@@ -12,7 +12,13 @@ import {
   Legend,
 } from "recharts";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type RankingDataPoint = {
   ranking_id: string;
@@ -38,18 +44,16 @@ export default function RankingHistoryChart({
 }: RankingHistoryChartProps) {
   // Transform data for Recharts (reverse to show oldest first, left to right)
   const chartData = useMemo(() => {
-    return [...history]
-      .reverse()
-      .map((entry) => ({
-        date: new Date(entry.rank_date).toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        }),
-        rank: entry.rank ?? null,
-        division: entry.division,
-        isChamp: entry.rank === 0,
-        isInterim: entry.is_interim,
-      }));
+    return [...history].reverse().map((entry) => ({
+      date: new Date(entry.rank_date).toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      }),
+      rank: entry.rank ?? null,
+      division: entry.division,
+      isChamp: entry.rank === 0,
+      isInterim: entry.is_interim,
+    }));
   }, [history]);
 
   if (chartData.length === 0) {
@@ -77,11 +81,14 @@ export default function RankingHistoryChart({
       return (
         <div className="rounded-lg border bg-background p-3 shadow-md">
           <p className="font-semibold">{data.date}</p>
-          <p className="text-sm">
-            Division: {data.division}
-          </p>
+          <p className="text-sm">Division: {data.division}</p>
           <p className="text-sm font-semibold">
-            Rank: {data.isChamp ? (data.isInterim ? "Champion (I)" : "Champion") : data.rank ?? "NR"}
+            Rank:{" "}
+            {data.isChamp
+              ? data.isInterim
+                ? "Champion (I)"
+                : "Champion"
+              : (data.rank ?? "NR")}
           </p>
         </div>
       );
@@ -94,7 +101,8 @@ export default function RankingHistoryChart({
       <CardHeader>
         <CardTitle>Ranking History</CardTitle>
         <CardDescription>
-          {division ? `${division} Division` : "All Divisions"} • {chartData.length} snapshots
+          {division ? `${division} Division` : "All Divisions"} •{" "}
+          {chartData.length} snapshots
         </CardDescription>
       </CardHeader>
       <CardContent>

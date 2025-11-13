@@ -10,7 +10,10 @@ interface EventStatsPanelProps {
 /**
  * Panel displaying key statistics about an event
  */
-export default function EventStatsPanel({ fights, eventName }: EventStatsPanelProps) {
+export default function EventStatsPanel({
+  fights,
+  eventName,
+}: EventStatsPanelProps) {
   const stats = calculateEventStats(fights, eventName);
 
   const statItems = [
@@ -52,9 +55,10 @@ export default function EventStatsPanel({ fights, eventName }: EventStatsPanelPr
     },
   ];
 
-  const finishRate = stats.totalFights > 0
-    ? ((stats.finishes / stats.totalFights) * 100).toFixed(1)
-    : "0.0";
+  const finishRate =
+    stats.totalFights > 0
+      ? ((stats.finishes / stats.totalFights) * 100).toFixed(1)
+      : "0.0";
 
   return (
     <div className="space-y-4 rounded-lg border border-gray-700 bg-gray-800/50 p-6">

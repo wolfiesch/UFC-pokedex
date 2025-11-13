@@ -392,9 +392,7 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(
-    request: Request, exc: SQLAlchemyTimeoutError
-):
+async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -446,9 +444,7 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
     request_id = request_id_context.get()
-    logger.error(
-        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
-    )
+    logger.error(f"Database error for request {request_id} to {request.url.path}: {str(exc)}")
 
     error_response = ErrorResponse(
         error_type=ErrorType.DATABASE_ERROR,
@@ -511,6 +507,4 @@ app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(rankings.router, prefix="/rankings", tags=["rankings"])
 app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])
-app.include_router(
-    image_validation.router, prefix="/image-validation", tags=["image-validation"]
-)
+app.include_router(image_validation.router, prefix="/image-validation", tags=["image-validation"])

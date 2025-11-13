@@ -12,7 +12,9 @@ type SearchBarProps = {
 
 export default function SearchBar({ isLoading = false }: SearchBarProps) {
   const current = useFavoritesFiltersStore((state) => state.searchTerm);
-  const setSearchTerm = useFavoritesFiltersStore((state) => state.setSearchTerm);
+  const setSearchTerm = useFavoritesFiltersStore(
+    (state) => state.setSearchTerm,
+  );
   const [value, setValue] = useState(current ?? "");
   const isUpdatingRef = useRef(false);
   const prevStoreRef = useRef(current);
@@ -68,10 +70,7 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search fighters by name or nickname..."
           aria-label="Search fighters"
-          className={cn(
-            "bg-background/70 pl-10",
-            value ? "pr-20" : "pr-12"
-          )}
+          className={cn("bg-background/70 pl-10", value ? "pr-20" : "pr-12")}
         />
 
         {/* Right controls */}
@@ -84,8 +83,19 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
               viewBox="0 0 24 24"
               aria-label="Searching..."
             >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
           ) : null}
 

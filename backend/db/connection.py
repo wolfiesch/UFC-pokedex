@@ -29,13 +29,9 @@ def _validate_postgres_url(database_url: str) -> str:
         )
 
     if normalized_url.startswith("postgres://"):
-        normalized_url = normalized_url.replace(
-            "postgres://", "postgresql+psycopg://", 1
-        )
+        normalized_url = normalized_url.replace("postgres://", "postgresql+psycopg://", 1)
     elif normalized_url.startswith("postgresql://"):
-        normalized_url = normalized_url.replace(
-            "postgresql://", "postgresql+psycopg://", 1
-        )
+        normalized_url = normalized_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
     if not normalized_url.startswith("postgresql+psycopg://"):
         raise RuntimeError(

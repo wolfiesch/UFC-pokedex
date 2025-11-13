@@ -60,9 +60,7 @@ def list_key(
 ) -> str:
     nationality_part = nationality if nationality else ""
     streak_part = "1" if include_streak else "0"
-    window_part = (
-        str(streak_window) if include_streak and streak_window is not None else ""
-    )
+    window_part = str(streak_window) if include_streak and streak_window is not None else ""
     return f"{_LIST_PREFIX}:{limit}:{offset}:{nationality_part}:{streak_part}:{window_part}"
 
 
@@ -200,10 +198,7 @@ def _is_redis_connection_error(exc: BaseException) -> bool:
         return True
 
     error_type = type(exc)
-    return (
-        error_type.__name__ == "ConnectionError"
-        and error_type.__module__.startswith("redis")
-    )
+    return error_type.__name__ == "ConnectionError" and error_type.__module__.startswith("redis")
 
 
 class CacheClient:

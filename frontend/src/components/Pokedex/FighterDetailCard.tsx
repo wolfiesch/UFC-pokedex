@@ -49,7 +49,7 @@ const StatsRadarChart = dynamic(
     import("@/components/visualizations/StatsRadarChart").then((mod) => ({
       default: mod.StatsRadarChart,
     })),
-  { ssr: false, loading: () => <ChartSkeleton title="Performance Overview" /> }
+  { ssr: false, loading: () => <ChartSkeleton title="Performance Overview" /> },
 );
 
 const RecordBreakdownChart = dynamic(
@@ -57,7 +57,10 @@ const RecordBreakdownChart = dynamic(
     import("@/components/visualizations/RecordBreakdownChart").then((mod) => ({
       default: mod.RecordBreakdownChart,
     })),
-  { ssr: false, loading: () => <ChartSkeleton title="Fight Record Breakdown" /> }
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton title="Fight Record Breakdown" />,
+  },
 );
 
 const PerformanceBarCharts = dynamic(
@@ -65,7 +68,7 @@ const PerformanceBarCharts = dynamic(
     import("@/components/visualizations/PerformanceBarCharts").then((mod) => ({
       default: mod.PerformanceBarCharts,
     })),
-  { ssr: false, loading: () => <ChartSkeleton title="Accuracy & Defense" /> }
+  { ssr: false, loading: () => <ChartSkeleton title="Accuracy & Defense" /> },
 );
 
 const FightScatterDemo = dynamic(
@@ -73,7 +76,10 @@ const FightScatterDemo = dynamic(
     import("@/components/analytics/FightScatterDemo").then((mod) => ({
       default: mod.FightScatterDemo,
     })),
-  { ssr: false, loading: () => <ChartSkeleton title="Fight History Timeline" /> }
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton title="Fight History Timeline" />,
+  },
 );
 
 type Props = {
@@ -84,7 +90,13 @@ type Props = {
   onRetry?: () => void;
 };
 
-export default function FighterDetailCard({ fighterId, fighter, isLoading, error, onRetry }: Props) {
+export default function FighterDetailCard({
+  fighterId,
+  fighter,
+  isLoading,
+  error,
+  onRetry,
+}: Props) {
   // Hooks must be called at the top level, before any conditional returns
   const [imageError, setImageError] = useState(false);
   const { toggleFavorite, isFavorite } = useFavorites({
@@ -117,23 +129,32 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           client.GET("/rankings/fighter/{fighter_id}/history", {
             params: {
               path: { fighter_id: fighter.fighter_id },
-              query: { source: "fightmatrix", limit: 50 }
-            }
+              query: { source: "fightmatrix", limit: 50 },
+            },
           }),
           client.GET("/rankings/fighter/{fighter_id}/peak", {
             params: {
               path: { fighter_id: fighter.fighter_id },
-              query: { source: "fightmatrix" }
-            }
-          })
+              query: { source: "fightmatrix" },
+            },
+          }),
         ]);
 
         // Only set data if the response was successful and contains actual data
-        if (!historyRes.error && historyRes.data && historyRes.data.history && historyRes.data.history.length > 0) {
+        if (
+          !historyRes.error &&
+          historyRes.data &&
+          historyRes.data.history &&
+          historyRes.data.history.length > 0
+        ) {
           setRankingHistory(historyRes.data);
         }
 
-        if (!peakRes.error && peakRes.data && peakRes.data.peak_rank !== undefined) {
+        if (
+          !peakRes.error &&
+          peakRes.data &&
+          peakRes.data.peak_rank !== undefined
+        ) {
           setPeakRanking(peakRes.data);
         }
       } catch (error) {
@@ -237,14 +258,17 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                   <span className="font-semibold">Fighter ID:</span> {fighterId}
                 </p>
                 <p>
-                  <span className="font-semibold">Error Type:</span> {error.errorType}
+                  <span className="font-semibold">Error Type:</span>{" "}
+                  {error.errorType}
                 </p>
                 <p>
-                  <span className="font-semibold">Status Code:</span> {error.statusCode}
+                  <span className="font-semibold">Status Code:</span>{" "}
+                  {error.statusCode}
                 </p>
                 {error.requestId && (
                   <p>
-                    <span className="font-semibold">Request ID:</span> {error.requestId}
+                    <span className="font-semibold">Request ID:</span>{" "}
+                    {error.requestId}
                   </p>
                 )}
                 {error.timestamp && (
@@ -304,7 +328,7 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                 <img
                   src={imageSrc ?? ""}
                   alt={fighter.name}
-                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_22px_35px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:scale-[1.06] group-hover/fighter-frame:rotate-[0.65deg]"
+                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_22px_35px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:rotate-[0.65deg] group-hover/fighter-frame:scale-[1.06]"
                   loading="lazy"
                   onError={() => setImageError(true)}
                 />
@@ -319,10 +343,10 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 <CardTitle className="text-3xl">{fighter.name}</CardTitle>
                 {fighter.is_current_champion && (
-                  <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-bold border-0">
+                  <Badge className="border-0 bg-gradient-to-r from-yellow-500 to-amber-600 font-bold text-white">
                     <svg
                       className="mr-1 h-4 w-4"
                       fill="currentColor"
@@ -335,7 +359,10 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                   </Badge>
                 )}
                 {!fighter.is_current_champion && fighter.is_former_champion && (
-                  <Badge variant="outline" className="font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
+                  <Badge
+                    variant="outline"
+                    className="border-amber-600/50 font-semibold text-amber-600 dark:text-amber-500"
+                  >
                     <svg
                       className="mr-1 h-4 w-4"
                       fill="currentColor"
@@ -353,8 +380,8 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                 size="lg"
                 onClick={handleFavoriteClick}
                 className={cn(
-                  "group/fav transition-all flex-shrink-0",
-                  isFavorited && "hover:scale-105"
+                  "group/fav flex-shrink-0 transition-all",
+                  isFavorited && "hover:scale-105",
                 )}
               >
                 <svg
@@ -362,7 +389,7 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                     "mr-2 h-5 w-5 transition-transform",
                     isFavorited
                       ? "fill-current group-hover/fav:scale-110"
-                      : "fill-none group-hover/fav:scale-110"
+                      : "fill-none group-hover/fav:scale-110",
                   )}
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -387,8 +414,12 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
               {fighter.record ?? "Record unavailable"}
             </p>
             <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              <Badge variant="outline">{fighter.division ?? "Unknown Division"}</Badge>
-              {fighter.stance ? <Badge variant="outline">{fighter.stance}</Badge> : null}
+              <Badge variant="outline">
+                {fighter.division ?? "Unknown Division"}
+              </Badge>
+              {fighter.stance ? (
+                <Badge variant="outline">{fighter.stance}</Badge>
+              ) : null}
             </div>
           </div>
         </div>
@@ -430,7 +461,10 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
           <StatsDisplay title="Grappling" stats={fighter.grappling} />
         ) : null}
         {Object.keys(fighter.significant_strikes).length > 0 ? (
-          <StatsDisplay title="Significant Strikes" stats={fighter.significant_strikes} />
+          <StatsDisplay
+            title="Significant Strikes"
+            stats={fighter.significant_strikes}
+          />
         ) : null}
         {Object.keys(fighter.takedown_stats).length > 0 ? (
           <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />
@@ -449,10 +483,12 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
 
         {fightHistory.length > 0 ? (
           <section className="space-y-4">
-            <h3 className="text-xl font-semibold">Fight History (Table View)</h3>
+            <h3 className="text-xl font-semibold">
+              Fight History (Table View)
+            </h3>
 
             {/* Desktop table view */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -468,7 +504,9 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                 <TableBody>
                   {fightHistory.map((fight) => (
                     <TableRow key={fight.fight_id}>
-                      <TableCell className="font-medium">{fight.event_name}</TableCell>
+                      <TableCell className="font-medium">
+                        {fight.event_name}
+                      </TableCell>
                       <TableCell>{fight.event_date ?? "—"}</TableCell>
                       <TableCell>
                         {fight.opponent_id ? (
@@ -494,8 +532,12 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                         </Badge>
                       </TableCell>
                       <TableCell>{fight.method}</TableCell>
-                      <TableCell className="text-center">{fight.round ?? "—"}</TableCell>
-                      <TableCell className="text-center">{fight.time ?? "—"}</TableCell>
+                      <TableCell className="text-center">
+                        {fight.round ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {fight.time ?? "—"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -503,14 +545,16 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
             </div>
 
             {/* Mobile card view */}
-            <div className="md:hidden space-y-3">
+            <div className="space-y-3 md:hidden">
               {fightHistory.map((fight) => (
                 <Card key={fight.fight_id} className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{fight.event_name}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <h4 className="text-sm font-semibold">
+                          {fight.event_name}
+                        </h4>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           {fight.event_date ?? "—"}
                         </p>
                       </div>
@@ -526,7 +570,9 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-xs text-muted-foreground">Opponent</p>
+                        <p className="text-xs text-muted-foreground">
+                          Opponent
+                        </p>
                         <p className="font-medium">
                           {fight.opponent_id ? (
                             <Link
@@ -591,7 +637,13 @@ export default function FighterDetailCard({ fighterId, fighter, isLoading, error
   );
 }
 
-function Info({ label, value }: { label: string; value: string | number | null | undefined }) {
+function Info({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
   return (
     <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">

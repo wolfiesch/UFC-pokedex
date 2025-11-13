@@ -75,7 +75,8 @@ export function formatCategoryLabel(categoryKey: string): string {
     return cached;
   }
 
-  const label = CATEGORY_LABEL_OVERRIDES[categoryKey] ?? toTitleCase(categoryKey);
+  const label =
+    CATEGORY_LABEL_OVERRIDES[categoryKey] ?? toTitleCase(categoryKey);
   cacheWithLimit(CATEGORY_LABEL_CACHE, categoryKey, label);
   return label;
 }

@@ -120,7 +120,19 @@ class FighterQueryService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, limit=None, offset=None, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None, include_streak=False, streak_window=6: (
+        lambda _self,
+        *,
+        limit=None,
+        offset=None,
+        nationality=None,
+        birthplace_country=None,
+        birthplace_city=None,
+        training_country=None,
+        training_city=None,
+        training_gym=None,
+        has_location_data=None,
+        include_streak=False,
+        streak_window=6: (
             fighter_list_cache_key(
                 limit=limit,
                 offset=offset,
@@ -194,7 +206,14 @@ class FighterQueryService(CacheableService):
         return await self._repository.get_fighter(fighter_id)
 
     @cached(
-        lambda _self, nationality=None, birthplace_country=None, birthplace_city=None, training_country=None, training_city=None, training_gym=None, has_location_data=None: (
+        lambda _self,
+        nationality=None,
+        birthplace_country=None,
+        birthplace_city=None,
+        training_country=None,
+        training_city=None,
+        training_gym=None,
+        has_location_data=None: (
             f"fighters:count:{nationality if nationality else 'all'}"
             if not any(
                 [
@@ -339,9 +358,7 @@ class FighterQueryService(CacheableService):
             "Failed to deserialize cached fighter comparison for key {key}: {error}"
         ),
     )
-    async def compare_fighters(
-        self, fighter_ids: Sequence[str]
-    ) -> list[FighterComparisonEntry]:
+    async def compare_fighters(self, fighter_ids: Sequence[str]) -> list[FighterComparisonEntry]:
         """Retrieve comparable stat bundles for the requested fighters."""
 
         return await self._repository.get_fighters_for_comparison(fighter_ids)
@@ -438,9 +455,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             min_streak_count=min_streak_count,
         )
 
-        roster = [
-            self._list_item_from_detail(detail) for detail in self._fighters.values()
-        ]
+        roster = [self._list_item_from_detail(detail) for detail in self._fighters.values()]
         filtered = filter_roster_entries(roster, filters=filters)
         paginated = list(
             paginate_roster_entries(

@@ -14,7 +14,14 @@ import {
 import type { TrendSeries } from "@/lib/types";
 
 /** Palette of high-contrast monochrome tones for multi-series charts. */
-const SERIES_COLORS = ["#0a0a0a", "#2f2f2f", "#555555", "#7a7a7a", "#a0a0a0", "#cfcfcf"];
+const SERIES_COLORS = [
+  "#0a0a0a",
+  "#2f2f2f",
+  "#555555",
+  "#7a7a7a",
+  "#a0a0a0",
+  "#cfcfcf",
+];
 
 /**
  * Props definition for the inner chart component that directly utilises the
@@ -51,7 +58,10 @@ function getDisplayKey(index: number, label: string): string {
   return `Series ${index + 1}`;
 }
 
-function buildChartData(series: TrendSeries[]): { data: ChartDatum[]; keys: string[] } {
+function buildChartData(series: TrendSeries[]): {
+  data: ChartDatum[];
+  keys: string[];
+} {
   const dataMap = new Map<string, ChartDatum>();
   const keys: string[] = [];
 
@@ -73,7 +83,7 @@ function buildChartData(series: TrendSeries[]): { data: ChartDatum[]; keys: stri
   });
 
   const data = Array.from(dataMap.values()).sort((a, b) =>
-    a.timestamp.localeCompare(b.timestamp)
+    a.timestamp.localeCompare(b.timestamp),
   );
 
   return { data, keys };
@@ -89,10 +99,23 @@ function TrendChartInnerComponent({ series }: TrendChartInnerProps) {
 
   return (
     <ResponsiveContainer width="100%" height={320}>
-      <LineChart data={data} margin={{ top: 16, right: 24, bottom: 16, left: 0 }}>
+      <LineChart
+        data={data}
+        margin={{ top: 16, right: 24, bottom: 16, left: 0 }}
+      >
         <CartesianGrid stroke="#e5e5e5" strokeDasharray="4 4" />
-        <XAxis dataKey="label" stroke="#525252" tickLine={false} axisLine={false} />
-        <YAxis stroke="#525252" tickLine={false} axisLine={false} allowDecimals />
+        <XAxis
+          dataKey="label"
+          stroke="#525252"
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="#525252"
+          tickLine={false}
+          axisLine={false}
+          allowDecimals
+        />
         <Tooltip
           contentStyle={{
             backgroundColor: "#ffffff",

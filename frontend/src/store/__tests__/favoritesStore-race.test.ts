@@ -1,11 +1,11 @@
 /**
  * Tests for favorites store race conditions.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useFavoritesStore } from '../favoritesStore';
-import * as api from '@/lib/api';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { useFavoritesStore } from "../favoritesStore";
+import * as api from "@/lib/api";
 
-describe('FavoritesStore Race Conditions', () => {
+describe("FavoritesStore Race Conditions", () => {
   beforeEach(() => {
     // Reset store state completely
     useFavoritesStore.setState({
@@ -23,24 +23,24 @@ describe('FavoritesStore Race Conditions', () => {
     vi.restoreAllMocks();
   });
 
-  it('should handle concurrent initialization calls', async () => {
+  it("should handle concurrent initialization calls", async () => {
     // Track API call count
     let apiCallCount = 0;
     let collectionDetailCallCount = 0;
 
     // Spy on getFavoriteCollections to count calls
-    vi.spyOn(api, 'getFavoriteCollections').mockImplementation(async () => {
+    vi.spyOn(api, "getFavoriteCollections").mockImplementation(async () => {
       apiCallCount++;
       // Simulate async delay to expose race conditions
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       // Return a collection so _ensureDefaultCollection doesn't make another call
       return {
         collections: [
           {
             collection_id: 1,
-            title: 'Test Collection',
+            title: "Test Collection",
             entry_count: 0,
-            user_id: 'demo-user',
+            user_id: "demo-user",
             description: null,
             is_public: false,
             created_at: new Date().toISOString(),
@@ -50,10 +50,10 @@ describe('FavoritesStore Race Conditions', () => {
       };
     });
 
-    vi.spyOn(api, 'createFavoriteCollection').mockResolvedValue({
+    vi.spyOn(api, "createFavoriteCollection").mockResolvedValue({
       collection_id: 1,
-      title: 'Test',
-      user_id: 'demo-user',
+      title: "Test",
+      user_id: "demo-user",
       description: null,
       is_public: false,
       created_at: new Date().toISOString(),
@@ -61,19 +61,21 @@ describe('FavoritesStore Race Conditions', () => {
       entry_count: 0,
     });
 
-    vi.spyOn(api, 'getFavoriteCollectionDetail').mockImplementation(async () => {
-      collectionDetailCallCount++;
-      return {
-        collection_id: 1,
-        title: 'Test',
-        user_id: 'demo-user',
-        description: null,
-        is_public: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        entries: [],
-      };
-    });
+    vi.spyOn(api, "getFavoriteCollectionDetail").mockImplementation(
+      async () => {
+        collectionDetailCallCount++;
+        return {
+          collection_id: 1,
+          title: "Test",
+          user_id: "demo-user",
+          description: null,
+          is_public: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          entries: [],
+        };
+      },
+    );
 
     // Simulate 5 concurrent initialization calls
     const { initialize } = useFavoritesStore.getState();

@@ -90,7 +90,7 @@ class BestFightOddsFinalSpider(scrapy.Spider):
             event_date = response.css("span.table-header-date::text").get()
             event_url = response.url
 
-            event_id_match = re.search(r'/events/(.+-(\d+))$', event_url)
+            event_id_match = re.search(r"/events/(.+-(\d+))$", event_url)
             event_id = event_id_match.group(1) if event_id_match else None
 
             # Get all matchup rows

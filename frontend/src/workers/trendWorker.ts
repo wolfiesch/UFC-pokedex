@@ -198,7 +198,7 @@ class SlidingMedian {
 
 function computeRollingMedian(
   points: TrendPoint[],
-  windowSize: number = 5
+  windowSize: number = 5,
 ): TrendPoint[] {
   if (points.length === 0) {
     return [];

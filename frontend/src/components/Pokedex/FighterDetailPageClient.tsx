@@ -17,7 +17,7 @@ export default function FighterDetailPageClient({
 }: FighterDetailPageClientProps) {
   const { fighter, isLoading, error, retry } = useFighter(
     fighterId,
-    initialData
+    initialData,
   );
 
   return (

@@ -64,7 +64,7 @@ export class ApiError extends Error {
       retryCount?: number;
       cause?: Error;
       context?: string;
-    } = {}
+    } = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -262,7 +262,7 @@ export class ValidationError extends ApiError {
   constructor(
     message: string,
     validationErrors: ValidationErrorDetail[],
-    detail?: string
+    detail?: string,
   ) {
     super(message, {
       errorType: ErrorType.VALIDATION_ERROR,
