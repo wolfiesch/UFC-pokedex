@@ -164,6 +164,13 @@ export interface EventStats {
   weightClasses: string[];
   finishes: number;
   decisions: number;
+  weightClassBreakdown: { name: string; fights: number; percentage: number }[];
+  fastestFinish: {
+    label: string;
+    round: number | null;
+    time: string | null;
+  } | null;
+  dominantFinishMethod: string | null;
 }
 
 export function calculateEventStats(fights: Fight[], eventName: string): EventStats {
@@ -193,6 +200,60 @@ export function calculateEventStats(fights: Fight[], eventName: string): EventSt
   const mainCardSection = sections.find(s => s.section === "main");
   const prelimSection = sections.find(s => s.section === "prelims");
 
+  const weightClassCounts = fights.reduce<Record<string, number>>((acc, fight) => {
+    if (fight.weight_class) {
+      acc[fight.weight_class] = (acc[fight.weight_class] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const weightClassBreakdown = Object.entries(weightClassCounts)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .map(([name, fightsCount]) => ({
+      name,
+      fights: fightsCount,
+      percentage: fights.length > 0 ? Math.round((fightsCount / fights.length) * 100) : 0,
+    }));
+
+  const timeToSeconds = (round: number | null, time: string | null): number => {
+    if (!round || !time) return Number.POSITIVE_INFINITY;
+    const [minutes, seconds] = time.split(":").map(part => parseInt(part, 10));
+    if (Number.isNaN(minutes) || Number.isNaN(seconds)) {
+      return Number.POSITIVE_INFINITY;
+    }
+    return (round - 1) * 300 + minutes * 60 + seconds; // 5 minute rounds
+  };
+
+  const finishFights = fights.filter(f =>
+    f.method &&
+    !f.method.toLowerCase().includes("decision") &&
+    !f.method.toLowerCase().includes("n/a")
+  );
+
+  const fastestFinish = finishFights.reduce<{
+    fight: Fight | null;
+    seconds: number;
+  }>(
+    (acc, fight) => {
+      const seconds = timeToSeconds(fight.round, fight.time);
+      if (seconds < acc.seconds) {
+        return { fight, seconds };
+      }
+      return acc;
+    },
+    { fight: null, seconds: Number.POSITIVE_INFINITY }
+  ).fight;
+
+  const dominantFinishMethod = finishFights.reduce<Record<string, number>>((acc, fight) => {
+    const key = fight.method?.trim() ?? "";
+    if (!key) return acc;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const mostCommonFinish = Object.entries(dominantFinishMethod)
+    .sort(([, countA], [, countB]) => countB - countA)[0]?.[0] ?? null;
+
   return {
     totalFights: fights.length,
     mainCardFights: mainCardSection?.fights.length || 0,
@@ -201,5 +262,14 @@ export function calculateEventStats(fights: Fight[], eventName: string): EventSt
     weightClasses,
     finishes,
     decisions,
+    weightClassBreakdown,
+    fastestFinish: fastestFinish
+      ? {
+          label: `${fastestFinish.fighter_1_name} vs ${fastestFinish.fighter_2_name}`,
+          round: fastestFinish.round,
+          time: fastestFinish.time,
+        }
+      : null,
+    dominantFinishMethod: mostCommonFinish,
   };
 }

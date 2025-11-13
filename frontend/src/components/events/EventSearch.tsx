@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Search, X } from "lucide-react";
 
 interface EventSearchProps {
   value: string;
@@ -23,14 +24,14 @@ export default function EventSearch({ value, onChange, placeholder = "Search eve
   return (
     <div className="relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <span className="text-gray-500 text-lg">🔍</span>
+        <Search className="h-4 w-4 text-slate-400" aria-hidden />
       </div>
       <input
         type="text"
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+        className="w-full pl-10 pr-12 py-3 rounded-xl border border-slate-700/60 bg-slate-900/70 text-white placeholder-slate-500 shadow-inner shadow-black/20 backdrop-blur focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
       />
       {localValue && (
         <button
@@ -38,10 +39,10 @@ export default function EventSearch({ value, onChange, placeholder = "Search eve
             setLocalValue("");
             onChange("");
           }}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
           aria-label="Clear search"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden />
         </button>
       )}
     </div>
