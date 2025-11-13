@@ -21,6 +21,8 @@ Database Schema (New Table):
 Usage:
     python scripts/import_fightmatrix_historical.py
     python scripts/import_fightmatrix_historical.py --file issue_996_11-02-2025.json
+
+PostgreSQL is required; the script will exit if a SQLite fallback is detected.
 """
 
 import argparse
@@ -28,14 +30,14 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import TypedDict
 from uuid import uuid4
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
+from sqlalchemy.engine import Engine, make_url
 
 # Import database connection
 from backend.db.connection import get_database_url
@@ -61,18 +63,40 @@ def parse_issue_date(date_str: str) -> str:
         return date_str
 
 
-def create_historical_rankings_table(engine):
-    """
-    Create historical_rankings table if it doesn't exist.
-    """
-    # Check database type from engine URL
-    is_sqlite = 'sqlite' in str(engine.url)
+def resolve_postgres_url(raw_url: str) -> str:
+    """Ensure the provided database URL targets PostgreSQL.
 
-    if is_sqlite:
-        # SQLite version (no UUID support)
-        create_table_sql = """
+    The helper normalises SQLAlchemy's async connection string to the sync
+    variant required by ``create_engine`` while failing fast when a legacy
+    SQLite fallback sneaks in.
+    """
+
+    url = make_url(raw_url)
+    if url.get_backend_name() != "postgresql":
+        raise SystemExit(
+            f"This importer now requires a PostgreSQL DATABASE_URL. Found backend: {url.get_backend_name()}"
+        )
+
+    # Always coerce to the psycopg (psycopg3) driver for consistency across
+    # environments. ``get_database_url`` already returns the async variant so we
+    # simply reuse the same driver here for the sync engine.
+    return str(url.set(drivername="postgresql+psycopg"))
+
+
+def create_historical_rankings_table(engine: Engine) -> None:
+    """Create the PostgreSQL ``historical_rankings`` table when missing.
+
+    The table is intentionally created inline because historical rankings live
+    outside the main Alembic migration flow.  PostgreSQL-specific features such
+    as ``gen_random_uuid`` are safe to assume because the CLI guards against
+    non-PostgreSQL URLs during start-up.
+    """
+
+    create_table_sql = """
+        CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
         CREATE TABLE IF NOT EXISTS historical_rankings (
-            id TEXT PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             issue_number INTEGER NOT NULL,
             issue_date DATE NOT NULL,
             division_code INTEGER NOT NULL,
@@ -100,51 +124,40 @@ def create_historical_rankings_table(engine):
 
         CREATE INDEX IF NOT EXISTS idx_historical_rankings_date
             ON historical_rankings(issue_date DESC);
-        """
-    else:
-        # PostgreSQL version (with UUID support)
-        create_table_sql = """
-        CREATE TABLE IF NOT EXISTS historical_rankings (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        issue_number INTEGER NOT NULL,
-        issue_date DATE NOT NULL,
-        division_code INTEGER NOT NULL,
-        division_name VARCHAR(50) NOT NULL,
-        fighter_name VARCHAR(255) NOT NULL,
-        rank INTEGER NOT NULL,
-        points INTEGER NOT NULL,
-        movement VARCHAR(10),
-        profile_url VARCHAR(500),
-        scraped_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-        -- Indexes for common queries
-        CONSTRAINT unique_ranking UNIQUE (issue_number, division_code, rank)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_historical_rankings_fighter
-        ON historical_rankings(fighter_name);
-
-    CREATE INDEX IF NOT EXISTS idx_historical_rankings_division
-        ON historical_rankings(division_code);
-
-    CREATE INDEX IF NOT EXISTS idx_historical_rankings_issue
-        ON historical_rankings(issue_number);
-
-    CREATE INDEX IF NOT EXISTS idx_historical_rankings_date
-        ON historical_rankings(issue_date DESC);
     """
 
     with engine.connect() as conn:
-        for statement in create_table_sql.strip().split(';'):
+        for statement in create_table_sql.strip().split(";"):
             if statement.strip():
                 conn.execute(text(statement))
         conn.commit()
 
-    print("✓ Historical rankings table ready")
+    print("✓ Historical rankings table ready (PostgreSQL)")
 
 
-def import_issue_file(file_path: Path, engine) -> Dict:
+class IssueImportStats(TypedDict):
+    """Typed structure describing per-file import metrics."""
+
+    file: str
+    issue_number: int
+    issue_date: str
+    divisions: int
+    fighters_imported: int
+    duplicates_skipped: int
+    errors: int
+
+
+class AggregateImportStats(TypedDict):
+    """Typed structure describing aggregate metrics across multiple files."""
+
+    files: int
+    divisions: int
+    fighters_imported: int
+    duplicates_skipped: int
+    errors: int
+
+
+def import_issue_file(file_path: Path, engine: Engine) -> IssueImportStats:
     """
     Import a single issue file into the database.
 
@@ -157,56 +170,59 @@ def import_issue_file(file_path: Path, engine) -> Dict:
     """
     print(f"📄 Importing {file_path.name}...")
 
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         data = json.load(f)
 
-    issue_number = data['issue_number']
-    issue_date_str = data['issue_date']
+    issue_number = data["issue_number"]
+    issue_date_str = data["issue_date"]
     issue_date = parse_issue_date(issue_date_str)
 
-    stats = {
-        'file': file_path.name,
-        'issue_number': issue_number,
-        'issue_date': issue_date_str,
-        'divisions': 0,
-        'fighters_imported': 0,
-        'duplicates_skipped': 0,
-        'errors': 0
+    stats: IssueImportStats = {
+        "file": file_path.name,
+        "issue_number": issue_number,
+        "issue_date": issue_date_str,
+        "divisions": 0,
+        "fighters_imported": 0,
+        "duplicates_skipped": 0,
+        "errors": 0,
     }
 
     with engine.connect() as conn:
-        for division_data in data['divisions']:
-            stats['divisions'] += 1
-            division_code = division_data['division']
-            division_name = division_data['division_name']
-            scraped_at = division_data.get('scraped_at', datetime.utcnow().isoformat())
+        for division_data in data["divisions"]:
+            stats["divisions"] += 1
+            division_code = division_data["division"]
+            division_name = division_data["division_name"]
+            scraped_at = division_data.get("scraped_at", datetime.utcnow().isoformat())
 
-            for fighter in division_data['fighters']:
+            for fighter in division_data["fighters"]:
                 try:
                     # Check if already exists
-                    check_sql = text("""
+                    check_sql = text(
+                        """
                         SELECT COUNT(*) as count
                         FROM historical_rankings
                         WHERE issue_number = :issue_number
                           AND division_code = :division_code
                           AND rank = :rank
-                    """)
+                    """
+                    )
 
                     result = conn.execute(
                         check_sql,
                         {
-                            'issue_number': issue_number,
-                            'division_code': division_code,
-                            'rank': fighter['rank']
-                        }
+                            "issue_number": issue_number,
+                            "division_code": division_code,
+                            "rank": fighter["rank"],
+                        },
                     ).fetchone()
 
                     if result[0] > 0:
-                        stats['duplicates_skipped'] += 1
+                        stats["duplicates_skipped"] += 1
                         continue
 
                     # Insert new record
-                    insert_sql = text("""
+                    insert_sql = text(
+                        """
                         INSERT INTO historical_rankings (
                             id, issue_number, issue_date, division_code,
                             division_name, fighter_name, rank, points,
@@ -216,40 +232,45 @@ def import_issue_file(file_path: Path, engine) -> Dict:
                             :division_name, :fighter_name, :rank, :points,
                             :movement, :profile_url, :scraped_at
                         )
-                    """)
+                    """
+                    )
 
                     conn.execute(
                         insert_sql,
                         {
-                            'id': str(uuid4()),
-                            'issue_number': issue_number,
-                            'issue_date': issue_date,
-                            'division_code': division_code,
-                            'division_name': division_name,
-                            'fighter_name': fighter['name'],
-                            'rank': fighter['rank'],
-                            'points': fighter['points'],
-                            'movement': fighter.get('movement'),
-                            'profile_url': fighter.get('profile_url'),
-                            'scraped_at': scraped_at
-                        }
+                            "id": str(uuid4()),
+                            "issue_number": issue_number,
+                            "issue_date": issue_date,
+                            "division_code": division_code,
+                            "division_name": division_name,
+                            "fighter_name": fighter["name"],
+                            "rank": fighter["rank"],
+                            "points": fighter["points"],
+                            "movement": fighter.get("movement"),
+                            "profile_url": fighter.get("profile_url"),
+                            "scraped_at": scraped_at,
+                        },
                     )
 
-                    stats['fighters_imported'] += 1
+                    stats["fighters_imported"] += 1
 
                 except Exception as e:
-                    print(f"   ⚠️  Error importing {fighter.get('name', 'unknown')}: {e}")
-                    stats['errors'] += 1
+                    print(
+                        f"   ⚠️  Error importing {fighter.get('name', 'unknown')}: {e}"
+                    )
+                    stats["errors"] += 1
 
         conn.commit()
 
-    print(f"   ✓ Imported {stats['fighters_imported']} fighters "
-          f"({stats['duplicates_skipped']} duplicates, {stats['errors']} errors)")
+    print(
+        f"   ✓ Imported {stats['fighters_imported']} fighters "
+        f"({stats['duplicates_skipped']} duplicates, {stats['errors']} errors)"
+    )
 
     return stats
 
 
-def import_all_files(engine) -> None:
+def import_all_files(engine: Engine) -> None:
     """
     Import all issue files from the historical directory.
     """
@@ -266,21 +287,21 @@ def import_all_files(engine) -> None:
     print(f"📦 Found {len(issue_files)} issue files to import")
     print()
 
-    total_stats = {
-        'files': 0,
-        'divisions': 0,
-        'fighters_imported': 0,
-        'duplicates_skipped': 0,
-        'errors': 0
+    total_stats: AggregateImportStats = {
+        "files": 0,
+        "divisions": 0,
+        "fighters_imported": 0,
+        "duplicates_skipped": 0,
+        "errors": 0,
     }
 
     for file_path in issue_files:
         stats = import_issue_file(file_path, engine)
-        total_stats['files'] += 1
-        total_stats['divisions'] += stats['divisions']
-        total_stats['fighters_imported'] += stats['fighters_imported']
-        total_stats['duplicates_skipped'] += stats['duplicates_skipped']
-        total_stats['errors'] += stats['errors']
+        total_stats["files"] += 1
+        total_stats["divisions"] += stats["divisions"]
+        total_stats["fighters_imported"] += stats["fighters_imported"]
+        total_stats["duplicates_skipped"] += stats["duplicates_skipped"]
+        total_stats["errors"] += stats["errors"]
 
     print()
     print(f"✅ Import complete!")
@@ -293,17 +314,17 @@ def import_all_files(engine) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Import Fight Matrix historical rankings into database'
+        description="Import Fight Matrix historical rankings into PostgreSQL"
     )
     parser.add_argument(
-        '--file',
+        "--file",
         type=str,
-        help='Import a specific file (e.g., issue_996_11-02-2025.json)'
+        help="Import a specific file (e.g., issue_996_11-02-2025.json)",
     )
     parser.add_argument(
-        '--create-table-only',
-        action='store_true',
-        help='Only create the table, don\'t import data'
+        "--create-table-only",
+        action="store_true",
+        help="Only create the table, don't import data",
     )
 
     args = parser.parse_args()
@@ -311,22 +332,14 @@ def main():
     print("🚀 Fight Matrix Historical Rankings Importer")
     print()
 
-    # Get database URL and convert from async to sync
-    database_url = get_database_url()
+    # Resolve PostgreSQL URL in synchronous form. ``resolve_postgres_url``
+    # raises immediately if the async layer is still configured for SQLite.
+    database_url = resolve_postgres_url(get_database_url())
 
-    # Convert async URLs to sync versions for import script
-    if database_url.startswith("postgresql+psycopg://"):
-        database_url = database_url.replace(
-            "postgresql+psycopg://",
-            "postgresql+psycopg2://"
-        )
-    elif database_url.startswith("sqlite+aiosqlite://"):
-        database_url = database_url.replace(
-            "sqlite+aiosqlite://",
-            "sqlite://"
-        )
-
-    print(f"📊 Database: {database_url.split('@')[-1] if '@' in database_url else database_url.split(':///')[-1]}")
+    print(
+        f"📊 Database: {database_url.split('@')[-1] if '@' in database_url else database_url.split(':///')[-1]}"
+    )
+    print("🛡️  PostgreSQL URL validated")
     print()
 
     engine = create_engine(database_url)
