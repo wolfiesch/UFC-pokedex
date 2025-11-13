@@ -62,3 +62,6 @@ def pytest_configure(config: pytest.Config) -> None:
             "asyncio: fallback marker handled by tests.conftest when pytest-asyncio is absent",
         )
         config.pluginmanager.register(_AsyncioCompatPlugin(), name="asyncio_compat")
+
+
+pytest_plugins = ["tests.backend.postgres"]
