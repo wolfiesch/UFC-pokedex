@@ -3,12 +3,23 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
+import { differenceInDays, differenceInHours, format, parseISO } from "date-fns";
 import { groupFightsBySection } from "@/lib/fight-utils";
 import { detectEventType, getEventTypeConfig, normalizeEventType } from "@/lib/event-utils";
 import EventStatsPanel from "@/components/events/EventStatsPanel";
 import FightCardSection from "@/components/events/FightCardSection";
 import RelatedEventsWidget from "@/components/events/RelatedEventsWidget";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  CalendarDays,
+  Clock,
+  Flame,
+  MapPin,
+  Radio,
+  Sparkles,
+  Tv,
+} from "lucide-react";
 
 interface Fight {
   fight_id: string;
@@ -133,92 +144,143 @@ export default function EventDetailPage() {
 
   // Group fights into sections
   const fightSections = groupFightsBySection(event.fight_card);
+  const eventDate = parseISO(event.date);
+  const countdown = getCountdown(event.status, eventDate);
+  const [promotionPrefix, headlineSegment] = event.name.split(":");
+  const headlinerNames = headlineSegment?.split("vs").map((fighter) => fighter.trim()).filter(Boolean) ?? [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
-      <Link href="/events" className="inline-flex items-center gap-2 text-blue-500 hover:underline mb-6">
-        ← Back to Events
-      </Link>
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-10">
+      <div className="relative mb-12 overflow-hidden rounded-[42px] border border-white/10 bg-slate-950 shadow-[0_60px_140px_-80px_rgba(15,23,42,0.95)]">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center opacity-50" />
+        <div className={`absolute inset-0 bg-gradient-to-br ${typeConfig.heroGlow} via-transparent to-slate-950`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent" />
 
-      {/* Event Header */}
-      <div
-        className={`
-          rounded-lg p-6 mb-8 border
-          ${isPPV ? "bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 border-amber-600" : "bg-gray-800 border-gray-700"}
-        `}
-      >
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2 flex-wrap">
-              <span className={`rounded px-3 py-1 text-xs font-bold ${typeConfig.badgeClass}`}>
-                {typeConfig.label}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  event.status === "upcoming"
-                    ? "bg-green-900 text-green-300"
-                    : "bg-gray-700 text-gray-300"
-                }`}
-              >
-                {event.status === "upcoming" ? "Upcoming" : "Completed"}
-              </span>
+        <div className="relative z-10 flex flex-col gap-10 px-6 pb-12 pt-10 md:px-12 md:pb-16">
+          <div className="flex items-center justify-between text-xs uppercase tracking-[0.4em] text-slate-200/70">
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-semibold text-slate-100 transition hover:border-white/40 hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to events
+            </Link>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-semibold text-slate-200">
+              {promotionPrefix?.trim() ?? "UFC"}
+            </span>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-[1.35fr_0.65fr] md:items-end">
+            <div className="space-y-6 text-slate-100">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-slate-900 shadow ${typeConfig.badgeClass}`}>
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  {typeConfig.label}
+                </span>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] ${
+                    event.status === "upcoming" ? "bg-emerald-400/20 text-emerald-100" : "bg-slate-700/60 text-slate-200"
+                  }`}
+                >
+                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                  {event.status === "upcoming" ? "Scheduled" : "Completed"}
+                </span>
+                {isPPV && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/60 bg-amber-400/20 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-amber-100">
+                    <Flame className="h-4 w-4" aria-hidden="true" /> Championship billing
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <h1 className="text-4xl font-black uppercase tracking-tight drop-shadow md:text-5xl">
+                  {headlineSegment?.trim() ?? event.name}
+                </h1>
+                {headlinerNames.length >= 2 && (
+                  <p className="mt-3 text-sm font-medium uppercase tracking-[0.6em] text-slate-200/80">
+                    {headlinerNames.join(" • ")}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 text-sm sm:grid-cols-2">
+                <div className="flex items-center gap-3 rounded-3xl border border-white/15 bg-white/10 px-4 py-3">
+                  <CalendarDays className="h-4 w-4 text-cyan-300" aria-hidden="true" />
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/70">Date</p>
+                    <p className="text-base font-semibold text-white">{format(eventDate, "MMMM d, yyyy")}</p>
+                  </div>
+                </div>
+                {event.location && (
+                  <div className="flex items-center gap-3 rounded-3xl border border-white/15 bg-white/10 px-4 py-3">
+                    <MapPin className="h-4 w-4 text-rose-300" aria-hidden="true" />
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/70">Location</p>
+                      <p className="text-base font-semibold text-white">{event.location}</p>
+                    </div>
+                  </div>
+                )}
+                {event.venue && (
+                  <div className="flex items-center gap-3 rounded-3xl border border-white/15 bg-white/10 px-4 py-3">
+                    <Radio className="h-4 w-4 text-amber-300" aria-hidden="true" />
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/70">Venue</p>
+                      <p className="text-base font-semibold text-white">{event.venue}</p>
+                    </div>
+                  </div>
+                )}
+                {event.broadcast && (
+                  <div className="flex items-center gap-3 rounded-3xl border border-white/15 bg-white/10 px-4 py-3">
+                    <Tv className="h-4 w-4 text-indigo-300" aria-hidden="true" />
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/70">Broadcast</p>
+                      <p className="text-base font-semibold text-white">{event.broadcast}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <h1 className={`text-3xl font-bold ${isPPV ? "text-amber-200" : "text-white"}`}>
-              {event.name}
-            </h1>
+
+            <aside className="flex flex-col gap-4 rounded-[32px] border border-white/15 bg-white/10 p-5 text-slate-100 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-300/80">Event timeline</p>
+              <div className="flex flex-col gap-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <Clock className="h-4 w-4 text-cyan-300" aria-hidden="true" />
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/80">Countdown</p>
+                    <p className="text-base font-semibold text-white">{countdown}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Flame className="h-4 w-4 text-amber-300" aria-hidden="true" />
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/80">Promotion</p>
+                    <p className="text-base font-semibold text-white">{event.promotion}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Sparkles className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-300/80">Status</p>
+                    <p className="text-base font-semibold text-white">{event.status}</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2 text-gray-400">
-            <span className="text-gray-500">📅</span>
-            <span>{format(parseISO(event.date), "MMMM d, yyyy")}</span>
-          </div>
-          {event.location && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">📍</span>
-              <span>{event.location}</span>
-            </div>
-          )}
-          {event.venue && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">🏟️</span>
-              <span>{event.venue}</span>
-            </div>
-          )}
-          {event.broadcast && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">📺</span>
-              <span>{event.broadcast}</span>
-            </div>
-          )}
-        </div>
-
-        {isPPV && (
-          <div className="mt-4 pt-4 border-t border-amber-600/40">
-            <span className="font-bold text-amber-300">⭐ Pay-Per-View Event</span>
-          </div>
-        )}
       </div>
 
-      {/* Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content - Fight Card */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Event Statistics Panel */}
+      <div className="grid gap-10 lg:grid-cols-[1.55fr_0.45fr]">
+        <div className="space-y-8">
           {event.fight_card.length > 0 && (
             <EventStatsPanel fights={event.fight_card} eventName={event.name} />
           )}
 
-          {/* Fight Card Sections */}
           <div>
-            <h2 className="text-2xl font-bold mb-6 text-white">
-              Fight Card
-            </h2>
+            <h2 className="mb-6 text-2xl font-bold uppercase tracking-[0.3em] text-slate-100">Fight Card</h2>
 
             {event.fight_card.length === 0 ? (
-              <div className="text-center py-12 bg-gray-800 rounded-lg text-gray-400 border border-gray-700">
+              <div className="rounded-3xl border border-white/10 bg-white/5 py-12 text-center text-slate-300">
                 No fights available for this event.
               </div>
             ) : (
@@ -236,7 +298,6 @@ export default function EventDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar - Related Events */}
         <div className="lg:col-span-1">
           <div className="sticky top-8">
             {relatedEvents.length > 0 && (
@@ -251,4 +312,23 @@ export default function EventDetailPage() {
       </div>
     </div>
   );
+}
+
+function getCountdown(status: string, eventDate: Date): string {
+  if (status !== "upcoming") {
+    return "Relive the action";
+  }
+
+  const now = new Date();
+  if (eventDate <= now) {
+    return "Fight night";
+  }
+
+  const days = differenceInDays(eventDate, now);
+  if (days > 0) {
+    return `${days} day${days === 1 ? "" : "s"}`;
+  }
+
+  const hours = differenceInHours(eventDate, now);
+  return `${hours} hour${hours === 1 ? "" : "s"}`;
 }

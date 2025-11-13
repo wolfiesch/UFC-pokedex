@@ -1,11 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { isSameMonth, parseISO } from "date-fns";
+import {
+  ArrowRightCircle,
+  CalendarDays,
+  Compass,
+  Filter,
+  LayoutGrid,
+  ListTree,
+  MapPin,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import EventCard from "@/components/events/EventCard";
 import EventSearch from "@/components/events/EventSearch";
 import EventFilters from "@/components/events/EventFilters";
 import EventTimeline from "@/components/events/EventTimeline";
-import type { EventType } from "@/lib/event-utils";
+import {
+  detectEventType,
+  getEventTypeConfig,
+  normalizeEventType,
+  type EventType,
+} from "@/lib/event-utils";
 
 interface Event {
   event_id: string;
@@ -183,169 +200,276 @@ export default function EventsPage() {
     setOffset(0);
   };
 
+  const heroHighlight = useMemo(() => {
+    if (events.length === 0) {
+      return null;
+    }
+
+    const upcomingEvents = events.filter((eventItem) => eventItem.status === "upcoming");
+    const prioritized =
+      upcomingEvents.find((eventItem) => {
+        const eventType =
+          normalizeEventType(eventItem.event_type ?? null) ?? detectEventType(eventItem.name);
+        return eventType === "ppv";
+      }) ?? upcomingEvents.at(0) ?? events.at(0);
+
+    if (!prioritized) {
+      return null;
+    }
+
+    const resolvedType =
+      normalizeEventType(prioritized.event_type ?? null) ?? detectEventType(prioritized.name);
+    const typeConfig = getEventTypeConfig(resolvedType);
+
+    return {
+      event: prioritized,
+      typeConfig,
+    };
+  }, [events]);
+
+  const statistics = useMemo(() => {
+    if (events.length === 0) {
+      return {
+        upcomingThisMonth: 0,
+        uniqueCountries: 0,
+        indexedEvents: total,
+      };
+    }
+
+    const now = new Date();
+    const upcomingThisMonth = events.filter((eventItem) => {
+      const eventDate = parseISO(eventItem.date);
+      return isSameMonth(eventDate, now) && eventDate >= now;
+    }).length;
+
+    const countries = new Set<string>();
+    events.forEach((eventItem) => {
+      if (!eventItem.location) {
+        return;
+      }
+      const segments = eventItem.location.split(",");
+      const country = segments.at(-1)?.trim();
+      if (country) {
+        countries.add(country);
+      }
+    });
+
+    return {
+      upcomingThisMonth,
+      uniqueCountries: countries.size,
+      indexedEvents: total,
+    };
+  }, [events, total]);
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading events...</div>
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
+        <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm uppercase tracking-[0.4em]">
+          <Play className="h-4 w-4 animate-pulse" aria-hidden="true" />
+          Loading cards…
+        </div>
       </div>
     );
   }
 
-  const hasActiveFilters = searchQuery || selectedYear || selectedLocation || selectedEventType;
+  const hasActiveFilters = Boolean(searchQuery || selectedYear || selectedLocation || selectedEventType);
   const showPagination = statusFilter !== "upcoming" && total > EVENTS_PER_PAGE && !hasActiveFilters;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-6">UFC Events</h1>
+    <div className="relative mx-auto flex max-w-6xl flex-col gap-12 px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden rounded-[40px] border border-white/10 bg-slate-950 shadow-[0_60px_120px_-70px_rgba(15,23,42,0.9)]">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1579974640221-d1bd61b0843b?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-slate-950/70 to-slate-950" />
+        <div className="relative z-10 grid gap-10 px-8 pb-16 pt-14 md:grid-cols-[1.2fr_0.8fr] md:px-14 md:pb-20 md:pt-16">
+          <div className="space-y-6 text-slate-100">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              UFC Events Atlas
+            </span>
+            <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-md md:text-5xl">
+              Step into the octagon’s living history.
+            </h1>
+            <p className="max-w-xl text-base text-slate-200/80">
+              Explore every card we’ve indexed, chart global venues, and follow the momentum of upcoming fights. Search, filter,
+              and timeline-hop without breaking flow—the experience is crafted as a cinematic control room for fight fans.
+            </p>
 
-        {/* Search Bar */}
-        <div className="mb-6">
+            <dl className="grid gap-4 text-sm sm:grid-cols-3">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <dt className="flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-slate-200/70">
+                  <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Indexed
+                </dt>
+                <dd className="mt-2 text-2xl font-bold text-white">{statistics.indexedEvents.toLocaleString()}</dd>
+              </div>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <dt className="flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-slate-200/70">
+                  <Compass className="h-4 w-4" aria-hidden="true" /> Countries
+                </dt>
+                <dd className="mt-2 text-2xl font-bold text-white">{statistics.uniqueCountries}</dd>
+              </div>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <dt className="flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-slate-200/70">
+                  <CalendarDays className="h-4 w-4" aria-hidden="true" /> This Month
+                </dt>
+                <dd className="mt-2 text-2xl font-bold text-white">{statistics.upcomingThisMonth}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="relative flex h-full flex-col justify-between rounded-[30px] border border-white/20 bg-white/10 p-6 backdrop-blur">
+            {heroHighlight && (
+              <div className="space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200/70">Next Spotlight</p>
+                <h2 className="text-2xl font-bold text-white">{heroHighlight.event.name}</h2>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-100/90">
+                  <CalendarDays className="h-4 w-4 text-cyan-300" aria-hidden="true" />
+                  <span>{formatEventDate(heroHighlight.event.date)}</span>
+                </div>
+                {heroHighlight.event.location && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-100/90">
+                    <MapPin className="h-4 w-4 text-rose-300" aria-hidden="true" />
+                    <span>{heroHighlight.event.location}</span>
+                  </div>
+                )}
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold">
+                  <span>{heroHighlight.typeConfig.label}</span>
+                  <ArrowRightCircle className="h-4 w-4" aria-hidden="true" />
+                  In Focus
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-slate-300/70">
+              Scroll to activate the events console below—filters stay docked so you can remix storylines and build watchlists without losing your place.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="sticky top-16 z-30 -mt-24 space-y-6 rounded-[30px] border border-white/10 bg-slate-900/80 p-6 shadow-[0_35px_80px_-55px_rgba(15,23,42,0.95)] backdrop-blur">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <EventSearch
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Search by event name, location, or fighter..."
+            placeholder="Search by city, headliner, or event tag"
+            className="bg-gradient-to-r from-white/10 via-white/5 to-transparent"
           />
-        </div>
-
-        {/* Filter Tabs and View Toggle */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => handleFilterChange("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                statusFilter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              All Events ({total})
-            </button>
-            <button
-              onClick={() => handleFilterChange("upcoming")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                statusFilter === "upcoming"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              Upcoming
-            </button>
-            <button
-              onClick={() => handleFilterChange("completed")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                statusFilter === "completed"
-                  ? "bg-gray-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              Completed
-            </button>
-          </div>
-
-          <div className="flex gap-2">
-            {/* Filters Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                showFilters || hasActiveFilters
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              <span>🎛️</span>
-              <span>Filters</span>
-              {hasActiveFilters && <span className="bg-purple-800 px-2 py-0.5 rounded-full text-xs">Active</span>}
-            </button>
-
-            {/* View Mode Toggle */}
-            <div className="flex gap-1 bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-gray-600 text-white"
-                    : "text-gray-400 hover:text-gray-200"
-                }`}
-                title="Grid view"
-              >
-                ▦
-              </button>
-              <button
-                onClick={() => setViewMode("timeline")}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                  viewMode === "timeline"
-                    ? "bg-gray-600 text-white"
-                    : "text-gray-400 hover:text-gray-200"
-                }`}
-                title="Timeline view"
-              >
-                ≡
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.3em] text-slate-200/70">
+            <Filter className="h-4 w-4" aria-hidden="true" />
+            <span>Dynamic Dashboard Controls</span>
           </div>
         </div>
 
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="mb-6">
-            <EventFilters
-              years={filterOptions.years}
-              locations={filterOptions.locations}
-              selectedYear={selectedYear}
-              selectedLocation={selectedLocation}
-              selectedEventType={selectedEventType}
-              onYearChange={handleYearChange}
-              onLocationChange={handleLocationChange}
-              onEventTypeChange={handleEventTypeChange}
-            />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                { key: "all" as const, label: `All Events (${total})` },
+                { key: "upcoming" as const, label: "Upcoming" },
+                { key: "completed" as const, label: "Completed" },
+              ]
+            ).map((segment) => (
+              <button
+                key={segment.key}
+                type="button"
+                onClick={() => handleFilterChange(segment.key)}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition ${
+                  statusFilter === segment.key
+                    ? "border-cyan-400/80 bg-cyan-400/20 text-cyan-100 shadow-[0_0_25px_rgba(34,211,238,0.35)]"
+                    : "border-white/10 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10"
+                }`}
+              >
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                {segment.label}
+              </button>
+            ))}
           </div>
+
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1 text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition ${
+                viewMode === "grid" ? "bg-white/15 text-white" : "hover:bg-white/10"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("timeline")}
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition ${
+                viewMode === "timeline" ? "bg-white/15 text-white" : "hover:bg-white/10"
+              }`}
+            >
+              <ListTree className="h-4 w-4" aria-hidden="true" /> Timeline
+            </button>
+          </div>
+        </div>
+
+        <EventFilters
+          years={filterOptions.years}
+          locations={filterOptions.locations}
+          selectedYear={selectedYear}
+          selectedLocation={selectedLocation}
+          selectedEventType={selectedEventType}
+          onYearChange={handleYearChange}
+          onLocationChange={handleLocationChange}
+          onEventTypeChange={handleEventTypeChange}
+        />
+      </div>
+
+      <div className="mt-10">
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 gap-6">
+            {events.map((event) => (
+              <EventCard key={event.event_id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <EventTimeline events={events} />
         )}
       </div>
 
-      {/* Events Display */}
-      {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 gap-4">
-          {events.map((event) => (
-            <EventCard key={event.event_id} event={event} />
-          ))}
-        </div>
-      ) : (
-        <EventTimeline events={events} />
-      )}
-
-      {/* Pagination */}
       {showPagination && (
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-6 text-sm text-slate-100">
           <button
             onClick={handlePrevPage}
             disabled={offset === 0}
-            className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2 font-semibold uppercase tracking-[0.25em] text-slate-100 transition disabled:cursor-not-allowed disabled:opacity-40 hover:border-white/40 hover:bg-white/10"
           >
-            Previous
+            ← Previous
           </button>
-          <span className="text-gray-400">
-            Page {Math.floor(offset / EVENTS_PER_PAGE) + 1} of{" "}
-            {Math.ceil(total / EVENTS_PER_PAGE)}
+          <span className="text-xs uppercase tracking-[0.35em] text-slate-300/80">
+            Page {Math.floor(offset / EVENTS_PER_PAGE) + 1} of {Math.ceil(total / EVENTS_PER_PAGE)}
           </span>
           <button
             onClick={handleNextPage}
             disabled={offset + EVENTS_PER_PAGE >= total}
-            className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2 font-semibold uppercase tracking-[0.25em] text-slate-100 transition disabled:cursor-not-allowed disabled:opacity-40 hover:border-white/40 hover:bg-white/10"
           >
-            Next
+            Next →
           </button>
         </div>
       )}
 
       {events.length === 0 && !loading && (
-        <div className="text-center py-12 text-gray-400">
-          <p className="text-xl mb-2">No events found.</p>
-          {hasActiveFilters && (
-            <p className="text-sm">Try adjusting your search or filters.</p>
+        <div className="rounded-3xl border border-white/10 bg-white/5 py-20 text-center text-slate-200">
+          <p className="text-2xl font-semibold uppercase tracking-[0.4em]">No events found</p>
+          {hasActiveFilters ? (
+            <p className="mt-2 text-sm text-slate-300/80">Refresh your filters or try a different search query.</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-300/80">We could not surface events at this time.</p>
           )}
         </div>
       )}
     </div>
   );
+}
+
+function formatEventDate(date: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parseISO(date));
 }
