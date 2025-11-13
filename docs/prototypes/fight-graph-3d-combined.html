@@ -849,10 +849,16 @@
        */
       async function simulateLayout(graph) {
         // Normalize fighter_id to id for d3-force compatibility
-        const nodes = graph.nodes.map((node) => ({
-          ...node,
-          id: node.fighter_id || node.id
-        }));
+        const nodes = graph.nodes.map((node) => {
+          const id = node.fighter_id || node.id;
+          const name = node.name ?? node.label ?? node.fighter_id ?? node.id;
+
+          return {
+            ...node,
+            id,
+            name,
+          };
+        });
         const links = graph.links.map((link) => ({
           ...link,
           fights: getLinkFightCount(link),
@@ -1114,7 +1120,8 @@
             labelContext.fillStyle = "#ffffff";
             labelContext.font = "700 36px 'Inter', sans-serif";
             labelContext.textAlign = "left";
-            labelContext.fillText(node.label ?? node.id, 20, 60);
+            const labelText = node.name ?? node.fighter_id ?? node.id;
+            labelContext.fillText(labelText, 20, 60);
           }
 
           const texture = new THREE.CanvasTexture(labelCanvas);
@@ -1211,8 +1218,9 @@
             if (first.userData.node) {
               const { node } = first.userData;
               hovered.add(first);
+              const displayName = node.name ?? node.label ?? node.fighter_id ?? node.id;
               const tooltipLines = [
-                `<strong>${node.label ?? node.id}</strong>`,
+                `<strong>${displayName}</strong>`,
                 `Division: ${node.division ?? "Unknown"}`,
               ];
 
