@@ -728,24 +728,40 @@
           // Update all node z-coordinates
           currentNodes.forEach((nodeData) => {
             if (nodeData.mesh) {
-              nodeData.mesh.position.z = (nodeData.fz || 0) * depthScale;
+              const originalZ =
+                typeof nodeData.originalZ === "number" ? nodeData.originalZ : 0;
+              nodeData.mesh.position.z = originalZ * depthScale;
             }
             if (nodeData.label) {
-              const radius = nodeData.mesh.userData.baseScale || 1;
-              nodeData.label.position.z = (nodeData.fz || 0) * depthScale;
+              const originalZ =
+                typeof nodeData.originalZ === "number" ? nodeData.originalZ : 0;
+              nodeData.label.position.z = originalZ * depthScale;
             }
           });
 
           // Update link z-coordinates
           if (linkGroup) {
             linkGroup.children.forEach((line, index) => {
-              if (line.geometry && line.userData.sourceNode && line.userData.targetNode) {
-                const sourceNode = line.userData.sourceNode;
-                const targetNode = line.userData.targetNode;
+              if (line.geometry && line.userData) {
+                const sourceZ =
+                  (line.userData.source &&
+                    typeof line.userData.source.originalZ === "number" &&
+                    line.userData.source.originalZ) ??
+                  (typeof line.userData.sourceOriginalZ === "number"
+                    ? line.userData.sourceOriginalZ
+                    : 0);
+                const targetZ =
+                  (line.userData.target &&
+                    typeof line.userData.target.originalZ === "number" &&
+                    line.userData.target.originalZ) ??
+                  (typeof line.userData.targetOriginalZ === "number"
+                    ? line.userData.targetOriginalZ
+                    : 0);
                 const positions = line.geometry.attributes.position.array;
-                positions[2] = (sourceNode.fz || 0) * depthScale;
-                positions[5] = (targetNode.fz || 0) * depthScale;
+                positions[2] = sourceZ * depthScale;
+                positions[5] = targetZ * depthScale;
                 line.geometry.attributes.position.needsUpdate = true;
+                line.geometry.computeBoundingSphere?.();
               }
             });
           }
@@ -843,11 +859,28 @@
         const nodeMaterialCache = new Map();
         const nodeGeometry = new THREE.SphereGeometry(1, 16, 16);
 
+        /**
+         * Ensure every node retains its simulated depth so we can toggle between 2D/3D
+         * without losing the original z coordinate returned by d3-force-3d.
+         */
+        graph.nodes.forEach((node) => {
+          const fallbackZ = Number.isFinite(node.z) ? node.z : 0;
+          if (typeof node.originalZ !== "number") {
+            node.originalZ = fallbackZ;
+          }
+        });
+
+        const nodeMetaById = new Map();
+
         // Create nodes
         currentNodes = [];
         for (const node of graph.nodes) {
           const radius = 4 + Math.sqrt(node.degree || 0) * 0.9;
           const colorKey = node.division || "default";
+          const nodeId =
+            node.id || node.fighter_id || node.label || `node-${currentNodes.length}`;
+          const originalZ = typeof node.originalZ === "number" ? node.originalZ : 0;
+          const initialZ = originalZ * depthScale;
 
           if (!nodeMaterialCache.has(colorKey)) {
             // More distinct color palette for better differentiation
@@ -879,9 +912,10 @@
 
           const mesh = new THREE.Mesh(nodeGeometry, nodeMaterialCache.get(colorKey));
           mesh.scale.setScalar(radius);
-          mesh.position.set(node.x || 0, node.y || 0, node.z || 0);
+          mesh.position.set(node.x || 0, node.y || 0, initialZ);
           mesh.userData.node = node;
           mesh.userData.baseScale = radius;
+          mesh.userData.originalZ = originalZ;
           nodeGroup.add(mesh);
 
           // Create label sprite with better visibility
@@ -913,22 +947,42 @@
           });
           const sprite = new THREE.Sprite(spriteMaterial);
           sprite.scale.set(80, 20, 1);
-          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, node.z || 0);
+          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, initialZ);
           nodeGroup.add(sprite);
 
           // Store node data for depth interpolation
-          currentNodes.push({
+          const nodeMeta = {
             mesh,
             label: sprite,
-            fz: node.z || 0,
+            originalZ,
             node,
-          });
+            id: nodeId,
+          };
+          currentNodes.push(nodeMeta);
+          nodeMetaById.set(nodeId, nodeMeta);
         }
 
         // Create edges with better visibility
         for (const link of graph.links) {
           const sourceNode = link.source;
           const targetNode = link.target;
+
+          const sourceId =
+            (sourceNode && (sourceNode.id || sourceNode.fighter_id || sourceNode.label)) ||
+            undefined;
+          const targetId =
+            (targetNode && (targetNode.id || targetNode.fighter_id || targetNode.label)) ||
+            undefined;
+          const sourceMeta = (sourceId && nodeMetaById.get(sourceId)) || null;
+          const targetMeta = (targetId && nodeMetaById.get(targetId)) || null;
+          const sourceOriginalZ =
+            (sourceMeta && sourceMeta.originalZ) ||
+            (typeof sourceNode?.originalZ === "number" ? sourceNode.originalZ : 0);
+          const targetOriginalZ =
+            (targetMeta && targetMeta.originalZ) ||
+            (typeof targetNode?.originalZ === "number" ? targetNode.originalZ : 0);
+          const scaledSourceZ = sourceOriginalZ * depthScale;
+          const scaledTargetZ = targetOriginalZ * depthScale;
 
           // Increase opacity and add glow for better visibility
           const opacity = 0.5;
@@ -944,15 +998,19 @@
           const points = new Float32Array([
             sourceNode.x || 0,
             sourceNode.y || 0,
-            sourceNode.z || 0,
+            scaledSourceZ,
             targetNode.x || 0,
             targetNode.y || 0,
-            targetNode.z || 0,
+            scaledTargetZ,
           ]);
           geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
           const line = new THREE.Line(geometry, material);
-          line.userData.sourceNode = sourceNode;
-          line.userData.targetNode = targetNode;
+          line.userData = {
+            source: sourceMeta,
+            target: targetMeta,
+            sourceOriginalZ,
+            targetOriginalZ,
+          };
           linkGroup.add(line);
         }
 
