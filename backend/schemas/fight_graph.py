@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class FightGraphNode(BaseModel):
@@ -31,3 +31,9 @@ class FightGraphResponse(BaseModel):
     nodes: list[FightGraphNode] = Field(default_factory=list)
     links: list[FightGraphLink] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def edges(self) -> list[FightGraphLink]:
+        """Alias for links to maintain compatibility with frontend."""
+        return self.links

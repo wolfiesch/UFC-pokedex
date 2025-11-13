@@ -63,8 +63,8 @@ export default function EventsPage() {
   useEffect(() => {
     async function fetchFilterOptions() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-        const response = await fetch(`${apiUrl}/events/filters/options`, { cache: "no-store" });
+        // Use relative URL for client-side fetching - works with Next.js /api proxy
+        const response = await fetch(`/api/events/filters/options`, { cache: "no-store" });
 
         if (response.ok) {
           const data = await response.json();
@@ -82,20 +82,19 @@ export default function EventsPage() {
     async function fetchEvents() {
       setLoading(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
         // Build query parameters
         const params = new URLSearchParams();
         if (offset > 0) params.set("offset", offset.toString());
         params.set("limit", EVENTS_PER_PAGE.toString());
 
         // Determine which endpoint to use
+        // Use relative URLs for client-side fetching - works with Next.js /api proxy
         let url: string;
         const hasFilters = searchQuery || selectedYear || selectedLocation || selectedEventType;
 
         if (hasFilters) {
           // Use search endpoint with filters
-          url = `${apiUrl}/events/search/`;
+          url = `/api/events/search/`;
           if (searchQuery) params.set("q", searchQuery);
           if (selectedYear) params.set("year", selectedYear.toString());
           if (selectedLocation) params.set("location", selectedLocation);
@@ -104,11 +103,11 @@ export default function EventsPage() {
         } else {
           // Use regular list endpoints
           if (statusFilter === "upcoming") {
-            url = `${apiUrl}/events/upcoming`;
+            url = `/api/events/upcoming`;
           } else if (statusFilter === "completed") {
-            url = `${apiUrl}/events/completed?${params.toString()}`;
+            url = `/api/events/completed?${params.toString()}`;
           } else {
-            url = `${apiUrl}/events/?${params.toString()}`;
+            url = `/api/events/?${params.toString()}`;
           }
         }
 

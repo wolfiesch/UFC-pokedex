@@ -13,6 +13,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 from typing import Final
+from urllib.parse import urlsplit
 
 # Directory that stores cached fighter images. We compute it relative to the
 # repository root so the helper keeps working no matter where the application
@@ -30,6 +31,46 @@ _SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".jpg", ".jpeg", ".png", ".webp
 # already include this prefix lets the frontend's existing ``resolveImageUrl``
 # helper build a proper absolute URL.
 _RELATIVE_PREFIX: Final[str] = "images/fighters"
+
+# Historical seed data occasionally preserved absolute ``http://localhost`` URLs
+# in the ``image_url`` column. When those values leak into API responses the
+# production frontend attempts to load images from a developer machine.
+# Normalising those artifacts into relative paths keeps responses deployment
+# agnostic.
+_LOCAL_HOSTNAMES: Final[frozenset[str]] = frozenset(
+    {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
+)
+
+
+def _strip_local_origin(candidate: str) -> str | None:
+    """Return ``candidate`` without a localhost-style origin when present."""
+
+    parsed = urlsplit(candidate)
+    hostname = (parsed.hostname or "").lower()
+    if not hostname or hostname not in _LOCAL_HOSTNAMES:
+        return None
+
+    relative_path = parsed.path.lstrip("/")
+    if not relative_path:
+        return None
+
+    if parsed.query:
+        return f"{relative_path}?{parsed.query}"
+    return relative_path
+
+
+def _prepare_path(path: str | None) -> str | None:
+    """Trim whitespace and collapse legacy localhost URLs into relative paths."""
+
+    if not path:
+        return None
+
+    candidate = path.strip()
+    if not candidate:
+        return None
+
+    normalized = _strip_local_origin(candidate)
+    return normalized or candidate
 
 
 def resolve_fighter_image(fighter_id: str, stored_path: str | None) -> str | None:
@@ -52,8 +93,9 @@ def resolve_fighter_image(fighter_id: str, stored_path: str | None) -> str | Non
     to avoid redundant disk checks across large list responses.
     """
 
-    if stored_path:
-        return stored_path
+    prepared_path = _prepare_path(stored_path)
+    if prepared_path:
+        return prepared_path
 
     return _find_local_image(fighter_id)
 
@@ -84,8 +126,9 @@ def resolve_fighter_image_cropped(
         3. Original image (via ``resolve_fighter_image``)
     """
     # First priority: database-stored cropped path
-    if cropped_path:
-        return cropped_path
+    prepared_cropped = _prepare_path(cropped_path)
+    if prepared_cropped:
+        return prepared_cropped
 
     # Second priority: check filesystem for cropped image
     cropped_local = _find_local_cropped_image(fighter_id)

@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.drop_index('idx_historical_rankings_division', table_name='historical_rankings', if_exists=True)
     op.drop_index('idx_historical_rankings_fighter', table_name='historical_rankings', if_exists=True)
     op.drop_index('idx_historical_rankings_issue', table_name='historical_rankings', if_exists=True)
-    op.drop_table('historical_rankings', if_exists=True)
+    op.execute('DROP TABLE IF EXISTS historical_rankings')
     op.drop_index('ix_favorite_collections_user_id_created_at', table_name='favorite_collections', if_exists=True)
     op.create_unique_constraint('uq_fighter_rankings_natural_key', 'fighter_rankings', ['fighter_id', 'division', 'rank_date', 'source'])
     op.add_column('fighters', sa.Column('sherdog_url', sa.String(length=255), nullable=True))

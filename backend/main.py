@@ -217,6 +217,7 @@ app = FastAPI(
     version="0.1.0",
     description="REST API serving UFC fighter data scraped from UFCStats.",
     lifespan=lifespan,
+    redirect_slashes=False,  # Disable automatic trailing slash redirects
 )
 
 

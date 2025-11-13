@@ -54,17 +54,21 @@ class FightGraphRepository(BaseRepository):
             fight_filters.append(func.lower(Fight.result) != "next")
 
         fight_count_expr = func.count().label("fight_count")
+        opponent_count_expr = func.count(Fight.opponent_id).label("opponent_count")
         latest_event_expr = func.max(Fight.event_date).label("latest_event_date")
 
         fight_counts_query = select(
-            Fight.fighter_id, fight_count_expr, latest_event_expr
+            Fight.fighter_id, fight_count_expr, opponent_count_expr, latest_event_expr
         ).join(Fighter, Fighter.id == Fight.fighter_id)
         if fight_filters:
             fight_counts_query = fight_counts_query.where(*fight_filters)
         if division:
             fight_counts_query = fight_counts_query.where(Fighter.division == division)
         fight_counts_query = fight_counts_query.group_by(Fight.fighter_id)
-        fight_counts_query = fight_counts_query.order_by(desc(fight_count_expr))
+        # Prioritize fighters with opponent data, then by fight count
+        fight_counts_query = fight_counts_query.order_by(
+            desc(opponent_count_expr), desc(fight_count_expr)
+        )
         if limit is not None:
             fight_counts_query = fight_counts_query.limit(limit)
 

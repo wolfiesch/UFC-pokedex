@@ -24,8 +24,24 @@ const RETRY_DELAY_MS = 1000; // 1 second base delay
 
 /**
  * Get the API base URL from environment variables
+ *
+ * For server-side rendering (Next.js RSC), we need to use the direct backend URL
+ * because relative URLs like "/api" don't work without a browser context.
+ *
+ * For client-side, we use the NEXT_PUBLIC_API_BASE_URL which can be "/api"
+ * (proxied by Next.js) or a full URL.
  */
 function getApiBaseUrl(): string {
+  // Check if we're in a server environment (Next.js RSC)
+  const isServer = typeof window === "undefined";
+
+  if (isServer) {
+    // Server-side: use NEXT_API_REWRITE_BASE_URL or fall back to localhost
+    const serverUrl = process.env.NEXT_API_REWRITE_BASE_URL || DEFAULT_CLIENT_API_BASE_URL;
+    return resolveClientApiBaseUrl(serverUrl, DEFAULT_CLIENT_API_BASE_URL);
+  }
+
+  // Client-side: use NEXT_PUBLIC_API_BASE_URL (can be "/api" or full URL)
   return resolveClientApiBaseUrl(
     process.env.NEXT_PUBLIC_API_BASE_URL,
     DEFAULT_CLIENT_API_BASE_URL

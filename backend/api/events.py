@@ -15,6 +15,7 @@ class EventFilterOptions(BaseModel):
     event_types: list[str]
 
 
+@router.get("", response_model=PaginatedEventsResponse)
 @router.get("/", response_model=PaginatedEventsResponse)
 async def list_events(
     status: str | None = Query(
