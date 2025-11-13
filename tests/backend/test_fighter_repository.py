@@ -28,6 +28,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
     )
 
 from backend.db.models import Base, Fighter
+import backend.db.repositories.base as repository_base
 from backend.db.repositories import PostgreSQLFighterRepository
 
 
@@ -38,6 +39,10 @@ async def session() -> AsyncIterator[AsyncSession]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Pre-populate the interim support cache so repository checks avoid schema
+    # inspection round-trips that would otherwise roll back SQLite transactions.
+    repository_base._WAS_INTERIM_SUPPORTED_CACHE = True
 
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
@@ -77,6 +82,15 @@ def freeze_utc_today(
     monkeypatch.setattr(
         "backend.db.repositories.fighter_repository.datetime", FrozenDateTime
     )
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter.roster.datetime", FrozenDateTime
+    )
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter.detail.datetime", FrozenDateTime
+    )
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter.comparison.datetime", FrozenDateTime
+    )
 
 
 @pytest.mark.asyncio
@@ -114,6 +128,55 @@ async def test_list_fighters_includes_age_field(
     fighters = list(await repo.list_fighters())
 
     assert fighters[0].age == 34
+
+
+@pytest.mark.asyncio
+async def test_list_and_search_payloads_remain_identical(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify that list and search responses surface identical fighter payloads."""
+
+    freeze_utc_today(monkeypatch, reference_date=date(2024, 6, 16))
+
+    fighter = Fighter(
+        id="parity-check",
+        name="Parity Check",
+        nickname="Mirror",
+        record="10-1-0",
+        division="Lightweight",
+        height="5'9\"",
+        weight="155 lbs",
+        reach="70 in",
+        stance="Orthodox",
+        dob=date(1990, 6, 15),
+        image_url="https://example.com/mirror.jpg",
+        is_current_champion=True,
+        is_former_champion=True,
+        was_interim=True,
+        birthplace="Dublin, Ireland",
+        birthplace_city="Dublin",
+        birthplace_country="Ireland",
+        nationality="Irish",
+        fighting_out_of="Las Vegas, NV",
+        training_gym="SBG Ireland",
+        training_city="Dublin",
+        training_country="Ireland",
+        last_fight_date=date(2024, 1, 1),
+    )
+    session.add(fighter)
+    await session.flush()
+
+    repo = PostgreSQLFighterRepository(session)
+
+    listed_fighters = list(await repo.list_fighters(limit=10, offset=0))
+    searched_fighters, total = await repo.search_fighters(
+        query="Parity", limit=10, offset=0
+    )
+
+    assert total == 1
+    assert len(listed_fighters) == 1
+    assert len(searched_fighters) == 1
+    assert listed_fighters[0].model_dump() == searched_fighters[0].model_dump()
 
 
 @pytest.mark.asyncio
@@ -221,25 +284,33 @@ async def test_list_fighters_filters_by_nationality(
     repo = PostgreSQLFighterRepository(session)
 
     # Test filtering by American nationality
-    us_fighters = list(await repo.list_fighters(nationality="American", limit=10, offset=0))
+    us_fighters = list(
+        await repo.list_fighters(nationality="American", limit=10, offset=0)
+    )
     assert len(us_fighters) == 1
     assert us_fighters[0].fighter_id == "us-fighter"
     assert us_fighters[0].nationality == "American"
 
     # Test filtering by Brazilian nationality
-    br_fighters = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_fighters = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_fighters) == 1
     assert br_fighters[0].fighter_id == "br-fighter"
     assert br_fighters[0].nationality == "Brazilian"
 
     # Test filtering by Irish nationality
-    ie_fighters = list(await repo.list_fighters(nationality="Irish", limit=10, offset=0))
+    ie_fighters = list(
+        await repo.list_fighters(nationality="Irish", limit=10, offset=0)
+    )
     assert len(ie_fighters) == 1
     assert ie_fighters[0].fighter_id == "ie-fighter"
     assert ie_fighters[0].nationality == "Irish"
 
     # Test filtering by non-existent nationality
-    jp_fighters = list(await repo.list_fighters(nationality="Japanese", limit=10, offset=0))
+    jp_fighters = list(
+        await repo.list_fighters(nationality="Japanese", limit=10, offset=0)
+    )
     assert len(jp_fighters) == 0
 
     # Test no filter returns all fighters
@@ -356,6 +427,8 @@ async def test_list_fighters_nationality_with_pagination(
     assert all(f.nationality == "American" for f in page_3)
 
     # Test Brazilian fighters with pagination
-    br_page = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_page = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_page) == 2
     assert all(f.nationality == "Brazilian" for f in br_page)
