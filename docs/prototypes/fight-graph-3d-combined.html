@@ -731,7 +731,6 @@
               nodeData.mesh.position.z = (nodeData.fz || 0) * depthScale;
             }
             if (nodeData.label) {
-              const radius = nodeData.mesh.userData.baseScale || 1;
               nodeData.label.position.z = (nodeData.fz || 0) * depthScale;
             }
           });
@@ -742,9 +741,19 @@
               if (line.geometry && line.userData.sourceNode && line.userData.targetNode) {
                 const sourceNode = line.userData.sourceNode;
                 const targetNode = line.userData.targetNode;
+                const sourceDepth =
+                  (sourceNode && typeof sourceNode.fz === "number"
+                    ? sourceNode.fz
+                    : sourceNode?.node?.fz ?? sourceNode?.node?.z ?? sourceNode?.z)
+                  || 0;
+                const targetDepth =
+                  (targetNode && typeof targetNode.fz === "number"
+                    ? targetNode.fz
+                    : targetNode?.node?.fz ?? targetNode?.node?.z ?? targetNode?.z)
+                  || 0;
                 const positions = line.geometry.attributes.position.array;
-                positions[2] = (sourceNode.fz || 0) * depthScale;
-                positions[5] = (targetNode.fz || 0) * depthScale;
+                positions[2] = sourceDepth * depthScale;
+                positions[5] = targetDepth * depthScale;
                 line.geometry.attributes.position.needsUpdate = true;
               }
             });
@@ -845,6 +854,11 @@
 
         // Create nodes
         currentNodes = [];
+        graph.nodes.forEach((node) => {
+          if (typeof node.fz !== "number") {
+            node.fz = node.z || 0;
+          }
+        });
         for (const node of graph.nodes) {
           const radius = 4 + Math.sqrt(node.degree || 0) * 0.9;
           const colorKey = node.division || "default";
@@ -879,7 +893,11 @@
 
           const mesh = new THREE.Mesh(nodeGeometry, nodeMaterialCache.get(colorKey));
           mesh.scale.setScalar(radius);
-          mesh.position.set(node.x || 0, node.y || 0, node.z || 0);
+          mesh.position.set(
+            node.x || 0,
+            node.y || 0,
+            (node.fz || 0) * depthScale,
+          );
           mesh.userData.node = node;
           mesh.userData.baseScale = radius;
           nodeGroup.add(mesh);
@@ -913,14 +931,18 @@
           });
           const sprite = new THREE.Sprite(spriteMaterial);
           sprite.scale.set(80, 20, 1);
-          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, node.z || 0);
+          sprite.position.set(
+            node.x || 0,
+            (node.y || 0) + radius * 3.5,
+            (node.fz || 0) * depthScale,
+          );
           nodeGroup.add(sprite);
 
           // Store node data for depth interpolation
           currentNodes.push({
             mesh,
             label: sprite,
-            fz: node.z || 0,
+            fz: node.fz || 0,
             node,
           });
         }
@@ -929,6 +951,10 @@
         for (const link of graph.links) {
           const sourceNode = link.source;
           const targetNode = link.target;
+          const sourceDepth =
+            (sourceNode && typeof sourceNode.fz === "number" ? sourceNode.fz : sourceNode?.z) || 0;
+          const targetDepth =
+            (targetNode && typeof targetNode.fz === "number" ? targetNode.fz : targetNode?.z) || 0;
 
           // Increase opacity and add glow for better visibility
           const opacity = 0.5;
@@ -944,15 +970,15 @@
           const points = new Float32Array([
             sourceNode.x || 0,
             sourceNode.y || 0,
-            sourceNode.z || 0,
+            sourceDepth * depthScale,
             targetNode.x || 0,
             targetNode.y || 0,
-            targetNode.z || 0,
+            targetDepth * depthScale,
           ]);
           geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
           const line = new THREE.Line(geometry, material);
-          line.userData.sourceNode = sourceNode;
-          line.userData.targetNode = targetNode;
+          line.userData.sourceNode = { node: sourceNode, fz: sourceDepth };
+          line.userData.targetNode = { node: targetNode, fz: targetDepth };
           linkGroup.add(line);
         }
 
