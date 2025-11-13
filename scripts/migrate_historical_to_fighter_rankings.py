@@ -280,8 +280,18 @@ async def migrate_historical_rankings_async(
 
 
 def resolve_postgres_url(raw_url: str) -> str:
-    """Validate and normalise the DATABASE_URL for synchronous PostgreSQL access."""
+    """
+    Validate and normalize the DATABASE_URL for synchronous PostgreSQL access.
 
+    Args:
+        raw_url: The raw DATABASE_URL string to validate and normalize.
+
+    Returns:
+        str: Normalized PostgreSQL URL with psycopg driver.
+
+    Raises:
+        SystemExit: If the URL does not target PostgreSQL.
+    """
     url = make_url(raw_url)
     if url.get_backend_name() != "postgresql":
         raise SystemExit(
