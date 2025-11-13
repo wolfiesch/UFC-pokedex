@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.cache import CacheClient, close_redis, get_cache_client
 from backend.db.connection import get_session
 from backend.db.models import Event, Fight
+from backend.utils.event_utils import detect_event_type
 
 # Load environment variables
 load_dotenv()
@@ -108,6 +109,9 @@ async def load_event_details_from_json(
                     date=event_date,
                     location=data.get("location"),
                     status=status,
+                    # Persist normalized classification across refresh cycles so
+                    # repository searches leverage indexed SQL filtering.
+                    event_type=detect_event_type(event_name).value,
                     venue=data.get("venue"),
                     broadcast=data.get("broadcast"),
                     promotion=data.get("promotion", "UFC"),
@@ -163,7 +167,9 @@ async def load_event_details_from_json(
                 progress.advance(task)
 
             except json.JSONDecodeError as e:
-                console.print(f"[red]File {json_file.name}: JSON decode error: {e}[/red]")
+                console.print(
+                    f"[red]File {json_file.name}: JSON decode error: {e}[/red]"
+                )
                 skipped_count += 1
             except (ValueError, TypeError, KeyError) as e:
                 console.print(

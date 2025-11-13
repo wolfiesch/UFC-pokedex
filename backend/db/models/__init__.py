@@ -49,6 +49,19 @@ class Event(Base):
     broadcast: Mapped[str | None]
     promotion: Mapped[str] = mapped_column(String, nullable=False, default="UFC")
 
+    event_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="other",
+        server_default="other",
+        index=True,
+        doc=(
+            "Normalized classification for downstream filtering and analytics. "
+            "Values align with backend.utils.event_utils.EventType (e.g., 'ppv', "
+            "'fight_night')."
+        ),
+    )
+
     # Cross-reference URLs
     ufcstats_url: Mapped[str | None] = mapped_column(String, nullable=True)
     tapology_url: Mapped[str | None]
@@ -157,7 +170,9 @@ class Fighter(Base):
         doc="Validation flags: low_resolution, no_face_detected, multiple_faces, potential_duplicate",
     )
     face_encoding: Mapped[bytes | None] = mapped_column(
-        LargeBinary, nullable=True, doc="128-dimensional face encoding for duplicate detection"
+        LargeBinary,
+        nullable=True,
+        doc="128-dimensional face encoding for duplicate detection",
     )
 
     # Champion status fields
@@ -380,7 +395,12 @@ class FighterRanking(Base):
     __tablename__ = "fighter_rankings"
     __table_args__ = (
         Index("ix_fighter_rankings_fighter_date", "fighter_id", "rank_date"),
-        Index("ix_fighter_rankings_division_date_source", "division", "rank_date", "source"),
+        Index(
+            "ix_fighter_rankings_division_date_source",
+            "division",
+            "rank_date",
+            "source",
+        ),
         Index("ix_fighter_rankings_fighter_source", "fighter_id", "source"),
         Index(
             "ix_fighter_rankings_fighter_source_rankdate",
@@ -435,7 +455,10 @@ class FighterRanking(Base):
         doc="Ranking source: 'ufc', 'fightmatrix', 'tapology'",
     )
     is_interim: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, doc="Whether this is an interim championship"
+        Boolean,
+        default=False,
+        nullable=False,
+        doc="Whether this is an interim championship",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
