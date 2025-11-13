@@ -6,13 +6,14 @@ import { Box, Scan } from "lucide-react";
 import { FightGraphControls } from "@/components/fight-graph/FightGraphControls";
 import { FightGraphInsights } from "@/components/fight-graph/FightGraphInsights";
 import { FightGraphViewport } from "@/components/fight-graph/FightGraphViewport";
-import { useFightGraph } from "@/components/fight-graph/hooks/useFightGraph";
+import { useFightGraph } from "@/hooks/useFightGraph";
+import type { FightGraphQueryParams } from "@/types/fight-graph";
 import type { FightGraphViewMode } from "@/components/fight-graph/hooks/useThreeScene";
 
-const DEFAULT_PARAMS = {
+const DEFAULT_PARAMS: FightGraphQueryParams = {
   limit: 200,
   includeUpcoming: false,
-} as const;
+};
 
 const VIEW_MODES: Array<{ label: string; value: FightGraphViewMode; icon: ReactNode }> = [
   {
@@ -34,10 +35,9 @@ const VIEW_MODES: Array<{ label: string; value: FightGraphViewMode; icon: ReactN
  */
 export default function FightGraphPage() {
   const [mode, setMode] = useState<FightGraphViewMode>("3d");
+  const [params, setParams] = useState<FightGraphQueryParams>(DEFAULT_PARAMS);
 
-  const { data, isLoading, error, params, setParams } = useFightGraph({
-    initialParams: DEFAULT_PARAMS,
-  });
+  const { data, isLoading, error } = useFightGraph(params);
 
   const headerSubtitle = useMemo(() => {
     if (isLoading) {

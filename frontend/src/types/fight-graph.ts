@@ -1,5 +1,14 @@
 import type { FightGraphLink, FightGraphNode } from "../lib/types";
 
+// Re-export types from lib/types for convenience
+export type {
+  FightGraphResponse,
+  FightGraphQueryParams,
+  FightGraphMetadata,
+  FightGraphNode,
+  FightGraphLink,
+} from "../lib/types";
+
 /**
  * Configuration accepted by the fight layout Web Worker when initialising or
  * updating the simulation. These options are tuned to balance clarity with
