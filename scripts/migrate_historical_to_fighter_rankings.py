@@ -124,7 +124,7 @@ async def migrate_historical_rankings_async(
         limit: Optional limit on number of records to migrate
 
     Returns:
-        Dict with migration stats
+        MigrationStats: Dictionary with migration statistics
     """
     stats: MigrationStats = {
         "total_historical": 0,
