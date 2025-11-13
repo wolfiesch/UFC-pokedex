@@ -55,10 +55,10 @@ http://localhost:8877/pr90-custom-force-2d3d.html?apiBase=http://localhost:8000
 | File | PR | Lines | Status | Description | Best For |
 |------|-----|-------|--------|-------------|----------|
 | **pr90-custom-force-2d3d.html** | 90 | 1,119 | ✅ **Working** | Custom physics with 2D⟷3D interpolation | Maximum control, unique features |
-| **pr91-d3-force-scripts.html** | 91 | 872 | ⚠️ Broken | D3-Force-3D (legacy script tags) | Legacy browser support |
+| **pr91-d3-force-scripts.html** | 91 | 872 | ❌ Broken | D3-Force-3D (legacy script tags) | Legacy browser support |
 | **pr92-d3-force-clean.html** | 92 | 627 | ✅ **Working** | D3-Force-3D (ES modules) - Cleanest | Production use, maintainability |
-| **pr93-force-graph-lib.html** | 93 | 757 | ⚠️ Broken | High-level force-graph libraries | Rapid prototyping, 2D+3D views |
-| **pr94-d3-force-refined.html** | 94 | 804 | ⚠️ Broken | D3-Force-3D (refined controls) | Polished experience |
+| **pr93-force-graph-lib.html** | 93 | 757 | ❌ Broken | High-level force-graph libraries | Rapid prototyping, 2D+3D views |
+| **pr94-d3-force-refined.html** | 94 | 804 | ✅ **Working** | D3-Force-3D (refined controls) | Polished experience |
 
 ## Feature Comparison
 
@@ -126,14 +126,14 @@ Estimated result: ~850-900 lines with all the best features.
 
 ## Test Results (as of 12/11/2025)
 
-### ✅ Working Prototypes
-- **PR 90 (Custom Force):** Loads 200 fighters, 623 bouts with colored spheres. Custom physics and 2D/3D toggle work perfectly.
-- **PR 92 (D3-Force Clean):** Loads 200 fighters, 623 bouts. Cleanest codebase, uses Skypack CDN for d3-force-3d.
+### ✅ Working Prototypes (3 of 5)
+- **PR 90 (Custom Force):** Loads 200 fighters, 623 bouts with colored spheres. Custom physics and 2D/3D toggle work perfectly. Import map added for Three.js modules.
+- **PR 92 (D3-Force Clean):** Loads 200 fighters, 623 bouts. Cleanest codebase, uses Skypack CDN for d3-force-3d. Import map + Skypack fix applied.
+- **PR 94 (D3-Force Refined):** Loads 200 fighters, 623 bouts with labels and refined controls. Fixed node ID mapping (fighter_id → id) for d3-force compatibility.
 
-### ⚠️ Known Issues
-- **PR 91:** Missing d3-timer dependency. The d3-force-3d library requires d3-timer which isn't loaded via CDN.
-- **PR 93:** High-level force-graph libraries not available as proper ES modules via CDN. Multiple CDN approaches failed.
-- **PR 94:** Node ID mismatch - d3-force throws "node not found" error. API returns `fighter_id` but simulation expects `id` field.
+### ❌ Unfixable Issues (2 of 5)
+- **PR 91:** Missing d3-timer + d3-dispatch dependencies. The legacy script tag approach requires multiple d3 dependencies that aren't properly bundled for browser use via CDN.
+- **PR 93:** High-level force-graph/3d-force-graph libraries not available as ES modules. Tried jsdelivr, unpkg, skypack - none provide working ES module exports for these libraries.
 
 ## Troubleshooting
 
