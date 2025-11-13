@@ -2,61 +2,34 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from backend.settings import AppSettings, settings
+
 logger = logging.getLogger(__name__)
 
 
-def get_database_url() -> str:
-    """Get database URL from environment or fallback to SQLite.
+def get_database_url(active_settings: AppSettings | None = None) -> str:
+    """Return the normalized database URL derived from shared settings."""
 
-    Returns:
-        Database URL string. Falls back to SQLite if DATABASE_URL is not set
-        or if USE_SQLITE=1 is set in environment.
-    """
-    # Force SQLite mode if USE_SQLITE=1 is set
-    use_sqlite = os.getenv("USE_SQLITE", "").strip() == "1"
-
-    if use_sqlite:
-        return "sqlite+aiosqlite:///./data/app.db"
-
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        # Fallback to SQLite when DATABASE_URL is not set
-        return "sqlite+aiosqlite:///./data/app.db"
-
-    # Auto-convert standard PostgreSQL URLs to async psycopg format. The
-    # ``postgres://`` URI scheme is still common in legacy Heroku setups, so we
-    # normalize it alongside ``postgresql://`` for compatibility.
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+psycopg://", 1)
-    elif url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    elif not url.startswith("postgresql+psycopg://"):
-        raise RuntimeError(f"Expected PostgreSQL URL, got {url}")
-
-    return url
+    settings_obj = active_settings or settings
+    return settings_obj.resolved_database_url
 
 
-def get_database_type() -> str:
-    """Detect database type from URL.
+def get_database_type(active_settings: AppSettings | None = None) -> str:
+    """Return the database dialect reported by the settings instance."""
 
-    Returns:
-        "sqlite" or "postgresql"
-    """
-    url = get_database_url()
-    if url.startswith("sqlite"):
-        return "sqlite"
-    return "postgresql"
+    settings_obj = active_settings or settings
+    return settings_obj.database_type
 
 
-def create_engine() -> AsyncEngine:
-    """Create async database engine with optimized connection pooling.
+def create_engine(active_settings: AppSettings | None = None) -> AsyncEngine:
+    """Create an async engine using configuration captured in ``AppSettings``.
 
     For PostgreSQL:
     - pool_size=10: Maintain 10 warm connections
@@ -67,8 +40,10 @@ def create_engine() -> AsyncEngine:
     For SQLite:
     - No pooling parameters (not supported)
     """
-    db_type = get_database_type()
-    url = get_database_url()
+
+    settings_obj = active_settings or settings
+    db_type = settings_obj.database_type
+    url = settings_obj.resolved_database_url
 
     if db_type == "postgresql":
         # PostgreSQL: Optimize connection pooling
@@ -88,10 +63,9 @@ def create_engine() -> AsyncEngine:
             from backend.monitoring import setup_query_monitoring
 
             # Get slow query threshold from environment (default: 100ms)
-            slow_query_threshold = float(os.getenv("SLOW_QUERY_THRESHOLD", "0.1"))
             setup_query_monitoring(
                 engine,
-                slow_query_threshold=slow_query_threshold,
+                slow_query_threshold=settings_obj.slow_query_threshold,
                 log_pool_stats=False,  # Disable verbose pool logging by default
             )
         except Exception as e:

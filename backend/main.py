@@ -1,13 +1,10 @@
 import logging
-import os
 import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import urlsplit
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,6 +32,7 @@ from backend.db.connection import (
 from backend.db.connection import (
     get_engine as _connection_get_engine,
 )
+from backend.settings import AppSettings, settings
 
 from .api import (
     events,
@@ -53,35 +51,28 @@ from .schemas.error import (
     ValidationErrorResponse,
 )
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Configure logging
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=settings.log_level_numeric,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
 
-def _validate_environment() -> None:
-    """Validate environment variables at startup and log warnings for missing optional vars."""
-    warnings: list[str] = []
+def _validate_environment(active_settings: AppSettings | None = None) -> None:
+    """Validate configuration values and highlight missing optional inputs.
 
-    # Check optional but recommended environment variables
-    if not os.getenv("REDIS_URL"):
-        warnings.append(
-            "REDIS_URL is not set - caching will use in-memory fallback "
-            "(performance may be degraded)"
-        )
+    Parameters
+    ----------
+    active_settings:
+        Optional :class:`~backend.settings.AppSettings` instance that allows unit
+        tests to supply overrides.  When ``None`` the module-level ``settings``
+        singleton is used.
+    """
 
-    if not os.getenv("CORS_ALLOW_ORIGINS"):
-        warnings.append(
-            "CORS_ALLOW_ORIGINS is not set - using default localhost origins only "
-            "(may cause CORS issues in production)"
-        )
+    settings_obj = active_settings or settings
+    warnings = settings_obj.optional_config_warnings()
 
-    # Log warnings if any
     if warnings:
         logger.warning("=" * 60)
         logger.warning("Environment Configuration Warnings:")
@@ -232,23 +223,7 @@ def _default_origins() -> list[str]:
 
 
 default_origins = _default_origins()
-extra_origins = [
-    origin.strip().rstrip("/")
-    for origin in os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
-    if origin.strip()
-]
-
-
-def _extract_origin(url: str | None) -> str | None:
-    if not url:
-        return None
-    try:
-        parsed = urlsplit(url.strip())
-        if not parsed.scheme or not parsed.netloc:
-            return None
-        return f"{parsed.scheme}://{parsed.netloc}"
-    except ValueError:
-        return None
+extra_origins = settings.cors_allow_origins
 
 
 def _combine_origins(*origin_groups: list[str]) -> list[str]:
@@ -264,22 +239,14 @@ def _combine_origins(*origin_groups: list[str]) -> list[str]:
     return combined
 
 
-derived_origins: list[str] = []
-for env_var in (
-    "PUBLIC_FRONTEND_URL",
-    "NEXT_PUBLIC_SITE_URL",
-    "NEXT_PUBLIC_API_BASE_URL",
-):
-    origin = _extract_origin(os.getenv(env_var))
-    if origin:
-        derived_origins.append(origin)
+derived_origins = settings.derived_cors_origins
 
 if extra_origins:
     allow_origins = _combine_origins(default_origins, extra_origins, derived_origins)
 else:
     allow_origins = _combine_origins(default_origins, derived_origins)
 
-cors_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX") or None
+cors_origin_regex = settings.cors_allow_origin_regex
 
 app.add_middleware(
     CORSMiddleware,
