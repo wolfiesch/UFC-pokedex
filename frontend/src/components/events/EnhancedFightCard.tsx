@@ -1,17 +1,24 @@
 "use client";
 
 import { Fight, getFightOutcomeColor, parseRecord } from "@/lib/fight-utils";
+import {
+  Activity,
+  ArrowUpRight,
+  Clock3,
+  Swords,
+  Trophy,
+  Weight,
+} from "lucide-react";
 
 interface EnhancedFightCardProps {
   fight: Fight;
   isTitleFight?: boolean;
   isMainEvent?: boolean;
-  fighterRecord?: string | null; // fighter_1's record from detail page
+  fighterRecord?: string | null;
 }
 
-/**
- * Enhanced fight card component with fighter records and visual styling
- */
+const badgeStyle = "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em]";
+
 export default function EnhancedFightCard({
   fight,
   isTitleFight = false,
@@ -22,94 +29,87 @@ export default function EnhancedFightCard({
   const parsedRecord = fighterRecord ? parseRecord(fighterRecord) : null;
 
   return (
-    <div
-      className={`
-        relative rounded-lg border p-4 transition-all hover:shadow-lg
-        ${isMainEvent ? "border-amber-500 bg-gradient-to-br from-amber-950/40 to-orange-950/40" : "border-gray-700 bg-gray-800/50"}
-      `}
-    >
-      {/* Title Fight Badge */}
-      {isTitleFight && (
-        <div className="absolute -top-2 -right-2 z-10">
-          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 px-3 py-1 text-xs font-bold text-gray-900 shadow-lg">
-            👑 Title Fight
-          </span>
-        </div>
-      )}
-
-      {/* Main Event Badge */}
-      {isMainEvent && !isTitleFight && (
-        <div className="absolute -top-2 -right-2 z-10">
-          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-600 to-rose-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
-            ⭐ Main Event
-          </span>
-        </div>
-      )}
-
-      <div className="space-y-3">
-        {/* Fighter 1 */}
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <span className="text-lg font-bold text-white">
-                {fight.fighter_1_name}
+    <article className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-950/70 to-slate-950/90 p-6 shadow-[0_40px_80px_-60px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/30 hover:shadow-[0_50px_90px_-60px_rgba(59,130,246,0.45)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(94,234,212,0.12),_transparent_60%)]" />
+      <div className="relative z-10 flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {isTitleFight && (
+              <span className={`${badgeStyle} border-amber-400/60 bg-amber-500/15 text-amber-100`}>
+                <Trophy className="h-3.5 w-3.5" aria-hidden /> Title bout
               </span>
-              {parsedRecord && (
-                <span className="rounded-md bg-gray-700 px-2 py-1 text-xs font-medium text-gray-300">
-                  {parsedRecord.wins}-{parsedRecord.losses}-{parsedRecord.draws}
-                </span>
-              )}
-            </div>
+            )}
+            {isMainEvent && !isTitleFight && (
+              <span className={`${badgeStyle} border-sky-400/60 bg-sky-500/15 text-sky-100`}>
+                <Activity className="h-3.5 w-3.5" aria-hidden /> Main event
+              </span>
+            )}
           </div>
           {fight.result && (
-            <span
-              className={`ml-3 rounded-md px-3 py-1 text-sm font-bold ${outcomeColor}`}
-            >
-              {fight.result}
+            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] ${outcomeColor}`}>
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /> {fight.result}
             </span>
           )}
         </div>
 
-        {/* VS Divider */}
-        <div className="flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
-          <span className="text-xs font-bold text-gray-500">VS</span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
-        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 flex-shrink-0 rounded-2xl border border-white/20 bg-gradient-to-br from-white/30 to-transparent shadow-inner" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Blue corner</p>
+                <p className="text-lg font-semibold text-white">{fight.fighter_1_name}</p>
+              </div>
+            </div>
+            {parsedRecord && (
+              <div className="flex items-center gap-3 text-xs text-slate-300">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                  <Swords className="h-3 w-3" aria-hidden />
+                  {parsedRecord.wins}-{parsedRecord.losses}-{parsedRecord.draws}
+                </span>
+              </div>
+            )}
+          </div>
 
-        {/* Fighter 2 */}
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <span className="text-lg font-medium text-gray-300">
-              {fight.fighter_2_name}
-            </span>
+          <div className="relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 flex-shrink-0 rounded-2xl border border-white/20 bg-gradient-to-br from-white/30 to-transparent shadow-inner" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Red corner</p>
+                <p className="text-lg font-semibold text-white">{fight.fighter_2_name}</p>
+              </div>
+            </div>
+            <div className="text-xs text-slate-300">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                <Swords className="h-3 w-3" aria-hidden /> Tale of the tape
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Fight Details */}
-        {(fight.weight_class || fight.method) && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-700 pt-3 text-sm text-gray-400">
-            {fight.weight_class && (
-              <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-500">Weight Class:</span>
-                {fight.weight_class}
+        <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-slate-200">
+          {fight.weight_class && (
+            <div className="flex items-center gap-2">
+              <Weight className="h-3.5 w-3.5" aria-hidden />
+              <span className="uppercase tracking-[0.25em]">{fight.weight_class}</span>
+            </div>
+          )}
+          {fight.method && (
+            <div className="flex items-center gap-2">
+              <Swords className="h-3.5 w-3.5" aria-hidden />
+              <span>{fight.method}</span>
+            </div>
+          )}
+          {fight.round && fight.time && (
+            <div className="flex items-center gap-2">
+              <Clock3 className="h-3.5 w-3.5" aria-hidden />
+              <span>
+                Round {fight.round} · {fight.time}
               </span>
-            )}
-            {fight.method && (
-              <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-500">Method:</span>
-                {fight.method}
-              </span>
-            )}
-            {fight.round && fight.time && (
-              <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-500">Time:</span>
-                R{fight.round} {fight.time}
-              </span>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

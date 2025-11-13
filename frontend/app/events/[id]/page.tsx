@@ -3,12 +3,23 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
-import { groupFightsBySection } from "@/lib/fight-utils";
+import { format, formatDistanceToNowStrict, parseISO } from "date-fns";
+import { groupFightsBySection, isTitleFight } from "@/lib/fight-utils";
 import { detectEventType, getEventTypeConfig, normalizeEventType } from "@/lib/event-utils";
 import EventStatsPanel from "@/components/events/EventStatsPanel";
 import FightCardSection from "@/components/events/FightCardSection";
 import RelatedEventsWidget from "@/components/events/RelatedEventsWidget";
+import type { EventType } from "@/lib/event-utils";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  CalendarDays,
+  Clock3,
+  MapPin,
+  Radio,
+  Sparkles,
+  Tv2,
+} from "lucide-react";
 
 interface Fight {
   fight_id: string;
@@ -45,6 +56,16 @@ interface EventListItem {
   status: string;
   event_type?: string | null;
 }
+
+const EVENT_TYPE_ARTWORK: Record<EventType, string> = {
+  ppv: "https://images.unsplash.com/photo-1571008887538-b36bb32f4571?auto=format&fit=crop&w=1600&q=80",
+  fight_night: "https://images.unsplash.com/photo-1521410132144-1a1e55e26f58?auto=format&fit=crop&w=1600&q=80",
+  ufc_on_espn: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1600&q=80",
+  ufc_on_abc: "https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1600&q=80",
+  tuf_finale: "https://images.unsplash.com/photo-1525954677600-06e3f1c41c08?auto=format&fit=crop&w=1600&q=80",
+  contender_series: "https://images.unsplash.com/photo-1533560904424-4b9d0f06e5d4?auto=format&fit=crop&w=1600&q=80",
+  other: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1600&q=80",
+};
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -134,76 +155,119 @@ export default function EventDetailPage() {
   // Group fights into sections
   const fightSections = groupFightsBySection(event.fight_card);
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
-      <Link href="/events" className="inline-flex items-center gap-2 text-blue-500 hover:underline mb-6">
-        ← Back to Events
-      </Link>
+  const heroBackground = EVENT_TYPE_ARTWORK[(normalizedEventType ?? "other") as EventType];
+  const headliner = event.name.split(":")[1]?.trim();
+  const countdownLabel =
+    event.status === "upcoming"
+      ? `${formatDistanceToNowStrict(parseISO(event.date), { addSuffix: false })}`
+      : "Event complete";
+  const metadata = [
+    {
+      label: "Date",
+      value: format(parseISO(event.date), "EEEE, MMMM d"),
+      icon: CalendarDays,
+    },
+    {
+      label: "Location",
+      value: event.location,
+      icon: MapPin,
+    },
+    {
+      label: "Venue",
+      value: event.venue,
+      icon: Radio,
+    },
+    {
+      label: "Broadcast",
+      value: event.broadcast,
+      icon: Tv2,
+    },
+    {
+      label: "Local time",
+      value: format(parseISO(event.date), "p zzz"),
+      icon: Clock3,
+    },
+  ].filter((item) => Boolean(item.value));
+  const hasTitleFight = event.fight_card.some((fight) => isTitleFight(fight, event.name));
 
-      {/* Event Header */}
-      <div
-        className={`
-          rounded-lg p-6 mb-8 border
-          ${isPPV ? "bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 border-amber-600" : "bg-gray-800 border-gray-700"}
-        `}
-      >
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2 flex-wrap">
-              <span className={`rounded px-3 py-1 text-xs font-bold ${typeConfig.badgeClass}`}>
+  return (
+    <div className="relative mx-auto flex max-w-6xl flex-col gap-10 px-4 pb-24">
+      <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-slate-950/90 px-8 py-14 shadow-[0_60px_140px_-100px_rgba(15,23,42,0.95)]">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: `linear-gradient(135deg, rgba(8,11,19,0.9), rgba(8,11,19,0.6)), url(${heroBackground})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.25),_transparent_55%)]" />
+
+        <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex-1 space-y-6">
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-300 transition hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden /> Back to events
+            </Link>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${typeConfig.badgeClass}`}>
                 {typeConfig.label}
               </span>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] ${
                   event.status === "upcoming"
-                    ? "bg-green-900 text-green-300"
-                    : "bg-gray-700 text-gray-300"
+                    ? "border-emerald-400/60 bg-emerald-500/10 text-emerald-200"
+                    : "border-slate-300/40 bg-slate-200/10 text-slate-200"
                 }`}
               >
+                <BadgeCheck className="h-4 w-4" aria-hidden />
                 {event.status === "upcoming" ? "Upcoming" : "Completed"}
               </span>
+              {isPPV && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/50 bg-amber-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-amber-200">
+                  PPV Spotlight
+                </span>
+              )}
             </div>
-            <h1 className={`text-3xl font-bold ${isPPV ? "text-amber-200" : "text-white"}`}>
+
+            <h1 className="text-balance text-4xl font-black tracking-tight text-white sm:text-5xl">
               {event.name}
             </h1>
+            {headliner && <p className="text-lg font-semibold text-slate-200/80">{headliner}</p>}
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200">
+                <Clock3 className="h-4 w-4" aria-hidden />
+                {countdownLabel}
+              </div>
+              {hasTitleFight && (
+                <div className="inline-flex items-center gap-3 rounded-full border border-amber-400/60 bg-amber-500/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-amber-100">
+                  <Sparkles className="h-4 w-4" aria-hidden /> Title on the line
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-xs flex-col gap-4 rounded-3xl border border-white/10 bg-white/10 p-6 backdrop-blur">
+            {metadata.map((item) => (
+              <div key={item.label} className="flex items-start gap-3">
+                <div className="mt-1 h-8 w-8 flex-shrink-0 rounded-full border border-white/20 bg-white/10 text-sky-200">
+                  <item.icon className="h-full w-full p-1.5" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-400">{item.label}</p>
+                  <p className="text-sm font-semibold text-white">{item.value}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2 text-gray-400">
-            <span className="text-gray-500">📅</span>
-            <span>{format(parseISO(event.date), "MMMM d, yyyy")}</span>
-          </div>
-          {event.location && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">📍</span>
-              <span>{event.location}</span>
-            </div>
-          )}
-          {event.venue && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">🏟️</span>
-              <span>{event.venue}</span>
-            </div>
-          )}
-          {event.broadcast && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-gray-500">📺</span>
-              <span>{event.broadcast}</span>
-            </div>
-          )}
-        </div>
-
-        {isPPV && (
-          <div className="mt-4 pt-4 border-t border-amber-600/40">
-            <span className="font-bold text-amber-300">⭐ Pay-Per-View Event</span>
-          </div>
-        )}
       </div>
 
-      {/* Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Main Content - Fight Card */}
         <div className="lg:col-span-2 space-y-8">
           {/* Event Statistics Panel */}
