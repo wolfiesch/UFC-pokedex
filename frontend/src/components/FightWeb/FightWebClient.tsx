@@ -141,6 +141,25 @@ export function FightWebClient({
     void applyFilters(defaultFilters);
   }, [appliedFilters, applyFilters, defaultFilters]);
 
+  // Allow the floating insight card to request a division filter change without breaking the
+  // existing filter state (year bounds, limits, etc.).
+  const handleFilterDivisionFromGraph = useCallback(
+    (division: string) => {
+      const normalized = division.trim();
+      if (normalized.length === 0) {
+        return;
+      }
+      void applyFilters({
+        division: normalized,
+        startYear: appliedFilters.startYear ?? null,
+        endYear: appliedFilters.endYear ?? null,
+        limit: appliedFilters.limit ?? fallbackLimit,
+        includeUpcoming: appliedFilters.includeUpcoming ?? false,
+      });
+    },
+    [appliedFilters, applyFilters, fallbackLimit],
+  );
+
   const nodeCount = graphData?.nodes.length ?? 0;
   const linkCount = graphData?.links.length ?? 0;
 
@@ -327,6 +346,7 @@ export function FightWebClient({
             isLoading={isLoading}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
+            onFilterDivisionRequest={handleFilterDivisionFromGraph}
             palette={palette}
             nodeColorMap={nodeColorMap}
           />
