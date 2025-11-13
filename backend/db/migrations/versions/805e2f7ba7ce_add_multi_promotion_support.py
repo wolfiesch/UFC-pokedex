@@ -10,12 +10,19 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = '805e2f7ba7ce'
 down_revision: Union[str, None] = '14bfa498a5d8'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
+def _constraint_exists(bind, table_name: str, constraint_name: str) -> bool:
+    inspector = inspect(bind)
+    constraints = inspector.get_unique_constraints(table_name)
+    return any(constraint["name"] == constraint_name for constraint in constraints)
 
 
 def upgrade() -> None:
@@ -26,7 +33,9 @@ def upgrade() -> None:
     op.drop_index('idx_historical_rankings_issue', table_name='historical_rankings', if_exists=True)
     op.execute('DROP TABLE IF EXISTS historical_rankings')
     op.drop_index('ix_favorite_collections_user_id_created_at', table_name='favorite_collections', if_exists=True)
-    op.create_unique_constraint('uq_fighter_rankings_natural_key', 'fighter_rankings', ['fighter_id', 'division', 'rank_date', 'source'])
+    bind = op.get_bind()
+    if not _constraint_exists(bind, 'fighter_rankings', 'uq_fighter_rankings_natural_key'):
+        op.create_unique_constraint('uq_fighter_rankings_natural_key', 'fighter_rankings', ['fighter_id', 'division', 'rank_date', 'source'])
     op.add_column('fighters', sa.Column('sherdog_url', sa.String(length=255), nullable=True))
     op.add_column('fighters', sa.Column('primary_promotion', sa.String(length=50), nullable=True))
     op.add_column('fighters', sa.Column('all_promotions', sa.JSON(), nullable=True))
