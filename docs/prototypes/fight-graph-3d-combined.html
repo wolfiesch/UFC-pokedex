@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>UFC Fight Graph 3D - Combined Prototype</title>
+    <style>
+      /*
+        Combined prototype integrating the best aspects of PRs 90, 92, and 94:
+        - PR 94: Refined scene setup, lighting, fog, form-based controls
+        - PR 90: 2D⟷3D toggle, keyboard shortcuts, auto-orbit animation
+        - PR 92: Clean sidebar design, simple interaction tips
+      */
+      :root {
+        color-scheme: dark;
+        --background: #05070f;
+        --surface: #0f1629;
+        --surface-alt: #18213b;
+        --accent: #66d9ef;
+        --accent-strong: #f92672;
+        --text-primary: #f8f8f2;
+        --text-muted: #a6accd;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #101a32 0%, #05070f 60%);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 1.5rem clamp(1rem, 3vw, 3rem);
+        background: linear-gradient(135deg, rgba(15, 22, 41, 0.95), rgba(24, 33, 59, 0.7));
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(102, 217, 239, 0.16);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .header-title {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      p {
+        margin: 0.25rem 0 0;
+        color: var(--text-muted);
+      }
+
+      .view-toggle {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .view-toggle button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(102, 217, 239, 0.3);
+        background: rgba(15, 22, 41, 0.8);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .view-toggle button:hover {
+        background: rgba(102, 217, 239, 0.2);
+        border-color: var(--accent);
+      }
+
+      .view-toggle button.active {
+        background: linear-gradient(135deg, rgba(102, 217, 239, 0.9), rgba(249, 38, 114, 0.9));
+        border-color: transparent;
+      }
+
+      main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) 1fr;
+        gap: 0;
+        overflow: hidden;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem clamp(1rem, 3vw, 3rem);
+        background: rgba(15, 22, 41, 0.78);
+        border-right: 1px solid rgba(102, 217, 239, 0.12);
+        overflow-y: auto;
+      }
+
+      fieldset {
+        display: grid;
+        gap: 0.75rem;
+        border: 1px solid rgba(102, 217, 239, 0.1);
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        background: rgba(24, 33, 59, 0.6);
+      }
+
+      legend {
+        padding: 0 0.5rem;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        gap: 0.4rem;
+      }
+
+      input,
+      select {
+        background: rgba(5, 7, 15, 0.8);
+        border: 1px solid rgba(102, 217, 239, 0.35);
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(102, 217, 239, 0.2);
+      }
+
+      button[type="submit"] {
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, rgba(102, 217, 239, 0.9), rgba(249, 38, 114, 0.9));
+        color: var(--text-primary);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button[type="submit"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(102, 217, 239, 0.3);
+      }
+
+      #status {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        white-space: pre-line;
+      }
+
+      .tips-section {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--text-muted);
+        padding: 1rem;
+        background: rgba(24, 33, 59, 0.4);
+        border-radius: 0.75rem;
+        border: 1px solid rgba(102, 217, 239, 0.1);
+      }
+
+      .tips-section strong {
+        color: var(--accent);
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+
+      .tips-section ul {
+        margin: 0;
+        padding-left: 1.5rem;
+      }
+
+      .tips-section li {
+        margin: 0.5rem 0;
+      }
+
+      .tips-section kbd {
+        background: rgba(5, 7, 15, 0.8);
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.3rem;
+        border: 1px solid rgba(102, 217, 239, 0.3);
+        font-family: monospace;
+        font-size: 0.8rem;
+      }
+
+      .graph-container {
+        position: relative;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .tooltip {
+        position: absolute;
+        left: 1.5rem;
+        bottom: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: rgba(5, 7, 15, 0.85);
+        border: 1px solid rgba(102, 217, 239, 0.2);
+        border-radius: 0.75rem;
+        min-width: 260px;
+        pointer-events: none;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: var(--text-primary);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .mode-indicator {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(5, 7, 15, 0.75);
+        border: 1px solid rgba(102, 217, 239, 0.3);
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+
+        form {
+          border-right: none;
+          border-bottom: 1px solid rgba(102, 217, 239, 0.12);
+        }
+
+        .header-title {
+          width: 100%;
+        }
+
+        .view-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-title">
+        <h1>UFC Fight Graph &mdash; Combined 3D/2D</h1>
+        <p>
+          Best of all prototypes: refined rendering, 2D/3D toggle, and keyboard shortcuts.
+        </p>
+      </div>
+      <div class="view-toggle">
+        <button id="toggle2D3D" class="active">Toggle 2D ⟷ 3D</button>
+      </div>
+    </header>
+    <main>
+      <form id="controls" autocomplete="off">
+        <fieldset>
+          <legend>API Source</legend>
+          <label>
+            Base URL
+            <input
+              type="url"
+              id="apiBaseInput"
+              name="apiBase"
+              placeholder="https://api.example.com"
+              required
+            />
+          </label>
+          <p id="status">
+            Provide the API origin hosting /fightweb/graph. Defaults to localhost if omitted.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Graph Filters</legend>
+          <label>
+            Division (optional)
+            <input
+              type="text"
+              id="divisionInput"
+              name="division"
+              placeholder="Lightweight"
+            />
+          </label>
+          <label>
+            Start Year
+            <input type="number" id="startYearInput" name="startYear" placeholder="2015" />
+          </label>
+          <label>
+            End Year
+            <input type="number" id="endYearInput" name="endYear" placeholder="2024" />
+          </label>
+          <label>
+            Fighter Limit
+            <input type="number" id="limitInput" name="limit" placeholder="150" />
+          </label>
+          <label>
+            Include Upcoming Bouts
+            <select id="upcomingSelect" name="includeUpcoming">
+              <option value="">Follow API default</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <button type="submit">Load Fight Graph</button>
+
+        <div class="tips-section">
+          <strong>Keyboard Shortcuts</strong>
+          <ul>
+            <li><kbd>Spacebar</kbd>: Toggle auto-orbit animation</li>
+            <li><kbd>R</kbd>: Reset camera position</li>
+            <li><kbd>H</kbd>: Toggle hover tooltips</li>
+          </ul>
+          <strong>Mouse Controls</strong>
+          <ul>
+            <li>Drag to orbit, scroll to zoom</li>
+            <li>Right-click + drag to pan</li>
+            <li>Hover nodes for fighter details</li>
+          </ul>
+        </div>
+      </form>
+      <section class="graph-container" aria-live="polite">
+        <div class="mode-indicator" id="modeIndicator">3D Mode</div>
+        <div class="tooltip" id="tooltip">Hover a fighter node to inspect details.</div>
+      </section>
+    </main>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+      }
+    }
+    </script>
+    <script type="module">
+      // Import Three.js and d3-force-3d
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import {
+        forceSimulation,
+        forceManyBody,
+        forceLink,
+        forceCenter,
+      } from "https://cdn.skypack.dev/d3-force-3d@3.0.5";
+
+      /** @type {HTMLFormElement} */
+      const controlsForm = document.getElementById("controls");
+      /** @type {HTMLInputElement} */
+      const apiBaseInput = document.getElementById("apiBaseInput");
+      /** @type {HTMLInputElement} */
+      const divisionInput = document.getElementById("divisionInput");
+      /** @type {HTMLInputElement} */
+      const startYearInput = document.getElementById("startYearInput");
+      /** @type {HTMLInputElement} */
+      const endYearInput = document.getElementById("endYearInput");
+      /** @type {HTMLInputElement} */
+      const limitInput = document.getElementById("limitInput");
+      /** @type {HTMLSelectElement} */
+      const upcomingSelect = document.getElementById("upcomingSelect");
+      /** @type {HTMLParagraphElement} */
+      const statusElement = document.getElementById("status");
+      /** @type {HTMLElement} */
+      const graphContainer = document.querySelector(".graph-container");
+      /** @type {HTMLButtonElement} */
+      const toggle2D3DButton = document.getElementById("toggle2D3D");
+      /** @type {HTMLElement} */
+      const modeIndicator = document.getElementById("modeIndicator");
+      /** @type {HTMLElement} */
+      const tooltipElement = document.getElementById("tooltip");
+
+      // Initialize API base URL from query params
+      const params = new URLSearchParams(window.location.search);
+      const providedBaseUrl = params.get("apiBaseUrl") ?? "";
+      const defaultBaseUrl = providedBaseUrl || "http://localhost:8000";
+      apiBaseInput.value = defaultBaseUrl;
+
+      // Global state
+      let renderer;
+      let scene;
+      let camera;
+      let controls;
+      let nodeGroup;
+      let linkGroup;
+      let animationId;
+      let resizeHandler;
+      let currentNodes = [];
+      let is3DMode = true;
+      let depthScale = 1.0;
+      let targetDepthScale = 1.0;
+      let autoOrbit = false;
+      let tooltipsEnabled = true;
+
+      /**
+       * Update status text area with progress cues
+       */
+      function updateStatus(text, isError = false) {
+        statusElement.textContent = text;
+        statusElement.style.color = isError ? "var(--accent-strong)" : "var(--text-muted)";
+      }
+
+      /**
+       * Convert form fields into query parameters for the API
+       */
+      function readFilters() {
+        const query = {};
+        if (divisionInput.value.trim()) {
+          query.division = divisionInput.value.trim();
+        }
+        if (startYearInput.value) {
+          query.start_year = startYearInput.value;
+        }
+        if (endYearInput.value) {
+          query.end_year = endYearInput.value;
+        }
+        if (limitInput.value) {
+          query.limit = limitInput.value;
+        }
+        if (upcomingSelect.value) {
+          query.include_upcoming = upcomingSelect.value;
+        }
+        return query;
+      }
+
+      /**
+       * Fetch fight graph data from API
+       */
+      async function fetchFightGraph(apiBaseUrl, query) {
+        const origin = apiBaseUrl.replace(/\/?$/, "");
+        const url = new URL("/fightweb/graph", origin);
+        const params = new URLSearchParams(query);
+        if ([...params.keys()].length > 0) {
+          url.search = params.toString();
+        }
+
+        updateStatus(`Fetching graph from ${url.toString()} ...`);
+        const response = await fetch(url.toString(), {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(`Request failed with ${response.status}: ${detail}`);
+        }
+
+        const payload = await response.json();
+        updateStatus(
+          `Loaded ${payload.nodes.length} fighters and ${payload.links.length} bouts.`
+        );
+        return payload;
+      }
+
+      /**
+       * Run d3-force-3d simulation to compute node positions
+       */
+      async function simulateLayout(graph) {
+        // Normalize fighter_id to id for d3-force compatibility
+        const nodes = graph.nodes.map((node) => ({
+          ...node,
+          id: node.fighter_id || node.id
+        }));
+        const links = graph.links.map((link) => ({ ...link }));
+
+        // Compute degree centrality
+        const adjacency = new Map();
+        for (const link of links) {
+          adjacency.set(link.source, (adjacency.get(link.source) || 0) + 1);
+          adjacency.set(link.target, (adjacency.get(link.target) || 0) + 1);
+        }
+        for (const node of nodes) {
+          node.degree = adjacency.get(node.id) || 0;
+        }
+
+        updateStatus("Running physics simulation...");
+
+        const simulation = forceSimulation(nodes)
+          .force(
+            "charge",
+            forceManyBody()
+              .strength(-40)
+              .theta(0.9)
+          )
+          .force(
+            "link",
+            forceLink(links)
+              .id((d) => d.id)
+              .strength((d) => (d.weight ? Math.min(1, d.weight / 5) : 0.2))
+              .distance((d) => (d.weight ? 60 / Math.max(1, d.weight) : 75))
+          )
+          .force("center", forceCenter(0, 0, 0))
+          .alphaDecay(0.05);
+
+        await new Promise((resolve) => {
+          simulation.on("end", resolve);
+        });
+
+        simulation.stop();
+        return { nodes, links };
+      }
+
+      /**
+       * Clean up WebGL resources
+       */
+      function teardownScene() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = undefined;
+        }
+        if (controls) {
+          controls.dispose();
+          controls = undefined;
+        }
+        if (renderer) {
+          renderer.dispose();
+          renderer.forceContextLoss?.();
+          renderer.domElement.remove();
+          renderer = undefined;
+        }
+        scene = undefined;
+        camera = undefined;
+        nodeGroup = undefined;
+        linkGroup = undefined;
+        if (resizeHandler) {
+          window.removeEventListener("resize", resizeHandler);
+          resizeHandler = undefined;
+        }
+        currentNodes = [];
+      }
+
+      /**
+       * Smoothly interpolate depth scale for 2D/3D transition
+       */
+      function interpolateDepth() {
+        if (Math.abs(depthScale - targetDepthScale) > 0.01) {
+          depthScale += (targetDepthScale - depthScale) * 0.15;
+
+          // Update all node z-coordinates
+          currentNodes.forEach((nodeData) => {
+            if (nodeData.mesh) {
+              nodeData.mesh.position.z = (nodeData.fz || 0) * depthScale;
+            }
+            if (nodeData.label) {
+              const radius = nodeData.mesh.userData.baseScale || 1;
+              nodeData.label.position.z = (nodeData.fz || 0) * depthScale;
+            }
+          });
+
+          // Update link z-coordinates
+          if (linkGroup) {
+            linkGroup.children.forEach((line, index) => {
+              if (line.geometry && line.userData.sourceNode && line.userData.targetNode) {
+                const sourceNode = line.userData.sourceNode;
+                const targetNode = line.userData.targetNode;
+                const positions = line.geometry.attributes.position.array;
+                positions[2] = (sourceNode.fz || 0) * depthScale;
+                positions[5] = (targetNode.fz || 0) * depthScale;
+                line.geometry.attributes.position.needsUpdate = true;
+              }
+            });
+          }
+
+          requestAnimationFrame(interpolateDepth);
+        }
+      }
+
+      /**
+       * Toggle between 2D and 3D modes
+       */
+      function toggle2D3D() {
+        is3DMode = !is3DMode;
+        targetDepthScale = is3DMode ? 1.0 : 0.0;
+        modeIndicator.textContent = is3DMode ? "3D Mode" : "2D Mode";
+        interpolateDepth();
+      }
+
+      /**
+       * Reset camera to default position
+       */
+      function resetCamera() {
+        if (camera && controls) {
+          camera.position.set(0, 0, 450);
+          controls.target.set(0, 0, 0);
+          controls.update();
+        }
+      }
+
+      /**
+       * Toggle auto-orbit animation
+       */
+      function toggleAutoOrbit() {
+        autoOrbit = !autoOrbit;
+      }
+
+      /**
+       * Toggle hover tooltips
+       */
+      function toggleTooltips() {
+        tooltipsEnabled = !tooltipsEnabled;
+        if (!tooltipsEnabled) {
+          tooltipElement.innerHTML = "Tooltips disabled. Press <kbd>H</kbd> to enable.";
+        }
+      }
+
+      /**
+       * Render the graph in Three.js
+       */
+      function renderGraph(graph) {
+        teardownScene();
+
+        const width = graphContainer.clientWidth;
+        const height = graphContainer.clientHeight;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0);
+        graphContainer.appendChild(renderer.domElement);
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03050d, 0.0035);
+
+        camera = new THREE.PerspectiveCamera(60, width / height, 1, 4000);
+        camera.position.set(0, 0, 450);
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 80;
+        controls.maxDistance = 1200;
+        controls.enablePan = true;
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+        scene.add(ambient);
+        const directional = new THREE.DirectionalLight(0x66d9ef, 0.6);
+        directional.position.set(120, 180, 220);
+        scene.add(directional);
+
+        nodeGroup = new THREE.Group();
+        linkGroup = new THREE.Group();
+        scene.add(linkGroup);
+        scene.add(nodeGroup);
+
+        const nodeMaterialCache = new Map();
+        const nodeGeometry = new THREE.SphereGeometry(1, 16, 16);
+
+        // Create nodes
+        currentNodes = [];
+        for (const node of graph.nodes) {
+          const radius = 4 + Math.sqrt(node.degree || 0) * 0.9;
+          const colorKey = node.division || "default";
+
+          if (!nodeMaterialCache.has(colorKey)) {
+            const palette = [
+              0x66d9ef, 0xf92672, 0xa6e22e, 0xfd971f, 0xae81ff, 0xf4bf75,
+            ];
+            const hash = [...colorKey].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const color = palette[hash % palette.length];
+            const material = new THREE.MeshStandardMaterial({
+              color,
+              emissive: color,
+              emissiveIntensity: 0.2,
+              roughness: 0.45,
+              metalness: 0.05,
+            });
+            nodeMaterialCache.set(colorKey, material);
+          }
+
+          const mesh = new THREE.Mesh(nodeGeometry, nodeMaterialCache.get(colorKey));
+          mesh.scale.setScalar(radius);
+          mesh.position.set(node.x || 0, node.y || 0, node.z || 0);
+          mesh.userData.node = node;
+          mesh.userData.baseScale = radius;
+          nodeGroup.add(mesh);
+
+          // Create label sprite
+          const labelCanvas = document.createElement("canvas");
+          labelCanvas.width = 256;
+          labelCanvas.height = 64;
+          const labelContext = labelCanvas.getContext("2d");
+          if (labelContext) {
+            labelContext.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+            labelContext.fillStyle = "rgba(5, 7, 15, 0.7)";
+            labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+            labelContext.fillStyle = "#66d9ef";
+            labelContext.font = "600 26px 'Inter', sans-serif";
+            labelContext.fillText(node.label ?? node.id, 16, 38);
+          }
+
+          const texture = new THREE.CanvasTexture(labelCanvas);
+          texture.needsUpdate = true;
+          const spriteMaterial = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+          });
+          const sprite = new THREE.Sprite(spriteMaterial);
+          sprite.scale.set(60, 15, 1);
+          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3, node.z || 0);
+          nodeGroup.add(sprite);
+
+          // Store node data for depth interpolation
+          currentNodes.push({
+            mesh,
+            label: sprite,
+            fz: node.z || 0,
+            node,
+          });
+        }
+
+        // Create edges
+        for (const link of graph.links) {
+          const sourceNode = link.source;
+          const targetNode = link.target;
+
+          const opacity = 0.25;
+          const color = new THREE.Color(0x66d9ef);
+          const material = new THREE.LineBasicMaterial({
+            color,
+            transparent: true,
+            opacity,
+          });
+
+          const geometry = new THREE.BufferGeometry();
+          const points = new Float32Array([
+            sourceNode.x || 0,
+            sourceNode.y || 0,
+            sourceNode.z || 0,
+            targetNode.x || 0,
+            targetNode.y || 0,
+            targetNode.z || 0,
+          ]);
+          geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
+          const line = new THREE.Line(geometry, material);
+          line.userData.sourceNode = sourceNode;
+          line.userData.targetNode = targetNode;
+          linkGroup.add(line);
+        }
+
+        // Raycasting for hover effects
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const hovered = new Set();
+
+        function handlePointerMove(event) {
+          const bounds = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+          pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+        }
+
+        renderer.domElement.addEventListener("pointermove", handlePointerMove);
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+          animationId = requestAnimationFrame(animate);
+          const elapsed = clock.getElapsedTime();
+
+          // Auto-orbit
+          if (autoOrbit && controls) {
+            const orbitSpeed = 0.0003;
+            const radius = camera.position.length();
+            const angle = elapsed * orbitSpeed;
+            camera.position.x = Math.cos(angle) * radius;
+            camera.position.z = Math.sin(angle) * radius;
+            camera.lookAt(0, 0, 0);
+          }
+
+          // Hover detection
+          raycaster.setFromCamera(pointer, camera);
+          const intersections = raycaster.intersectObjects(nodeGroup.children, false);
+          hovered.clear();
+
+          if (tooltipsEnabled && intersections.length > 0) {
+            const first = intersections[0].object;
+            if (first.userData.node) {
+              const { node } = first.userData;
+              hovered.add(first);
+              tooltipElement.innerHTML = `
+                <strong>${node.label ?? node.id}</strong><br />
+                Division: ${node.division ?? "Unknown"}<br />
+                Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
+                Recent activity: ${node.year ?? "Unknown"}
+              `;
+            }
+          } else if (tooltipsEnabled) {
+            tooltipElement.innerHTML = "Hover a fighter node to inspect details.";
+          }
+
+          // Scale hovered nodes
+          nodeGroup.children.forEach((child) => {
+            if (child.isSprite) {
+              child.lookAt(camera.position);
+              return;
+            }
+            if (hovered.has(child)) {
+              const targetScale = (child.userData.baseScale || 1) * 1.6;
+              child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, targetScale, 0.2));
+            } else {
+              const baseScale = child.userData.baseScale || 1;
+              child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, baseScale, 0.1));
+            }
+          });
+
+          if (!autoOrbit) {
+            controls.update();
+          }
+          renderer.render(scene, camera);
+        }
+
+        animate();
+
+        resizeHandler = () => {
+          if (!renderer || !camera) return;
+          const { clientWidth, clientHeight } = graphContainer;
+          renderer.setSize(clientWidth, clientHeight);
+          camera.aspect = clientWidth / clientHeight;
+          camera.updateProjectionMatrix();
+        };
+
+        window.addEventListener("resize", resizeHandler);
+      }
+
+      // Form submit handler
+      controlsForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const apiBaseUrl = apiBaseInput.value.trim();
+        if (!apiBaseUrl) {
+          updateStatus("Please supply an API base URL before loading the graph.", true);
+          return;
+        }
+
+        try {
+          updateStatus("Preparing simulation...");
+          const graph = await fetchFightGraph(apiBaseUrl, readFilters());
+          const { nodes, links } = await simulateLayout(graph);
+
+          // Hydrate links with node references
+          const nodeIndex = new Map(nodes.map((node) => [node.id, node]));
+          const hydratedLinks = links
+            .map((link) => ({
+              ...link,
+              source: nodeIndex.get(link.source) ?? link.source,
+              target: nodeIndex.get(link.target) ?? link.target,
+            }))
+            .filter((link) => typeof link.source === "object" && typeof link.target === "object");
+
+          renderGraph({ nodes, links: hydratedLinks });
+          updateStatus(
+            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts. Use keyboard shortcuts!`
+          );
+        } catch (error) {
+          console.error(error);
+          updateStatus(`Failed to render graph: ${error instanceof Error ? error.message : error}`, true);
+        }
+      });
+
+      // 2D/3D toggle button
+      toggle2D3DButton.addEventListener("click", toggle2D3D);
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (event) => {
+        if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT") {
+          return; // Don't trigger shortcuts when typing in inputs
+        }
+
+        switch (event.code) {
+          case "Space":
+            event.preventDefault();
+            toggleAutoOrbit();
+            break;
+          case "KeyR":
+            event.preventDefault();
+            resetCamera();
+            break;
+          case "KeyH":
+            event.preventDefault();
+            toggleTooltips();
+            break;
+        }
+      });
+
+      // Initial load
+      controlsForm.dispatchEvent(new Event("submit"));
+    </script>
+  </body>
+</html>
