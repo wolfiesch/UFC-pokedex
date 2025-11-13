@@ -211,8 +211,15 @@ class FighterRosterMixin:
             base_columns
         )
 
-        # Build query with database-level filtering for performance
+        # Build paired select statements so we can reuse the same filtering logic
+        # for both object hydration and lightweight identifier enumeration.  The
+        # identifier query allows us to evaluate streak filters across the full
+        # ordered result set before slicing for pagination, ensuring we never lose
+        # qualifying fighters that would otherwise fall beyond an SQL LIMIT.
         query_stmt = select(Fighter).options(load_only(*load_columns))
+        id_query_stmt = select(Fighter.id)
+
+        where_clauses: list[Any] = []
 
         # Apply text search at database level
         if filters.query:
@@ -230,19 +237,19 @@ class FighterRosterMixin:
                         Fighter.fighting_out_of.ilike(search_pattern),
                     ]
                 )
-            query_stmt = query_stmt.where(or_(*search_conditions))
+            where_clauses.append(or_(*search_conditions))
 
         # Apply stance filter at database level
         if filters.stance:
-            query_stmt = query_stmt.where(Fighter.stance.ilike(filters.stance))
+            where_clauses.append(Fighter.stance.ilike(filters.stance))
 
         # Apply division filter at database level
         if filters.division:
-            query_stmt = query_stmt.where(Fighter.division.ilike(filters.division))
+            where_clauses.append(Fighter.division.ilike(filters.division))
 
         # Apply champion status filters at database level
         if filters.champion_statuses:
-            champion_conditions = []
+            champion_conditions: list[Any] = []
             for status in filters.champion_statuses:
                 if status == "current":
                     champion_conditions.append(Fighter.is_current_champion.is_(True))
@@ -251,49 +258,106 @@ class FighterRosterMixin:
                 elif status == "interim":
                     champion_conditions.append(Fighter.was_interim.is_(True))
             if champion_conditions:
-                query_stmt = query_stmt.where(or_(*champion_conditions))
+                where_clauses.append(or_(*champion_conditions))
+
+        if where_clauses:
+            query_stmt = query_stmt.where(*where_clauses)
+            id_query_stmt = id_query_stmt.where(*where_clauses)
 
         query_stmt = query_stmt.order_by(Fighter.name, Fighter.id)
+        id_query_stmt = id_query_stmt.order_by(Fighter.name, Fighter.id)
 
-        # Get total count before pagination
-        count_stmt = select(func.count()).select_from(query_stmt.subquery())
-        count_result = await self._session.execute(count_stmt)
-        total = count_result.scalar_one()
+        requires_streak_filter = bool(
+            filters.streak_type and filters.min_streak_count is not None
+        )
+        offset_value = offset or 0
+        limit_value = limit
 
-        # Apply pagination at database level
-        if offset is not None:
-            query_stmt = query_stmt.offset(offset)
-        if limit is not None:
-            query_stmt = query_stmt.limit(limit)
-
-        result = await self._session.execute(query_stmt)
-        fighters = result.scalars().all()
-        fighter_ids = [f.id for f in fighters]
-
-        # Fetch streak data if requested
         streak_by_fighter: dict[
             str, dict[str, int | Literal["win", "loss", "draw", "none"]]
         ] = {}
-        if include_streak and fighter_ids:
-            streak_by_fighter = await self._batch_compute_streaks(
-                fighter_ids, window=streak_window
-            )
+        fighters: list[Fighter] = []
+        fighter_ids: list[str] = []
 
-        # Apply streak filter in-memory (can't be done efficiently at DB level)
-        if filters.streak_type and filters.min_streak_count is not None:
-            filtered_fighters = []
-            for fighter in fighters:
-                streak_bundle = streak_by_fighter.get(fighter.id, {})
-                fighter_streak_type = streak_bundle.get("current_streak_type", "none")
+        if requires_streak_filter:
+            # Pull the ordered identifiers first so we can compute streaks across
+            # the entire candidate pool and then slice the filtered set for
+            # pagination without breaking deterministic ordering.
+            id_result = await self._session.execute(id_query_stmt)
+            ordered_ids = id_result.scalars().all()
+
+            if not ordered_ids:
+                return [], 0
+
+            if include_streak or requires_streak_filter:
+                streak_by_fighter = await self._batch_compute_streaks(
+                    ordered_ids, window=streak_window
+                )
+
+            filtered_ids: list[str] = []
+            for fighter_id in ordered_ids:
+                streak_bundle = streak_by_fighter.get(fighter_id, {})
+                fighter_streak_type = typing_cast(
+                    str | None, streak_bundle.get("current_streak_type")
+                )
                 fighter_streak_count = int(streak_bundle.get("current_streak_count", 0))
                 if (
                     fighter_streak_type == filters.streak_type
-                    and fighter_streak_count >= filters.min_streak_count
+                    and fighter_streak_count
+                    >= typing_cast(int, filters.min_streak_count)
                 ):
-                    filtered_fighters.append(fighter)
-            fighters = filtered_fighters
+                    filtered_ids.append(fighter_id)
+
+            total = len(filtered_ids)
+
+            paginated_ids = filtered_ids[offset_value:]
+            if limit_value is not None:
+                paginated_ids = paginated_ids[:limit_value]
+
+            if not paginated_ids:
+                return [], total
+
+            fighter_result = await self._session.execute(
+                select(Fighter)
+                .options(load_only(*load_columns))
+                .where(Fighter.id.in_(paginated_ids))
+            )
+            fighters_by_id = {
+                fighter.id: fighter for fighter in fighter_result.scalars().all()
+            }
+            fighters = [
+                fighters_by_id[fighter_id]
+                for fighter_id in paginated_ids
+                if fighter_id in fighters_by_id
+            ]
+            fighter_ids = paginated_ids
+        else:
+            # When no streak filtering is requested we can rely entirely on SQL
+            # level pagination for efficiency.
+            count_stmt = select(func.count()).select_from(id_query_stmt.subquery())
+            count_result = await self._session.execute(count_stmt)
+            total = count_result.scalar_one()
+
+            if offset is not None and offset_value:
+                query_stmt = query_stmt.offset(offset_value)
+            if limit_value is not None:
+                query_stmt = query_stmt.limit(limit_value)
+
+            result = await self._session.execute(query_stmt)
+            fighters = result.scalars().all()
             fighter_ids = [f.id for f in fighters]
-            total = len(fighters)
+
+            if include_streak and fighter_ids:
+                streak_by_fighter = await self._batch_compute_streaks(
+                    fighter_ids, window=streak_window
+                )
+
+        # Ensure streak data is available for streak-filtered results even when
+        # the caller does not explicitly request streak metadata in the payload.
+        if requires_streak_filter and not streak_by_fighter and fighter_ids:
+            streak_by_fighter = await self._batch_compute_streaks(
+                fighter_ids, window=streak_window
+            )
 
         rankings = await self._fetch_ranking_summaries(fighter_ids)
         fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)

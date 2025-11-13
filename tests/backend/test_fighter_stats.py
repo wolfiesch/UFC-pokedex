@@ -10,7 +10,11 @@ import pytest
 try:
     import pytest_asyncio
     from sqlalchemy import insert
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for fighter stats tests.",
@@ -293,7 +297,9 @@ async def test_get_fighter_orders_mixed_fight_history(session: AsyncSession) -> 
 
     # Create a fighter record to anchor the upcoming and historical fights.
     fighter: Fighter = Fighter(id="fighter-ordering", name="Ordering Test")
-    session.add_all([fighter, FighterStats(fighter_id=fighter.id)])
+    # The repository logic only requires a fighter record; a stats row is not
+    # necessary for validating chronology, so we add the fighter independently.
+    session.add(fighter)
     await session.flush()
 
     # Define precise event dates to make the intended ordering explicit.
@@ -663,3 +669,59 @@ async def test_search_fighters_filters_by_extended_win_streak(
     assert [fighter.fighter_id for fighter in fighters] == ["streaker"]
     assert fighters[0].current_streak_type == "win"
     assert fighters[0].current_streak_count == 7
+
+
+@pytest.mark.asyncio
+async def test_search_fighters_applies_streak_filter_before_pagination(
+    session: AsyncSession,
+) -> None:
+    """Ensure streak-qualified fighters beyond the first SQL page remain discoverable."""
+
+    # Seed multiple fighters with alphabetical ordering so the streaking athlete
+    # would normally appear on a later page when naive SQL LIMIT/OFFSET logic is
+    # applied.  Only "streaker" meets the win-streak requirement.
+    fighters: list[Fighter] = [
+        Fighter(id="aaron", name="Aaron Alpha"),
+        Fighter(id="boris", name="Boris Bravo"),
+        Fighter(id="streaker", name="Streaker Charlie"),
+    ]
+    session.add_all(fighters)
+    await session.flush()
+
+    # Provide three consecutive wins for the streaker so the fighter qualifies
+    # for the requested streak filter while ensuring the other seeded fighters do
+    # not accidentally satisfy the criteria.
+    streak_fights: list[Fight] = []
+    for index in range(3):
+        streak_fights.append(
+            Fight(
+                id=f"streaker-win-{index}",
+                fighter_id="streaker",
+                opponent_id=f"opponent-{index}",
+                opponent_name=f"Opponent {index}",
+                event_name=f"Event {index}",
+                event_date=date(2024, 1, 1 + index),
+                result="Win",
+                method="Decision",
+                round=3,
+                time="05:00",
+                fight_card_url=None,
+            )
+        )
+
+    session.add_all(streak_fights)
+    await session.commit()
+
+    repo = PostgreSQLFighterRepository(session)
+
+    fighters_page, total = await repo.search_fighters(
+        streak_type="win",
+        min_streak_count=3,
+        limit=2,
+        offset=0,
+        include_streak=True,
+    )
+
+    assert total == 1
+    assert [fighter.fighter_id for fighter in fighters_page] == ["streaker"]
+    assert fighters_page[0].current_streak_count == 3
