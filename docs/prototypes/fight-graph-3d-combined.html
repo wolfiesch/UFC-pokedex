@@ -574,6 +574,11 @@
       let animationId;
       let resizeHandler;
       let currentNodes = [];
+      /**
+       * Mesh references used exclusively for raycasting so sprites are ignored.
+       * @type {THREE.Mesh[]}
+       */
+      let nodeMeshes = [];
       let is3DMode = true;
       let depthScale = 1.0;
       let targetDepthScale = 1.0;
@@ -716,6 +721,7 @@
           resizeHandler = undefined;
         }
         currentNodes = [];
+        nodeMeshes = [];
       }
 
       /**
@@ -883,6 +889,7 @@
           mesh.userData.node = node;
           mesh.userData.baseScale = radius;
           nodeGroup.add(mesh);
+          nodeMeshes.push(mesh);
 
           // Create label sprite with better visibility
           const labelCanvas = document.createElement("canvas");
@@ -959,6 +966,7 @@
         // Raycasting for hover effects
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
+        /** @type {Set<THREE.Object3D>} */
         const hovered = new Set();
 
         function handlePointerMove(event) {
@@ -987,14 +995,14 @@
 
           // Hover detection
           raycaster.setFromCamera(pointer, camera);
-          const intersections = raycaster.intersectObjects(nodeGroup.children, false);
+          const intersections = raycaster.intersectObjects(nodeMeshes, false);
           hovered.clear();
 
           if (tooltipsEnabled && intersections.length > 0) {
-            const first = intersections[0].object;
-            if (first.userData.node) {
-              const { node } = first.userData;
-              hovered.add(first);
+            const meshHit = intersections.find((intersection) => intersection.object.userData?.node);
+            if (meshHit && meshHit.object.userData.node) {
+              const { node } = meshHit.object.userData;
+              hovered.add(meshHit.object);
               tooltipElement.innerHTML = `
                 <strong>${node.label ?? node.id}</strong><br />
                 Division: ${node.division ?? "Unknown"}<br />
