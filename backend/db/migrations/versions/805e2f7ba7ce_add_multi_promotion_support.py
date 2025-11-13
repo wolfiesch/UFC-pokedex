@@ -35,6 +35,10 @@ def upgrade() -> None:
         table_name="favorite_collections",
         if_exists=True,
     )
+    # Drop constraint if it exists, then create it (for idempotency)
+    op.execute(
+        "ALTER TABLE fighter_rankings DROP CONSTRAINT IF EXISTS uq_fighter_rankings_natural_key"
+    )
     op.create_unique_constraint(
         "uq_fighter_rankings_natural_key",
         "fighter_rankings",
