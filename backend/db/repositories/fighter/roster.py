@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 from typing import cast as typing_cast
@@ -17,10 +17,124 @@ from backend.db.repositories.fighter.filters import (
     _validate_streak_type,
     normalize_search_filters,
 )
+from backend.db.repositories.fighter.types import FighterRankingSummary
 from backend.schemas.fighter import FighterListItem
 from backend.services.image_resolver import resolve_fighter_image
 
 logger = logging.getLogger(__name__)
+
+
+def _build_roster_entries(
+    *,
+    fighters: Sequence[Fighter],
+    include_streak: bool,
+    supports_was_interim: bool,
+    streak_by_fighter: Mapping[str, Mapping[str, Any]] | None = None,
+    fight_status_by_fighter: (
+        Mapping[str, Mapping[str, date | Literal["win", "loss", "draw", "nc"] | None]]
+        | None
+    ) = None,
+    rankings_by_fighter: Mapping[str, FighterRankingSummary] | None = None,
+    reference_date: date | None = None,
+) -> list[FighterListItem]:
+    """Return serialized roster rows for ``fighters`` using shared enrichment data.
+
+    The helper centralises the transformation logic for both ``list_fighters`` and
+    ``search_fighters``.  By funnelling roster assembly through a single code path we
+    avoid subtle divergences whenever additional fields are introduced.  Each
+    collection argument defaults to an empty mapping so the helper tolerates callers
+    that opt out of a particular enrichment step (e.g., streak calculations).
+    """
+
+    # Fall back to real-time UTC "today" computations when tests or callers do not
+    # supply an explicit reference date.  The UTC timezone mirrors production
+    # behaviour and keeps age calculations deterministic when coupled with
+    # monkeypatched datetime classes inside unit tests.
+    today_utc = reference_date or datetime.now(tz=UTC).date()
+
+    streak_map = streak_by_fighter or {}
+    fight_status_map = fight_status_by_fighter or {}
+    ranking_map = rankings_by_fighter or {}
+
+    roster_entries: list[FighterListItem] = []
+    for fighter in fighters:
+        # Extract the streak payload for the current fighter when enrichment is
+        # requested.  We normalise the streak type through ``_validate_streak_type``
+        # to guarantee canonical literals even when the upstream SQL aggregation
+        # returns unexpected casing.
+        streak_bundle = streak_map.get(fighter.id, {}) if include_streak else {}
+        raw_streak_type = streak_bundle.get("current_streak_type")
+        normalized_streak_type = (
+            _validate_streak_type(typing_cast(str | None, raw_streak_type))
+            if include_streak
+            else None
+        )
+        streak_type: Literal["win", "loss", "draw", "none"] = (
+            normalized_streak_type or "none"
+        )
+        streak_count = (
+            int(streak_bundle.get("current_streak_count", 0)) if include_streak else 0
+        )
+
+        # Fight status metadata exposes lightweight scheduling context for the
+        # frontend.  Missing keys simply translate to ``None`` values in the model.
+        fight_status = fight_status_map.get(fighter.id, {})
+        next_fight_date = typing_cast(date | None, fight_status.get("next_fight_date"))
+        last_fight_result = typing_cast(
+            Literal["win", "loss", "draw", "nc"] | None,
+            fight_status.get("last_fight_result"),
+        )
+
+        # Ranking summaries highlight both the current standing and the historical
+        # peak for a fighter.  When rankings data is absent we gracefully default to
+        # ``None`` across the board, matching prior behaviour.
+        ranking = ranking_map.get(fighter.id)
+
+        roster_entries.append(
+            FighterListItem(
+                fighter_id=fighter.id,
+                detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
+                name=fighter.name,
+                nickname=fighter.nickname,
+                record=fighter.record,
+                division=fighter.division,
+                height=fighter.height,
+                weight=fighter.weight,
+                reach=fighter.reach,
+                stance=fighter.stance,
+                dob=fighter.dob,
+                age=_calculate_age(dob=fighter.dob, reference_date=today_utc),
+                image_url=resolve_fighter_image(fighter.id, fighter.image_url),
+                is_current_champion=fighter.is_current_champion,
+                is_former_champion=fighter.is_former_champion,
+                was_interim=fighter.was_interim if supports_was_interim else False,
+                current_streak_type=streak_type,
+                current_streak_count=streak_count,
+                current_rank=ranking.current_rank if ranking else None,
+                current_rank_date=ranking.current_rank_date if ranking else None,
+                current_rank_division=(
+                    ranking.current_rank_division if ranking else None
+                ),
+                current_rank_source=ranking.current_rank_source if ranking else None,
+                peak_rank=ranking.peak_rank if ranking else None,
+                peak_rank_date=ranking.peak_rank_date if ranking else None,
+                peak_rank_division=ranking.peak_rank_division if ranking else None,
+                peak_rank_source=ranking.peak_rank_source if ranking else None,
+                birthplace=fighter.birthplace,
+                birthplace_city=fighter.birthplace_city,
+                birthplace_country=fighter.birthplace_country,
+                nationality=fighter.nationality,
+                fighting_out_of=fighter.fighting_out_of,
+                training_gym=fighter.training_gym,
+                training_city=fighter.training_city,
+                training_country=fighter.training_country,
+                next_fight_date=next_fight_date,
+                last_fight_date=fighter.last_fight_date,
+                last_fight_result=last_fight_result,
+            )
+        )
+
+    return roster_entries
 
 
 class FighterRosterMixin:
@@ -110,75 +224,14 @@ class FighterRosterMixin:
 
         rankings = await self._fetch_ranking_summaries(fighter_ids)
 
-        today_utc = datetime.now(tz=UTC).date()
-        roster_entries: list[FighterListItem] = []
-        for fighter in fighters:
-            streak_bundle = streak_by_fighter.get(fighter.id, {})
-            fight_status = fight_status_by_fighter.get(fighter.id, {})
-            ranking = rankings.get(fighter.id)
-            roster_entries.append(
-                FighterListItem(
-                    fighter_id=fighter.id,
-                    detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                    name=fighter.name,
-                    nickname=fighter.nickname,
-                    record=fighter.record,
-                    division=fighter.division,
-                    height=fighter.height,
-                    weight=fighter.weight,
-                    reach=fighter.reach,
-                    stance=fighter.stance,
-                    dob=fighter.dob,
-                    age=_calculate_age(dob=fighter.dob, reference_date=today_utc),
-                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                    is_current_champion=fighter.is_current_champion,
-                    is_former_champion=fighter.is_former_champion,
-                    was_interim=fighter.was_interim if supports_was_interim else False,
-                    current_streak_type=typing_cast(
-                        Literal["win", "loss", "draw", "none"],
-                        (
-                            streak_bundle.get("current_streak_type", "none")
-                            if include_streak
-                            else "none"
-                        ),
-                    ),
-                    current_streak_count=(
-                        int(streak_bundle.get("current_streak_count", 0))
-                        if include_streak
-                        else 0
-                    ),
-                    current_rank=ranking.current_rank if ranking else None,
-                    current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=(
-                        ranking.current_rank_division if ranking else None
-                    ),
-                    current_rank_source=(
-                        ranking.current_rank_source if ranking else None
-                    ),
-                    peak_rank=ranking.peak_rank if ranking else None,
-                    peak_rank_date=ranking.peak_rank_date if ranking else None,
-                    peak_rank_division=ranking.peak_rank_division if ranking else None,
-                    peak_rank_source=ranking.peak_rank_source if ranking else None,
-                    birthplace=fighter.birthplace,
-                    birthplace_city=fighter.birthplace_city,
-                    birthplace_country=fighter.birthplace_country,
-                    nationality=fighter.nationality,
-                    fighting_out_of=fighter.fighting_out_of,
-                    training_gym=fighter.training_gym,
-                    training_city=fighter.training_city,
-                    training_country=fighter.training_country,
-                    next_fight_date=typing_cast(
-                        date | None, fight_status.get("next_fight_date")
-                    ),
-                    last_fight_date=fighter.last_fight_date,
-                    last_fight_result=typing_cast(
-                        Literal["win", "loss", "draw", "nc"] | None,
-                        fight_status.get("last_fight_result"),
-                    ),
-                )
-            )
-
-        return roster_entries
+        return _build_roster_entries(
+            fighters=fighters,
+            include_streak=include_streak,
+            supports_was_interim=supports_was_interim,
+            streak_by_fighter=streak_by_fighter,
+            fight_status_by_fighter=fight_status_by_fighter,
+            rankings_by_fighter=rankings,
+        )
 
     async def search_fighters(
         self,
@@ -298,75 +351,14 @@ class FighterRosterMixin:
         rankings = await self._fetch_ranking_summaries(fighter_ids)
         fight_status_by_fighter = await self._fetch_fight_status(fighter_ids)
 
-        today_utc = datetime.now(tz=UTC).date()
-        roster_entries: list[FighterListItem] = []
-        for fighter in fighters:
-            streak_bundle = streak_by_fighter.get(fighter.id, {})
-            fight_status = fight_status_by_fighter.get(fighter.id, {})
-            ranking = rankings.get(fighter.id)
-            roster_entries.append(
-                FighterListItem(
-                    fighter_id=fighter.id,
-                    detail_url=f"http://www.ufcstats.com/fighter-details/{fighter.id}",
-                    name=fighter.name,
-                    nickname=fighter.nickname,
-                    record=fighter.record,
-                    division=fighter.division,
-                    height=fighter.height,
-                    weight=fighter.weight,
-                    reach=fighter.reach,
-                    stance=fighter.stance,
-                    dob=fighter.dob,
-                    age=_calculate_age(dob=fighter.dob, reference_date=today_utc),
-                    image_url=resolve_fighter_image(fighter.id, fighter.image_url),
-                    is_current_champion=fighter.is_current_champion,
-                    is_former_champion=fighter.is_former_champion,
-                    was_interim=fighter.was_interim if supports_was_interim else False,
-                    current_streak_type=(
-                        _validate_streak_type(
-                            typing_cast(
-                                str | None, streak_bundle.get("current_streak_type")
-                            )
-                        )
-                        if include_streak
-                        else "none"
-                    )
-                    or "none",
-                    current_streak_count=(
-                        int(streak_bundle.get("current_streak_count", 0))
-                        if include_streak
-                        else 0
-                    ),
-                    current_rank=ranking.current_rank if ranking else None,
-                    current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=(
-                        ranking.current_rank_division if ranking else None
-                    ),
-                    current_rank_source=(
-                        ranking.current_rank_source if ranking else None
-                    ),
-                    peak_rank=ranking.peak_rank if ranking else None,
-                    peak_rank_date=ranking.peak_rank_date if ranking else None,
-                    peak_rank_division=ranking.peak_rank_division if ranking else None,
-                    peak_rank_source=ranking.peak_rank_source if ranking else None,
-                    birthplace=fighter.birthplace,
-                    birthplace_city=fighter.birthplace_city,
-                    birthplace_country=fighter.birthplace_country,
-                    nationality=fighter.nationality,
-                    fighting_out_of=fighter.fighting_out_of,
-                    training_gym=fighter.training_gym,
-                    training_city=fighter.training_city,
-                    training_country=fighter.training_country,
-                    next_fight_date=typing_cast(
-                        date | None, fight_status.get("next_fight_date")
-                    ),
-                    last_fight_date=fighter.last_fight_date,
-                    last_fight_result=typing_cast(
-                        Literal["win", "loss", "draw", "nc"] | None,
-                        fight_status.get("last_fight_result"),
-                    ),
-                )
-            )
+        roster_entries = _build_roster_entries(
+            fighters=fighters,
+            include_streak=include_streak,
+            supports_was_interim=supports_was_interim,
+            streak_by_fighter=streak_by_fighter,
+            fight_status_by_fighter=fight_status_by_fighter,
+            rankings_by_fighter=rankings,
+        )
 
         return roster_entries, total
 

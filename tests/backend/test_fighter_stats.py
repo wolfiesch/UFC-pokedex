@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime, timezone
 from pathlib import Path
+from datetime import date, datetime as dt_datetime, timezone
 from typing import Any
 
 import pytest
@@ -10,14 +11,18 @@ import pytest
 try:
     import pytest_asyncio
     from sqlalchemy import insert
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for fighter stats tests.",
         allow_module_level=True,
     )
 
-from backend.db.models import Base, Fight, Fighter, fighter_stats
+from backend.db.models import Base, Fight, Fighter, FighterRanking, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
 from backend.schemas.fighter import FighterDetail
 from scripts.load_scraped_data import (
@@ -663,3 +668,147 @@ async def test_search_fighters_filters_by_extended_win_streak(
     assert [fighter.fighter_id for fighter in fighters] == ["streaker"]
     assert fighters[0].current_streak_type == "win"
     assert fighters[0].current_streak_count == 7
+
+
+@pytest.mark.asyncio
+async def test_list_and_search_fighters_emit_identical_metadata(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ensure roster payloads remain identical across list and search helpers."""
+
+    reference_date = date(2024, 6, 1)
+
+    class FrozenDateTime(dt_datetime):
+        """Deterministic datetime shim returning ``reference_date`` in UTC."""
+
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> dt_datetime:  # type: ignore[override]
+            """Return a timezone-aware timestamp anchored to ``reference_date``."""
+
+            reference_moment = dt_datetime(
+                reference_date.year,
+                reference_date.month,
+                reference_date.day,
+                tzinfo=timezone.utc,
+            )
+            return reference_moment if tz is None else reference_moment.astimezone(tz)
+
+    # Patch the repository module so age calculations use our deterministic anchor.
+    monkeypatch.setattr(
+        "backend.db.repositories.fighter.roster.datetime",
+        FrozenDateTime,
+        raising=False,
+    )
+
+    roster_fighter = Fighter(
+        id="mirror-champion",
+        name="Mirror Champion",
+        nickname="The Parity",
+        record="12-3-0",
+        division="Lightweight",
+        height="5'10\"",
+        weight="155 lbs",
+        reach='72"',
+        stance="Orthodox",
+        dob=date(1990, 6, 1),
+        image_url="https://cdn.ufc.example/mirror.jpg",
+        is_current_champion=True,
+        is_former_champion=True,
+        was_interim=True,
+        nationality="American",
+        birthplace="Boston, Massachusetts",
+        birthplace_city="Boston",
+        birthplace_country="United States",
+        fighting_out_of="Las Vegas, Nevada",
+        training_gym="Extreme Couture",
+        training_city="Las Vegas",
+        training_country="United States",
+        last_fight_date=date(2024, 5, 20),
+    )
+    session.add(roster_fighter)
+
+    session.add_all(
+        [
+            FighterRanking(
+                fighter_id="mirror-champion",
+                rank=2,
+                rank_date=date(2024, 5, 1),
+                division="Lightweight",
+                source="fightmatrix",
+            ),
+            FighterRanking(
+                fighter_id="mirror-champion",
+                rank=1,
+                rank_date=date(2023, 6, 1),
+                division="Lightweight",
+                source="fightmatrix",
+            ),
+        ]
+    )
+
+    # Populate a mix of historical wins plus a future scheduled fight to exercise
+    # streak calculations and fight status enrichment simultaneously.
+    session.add(
+        Fight(
+            id="mirror-upcoming",
+            fighter_id="mirror-champion",
+            opponent_id="contender-1",
+            opponent_name="Future Challenger",
+            event_name="Future Card",
+            event_date=date(2024, 12, 25),
+            result="Next",
+            method=None,
+            round=None,
+            time=None,
+            fight_card_url=None,
+        )
+    )
+
+    historical_results = [
+        ("mirror-win-1", date(2024, 5, 20), "Win"),
+        ("mirror-win-2", date(2024, 4, 15), "Win"),
+        ("mirror-win-3", date(2024, 3, 10), "Win"),
+        ("mirror-loss", date(2024, 1, 5), "Loss"),
+    ]
+    for fight_id, event_date, result in historical_results:
+        session.add(
+            Fight(
+                id=fight_id,
+                fighter_id="mirror-champion",
+                opponent_id=f"opponent-{fight_id}",
+                opponent_name=f"Opponent {fight_id}",
+                event_name=f"Event {fight_id}",
+                event_date=event_date,
+                result=result,
+                method="Decision",
+                round=3,
+                time="05:00",
+                fight_card_url=None,
+            )
+        )
+
+    await session.flush()
+
+    repo = PostgreSQLFighterRepository(session)
+
+    list_entries = list(await repo.list_fighters(include_streak=True, streak_window=10))
+    search_entries, total = await repo.search_fighters(
+        query="Mirror",
+        include_streak=True,
+        streak_window=10,
+    )
+
+    assert total == 1
+    assert len(list_entries) == 1
+    assert len(search_entries) == 1
+
+    list_payload = list_entries[0].model_dump()
+    search_payload = search_entries[0].model_dump()
+
+    # Check a few representative enriched fields before performing a deep equality
+    # assertion so failures provide actionable debugging context.
+    assert list_payload["current_rank"] == 2
+    assert list_payload["next_fight_date"] == date(2024, 12, 25)
+    assert list_payload["last_fight_result"] == "win"
+
+    assert list_payload == search_payload
