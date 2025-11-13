@@ -38,3 +38,16 @@ export function normalizeFilters(
     includeUpcoming: Boolean(filters.includeUpcoming),
   };
 }
+
+export function filtersEqual(
+  a: FightGraphQueryParams,
+  b: FightGraphQueryParams,
+): boolean {
+  return (
+    (a.division ?? null) === (b.division ?? null) &&
+    (a.startYear ?? null) === (b.startYear ?? null) &&
+    (a.endYear ?? null) === (b.endYear ?? null) &&
+    clampLimit(a.limit ?? null) === clampLimit(b.limit ?? null) &&
+    Boolean(a.includeUpcoming) === Boolean(b.includeUpcoming)
+  );
+}

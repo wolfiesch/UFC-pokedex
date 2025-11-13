@@ -30,6 +30,7 @@ import type {
   StatsTrendsResponse,
 } from "./types";
 import client from "./api-client";
+import { fetchFightGraph } from "./api/fightGraph";
 import { ApiError, NotFoundError } from "./errors";
 import {
   DEFAULT_CLIENT_API_BASE_URL,
@@ -819,39 +820,7 @@ export async function deleteFavoriteEntry(
 export async function getFightGraph(
   params: FightGraphQueryParams = {}
 ) {
-  const queryParams: Record<string, string | number | boolean> = {};
-
-  if (params.division && params.division.trim().length > 0) {
-    queryParams.division = params.division;
-  }
-  if (typeof params.startYear === "number") {
-    queryParams.start_year = params.startYear;
-  }
-  if (typeof params.endYear === "number") {
-    queryParams.end_year = params.endYear;
-  }
-  if (typeof params.limit === "number") {
-    queryParams.limit = params.limit;
-  }
-  if (typeof params.includeUpcoming === "boolean") {
-    queryParams.include_upcoming = params.includeUpcoming;
-  }
-
-  const { data, error } = await client.GET("/fightweb/graph", {
-    params: {
-      query: Object.keys(queryParams).length > 0 ? queryParams : undefined,
-    },
-  });
-
-  if (error) {
-    throwApiError(error, "Failed to fetch fight graph");
-  }
-
-  if (!data) {
-    throw new ApiError("No graph data returned", { statusCode: 500 });
-  }
-
-  return data;
+  return fetchFightGraph(params);
 }
 
 /**
