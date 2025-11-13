@@ -92,8 +92,8 @@ describe("graph-layout utilities", () => {
   it("builds a stable color palette for divisions", () => {
     const palette = createDivisionColorScale(sampleGraph.nodes);
     expect(palette.size).toBe(2);
-    expect(palette.get("Featherweight")).toBeDefined();
-    expect(palette.get("Lightweight")).toBeDefined();
+    expect(palette.get("Featherweight")?.base).toMatch(/^#/);
+    expect(palette.get("Lightweight")?.base).toMatch(/^#/);
   });
 
   it("derives event year bounds from metadata when available", () => {

@@ -1,23 +1,16 @@
+import {
+  DEFAULT_DIVISION_RAMP,
+  getDivisionColorRamp,
+  type ColorVisionMode,
+  type DivisionColorRamp,
+} from "@/constants/divisionColors";
 import type {
   FightGraphLink,
   FightGraphNode,
   FightGraphResponse,
 } from "@/lib/types";
 
-const COLOR_PALETTE = [
-  "#2563eb",
-  "#f97316",
-  "#10b981",
-  "#a855f7",
-  "#ec4899",
-  "#facc15",
-  "#14b8a6",
-  "#f43f5e",
-  "#0ea5e9",
-  "#22c55e",
-];
-
-export const DEFAULT_NODE_COLOR = "#64748b";
+export const DEFAULT_NODE_COLOR = DEFAULT_DIVISION_RAMP.base;
 
 export interface LayoutNode extends FightGraphNode {
   id: string;
@@ -224,10 +217,9 @@ export function computeForceLayout(
 }
 
 export function createDivisionColorScale(
-  nodes: FightGraphNode[]
-): Map<string, string> {
-  const palette = new Map<string, string>();
-  let paletteIndex = 0;
+  nodes: FightGraphNode[],
+): Map<string, DivisionColorRamp> {
+  const palette = new Map<string, DivisionColorRamp>();
 
   for (const node of nodes) {
     const division =
@@ -237,8 +229,7 @@ export function createDivisionColorScale(
     if (!division || palette.has(division)) {
       continue;
     }
-    palette.set(division, COLOR_PALETTE[paletteIndex % COLOR_PALETTE.length]);
-    paletteIndex += 1;
+    palette.set(division, getDivisionColorRamp(division));
   }
 
   return palette;
@@ -246,12 +237,16 @@ export function createDivisionColorScale(
 
 export function colorForDivision(
   division: string | null | undefined,
-  palette: Map<string, string>
+  palette: Map<string, DivisionColorRamp>,
+  mode: ColorVisionMode = "standard",
 ): string {
   if (!division) {
-    return DEFAULT_NODE_COLOR;
+    return mode === "colorblind"
+      ? DEFAULT_DIVISION_RAMP.colorblind
+      : DEFAULT_NODE_COLOR;
   }
-  return palette.get(division) ?? DEFAULT_NODE_COLOR;
+  const ramp = palette.get(division) ?? getDivisionColorRamp(division);
+  return mode === "colorblind" ? ramp.colorblind : ramp.base;
 }
 
 /**
@@ -331,7 +326,8 @@ function hslToHex(h: number, s: number, l: number): string {
  */
 export function createRecencyColorScale(
   nodes: FightGraphNode[],
-  divisionColor: string
+  divisionRamp: DivisionColorRamp,
+  mode: ColorVisionMode = "standard",
 ): Map<string, string> {
   const colorMap = new Map<string, string>();
 
@@ -362,8 +358,10 @@ export function createRecencyColorScale(
 
   if (dates.length === 0) {
     // No valid dates, return default color for all nodes
+    const fallbackColor =
+      mode === "colorblind" ? divisionRamp.colorblind : divisionRamp.base;
     for (const node of nodes) {
-      colorMap.set(node.fighter_id, divisionColor);
+      colorMap.set(node.fighter_id, fallbackColor);
     }
     return colorMap;
   }
@@ -375,11 +373,13 @@ export function createRecencyColorScale(
   const dateRange = maxTimestamp - minTimestamp;
 
   // Convert base color to HSL
-  const baseHsl = hexToHsl(divisionColor);
+  const baseColor =
+    mode === "colorblind" ? divisionRamp.colorblind : divisionRamp.base;
+  const baseHsl = hexToHsl(baseColor);
   if (!baseHsl) {
     // Fallback if color conversion fails
     for (const node of nodes) {
-      colorMap.set(node.fighter_id, divisionColor);
+      colorMap.set(node.fighter_id, baseColor);
     }
     return colorMap;
   }

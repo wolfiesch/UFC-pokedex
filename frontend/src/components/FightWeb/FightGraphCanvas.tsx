@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  resolveDivisionGlow,
+  type ColorVisionMode,
+  type DivisionColorRamp,
+} from "@/constants/divisionColors";
+import { useColorVisionMode } from "@/hooks/useColorVisionMode";
 import type { FightGraphResponse } from "@/lib/types";
 
 import {
@@ -17,8 +23,9 @@ type FightGraphCanvasProps = {
   isLoading?: boolean;
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
-  palette?: Map<string, string> | null;
+  palette?: Map<string, DivisionColorRamp> | null;
   nodeColorMap?: Map<string, string> | null;
+  isolatedDivision?: string | null;
   minFightsThreshold?: number; // Add this prop
 };
 
@@ -38,6 +45,8 @@ interface RenderEdge extends LayoutEdge {
   sourceY: number;
   targetX: number;
   targetY: number;
+  sourceDivision: string | null | undefined;
+  targetDivision: string | null | undefined;
 }
 
 const CANVAS_HEIGHT = 520;
@@ -49,6 +58,7 @@ export function FightGraphCanvas({
   onSelectNode,
   palette: paletteProp = null,
   nodeColorMap = null,
+  isolatedDivision = null,
   minFightsThreshold = 2, // Default: show edges with 2+ fights
 }: FightGraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -69,6 +79,7 @@ export function FightGraphCanvas({
     translateY: 0,
   });
   const [isPanning, setIsPanning] = useState(false);
+  const colorVisionMode = useColorVisionMode();
   const panOrigin = useRef<{
     x: number;
     y: number;
@@ -111,12 +122,19 @@ export function FightGraphCanvas({
       return paletteProp;
     }
     if (!data) {
-      return new Map<string, string>();
+      return new Map<string, DivisionColorRamp>();
     }
     return createDivisionColorScale(data.nodes);
   }, [data, paletteProp]);
 
   const focusNodeId = hoveredNodeId ?? selectedNodeId ?? null;
+  const isolatedKey = useMemo(() => {
+    if (!isolatedDivision) {
+      return null;
+    }
+    const trimmed = isolatedDivision.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, [isolatedDivision]);
 
   const renderGraph = useMemo(() => {
     if (!layout) {
@@ -168,12 +186,20 @@ export function FightGraphCanvas({
           sourceY: source.py,
           targetX: target.px,
           targetY: target.py,
+          sourceDivision: source.division,
+          targetDivision: target.division,
         };
       })
       .filter((edge): edge is RenderEdge => edge !== null);
 
     return { nodes, edges, nodeMap };
-  }, [layout, size.height, size.width, focusNodeId, minFightsThreshold]); // Add minFightsThreshold
+  }, [
+    layout,
+    size.height,
+    size.width,
+    focusNodeId,
+    minFightsThreshold,
+  ]);
 
   const nodeMap = useMemo(() => {
     if (!renderGraph) {
@@ -370,16 +396,24 @@ export function FightGraphCanvas({
               const isConnected =
                 focusNodeId !== null &&
                 (edge.source === focusNodeId || edge.target === focusNodeId);
-              
+
+              const edgeTouchesIsolation =
+                !isolatedKey ||
+                (edge.sourceDivision?.trim() === isolatedKey ||
+                  edge.targetDivision?.trim() === isolatedKey);
+
               // Much lower base opacity to reduce visual noise
               const baseOpacity = focusNodeId
-                ? isConnected ? 0.9 : 0.08  // Very dim when not connected
-                : 0.2;  // Lower default opacity (was 0.45)
-              
+                ? isConnected
+                  ? 0.9
+                  : 0.08
+                : 0.2;
+              const isolationOpacity = edgeTouchesIsolation ? 1 : 0.1;
+
               // Thinner edges for weaker connections
               const strokeWidth = focusNodeId && isConnected
-                ? Math.min(6, 1.5 + Math.log(edge.fights + 1) * 1.2)  // Thicker when focused
-                : Math.min(2, 0.8 + Math.log(edge.fights + 1) * 0.4);  // Thinner by default
+                ? Math.min(6, 1.5 + Math.log(edge.fights + 1) * 1.2)
+                : Math.min(2, 0.8 + Math.log(edge.fights + 1) * 0.4);
               
               // Calculate control point for curve (perpendicular midpoint)
               const dx = edge.targetX - edge.sourceX;
@@ -399,7 +433,7 @@ export function FightGraphCanvas({
                   fill="none"
                   stroke="hsl(var(--foreground) / 0.4)"  // Lighter color
                   strokeWidth={strokeWidth}
-                  strokeOpacity={baseOpacity}
+                  strokeOpacity={baseOpacity * isolationOpacity}
                   strokeLinecap="round"
                   pointerEvents="none"
                   style={{
@@ -415,18 +449,24 @@ export function FightGraphCanvas({
                 focusNodeId !== null &&
                 focusNeighbors.has(node.id) &&
                 node.id !== focusNodeId;
-              const opacity =
+              const divisionKey = node.division?.trim() ?? null;
+              const matchesIsolation = !isolatedKey || divisionKey === isolatedKey;
+              const baseOpacity =
                 focusNodeId === null
                   ? 0.95
                   : isFocus || isNeighbor
                     ? 0.95
                     : 0.2;
+              const opacity = matchesIsolation ? baseOpacity : Math.min(0.12, baseOpacity);
               const strokeWidth = isFocus ? 3 : isNeighbor ? 2 : 1.2;
-              // Use nodeColorMap if available (for recency-based coloring in single division),
-              // otherwise fall back to division-based coloring
               const fillColor =
                 nodeColorMap?.get(node.id) ??
-                colorForDivision(node.division, palette);
+                colorForDivision(node.division, palette, colorVisionMode);
+              const glowFilter = computeNodeGlow(
+                node,
+                palette,
+                colorVisionMode,
+              );
 
               return (
                 <g key={node.id}>
@@ -439,6 +479,7 @@ export function FightGraphCanvas({
                     stroke="var(--background)"
                     strokeWidth={strokeWidth}
                     opacity={opacity}
+                    style={glowFilter ? { filter: glowFilter } : undefined}
                     onPointerEnter={(event) =>
                       handleNodePointerEnter(node, event)
                     }
@@ -499,4 +540,53 @@ export function FightGraphCanvas({
       </div>
     </div>
   );
+}
+
+function normalizeRankValue(rank: number | null | undefined): number | null {
+  if (rank === null || rank === undefined) {
+    return null;
+  }
+  if (rank <= 0) {
+    return 1;
+  }
+  const scaled = 1 - Math.min(1, (rank - 1) / 14);
+  return Number.isFinite(scaled) ? scaled : null;
+}
+
+function computeNodeGlow(
+  node: RenderNode,
+  palette: Map<string, DivisionColorRamp>,
+  mode: ColorVisionMode,
+): string | null {
+  const current = normalizeRankValue(node.current_rank);
+  const peak = normalizeRankValue(node.peak_rank);
+  const weight =
+    current !== null
+      ? current
+      : peak !== null
+        ? peak * 0.6
+        : null;
+
+  if (weight === null || weight <= 0) {
+    return null;
+  }
+
+  const divisionKey = node.division?.trim() ?? null;
+  const ramp = divisionKey ? palette.get(divisionKey) ?? null : null;
+  const glowHex = ramp?.glow ?? resolveDivisionGlow(divisionKey);
+  const blurRadius = 6 + weight * 10;
+  const alpha = Math.min(
+    1,
+    (mode === "colorblind" ? 0.35 : 0.25) + weight * 0.35,
+  );
+  return `drop-shadow(0 0 ${blurRadius.toFixed(2)}px ${hexToRgba(glowHex, alpha)})`;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace("#", "");
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  const clampedAlpha = Math.min(1, Math.max(0, alpha));
+  return `rgba(${r}, ${g}, ${b}, ${clampedAlpha.toFixed(2)})`;
 }
