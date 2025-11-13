@@ -10,10 +10,10 @@ This repository handles:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar, Mapping
+from typing import ClassVar
 
 from sqlalchemy import Date, Float, Integer, case, cast, func, select
 from sqlalchemy.sql import ColumnElement
@@ -21,21 +21,21 @@ from sqlalchemy.sql import ColumnElement
 from backend.db.models import Fight, Fighter, fighter_stats
 from backend.db.repositories.base import BaseRepository
 from backend.schemas.stats import (
-    AverageFightDuration,
     LEADERBOARD_METRIC_DESCRIPTIONS,
-    LeaderboardDefinition,
-    LeaderboardEntry,
-    LeaderboardsResponse,
-    LeaderboardMetricId,
     SUMMARY_METRIC_DESCRIPTIONS,
     SUMMARY_METRIC_LABELS,
+    AverageFightDuration,
+    LeaderboardDefinition,
+    LeaderboardEntry,
+    LeaderboardMetricId,
+    LeaderboardsResponse,
     StatsSummaryMetric,
     StatsSummaryMetricId,
     StatsSummaryResponse,
     TrendPoint,
     TrendSeries,
-    TrendTimeBucket,
     TrendsResponse,
+    TrendTimeBucket,
     WinStreakSummary,
 )
 
@@ -54,9 +54,7 @@ class StatsRepository(BaseRepository):
     """Repository for analytics and aggregate statistics using SQL window functions."""
 
     _WIN_RESULTS: ClassVar[set[str]] = {"w", "win"}
-    _SUMMARY_METRIC_PRECISION: ClassVar[
-        Mapping[StatsSummaryMetricId, int]
-    ] = {
+    _SUMMARY_METRIC_PRECISION: ClassVar[Mapping[StatsSummaryMetricId, int]] = {
         "avg_sig_strikes_accuracy_pct": 1,
         "avg_takedown_accuracy_pct": 1,
         "avg_submission_attempts": 2,
@@ -145,7 +143,7 @@ class StatsRepository(BaseRepository):
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Compute leaderboard slices for accuracy and submission metrics with filtering and pagination."""
+        """Compute leaderboards with filtering and pagination support."""
 
         leaderboards: list[_LeaderboardPayload] = []
 
@@ -314,11 +312,7 @@ class StatsRepository(BaseRepository):
             .join(Fighter, Fighter.id == fighter_stats.c.fighter_id)
             .where(fighter_stats.c.metric == metric_name)
             .where(numeric_value.isnot(None))
-            .group_by(
-                fighter_stats.c.fighter_id,
-                Fighter.name,
-                Fighter.division
-            )
+            .group_by(fighter_stats.c.fighter_id, Fighter.name, Fighter.division)
         )
 
         # Apply division filter
@@ -609,21 +603,10 @@ class StatsRepository(BaseRepository):
         return durations
 
     def _fight_duration_seconds_expression(self) -> ColumnElement[float | None]:
-        """Translate fight round/time combination to elapsed seconds in SQL."""
+        """Translate fight round/time combination to elapsed seconds using PostgreSQL functions."""
 
-        if self._dialect_name() == "sqlite":
-            colon_index = func.instr(Fight.time, ":")
-            raw_minutes = case(
-                (colon_index > 0, func.substr(Fight.time, 1, colon_index - 1)),
-                else_=None,
-            )
-            raw_seconds = case(
-                (colon_index > 0, func.substr(Fight.time, colon_index + 1)),
-                else_=None,
-            )
-        else:
-            raw_minutes = func.split_part(Fight.time, ":", 1)
-            raw_seconds = func.split_part(Fight.time, ":", 2)
+        raw_minutes = func.split_part(Fight.time, ":", 1)
+        raw_seconds = func.split_part(Fight.time, ":", 2)
 
         minute_text = func.nullif(func.nullif(raw_minutes, ""), "--")
         second_text = func.nullif(func.nullif(raw_seconds, ""), "--")
@@ -648,40 +631,10 @@ class StatsRepository(BaseRepository):
         )
 
     def _bucket_start_expression(self, bucket: TrendTimeBucket) -> ColumnElement[date]:
-        """Return a SQL expression resolving the bucket start for the requested interval."""
-
-        if self._dialect_name() == "sqlite":
-            year_text = func.strftime("%Y", Fight.event_date)
-
-            if bucket == "year":
-                return cast(func.date(func.printf("%s-01-01", year_text)), Date)
-
-            if bucket == "quarter":
-                month_text = func.strftime("%m", Fight.event_date)
-                quarter_start = case(
-                    (month_text.in_(("01", "02", "03")), "01"),
-                    (month_text.in_(("04", "05", "06")), "04"),
-                    (month_text.in_(("07", "08", "09")), "07"),
-                    else_="10",
-                )
-                return cast(
-                    func.date(func.printf("%s-%s-01", year_text, quarter_start)),
-                    Date,
-                )
-
-            return cast(
-                func.date(func.strftime("%Y-%m-01", Fight.event_date)),
-                Date,
-            )
+        """Return the PostgreSQL date_trunc bucket start for the requested interval."""
 
         truncate_unit = {"year": "year", "quarter": "quarter"}.get(bucket, "month")
         return cast(func.date_trunc(truncate_unit, Fight.event_date), Date)
-
-    def _dialect_name(self) -> str:
-        bind = self._session.bind
-        if bind is None:
-            return ""
-        return bind.dialect.name
 
     def _format_bucket_label(self, bucket_start: date, bucket: TrendTimeBucket) -> str:
         """Format a human readable label for the supplied bucket start."""
