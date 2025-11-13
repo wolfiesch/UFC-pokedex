@@ -2,8 +2,6 @@ import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
-from contextvars import ContextVar
-from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -46,12 +44,12 @@ from .api import (
     search,
     stats,
 )
-from .schemas.error import (
-    ErrorResponse,
-    ErrorType,
-    ValidationErrorDetail,
-    ValidationErrorResponse,
+from .schemas.error import ErrorType, ValidationErrorDetail
+from .utils.error_responses import (
+    build_error_response,
+    build_validation_error_response,
 )
+from .utils.request_context import get_request_id, set_request_id
 
 # Load environment variables from .env file
 load_dotenv()
@@ -94,10 +92,6 @@ def validate_environment() -> None:
     """Public wrapper ensuring CLI tools can trigger configuration validation."""
 
     _validate_environment()
-
-
-# Context variable for request ID tracking
-request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 
 
 def _sanitize_database_url(url: str) -> str:
@@ -296,7 +290,7 @@ app.add_middleware(
 async def add_request_id(request: Request, call_next):
     """Add unique request ID to each request for tracking."""
     request_id = str(uuid.uuid4())
-    request_id_context.set(request_id)
+    set_request_id(request_id)
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
@@ -306,7 +300,6 @@ async def add_request_id(request: Request, call_next):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle FastAPI request validation errors."""
-    request_id = request_id_context.get()
     errors = [
         ValidationErrorDetail(
             field=".".join(str(loc) for loc in error["loc"]),
@@ -317,16 +310,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     ]
 
     logger.warning(
-        f"Validation error for request {request_id} to {request.url.path}: {len(errors)} errors"
+        "Validation error for request %s to %s: %s errors",
+        get_request_id(),
+        request.url.path,
+        len(errors),
     )
 
-    error_response = ValidationErrorResponse(
-        error_type=ErrorType.VALIDATION_ERROR,
+    error_response = build_validation_error_response(
         message="Request validation failed",
         detail=f"{len(errors)} validation error(s)",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         errors=errors,
     )
@@ -340,7 +333,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(ValidationError)
 async def pydantic_validation_exception_handler(request: Request, exc: ValidationError):
     """Handle Pydantic validation errors."""
-    request_id = request_id_context.get()
     errors = [
         ValidationErrorDetail(
             field=".".join(str(loc) for loc in error["loc"]),
@@ -352,18 +344,15 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
 
     logger.warning(
         "Pydantic validation error for request %s to %s: %s errors",
-        request_id,
+        get_request_id(),
         request.url.path,
         len(errors),
     )
 
-    error_response = ValidationErrorResponse(
-        error_type=ErrorType.VALIDATION_ERROR,
+    error_response = build_validation_error_response(
         message="Data validation failed",
         detail=f"{len(errors)} validation error(s)",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         errors=errors,
     )
@@ -378,18 +367,18 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
 @app.exception_handler(DBAPIError)
 async def database_connection_exception_handler(request: Request, exc: Exception):
     """Handle database connection errors."""
-    request_id = request_id_context.get()
     logger.error(
-        f"Database connection error for request {request_id} to {request.url.path}: {str(exc)}"
+        "Database connection error for request %s to %s: %s",
+        get_request_id(),
+        request.url.path,
+        str(exc),
     )
 
-    error_response = ErrorResponse(
+    error_response = build_error_response(
         error_type=ErrorType.DATABASE_ERROR,
         message="Database connection failed",
         detail="Unable to connect to the database. Please try again later.",
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         retry_after=5,
     )
@@ -405,18 +394,18 @@ async def database_timeout_exception_handler(
     request: Request, exc: SQLAlchemyTimeoutError
 ):
     """Handle database query timeout errors."""
-    request_id = request_id_context.get()
     logger.error(
-        f"Database timeout error for request {request_id} to {request.url.path}: {str(exc)}"
+        "Database timeout error for request %s to %s: %s",
+        get_request_id(),
+        request.url.path,
+        str(exc),
     )
 
-    error_response = ErrorResponse(
+    error_response = build_error_response(
         error_type=ErrorType.TIMEOUT_ERROR,
         message="Database query timeout",
         detail="The database query took too long to complete. Please try again.",
         status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         retry_after=3,
     )
@@ -430,18 +419,18 @@ async def database_timeout_exception_handler(
 @app.exception_handler(IntegrityError)
 async def database_integrity_exception_handler(request: Request, exc: IntegrityError):
     """Handle database integrity constraint errors."""
-    request_id = request_id_context.get()
     logger.error(
-        f"Database integrity error for request {request_id} to {request.url.path}: {str(exc)}"
+        "Database integrity error for request %s to %s: %s",
+        get_request_id(),
+        request.url.path,
+        str(exc),
     )
 
-    error_response = ErrorResponse(
+    error_response = build_error_response(
         error_type=ErrorType.DATABASE_ERROR,
         message="Data integrity constraint violation",
         detail="The operation would violate a database constraint.",
         status_code=status.HTTP_409_CONFLICT,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
     )
 
@@ -454,18 +443,18 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 @app.exception_handler(DatabaseError)
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
-    request_id = request_id_context.get()
     logger.error(
-        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
+        "Database error for request %s to %s: %s",
+        get_request_id(),
+        request.url.path,
+        str(exc),
     )
 
-    error_response = ErrorResponse(
+    error_response = build_error_response(
         error_type=ErrorType.DATABASE_ERROR,
         message="Database operation failed",
         detail="An error occurred while accessing the database. Please try again.",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         retry_after=3,
     )
@@ -479,18 +468,18 @@ async def database_generic_exception_handler(request: Request, exc: DatabaseErro
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     """Handle all other unhandled exceptions."""
-    request_id = request_id_context.get()
     logger.exception(
-        f"Unhandled exception for request {request_id} to {request.url.path}: {type(exc).__name__}"
+        "Unhandled exception for request %s to %s: %s",
+        get_request_id(),
+        request.url.path,
+        type(exc).__name__,
     )
 
-    error_response = ErrorResponse(
+    error_response = build_error_response(
         error_type=ErrorType.INTERNAL_ERROR,
         message="Internal server error",
         detail=f"An unexpected error occurred: {type(exc).__name__}",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        timestamp=datetime.now(UTC),
-        request_id=request_id,
         path=str(request.url.path),
         retry_after=5,
     )
