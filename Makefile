@@ -64,11 +64,20 @@ dev-tunnel: ensure-docker ## Start backend + frontend with Cloudflare tunnel (pu
 	@sleep 1
 	@echo ""
 	@echo "🚇 Starting Cloudflare tunnel..."
+	@rm -f /tmp/tunnel.log
 	@cloudflared tunnel --url http://localhost:3000 > /tmp/tunnel.log 2>&1 &
-	@sleep 3
-	@TUNNEL_URL=$$(grep -o 'https://[^[:space:]]*\.trycloudflare.com' /tmp/tunnel.log | head -1); \
+	@echo "⏳ Waiting for tunnel URL..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		sleep 1; \
+		TUNNEL_URL=$$(grep -o 'https://[^[:space:]]*\.trycloudflare.com' /tmp/tunnel.log 2>/dev/null | head -1); \
+		if [ -n "$$TUNNEL_URL" ]; then \
+			break; \
+		fi; \
+	done; \
+	TUNNEL_URL=$$(grep -o 'https://[^[:space:]]*\.trycloudflare.com' /tmp/tunnel.log 2>/dev/null | head -1); \
 	if [ -z "$$TUNNEL_URL" ]; then \
-		echo "❌ Failed to get tunnel URL"; \
+		echo "❌ Failed to get tunnel URL after 10 seconds"; \
+		echo "📋 Check tunnel log: tail -f /tmp/tunnel.log"; \
 		exit 1; \
 	fi; \
 	echo "✅ Tunnel started: $$TUNNEL_URL"; \
@@ -700,20 +709,20 @@ scrape-line-movement-dry-run: ## Preview what events would be scraped for line m
 		--organization UFC \
 		--dry-run
 
-scrape-mean-odds-test: ## Test mean odds scraper with 5 fighters (~1 minute)
+scrape-mean-odds-test: ## Test mean odds scraper with 5 fighters (~2 minutes)
 	@echo "Testing mean odds scraper with 5 fighters..."
 	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --limit 5 --batch-size 2
 
-scrape-mean-odds-sample: ## Scrape mean odds for 50 fighters (~7 minutes)
+scrape-mean-odds-sample: ## Scrape mean odds for 50 fighters (~15-20 minutes)
 	@echo "Scraping mean odds for 50 fighters..."
 	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --limit 50 --batch-size 10
 
-scrape-mean-odds-full: ## Scrape mean odds for ALL 1,262 fighters (~2.5 hours)
+scrape-mean-odds-full: ## Scrape mean odds for ALL 1,262 fighters (~5-7 hours)
 	@echo "================================================"
 	@echo "Mean Odds Full Scrape"
 	@echo "================================================"
 	@echo "Total fighters: 1,262"
-	@echo "Estimated time: 2.5 hours"
+	@echo "Estimated time: 5-7 hours"
 	@echo "Output: data/raw/bfo_fighter_mean_odds.jsonl"
 	@echo "================================================"
 	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --batch-size 20

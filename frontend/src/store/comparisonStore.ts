@@ -1,6 +1,6 @@
 "use client";
 
-import { create } from "zustand";
+import { createWithEqualityFn } from "zustand/traditional";
 import { persist } from "zustand/middleware";
 
 type ComparisonState = {
@@ -14,7 +14,7 @@ type ComparisonState = {
 
 const MAX_COMPARISON = 4;
 
-export const useComparisonStore = create<ComparisonState>()(
+export const useComparisonStore = createWithEqualityFn<ComparisonState>()(
   persist(
     (set, get) => ({
       comparisonList: [],

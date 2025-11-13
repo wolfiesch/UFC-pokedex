@@ -1,6 +1,6 @@
 "use client";
 
-import { create } from "zustand";
+import { createWithEqualityFn } from "zustand/traditional";
 
 type FavoritesFiltersState = {
   searchTerm: string;
@@ -31,7 +31,7 @@ const defaultFilters = {
   lossStreakCount: null as number | null,
 };
 
-export const useFavoritesFiltersStore = create<FavoritesFiltersState>((set, get) => ({
+export const useFavoritesFiltersStore = createWithEqualityFn<FavoritesFiltersState>((set, get) => ({
   ...defaultFilters,
   setSearchTerm: (term) => set({ searchTerm: term }),
   setStanceFilter: (stance) => set({ stanceFilter: stance }),

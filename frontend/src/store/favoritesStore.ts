@@ -1,6 +1,6 @@
 "use client";
 
-import { create } from "zustand";
+import { createWithEqualityFn } from "zustand/traditional";
 
 import type { FighterListItem } from "@/lib/types";
 import type { FavoriteCollectionDetail, FavoriteEntry } from "@/lib/types";
@@ -86,7 +86,7 @@ type FavoritesState = {
 
 const initialDerivedState = deriveFavoritesSnapshot(null);
 
-export const useFavoritesStore = create<FavoritesState>((set, get) => ({
+export const useFavoritesStore = createWithEqualityFn<FavoritesState>((set, get) => ({
   // Initial state
   ...initialDerivedState,
   isLoading: false,

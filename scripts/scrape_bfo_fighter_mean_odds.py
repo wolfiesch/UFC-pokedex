@@ -149,13 +149,14 @@ def main():
 
     print(f"\nProcessing in {len(batches)} batches of {args.batch_size} fighters")
 
-    # Estimate time (based on ~8s per fighter from testing)
-    estimated_seconds = len(all_urls) * 8
+    # Estimate time (based on ~15-20s per fighter with modal clicking)
+    estimated_seconds = len(all_urls) * 18  # Using 18s as middle estimate
     estimated_time = timedelta(seconds=estimated_seconds)
     estimated_end = datetime.now() + estimated_time
 
     print(f"Estimated time: {estimated_time}")
     print(f"Estimated completion: {estimated_end.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Note: Time per fighter varies based on number of fights (avg ~15-20s)")
 
     # Confirm before starting
     if len(all_urls) > 50:
