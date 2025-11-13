@@ -642,13 +642,87 @@
       }
 
       /**
+       * Parse a fighter record string (e.g., "23-5-0 (1 NC)") into structured values
+       * while keeping a human-readable fallback for display.
+       *
+       * @param {string | null | undefined} recordString
+       * @returns {{ wins: number | null, losses: number | null, draws: number | null, noContests: number | null, formatted: string, total: number | null }}
+       */
+      function parseRecordDetails(recordString) {
+        if (typeof recordString !== "string" || recordString.trim().length === 0) {
+          return {
+            wins: null,
+            losses: null,
+            draws: null,
+            noContests: null,
+            formatted: "Unknown",
+            total: null,
+          };
+        }
+
+        const primaryMatch = recordString.match(/(\d+)\s*-\s*(\d+)\s*-\s*(\d+)/);
+        const wins = primaryMatch ? Number.parseInt(primaryMatch[1], 10) : null;
+        const losses = primaryMatch ? Number.parseInt(primaryMatch[2], 10) : null;
+        const draws = primaryMatch ? Number.parseInt(primaryMatch[3], 10) : null;
+
+        const noContestMatch = recordString.match(/(\d+)\s*NC/i);
+        const noContests = noContestMatch ? Number.parseInt(noContestMatch[1], 10) : null;
+
+        const formattedParts = [];
+        if (wins !== null && losses !== null && draws !== null) {
+          formattedParts.push(`${wins}-${losses}-${draws}`);
+        }
+        if (noContests !== null) {
+          formattedParts.push(`(${noContests} NC)`);
+        }
+
+        const formatted = formattedParts.length > 0
+          ? formattedParts.join(" ")
+          : recordString.trim();
+
+        const numericValues = [wins, losses, draws, noContests];
+        const hasAnyNumeric = numericValues.some((value) => Number.isFinite(value));
+        const total = hasAnyNumeric
+          ? numericValues.reduce((sum, value) => sum + (Number.isFinite(value) ? Number(value) : 0), 0)
+          : null;
+
+        return { wins, losses, draws, noContests, formatted, total };
+      }
+
+      /**
+       * Create a friendly label for the fighter's most recent event date.
+       *
+       * @param {string | null | undefined} isoDate
+       * @returns {string}
+       */
+      function formatLatestEventDate(isoDate) {
+        if (!isoDate) {
+          return "Unknown";
+        }
+
+        const parsed = new Date(isoDate);
+        if (Number.isNaN(parsed.getTime())) {
+          return "Unknown";
+        }
+
+        return parsed.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      /**
        * Run d3-force-3d simulation to compute node positions
        */
       async function simulateLayout(graph) {
         // Normalize fighter_id to id for d3-force compatibility
         const nodes = graph.nodes.map((node) => ({
           ...node,
-          id: node.fighter_id || node.id
+          id: node.fighter_id || node.id,
+          record: node.record ?? null,
+          total_fights: node.total_fights ?? null,
+          latest_event_date: node.latest_event_date ?? null,
         }));
         const links = graph.links.map((link) => ({ ...link }));
 
@@ -995,11 +1069,17 @@
             if (first.userData.node) {
               const { node } = first.userData;
               hovered.add(first);
+              const recordDetails = parseRecordDetails(node.record);
+              const totalFights = typeof node.total_fights === "number"
+                ? node.total_fights
+                : (Number.isFinite(recordDetails.total) ? recordDetails.total : "Unknown");
+              const latestEventLabel = formatLatestEventDate(node.latest_event_date);
               tooltipElement.innerHTML = `
                 <strong>${node.label ?? node.id}</strong><br />
                 Division: ${node.division ?? "Unknown"}<br />
-                Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
-                Recent activity: ${node.year ?? "Unknown"}
+                Record: ${recordDetails.formatted}<br />
+                Total fights: ${totalFights}<br />
+                Latest event: ${latestEventLabel}
               `;
             }
           } else if (tooltipsEnabled) {
