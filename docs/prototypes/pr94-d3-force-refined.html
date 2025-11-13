@@ -434,7 +434,11 @@
        * @returns {Promise<FightGraphResponse>}
        */
       async function simulateLayout(graph) {
-        const nodes = graph.nodes.map((node) => ({ ...node }));
+        // API returns fighter_id, normalize to id for d3-force compatibility
+        const nodes = graph.nodes.map((node) => ({
+          ...node,
+          id: node.fighter_id || node.id
+        }));
         const links = graph.links.map((link) => ({ ...link }));
 
         const adjacency = new Map();
