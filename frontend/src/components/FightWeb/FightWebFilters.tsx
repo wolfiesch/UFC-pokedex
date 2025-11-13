@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import type { FightGraphQueryParams } from "@/lib/types";
 
 import {
   clampLimit,
+  filtersEqual,
   MAX_LIMIT,
   MIN_LIMIT,
   normalizeFilters,
@@ -18,20 +20,10 @@ type FightWebFiltersProps = {
   availableDivisions: string[];
   yearBounds: { min: number; max: number } | null;
   isLoading?: boolean;
+  isRefreshing?: boolean;
+  error?: string | null;
+  onRetry?: () => void | Promise<void>;
 };
-
-function filtersEqual(
-  a: FightGraphQueryParams,
-  b: FightGraphQueryParams,
-): boolean {
-  return (
-    (a.division ?? null) === (b.division ?? null) &&
-    (a.startYear ?? null) === (b.startYear ?? null) &&
-    (a.endYear ?? null) === (b.endYear ?? null) &&
-    clampLimit(a.limit ?? null) === clampLimit(b.limit ?? null) &&
-    Boolean(a.includeUpcoming) === Boolean(b.includeUpcoming)
-  );
-}
 
 export function FightWebFilters({
   filters,
@@ -40,6 +32,9 @@ export function FightWebFilters({
   availableDivisions,
   yearBounds,
   isLoading = false,
+  isRefreshing = false,
+  error = null,
+  onRetry,
 }: FightWebFiltersProps) {
   const [draft, setDraft] = useState<FightGraphQueryParams>(
     normalizeFilters(filters),
@@ -100,6 +95,37 @@ export function FightWebFilters({
 
   return (
     <aside className="space-y-4 rounded-3xl border border-border/80 bg-card/60 p-6">
+      <div className="space-y-3">
+        {isRefreshing && (
+          <div
+            className="flex items-center gap-2 rounded-2xl border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground"
+            role="status"
+            aria-live="polite"
+            aria-label="Refreshing fight graph"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Refreshing graph data…</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="space-y-2 rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="font-medium">{error}</p>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={() => {
+                  onRetry();
+                }}
+                className="inline-flex items-center justify-center rounded-full border border-destructive/50 px-3 py-1 text-xs font-semibold text-destructive transition hover:border-destructive hover:bg-destructive/10"
+              >
+                Retry request
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <header className="space-y-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
           Filters
