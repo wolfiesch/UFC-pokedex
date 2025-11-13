@@ -76,6 +76,7 @@ class FighterRepositoryProtocol(Protocol):
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        nationality: str | None = None,
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
@@ -243,6 +244,7 @@ class FighterQueryService(CacheableService):
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        nationality: str | None = None,
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
@@ -251,7 +253,7 @@ class FighterQueryService(CacheableService):
         limit: int | None = None,
         offset: int | None = None,
     ) -> PaginatedFightersResponse:
-        """Search fighters by name, stance, division, champion status, or streak."""
+        """Search fighters by name, stance, division, nationality, champion status, or streak."""
 
         resolved_limit = limit if limit is not None and limit > 0 else 20
         resolved_offset = offset if offset is not None and offset >= 0 else 0
@@ -260,6 +262,7 @@ class FighterQueryService(CacheableService):
             query=query,
             stance=stance,
             division=division,
+            nationality=nationality,
             champion_statuses=champion_statuses,
             streak_type=streak_type,
             min_streak_count=min_streak_count,
@@ -270,6 +273,7 @@ class FighterQueryService(CacheableService):
                 filters.query,
                 filters.stance,
                 filters.division,
+                filters.nationality,
                 filters.champion_statuses,
                 filters.streak_type,
             )
@@ -301,6 +305,7 @@ class FighterQueryService(CacheableService):
             query=filters.query,
             stance=filters.stance,
             division=filters.division,
+            nationality=filters.nationality,
             champion_statuses=(
                 list(filters.champion_statuses) if filters.champion_statuses else None
             ),
@@ -421,6 +426,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        nationality: str | None = None,
         champion_statuses: list[str] | None = None,
         streak_type: Literal["win", "loss"] | None = None,
         min_streak_count: int | None = None,
@@ -433,6 +439,7 @@ class InMemoryFighterRepository(FighterRepositoryProtocol):
             query=query,
             stance=stance,
             division=division,
+            nationality=nationality,
             champion_statuses=champion_statuses,
             streak_type=streak_type,
             min_streak_count=min_streak_count,

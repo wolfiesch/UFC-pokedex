@@ -28,6 +28,7 @@ def normalize_search_filters(
     query: str | None,
     stance: str | None,
     division: str | None,
+    nationality: str | None,
     champion_statuses: Iterable[str] | None,
     streak_type: str | None,
     min_streak_count: int | None,
@@ -37,6 +38,7 @@ def normalize_search_filters(
     normalized_query = (query or "").strip()
     normalized_stance = (stance or "").strip()
     normalized_division = (division or "").strip()
+    normalized_nationality = (nationality or "").strip()
 
     champion_tuple: tuple[str, ...] | None = None
     if champion_statuses:
@@ -66,6 +68,7 @@ def normalize_search_filters(
         query=normalized_query or None,
         stance=normalized_stance or None,
         division=normalized_division or None,
+        nationality=normalized_nationality or None,
         champion_statuses=champion_tuple,
         streak_type=normalized_streak,
         min_streak_count=normalized_count,
@@ -82,6 +85,7 @@ def filter_roster_entries(
     query_lower = filters.query.lower() if filters.query else None
     stance_lower = filters.stance.lower() if filters.stance else None
     division_lower = filters.division.lower() if filters.division else None
+    nationality_upper = filters.nationality.upper() if filters.nationality else None
 
     filtered: list[RosterEntry] = []
     for fighter in roster:
@@ -89,6 +93,7 @@ def filter_roster_entries(
         nickname_value = getattr(fighter, "nickname", "") or ""
         stance_value = getattr(fighter, "stance", "") or ""
         division_value = getattr(fighter, "division", "") or ""
+        birthplace_country_value = getattr(fighter, "birthplace_country", "") or ""
 
         matches_query = True
         if query_lower:
@@ -104,6 +109,10 @@ def filter_roster_entries(
         matches_division = True
         if division_lower:
             matches_division = division_value.lower() == division_lower
+
+        matches_nationality = True
+        if nationality_upper:
+            matches_nationality = birthplace_country_value.upper() == nationality_upper
 
         matches_champion = True
         if filters.champion_statuses:
@@ -129,6 +138,7 @@ def filter_roster_entries(
             matches_query
             and matches_stance
             and matches_division
+            and matches_nationality
             and matches_champion
             and matches_streak
         ):

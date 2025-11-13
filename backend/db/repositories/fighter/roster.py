@@ -186,6 +186,7 @@ class FighterRosterMixin:
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
+        nationality: str | None = None,
         champion_statuses: Sequence[str] | None = None,
         streak_type: str | None = None,
         min_streak_count: int | None = None,
@@ -201,6 +202,7 @@ class FighterRosterMixin:
             query=query,
             stance=stance,
             division=division,
+            nationality=nationality,
             champion_statuses=champion_statuses,
             streak_type=streak_type,
             min_streak_count=min_streak_count,
@@ -239,6 +241,10 @@ class FighterRosterMixin:
         # Apply division filter at database level
         if filters.division:
             query_stmt = query_stmt.where(Fighter.division.ilike(filters.division))
+
+        # Apply nationality filter at database level (searches birthplace_country)
+        if filters.nationality:
+            query_stmt = query_stmt.where(Fighter.birthplace_country == filters.nationality)
 
         # Apply champion status filters at database level
         if filters.champion_statuses:
