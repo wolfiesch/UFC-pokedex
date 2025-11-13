@@ -774,6 +774,24 @@
       }
 
       /**
+       * Determine how many bouts a rivalry represents.
+       *
+       * Prefers the `fights` property emitted by the API while
+       * gracefully falling back to legacy `weight` values or a
+       * neutral default when the metric is missing.
+       * @param {Record<string, unknown>} link
+       * @returns {number}
+       */
+      function getLinkFightCount(link) {
+        if (!link || typeof link !== "object") {
+          return 1;
+        }
+        const raw = Reflect.get(link, "fights") ?? Reflect.get(link, "weight") ?? 1;
+        const parsed = typeof raw === "number" ? raw : Number.parseFloat(String(raw));
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      }
+
+      /**
        * Convert form fields into query parameters for the API
        */
       function readFilters() {
@@ -835,7 +853,10 @@
           ...node,
           id: node.fighter_id || node.id
         }));
-        const links = graph.links.map((link) => ({ ...link }));
+        const links = graph.links.map((link) => ({
+          ...link,
+          fights: getLinkFightCount(link),
+        }));
 
         // Compute degree centrality
         const adjacency = new Map();
@@ -860,8 +881,14 @@
             "link",
             forceLink(links)
               .id((d) => d.id)
-              .strength((d) => (d.weight ? Math.min(1, d.weight / 5) : 0.2))
-              .distance((d) => (d.weight ? 60 / Math.max(1, d.weight) : 75))
+              .strength((link) => {
+                const fights = getLinkFightCount(link);
+                return fights > 0 ? Math.min(1, fights / 5) : 0.2;
+              })
+              .distance((link) => {
+                const fights = getLinkFightCount(link);
+                return fights > 0 ? 60 / Math.max(1, fights) : 75;
+              })
           )
           .force("center", forceCenter(0, 0, 0))
           .alphaDecay(0.05);
@@ -1115,14 +1142,17 @@
           const sourceNode = link.source;
           const targetNode = link.target;
 
+          const fights = getLinkFightCount(link);
+          const normalized = Math.min(1, fights / 5);
+
           // Increase opacity and add glow for better visibility
-          const opacity = 0.5;
+          const opacity = THREE.MathUtils.lerp(0.2, 0.85, normalized);
           const color = new THREE.Color(0x66d9ef);
           const material = new THREE.LineBasicMaterial({
             color,
             transparent: true,
             opacity,
-            linewidth: 2, // Note: linewidth > 1 only works with THREE.Line2
+            linewidth: THREE.MathUtils.lerp(1, 4, normalized), // Note: linewidth > 1 only works with THREE.Line2
           });
 
           const geometry = new THREE.BufferGeometry();
@@ -1138,6 +1168,7 @@
           const line = new THREE.Line(geometry, material);
           line.userData.sourceNode = sourceNode;
           line.userData.targetNode = targetNode;
+          line.userData.fights = fights;
           linkGroup.add(line);
         }
 
