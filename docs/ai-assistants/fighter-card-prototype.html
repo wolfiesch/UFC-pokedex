@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fighter Card Prototype Plan</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: radial-gradient(circle at 20% 20%, #1f2937, #111827 70%);
+      --surface: rgba(17, 24, 39, 0.85);
+      --surface-alt: rgba(15, 118, 110, 0.1);
+      --accent: #0ea5e9;
+      --accent-strong: #06b6d4;
+      --text: #f9fafb;
+      --muted: rgba(148, 163, 184, 0.9);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 2.5rem clamp(1.5rem, 4vw, 3.5rem) 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 48rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      background: rgba(15, 23, 42, 0.35);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+    }
+
+    .tab.active,
+    .tab:hover {
+      color: var(--text);
+      background: rgba(14, 165, 233, 0.35);
+      border-color: rgba(6, 182, 212, 0.6);
+      box-shadow: 0 8px 30px rgba(14, 165, 233, 0.25);
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      gap: 2rem;
+      padding: 0 1.5rem 3rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: clamp(1.5rem, 3vw, 2.5rem);
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(22px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel.hidden {
+      display: none;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(circle at center, rgba(14, 165, 233, 0.25), transparent 65%);
+      opacity: 0.4;
+      z-index: 0;
+    }
+
+    .panel-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .section-title span {
+      width: 38px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.9));
+      border-radius: 999px;
+    }
+
+    .plan-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .plan-step {
+      padding: 1.25rem 1.5rem;
+      border-radius: 18px;
+      background: rgba(15, 118, 110, 0.12);
+      border: 1px solid rgba(13, 148, 136, 0.35);
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .plan-step h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .plan-step h3 span {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .plan-step ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: rgba(226, 232, 240, 0.88);
+      line-height: 1.5;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .timeline span {
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .fighter-card {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .card-preview {
+      border-radius: 26px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.05));
+      border: 1px solid rgba(14, 165, 233, 0.35);
+      box-shadow: 0 30px 60px rgba(8, 47, 73, 0.5);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 1.75rem;
+      align-items: flex-start;
+      background: linear-gradient(120deg, rgba(15, 23, 42, 0.7), rgba(8, 47, 73, 0.85));
+    }
+
+    .fighter-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .fighter-name {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .fighter-meta {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .record {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .state-indicator {
+      border-radius: 14px;
+      padding: 0.45rem 0.75rem;
+      background: rgba(14, 165, 233, 0.18);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .card-body {
+      display: grid;
+      gap: 1.5rem;
+      padding: 1.75rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat {
+      padding: 1rem;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .stat span {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat strong {
+      font-size: 1.3rem;
+      letter-spacing: 0.02em;
+    }
+
+    .card-footer {
+      padding: 1.75rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cta {
+      padding: 0.85rem 1.6rem;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #0f172a;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(14, 165, 233, 0.35);
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .color-chip {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+    }
+
+    .state-controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .state-button {
+      padding: 0.6rem 1.1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.4);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .state-button.active,
+    .state-button:hover {
+      color: var(--text);
+      background: rgba(45, 212, 191, 0.18);
+      border-color: rgba(45, 212, 191, 0.6);
+    }
+
+    .annotations {
+      display: grid;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: rgba(226, 232, 240, 0.9);
+    }
+
+    .annotation {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .annotation strong {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 0.2rem;
+    }
+
+    footer {
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding-bottom: 1rem;
+      }
+
+      .card-header,
+      .card-body,
+      .card-footer {
+        padding: 1.5rem;
+      }
+
+      .fighter-name {
+        font-size: 1.55rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Fighter Card Experience Prototype</h1>
+      <p>
+        A structured plan and interactive preview for refactoring the fighter profile card.
+        The goal is to surface key information at a glance while reinforcing UFC visual language
+        through layered surfaces, typographic hierarchy, and purposeful interaction states.
+      </p>
+    </div>
+    <nav class="tab-bar" aria-label="Prototype focus areas">
+      <button class="tab active" data-target="plan">Product Roadmap</button>
+      <button class="tab" data-target="layout">Layout Anatomy</button>
+      <button class="tab" data-target="visual">Visual System</button>
+      <button class="tab" data-target="interaction">Interaction Notes</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel" id="plan">
+      <div class="panel-content">
+        <div class="section-title"><span></span>Refactor Roadmap</div>
+        <div class="timeline">
+          <span>Discovery</span>
+          <span>Experience Mapping</span>
+          <span>Visual Exploration</span>
+          <span>Prototype &amp; Validation</span>
+          <span>Design Handoff</span>
+        </div>
+        <div class="plan-grid">
+          <article class="plan-step">
+            <h3>01 <span>Research Foundations</span></h3>
+            <ul>
+              <li>Audit current fighter card layout, cataloging redundant or low-signal elements.</li>
+              <li>Pair with analytics to understand the most referenced data points pre-fight vs. post-fight.</li>
+              <li>Create experience goals that anchor the redesign: clarity, identity, comparability.</li>
+            </ul>
+          </article>
+          <article class="plan-step">
+            <h3>02 <span>Information Architecture</span></h3>
+            <ul>
+              <li>Map an updated hierarchy balancing fighter identity, record snapshot, and matchup context.</li>
+              <li>Define responsive breakpoints and content rules for roster grid vs. detail contexts.</li>
+              <li>Document component states (default, weigh-in, fight night, post-fight recap).</li>
+            </ul>
+          </article>
+          <article class="plan-step">
+            <h3>03 <span>Interaction Model</span></h3>
+            <ul>
+              <li>Prototype progressive disclosure: quick stats, expanded analytics, and narrative tags.</li>
+              <li>Introduce micro-interactions to reinforce state transitions and call-to-action urgency.</li>
+              <li>Validate accessibility targets (WCAG AA color contrast, focus order, keyboard support).</li>
+            </ul>
+          </article>
+          <article class="plan-step">
+            <h3>04 <span>Visual Systems</span></h3>
+            <ul>
+              <li>Modernize typographic scale using condensed headlines paired with technical body copy.</li>
+              <li>Leverage glassmorphism surfaces with octagon-inspired angles for brand continuity.</li>
+              <li>Build tokenized color ramps for weight-class differentiation and outcome states.</li>
+            </ul>
+          </article>
+          <article class="plan-step">
+            <h3>05 <span>Prototype Validation</span></h3>
+            <ul>
+              <li>Run quick usability crits with matchmakers and content editors using Figma or coded prototype.</li>
+              <li>Measure comprehension speed and emotional resonance through moderated sessions.</li>
+              <li>Finalize engineering specs: spacing tokens, component anatomy, state documentation.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel hidden" id="layout" hidden>
+      <div class="panel-content">
+        <div class="section-title"><span></span>Layout Anatomy</div>
+        <div class="annotations">
+          <div class="annotation">
+            <strong>A</strong>
+            <p><em>Hero Identity Bar:</em> anchors the card with name, division, and record. Sticky placement enables quick scanning in multi-card grids.</p>
+          </div>
+          <div class="annotation">
+            <strong>B</strong>
+            <p><em>Performance Snapshot:</em> modular stat chips highlight the KPIs needed for matchup comparisons (reach, striking differential, finishing rate).</p>
+          </div>
+          <div class="annotation">
+            <strong>C</strong>
+            <p><em>Narrative Tags:</em> small but high-signal storytelling moments (win streak, fighting out of) that humanize the data.</p>
+          </div>
+          <div class="annotation">
+            <strong>D</strong>
+            <p><em>Action Rail:</em> houses the primary CTA and lightweight metadata (bout position, odds). Designed for high contrast and urgency.</p>
+          </div>
+          <div class="annotation">
+            <strong>E</strong>
+            <p><em>State Indicator:</em> dynamic label updates with weigh-in or fight-night context; color-coded to match broadcast graphics.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel hidden" id="visual" hidden>
+      <div class="panel-content">
+        <div class="section-title"><span></span>Visual Design System</div>
+        <div class="annotations">
+          <div class="annotation">
+            <strong>Palette</strong>
+            <p>Uses a cool aqua accent atop midnight neutrals. Accent ramps pair with class-specific color chips to retain UFC personality while feeling premium.</p>
+          </div>
+          <div class="annotation">
+            <strong>Typography</strong>
+            <p>Condensed uppercase display (Inter Tight) for fighter names; geometric sans for body copy ensures readability in dense stats.</p>
+          </div>
+          <div class="annotation">
+            <strong>Texture</strong>
+            <p>Layered glassmorphism surfaces nod to octagon panels; subtle noise gradients keep focus on content while adding depth.</p>
+          </div>
+          <div class="annotation">
+            <strong>Motion</strong>
+            <p>Micro-interactions (hover glow, state transitions) provide immediate feedback, guiding attention without overwhelming the user.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="interaction">
+      <div class="panel-content">
+        <div class="section-title"><span></span>Interactive Prototype</div>
+        <div class="fighter-card" aria-live="polite">
+          <div class="state-controls" role="group" aria-label="Preview fighter card states">
+            <button class="state-button active" data-state="default">Default</button>
+            <button class="state-button" data-state="weighin">Weigh-in</button>
+            <button class="state-button" data-state="fightnight">Fight Night</button>
+            <button class="state-button" data-state="postfight">Post Fight</button>
+          </div>
+          <article class="card-preview" data-card-state="default">
+            <header class="card-header">
+              <div class="fighter-info">
+                <div class="fighter-name" id="fighterName">Alexa Grasso</div>
+                <div class="fighter-meta" id="fighterMeta">Flyweight • Fighting out of Guadalajara, Mexico</div>
+                <div class="record" id="fighterRecord">21-3-0</div>
+              </div>
+              <div class="state-indicator" id="stateIndicator">Upcoming Bout</div>
+            </header>
+            <div class="card-body">
+              <div class="stats-grid">
+                <div class="stat">
+                  <span>Height</span>
+                  <strong id="statHeight">5'5"</strong>
+                </div>
+                <div class="stat">
+                  <span>Reach</span>
+                  <strong id="statReach">66"</strong>
+                </div>
+                <div class="stat">
+                  <span>Striking Accuracy</span>
+                  <strong id="statAccuracy">43%</strong>
+                </div>
+                <div class="stat">
+                  <span>Grappling Success</span>
+                  <strong id="statGrappling">58%</strong>
+                </div>
+              </div>
+              <div class="legend">
+                <span><span class="color-chip" style="background: var(--accent);"></span> Primary Accent</span>
+                <span><span class="color-chip" style="background: var(--success);"></span> Positive Momentum</span>
+                <span><span class="color-chip" style="background: var(--warning);"></span> Bout Alert</span>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <div>
+                <strong id="fightTag">Co-main Event • UFC 309</strong>
+                <p id="fightDetail" style="margin: 0.35rem 0 0; color: var(--muted); font-size: 0.85rem;">
+                  Facing Valentina Shevchenko • Sat, Dec 14 • T-Mobile Arena, Las Vegas
+                </p>
+              </div>
+              <button class="cta">View Tale of the Tape</button>
+            </footer>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Prototype sandbox • Built for UFC Pokedex design exploration</footer>
+
+  <script>
+    const tabButtons = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+
+    tabButtons.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.dataset.target;
+
+        tabButtons.forEach((btn) => btn.classList.toggle('active', btn === tab));
+        panels.forEach((panel) => {
+          const match = panel.id === targetId || (targetId === 'interaction' && panel.id === 'interaction');
+          panel.hidden = !match && panel.id !== 'interaction';
+          if (panel.id === targetId) {
+            panel.classList.remove('hidden');
+          } else if (panel.id !== 'interaction') {
+            panel.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    const card = document.querySelector('.card-preview');
+    const stateButtons = document.querySelectorAll('.state-button');
+
+    const stateContent = {
+      default: {
+        state: 'Upcoming Bout',
+        record: '21-3-0',
+        meta: 'Flyweight • Fighting out of Guadalajara, Mexico',
+        name: 'Alexa Grasso',
+        height: "5'5\"",
+        reach: '66"',
+        accuracy: '43%',
+        grappling: '58%',
+        tag: 'Co-main Event • UFC 309',
+        detail: 'Facing Valentina Shevchenko • Sat, Dec 14 • T-Mobile Arena, Las Vegas',
+        accent: 'linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.05))'
+      },
+      weighin: {
+        state: 'Official Weigh-in',
+        record: '21-3-0',
+        meta: '125 lbs (champ) • Reach: 66"',
+        name: 'Alexa Grasso',
+        height: "5'5\"",
+        reach: '66"',
+        accuracy: '43%',
+        grappling: '58%',
+        tag: 'Weight on Point • 125 lbs',
+        detail: 'Captured at 9:00 AM PT • Live stream replay available',
+        accent: 'linear-gradient(135deg, rgba(45, 212, 191, 0.3), rgba(14, 165, 233, 0.1))'
+      },
+      fightnight: {
+        state: 'Live Fight Night',
+        record: '21-3-0 (Champion)',
+        meta: 'Flyweight Title Defense • T-Mobile Arena',
+        name: 'Alexa Grasso',
+        height: "5'5\"",
+        reach: '66"',
+        accuracy: '43%',
+        grappling: '58%',
+        tag: 'Live Now • Round 3 starting',
+        detail: 'Significant strikes landed: 68 • Control time: 4:12',
+        accent: 'linear-gradient(135deg, rgba(251, 191, 36, 0.35), rgba(14, 165, 233, 0.1))'
+      },
+      postfight: {
+        state: 'Post-fight Recap',
+        record: '22-3-0 (Win • UD)',
+        meta: 'Flyweight Champion • Performance of the Night',
+        name: 'Alexa Grasso',
+        height: "5'5\"",
+        reach: '66"',
+        accuracy: '47%',
+        grappling: '61%',
+        tag: 'Victory Sealed • Performance Bonus',
+        detail: 'Defeated Valentina Shevchenko via unanimous decision (49-46, 48-47, 48-47)',
+        accent: 'linear-gradient(135deg, rgba(52, 211, 153, 0.35), rgba(14, 165, 233, 0.08))'
+      }
+    };
+
+    const nameEl = document.getElementById('fighterName');
+    const metaEl = document.getElementById('fighterMeta');
+    const recordEl = document.getElementById('fighterRecord');
+    const stateEl = document.getElementById('stateIndicator');
+    const heightEl = document.getElementById('statHeight');
+    const reachEl = document.getElementById('statReach');
+    const accuracyEl = document.getElementById('statAccuracy');
+    const grapplingEl = document.getElementById('statGrappling');
+    const fightTagEl = document.getElementById('fightTag');
+    const fightDetailEl = document.getElementById('fightDetail');
+
+    stateButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        stateButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
+        const config = stateContent[button.dataset.state];
+        card.style.background = config.accent;
+        card.setAttribute('data-card-state', button.dataset.state);
+        nameEl.textContent = config.name;
+        metaEl.textContent = config.meta;
+        recordEl.textContent = config.record;
+        stateEl.textContent = config.state;
+        heightEl.textContent = config.height;
+        reachEl.textContent = config.reach;
+        accuracyEl.textContent = config.accuracy;
+        grapplingEl.textContent = config.grappling;
+        fightTagEl.textContent = config.tag;
+        fightDetailEl.textContent = config.detail;
+      });
+    });
+  </script>
+</body>
+</html>
