@@ -3,145 +3,131 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterable
-from contextlib import asynccontextmanager
-from typing import Any, Final
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Result
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from sqlalchemy.sql import literal
 
 from backend.api import image_validation
-from backend.db.models import Base, Fighter
 
 
-class _AsyncResultWrapper:
-    """Lightweight adapter mimicking :class:`~sqlalchemy.ext.asyncio.AsyncResult`."""
+class _StubScalarResult:
+    """Mimic SQLAlchemy's scalar result wrapper for asynchronous contexts."""
 
-    def __init__(self, result: Result[Any]) -> None:
-        self._result = result
+    def __init__(self, values: list[Any]) -> None:
+        self._values = values
 
-    # The return type differs from the base class because this is a synchronous
-    # wrapper around SQLAlchemy's Result, not AsyncResult.
-    def scalars(self):  # type: ignore[override]
-        """Expose the scalar result helper from the wrapped synchronous result."""
+    def all(self) -> list[Any]:
+        """Return the collected scalar values."""
 
-        return self._result.scalars()
+        return list(self._values)
+
+
+class _StubResult:
+    """Provide the minimal interface consumed by ``get_fighters_by_flag``."""
+
+    def __init__(
+        self,
+        *,
+        scalars: list[Any] | None = None,
+        scalar_one: Any | None = None,
+        rows: list[Any] | None = None,
+    ) -> None:
+        self._scalar_values = scalars or []
+        self._scalar_one = scalar_one
+        self._rows = rows if rows is not None else self._scalar_values
+
+    def scalars(self) -> _StubScalarResult:
+        """Return a helper exposing ``all()`` over the configured values."""
+
+        return _StubScalarResult(self._scalar_values)
 
     def scalar_one(self) -> Any:
-        """Return a single scalar from the underlying synchronous result set."""
+        """Return the singular scalar result for count queries."""
 
-        return self._result.scalar_one()
+        if self._scalar_one is None:
+            raise RuntimeError("No scalar value configured for this stub result.")
+        return self._scalar_one
 
+    def __iter__(self):
+        """Support iteration for duplicate lookup queries."""
 
-class _AsyncSessionFacade:
-    """Minimal async-compatible shim around SQLAlchemy's synchronous session."""
-
-    def __init__(self, sync_session: Session) -> None:
-        self._sync_session = sync_session
-
-    def add_all(self, instances: Iterable[Any]) -> None:
-        """Delegate bulk addition of ORM instances to the synchronous session."""
-
-        self._sync_session.add_all(list(instances))
-
-    async def execute(self, statement: Any) -> _AsyncResultWrapper:
-        """Execute ``statement`` synchronously and wrap the result for awaiters."""
-
-        result = self._sync_session.execute(statement)
-        return _AsyncResultWrapper(result)
-
-    async def commit(self) -> None:
-        """Flush and commit the pending transaction using the synchronous session."""
-
-        self._sync_session.commit()
-
-    async def rollback(self) -> None:
-        """Rollback the underlying synchronous transaction if present."""
-
-        self._sync_session.rollback()
-
-    def in_transaction(self) -> bool:
-        """Report whether the synchronous session currently holds a transaction."""
-
-        return bool(self._sync_session.in_transaction())
+        return iter(self._rows)
 
 
-@asynccontextmanager
-async def in_memory_session() -> AsyncIterator[AsyncSession]:
-    """Yield a fresh in-memory SQLite session with the schema initialised."""
+def _stub_fighter(
+    fighter_id: str,
+    name: str,
+    *,
+    flags: dict[str, Any] | None,
+    quality: float | None = None,
+    resolution: tuple[int | None, int | None] = (None, None),
+) -> SimpleNamespace:
+    """Create a light-weight fighter namespace used in stubbed query results."""
 
-    engine = create_engine("sqlite:///:memory:", future=True)
-    try:
-        Base.metadata.create_all(engine)
-        with Session(engine) as sync_session:
-            async_session = _AsyncSessionFacade(sync_session)
-            try:
-                yield async_session  # type: ignore[return-value]
-            finally:
-                if async_session.in_transaction():
-                    await async_session.rollback()
-    finally:
-        engine.dispose()
-
-
-async def _seed_flagged_fighters(session: AsyncSession) -> None:
-    """Populate the session with fighters carrying a mix of validation flags."""
-
-    low_resolution_details: Final[dict[str, int]] = {"width": 320, "height": 240}
-
-    fighters: list[Fighter] = [
-        Fighter(
-            id="flag-alpha",
-            name="Alpha Flag",
-            image_url="https://cdn.example.com/alpha.jpg",
-            image_resolution_width=640,
-            image_resolution_height=480,
-            image_validation_flags={"low_resolution": low_resolution_details},
-        ),
-        Fighter(
-            id="flag-beta",
-            name="Beta Flag",
-            image_validation_flags={"low_resolution": True, "multiple_faces": 2},
-        ),
-        Fighter(
-            id="flag-gamma",
-            name="Gamma Flag",
-            image_validation_flags={"no_face_detected": True},
-        ),
-        Fighter(
-            id="flag-delta",
-            name="Delta Flag",
-            image_validation_flags=None,
-        ),
-    ]
-
-    session.add_all(fighters)
-    await session.commit()
+    width, height = resolution
+    return SimpleNamespace(
+        id=fighter_id,
+        name=name,
+        image_url=f"https://cdn.example.com/{fighter_id}.jpg",
+        image_quality_score=quality,
+        image_resolution_width=width,
+        image_resolution_height=height,
+        image_validation_flags=flags or {},
+    )
 
 
 @pytest.mark.asyncio
 async def test_get_fighters_by_flag_filters_via_database_predicate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The API should delegate JSON flag filtering to the database layer."""
+    """The API should honour database-side filtering and response shaping."""
 
-    monkeypatch.setattr(
-        "backend.api.image_validation.db_connection.get_database_type",
-        lambda: "sqlite",
+    fighters = [
+        _stub_fighter(
+            "flag-alpha",
+            "Alpha Flag",
+            flags={"low_resolution": {"width": 320, "height": 240}},
+            resolution=(640, 480),
+        ),
+        _stub_fighter(
+            "flag-beta",
+            "Beta Flag",
+            flags={"low_resolution": True},
+        ),
+    ]
+
+    session = AsyncMock()
+    session.execute = AsyncMock(
+        side_effect=[
+            _StubResult(scalars=fighters),
+            _StubResult(scalar_one=2),
+        ]
     )
 
-    async with in_memory_session() as session:
-        await _seed_flagged_fighters(session)
+    observed_flags: list[str] = []
 
-        response = await image_validation.get_fighters_by_flag(
-            flag="low_resolution",
-            limit=10,
-            offset=0,
-            session=session,
-        )
+    def _record_flag(flag: str) -> Any:
+        observed_flags.append(flag)
+        return literal(True)
 
+    monkeypatch.setattr(image_validation, "_build_flag_predicate", _record_flag)
+    monkeypatch.setattr(
+        image_validation,
+        "resolve_fighter_image",
+        lambda fighter_id, image_url: image_url,
+    )
+
+    response = await image_validation.get_fighters_by_flag(
+        flag="low_resolution",
+        limit=10,
+        offset=0,
+        session=session,
+    )
+
+    assert observed_flags == ["low_resolution"]
     assert response["total"] == 2
     assert response["count"] == 2
     assert response["limit"] == 10
@@ -158,22 +144,37 @@ async def test_get_fighters_by_flag_filters_via_database_predicate(
 async def test_get_fighters_by_flag_preserves_total_during_pagination(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Paginated responses should expose the full result count alongside the slice."""
+    """Paginated responses should retain the overall total count."""
 
-    monkeypatch.setattr(
-        "backend.api.image_validation.db_connection.get_database_type",
-        lambda: "sqlite",
+    paginated = [
+        _stub_fighter("flag-beta", "Beta Flag", flags={"low_resolution": True})
+    ]
+
+    session = AsyncMock()
+    session.execute = AsyncMock(
+        side_effect=[
+            _StubResult(scalars=paginated),
+            _StubResult(scalar_one=2),
+        ]
     )
 
-    async with in_memory_session() as session:
-        await _seed_flagged_fighters(session)
+    monkeypatch.setattr(
+        image_validation,
+        "_build_flag_predicate",
+        lambda flag: literal(True),
+    )
+    monkeypatch.setattr(
+        image_validation,
+        "resolve_fighter_image",
+        lambda fighter_id, image_url: image_url,
+    )
 
-        page = await image_validation.get_fighters_by_flag(
-            flag="low_resolution",
-            limit=1,
-            offset=1,
-            session=session,
-        )
+    page = await image_validation.get_fighters_by_flag(
+        flag="low_resolution",
+        limit=1,
+        offset=1,
+        session=session,
+    )
 
     assert page["total"] == 2
     assert page["count"] == 1
