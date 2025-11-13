@@ -1,6 +1,11 @@
 "use client";
 
-import { Fight, FightCardSection as FightCardSectionType, isTitleFight, isMainEvent } from "@/lib/fight-utils";
+import {
+  Fight,
+  FightCardSection as FightCardSectionType,
+  isTitleFight,
+  isMainEvent,
+} from "@/lib/fight-utils";
 import EnhancedFightCard from "./EnhancedFightCard";
 
 interface FightCardSectionProps {
@@ -52,7 +57,8 @@ export default function FightCardSection({
             {config.icon} {section.label}
           </h3>
           <span className="rounded-full bg-gray-700/50 px-3 py-1 text-sm font-medium text-gray-300">
-            {section.fights.length} {section.fights.length === 1 ? "Fight" : "Fights"}
+            {section.fights.length}{" "}
+            {section.fights.length === 1 ? "Fight" : "Fights"}
           </span>
         </div>
       </div>

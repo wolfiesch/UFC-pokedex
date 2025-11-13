@@ -27,7 +27,9 @@ type FighterCardProps = {
 };
 
 function FighterCardComponent({ fighter }: FighterCardProps) {
-  const { isFavorite: isFavoriteFn, toggleFavorite } = useFavorites({ autoInitialize: false });
+  const { isFavorite: isFavoriteFn, toggleFavorite } = useFavorites({
+    autoInitialize: false,
+  });
   const isFavorite = isFavoriteFn(fighter.fighter_id);
   const imageSrc = resolveImageUrl(fighter.image_url);
   const [imageError, setImageError] = useState(false);
@@ -61,29 +63,34 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
   const championGlowClass = fighter.is_current_champion
     ? "ring-2 ring-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
     : fighter.is_former_champion
-    ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-    : "";
+      ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+      : "";
 
   return (
-    <Link href={`/fighters/${fighter.fighter_id}`} className="group block h-full">
-      <Card className={cn(
-        "flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl",
-        championGlowClass
-      )}>
+    <Link
+      href={`/fighters/${fighter.fighter_id}`}
+      className="group block h-full"
+    >
+      <Card
+        className={cn(
+          "flex h-full flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl",
+          championGlowClass,
+        )}
+      >
         <CardHeader className="p-6 pb-4">
-          <div className="flex items-start justify-between gap-4 min-h-24">
+          <div className="flex min-h-24 items-start justify-between gap-4">
             <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-2xl group-hover:text-foreground/80">
                   {fighter.name}
                 </CardTitle>
                 {fighter.record ? (
-                  <Badge variant="outline" className="text-xs font-mono">
+                  <Badge variant="outline" className="font-mono text-xs">
                     {fighter.record}
                   </Badge>
                 ) : null}
                 {fighter.is_current_champion ? (
-                  <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-xs font-semibold border-0">
+                  <Badge className="border-0 bg-gradient-to-r from-yellow-500 to-amber-600 text-xs font-semibold text-white">
                     <svg
                       className="mr-1 h-3 w-3"
                       fill="currentColor"
@@ -95,7 +102,10 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
                     CURRENT CHAMP
                   </Badge>
                 ) : fighter.is_former_champion ? (
-                  <Badge variant="outline" className="text-xs font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
+                  <Badge
+                    variant="outline"
+                    className="border-amber-600/50 text-xs font-semibold text-amber-600 dark:text-amber-500"
+                  >
                     <svg
                       className="mr-1 h-3 w-3"
                       fill="currentColor"
@@ -109,7 +119,7 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
                 ) : null}
               </div>
               {fighter.nickname ? (
-                <CardDescription className="text-sm tracking-tight line-clamp-1">
+                <CardDescription className="line-clamp-1 text-sm tracking-tight">
                   &ldquo;{fighter.nickname}&rdquo;
                 </CardDescription>
               ) : null}
@@ -120,7 +130,7 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
               onClick={handleFavoriteClick}
               className={cn(
                 "group/fav transition-all",
-                isFavorite && "hover:scale-105"
+                isFavorite && "hover:scale-105",
               )}
             >
               <svg
@@ -128,7 +138,7 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
                   "mr-1.5 h-4 w-4 transition-transform",
                   isFavorite
                     ? "fill-current group-hover/fav:scale-110"
-                    : "fill-none group-hover/fav:scale-110"
+                    : "fill-none group-hover/fav:scale-110",
                 )}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -153,7 +163,7 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
                 <img
                   src={imageSrc ?? ""}
                   alt={fighter.name}
-                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:scale-105 group-hover/fighter-frame:rotate-[0.8deg]"
+                  className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:rotate-[0.8deg] group-hover/fighter-frame:scale-105"
                   loading="lazy"
                   onError={() => setImageError(true)}
                 />
@@ -195,29 +205,35 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
           </dl>
 
           {/* Location Information - Desktop */}
-          {(fighter.birthplace || fighter.training_gym || fighter.nationality) && (
-            <div className="hidden md:flex flex-col gap-2 pt-2 border-t border-border/50">
+          {(fighter.birthplace ||
+            fighter.training_gym ||
+            fighter.nationality) && (
+            <div className="hidden flex-col gap-2 border-t border-border/50 pt-2 md:flex">
               {fighter.birthplace && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   <Badge variant="outline" className="text-xs">
                     <span className="text-muted-foreground">Born:</span>
-                    <span className="ml-1 font-medium">{fighter.birthplace}</span>
+                    <span className="ml-1 font-medium">
+                      {fighter.birthplace}
+                    </span>
                   </Badge>
                 </div>
               )}
               {fighter.training_gym && (
                 <div className="flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Dumbbell className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   <Badge variant="secondary" className="text-xs">
                     <span className="text-muted-foreground">Trains:</span>
-                    <span className="ml-1 font-medium">{fighter.training_gym}</span>
+                    <span className="ml-1 font-medium">
+                      {fighter.training_gym}
+                    </span>
                   </Badge>
                 </div>
               )}
               {!fighter.birthplace && fighter.nationality && (
                 <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Globe className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   <Badge variant="outline" className="text-xs">
                     <span className="font-medium">{fighter.nationality}</span>
                   </Badge>
@@ -227,11 +243,16 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
           )}
 
           {/* Location Information - Mobile Compact */}
-          {(fighter.birthplace || fighter.training_gym || fighter.nationality) && (
-            <div className="flex md:hidden flex-wrap gap-1.5 pt-2 border-t border-border/50">
+          {(fighter.birthplace ||
+            fighter.training_gym ||
+            fighter.nationality) && (
+            <div className="flex flex-wrap gap-1.5 border-t border-border/50 pt-2 md:hidden">
               {fighter.birthplace && (
                 <Badge variant="outline" className="text-xs">
-                  📍 {fighter.birthplace_city || fighter.birthplace_country || fighter.birthplace}
+                  📍{" "}
+                  {fighter.birthplace_city ||
+                    fighter.birthplace_country ||
+                    fighter.birthplace}
                 </Badge>
               )}
               {fighter.training_gym && (
@@ -254,11 +275,14 @@ function FighterCardComponent({ fighter }: FighterCardProps) {
               {fighter.division ?? "Unknown Division"}
             </Badge>
             {fighter.is_current_champion ? (
-              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-xs font-semibold border-0">
+              <Badge className="border-0 bg-gradient-to-r from-yellow-500 to-amber-600 text-xs font-semibold text-white">
                 {fighter.was_interim ? "Current Champ (I)" : "Current Champ"}
               </Badge>
             ) : fighter.is_former_champion ? (
-              <Badge variant="outline" className="text-xs font-semibold border-amber-600/50 text-amber-600 dark:text-amber-500">
+              <Badge
+                variant="outline"
+                className="border-amber-600/50 text-xs font-semibold text-amber-600 dark:text-amber-500"
+              >
                 {fighter.was_interim ? "Former Champ (I)" : "Former Champ"}
               </Badge>
             ) : null}
@@ -286,7 +310,10 @@ const fighterCardEqualityKeys: Array<keyof FighterListItem> = [
 
 const areFighterCardPropsEqual = (
   prev: Readonly<FighterCardProps>,
-  next: Readonly<FighterCardProps>
-) => fighterCardEqualityKeys.every((key) => prev.fighter[key] === next.fighter[key]);
+  next: Readonly<FighterCardProps>,
+) =>
+  fighterCardEqualityKeys.every(
+    (key) => prev.fighter[key] === next.fighter[key],
+  );
 
 export default memo(FighterCardComponent, areFighterCardPropsEqual);

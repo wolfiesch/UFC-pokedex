@@ -75,9 +75,7 @@ class FavoritesService:
         summaries: list[FavoriteCollectionSummary] = []
         for collection in collections:
             stats = await self._get_collection_stats(collection)
-            summaries.append(
-                self._analytics.collection_summary(collection, stats=stats)
-            )
+            summaries.append(self._analytics.collection_summary(collection, stats=stats))
 
         payload = FavoriteCollectionListResponse(
             total=len(summaries),
@@ -137,14 +135,10 @@ class FavoritesService:
             raise PermissionError("Collection does not belong to the supplied user")
 
         await self._persistence.update_collection(collection, payload)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
         return await self._build_collection_detail(collection)
 
-    async def delete_collection(
-        self, *, collection_id: int, user_id: str | None
-    ) -> None:
+    async def delete_collection(self, *, collection_id: int, user_id: str | None) -> None:
         if not await self._persistence.tables_ready():
             return
 
@@ -155,9 +149,7 @@ class FavoritesService:
             raise PermissionError("Collection does not belong to the supplied user")
 
         await self._persistence.delete_collection(collection)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
 
     async def add_entry(
         self,
@@ -173,9 +165,7 @@ class FavoritesService:
 
         collection = await self._require_collection(collection_id, user_id)
         entry = await self._persistence.add_entry(collection, payload)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
         return self._analytics.entry_to_schema(entry)
 
     async def update_entry(
@@ -194,9 +184,7 @@ class FavoritesService:
         collection = await self._require_collection(collection_id, user_id)
         entry = self._require_entry(collection, entry_id)
         await self._persistence.update_entry(collection, entry, payload)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
         return self._analytics.entry_to_schema(entry)
 
     async def delete_entry(
@@ -220,9 +208,7 @@ class FavoritesService:
             return
 
         await self._persistence.delete_entry(collection, entry)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
 
     async def reorder_entries(
         self,
@@ -238,9 +224,7 @@ class FavoritesService:
 
         collection = await self._require_collection(collection_id, user_id)
         await self._persistence.reorder_entries(collection, payload)
-        await self._cache.invalidate(
-            collection_id=collection.id, user_id=collection.user_id
-        )
+        await self._cache.invalidate(collection_id=collection.id, user_id=collection.user_id)
         return await self._build_collection_detail(collection)
 
     async def _build_collection_detail(
@@ -256,9 +240,7 @@ class FavoritesService:
             entries=entries,
             activity=activity,
         )
-        await self._cache.write_collection_detail(
-            collection_id=collection.id, payload=detail
-        )
+        await self._cache.write_collection_detail(collection_id=collection.id, payload=detail)
         return detail
 
     async def _get_collection_stats(
@@ -274,9 +256,7 @@ class FavoritesService:
             entries=collection.entries,
             fights=fights,
         )
-        await self._cache.write_collection_stats(
-            collection_id=collection.id, payload=stats
-        )
+        await self._cache.write_collection_stats(collection_id=collection.id, payload=stats)
         return stats
 
     async def _require_collection(
@@ -290,9 +270,7 @@ class FavoritesService:
         # Entries are already eagerly loaded by load_collection; no need to ensure again.
         return collection
 
-    def _require_entry(
-        self, collection: FavoriteCollection, entry_id: int
-    ) -> FavoriteEntryModel:
+    def _require_entry(self, collection: FavoriteCollection, entry_id: int) -> FavoriteEntryModel:
         entry = next((item for item in collection.entries if item.id == entry_id), None)
         if entry is None:
             raise LookupError("Entry not found")

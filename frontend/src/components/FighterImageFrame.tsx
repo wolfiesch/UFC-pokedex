@@ -36,17 +36,17 @@ function FighterImageFrameComponent({
     <div
       className={cn(
         "group/fighter-frame relative isolate flex aspect-[3/4] items-center justify-center overflow-visible rounded-[1.45rem] p-[3px]",
-        "bg-gradient-to-br from-rose-500/70 via-amber-400/55 to-emerald-400/70 bg-[length:260%_260%] animate-border-glow",
+        "animate-border-glow bg-gradient-to-br from-rose-500/70 via-amber-400/55 to-emerald-400/70 bg-[length:260%_260%]",
         "shadow-subtle transition-all duration-700 ease-out hover:shadow-[0_24px_66px_-30px_rgba(15,23,42,0.78)]",
         widthClass,
-        className
+        className,
       )}
     >
       <div
         className={cn(
           "relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.18rem] bg-background/95",
-          "backdrop-blur-sm ring-1 ring-white/10 transition duration-700 ease-out",
-          "group-hover/fighter-frame:bg-background/80 group-hover/fighter-frame:ring-white/20"
+          "ring-1 ring-white/10 backdrop-blur-sm transition duration-700 ease-out",
+          "group-hover/fighter-frame:bg-background/80 group-hover/fighter-frame:ring-white/20",
         )}
       >
         {children}

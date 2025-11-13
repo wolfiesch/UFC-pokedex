@@ -154,7 +154,9 @@ export function calculateStreak(fightHistory?: FightHistoryEntry[]): Streak {
 /**
  * Get the most recent fight from fight history
  */
-export function getLastFight(fightHistory?: FightHistoryEntry[]): LastFightInfo | null {
+export function getLastFight(
+  fightHistory?: FightHistoryEntry[],
+): LastFightInfo | null {
   if (!fightHistory || fightHistory.length === 0) {
     return null;
   }

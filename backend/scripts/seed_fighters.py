@@ -9,6 +9,7 @@ Usage:
     python -m backend.scripts.seed_fighters ./data/fixtures/fighters.jsonl
     python -m backend.scripts.seed_fighters ./data/processed/fighters_list.jsonl --limit 50
 """
+
 from __future__ import annotations
 
 import argparse
@@ -240,9 +241,7 @@ async def main() -> int:
     # launches now that environment validation occurs during lifespan startup.
     validate_environment()
 
-    parser = argparse.ArgumentParser(
-        description="Seed minimal fighter data into database"
-    )
+    parser = argparse.ArgumentParser(description="Seed minimal fighter data into database")
     parser.add_argument(
         "jsonl_path",
         nargs="?",
@@ -277,9 +276,7 @@ async def main() -> int:
     check_sqlite_production_seed_safety(db_type, args.jsonl_path)
 
     # Run seeding
-    loaded, skipped = await seed_fighters(
-        args.jsonl_path, limit=args.limit, dry_run=args.dry_run
-    )
+    loaded, skipped = await seed_fighters(args.jsonl_path, limit=args.limit, dry_run=args.dry_run)
 
     # Summary
     print()

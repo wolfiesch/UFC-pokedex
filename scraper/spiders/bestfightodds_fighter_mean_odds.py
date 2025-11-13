@@ -155,7 +155,7 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
             fights_processed = 0
 
             for idx, row in enumerate(fight_rows):
-                self.logger.info(f"Processing row {idx+1}/{len(fight_rows)}")
+                self.logger.info(f"Processing row {idx + 1}/{len(fight_rows)}")
 
                 try:
                     # Get opponent from next row (next sibling)
@@ -186,7 +186,9 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                         if "event-header" in (class_name or ""):
                             event_link = await prev_row_element.query_selector("a")
                             event_name = await event_link.text_content() if event_link else None
-                            event_url = await event_link.get_attribute("href") if event_link else None
+                            event_url = (
+                                await event_link.get_attribute("href") if event_link else None
+                            )
 
                     # Extract odds data from td cells
                     td_cells = await row.query_selector_all("td")
@@ -205,7 +207,9 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                     # Find the chart cell with data-li attribute
                     chart_cell = await row.query_selector("td.chart-cell[data-li]")
                     if not chart_cell:
-                        self.logger.warning(f"  No chart-cell with data-li found for {opponent_name} - skipping")
+                        self.logger.warning(
+                            f"  No chart-cell with data-li found for {opponent_name} - skipping"
+                        )
                         continue
 
                     # Get the data-li attribute to identify this chart
@@ -221,7 +225,9 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                     try:
                         await chart_cell.click(timeout=5000, force=True)
                         self.logger.info(f"  Clicked chart cell")
-                        await page.wait_for_timeout(2000)  # Wait for modal to open and chart to render
+                        await page.wait_for_timeout(
+                            2000
+                        )  # Wait for modal to open and chart to render
                     except Exception as e:
                         self.logger.error(f"  Failed to click chart cell: {e}")
                         continue
@@ -230,11 +236,15 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                     mean_odds_data = await self._extract_mean_odds_chart(page)
 
                     if mean_odds_data:
-                        self.logger.info(f"  Extracted chart data: {mean_odds_data.get('error', 'success')}")
-                        if 'debug' in mean_odds_data:
+                        self.logger.info(
+                            f"  Extracted chart data: {mean_odds_data.get('error', 'success')}"
+                        )
+                        if "debug" in mean_odds_data:
                             self.logger.info(f"  Debug info: {mean_odds_data['debug']}")
-                        if 'series' in mean_odds_data and mean_odds_data['series']:
-                            self.logger.info(f"  Got {len(mean_odds_data['series'][0].get('data', []))} data points")
+                        if "series" in mean_odds_data and mean_odds_data["series"]:
+                            self.logger.info(
+                                f"  Got {len(mean_odds_data['series'][0].get('data', []))} data points"
+                            )
 
                     # Close the modal
                     await self._close_chart_modal(page)
@@ -251,30 +261,39 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                         "event_name": event_name.strip() if event_name else None,
                         "event_url": response.urljoin(event_url) if event_url else None,
                         "opening_odds": opening_odds.strip() if opening_odds else None,
-                        "closing_range_start": closing_range_start.strip() if closing_range_start else None,
-                        "closing_range_end": closing_range_end.strip() if closing_range_end else None,
+                        "closing_range_start": closing_range_start.strip()
+                        if closing_range_start
+                        else None,
+                        "closing_range_end": closing_range_end.strip()
+                        if closing_range_end
+                        else None,
                         "scraped_at": datetime.utcnow().isoformat(),
                     }
 
                     # Add mean odds time-series data if available
-                    if mean_odds_data and 'series' in mean_odds_data and len(mean_odds_data['series']) > 0:
+                    if (
+                        mean_odds_data
+                        and "series" in mean_odds_data
+                        and len(mean_odds_data["series"]) > 0
+                    ):
                         # Extract data from first series (mean odds)
-                        series_data = mean_odds_data['series'][0]
-                        result["mean_odds_history"] = series_data.get('data', [])
-                        result["num_odds_points"] = len(series_data.get('data', []))
-                        result["series_name"] = series_data.get('name')
-                        result["chart_title"] = mean_odds_data.get('title')
+                        series_data = mean_odds_data["series"][0]
+                        result["mean_odds_history"] = series_data.get("data", [])
+                        result["num_odds_points"] = len(series_data.get("data", []))
+                        result["series_name"] = series_data.get("name")
+                        result["chart_title"] = mean_odds_data.get("title")
                     else:
                         result["mean_odds_history"] = []
                         result["num_odds_points"] = 0
-                        if mean_odds_data and 'error' in mean_odds_data:
-                            result["extraction_error"] = mean_odds_data['error']
+                        if mean_odds_data and "error" in mean_odds_data:
+                            result["extraction_error"] = mean_odds_data["error"]
 
                     yield result
 
                 except Exception as e:
                     self.logger.error(f"  Error processing fight: {e}")
                     import traceback
+
                     self.logger.error(traceback.format_exc())
                     continue
 

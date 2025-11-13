@@ -181,12 +181,12 @@ def parse_sherdog_reach(reach_str: str | None) -> dict[str, Any]:
         # Format as integer if no decimal part
         if inches == int(inches):
             return {
-                "value": f"{int(inches)}\"",
+                "value": f'{int(inches)}"',
                 "cm": cm,
                 "original": text,
             }
         return {
-            "value": f"{inches}\"",
+            "value": f'{inches}"',
             "cm": cm,
             "original": text,
         }
@@ -199,12 +199,12 @@ def parse_sherdog_reach(reach_str: str | None) -> dict[str, Any]:
         # Format as integer if no decimal part
         if inches == int(inches):
             return {
-                "value": f"{int(inches)}\"",
+                "value": f'{int(inches)}"',
                 "cm": cm,
                 "original": text,
             }
         return {
-            "value": f"{inches}\"",
+            "value": f'{inches}"',
             "cm": cm,
             "original": text,
         }
@@ -263,9 +263,7 @@ def parse_sherdog_fighter_detail(response: Selector) -> dict[str, Any] | None:
             data["weight_kg"] = weight_data["kg"]
 
         # Extract nationality (convert to ISO code)
-        nationality_text = clean_text(
-            response.css("strong[itemprop='nationality']::text").get()
-        )
+        nationality_text = clean_text(response.css("strong[itemprop='nationality']::text").get())
         if nationality_text:
             nationality = normalize_nationality(nationality_text)
             if nationality:

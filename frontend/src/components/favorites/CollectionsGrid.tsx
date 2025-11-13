@@ -36,7 +36,14 @@ export type CollectionsGridProps = {
  * Sortable list item rendered inside the drag-and-drop context.
  */
 function SortableEntry({ entry }: { entry: FavoriteEntry }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: entry.id,
   });
 
@@ -78,7 +85,9 @@ function SortableEntry({ entry }: { entry: FavoriteEntry }) {
             </span>
           ))}
           {!entry.tags.length ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">No tags yet</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+              No tags yet
+            </span>
           ) : null}
         </div>
         <p className="text-xs uppercase tracking-wide text-muted-foreground/80">
@@ -93,11 +102,17 @@ function SortableEntry({ entry }: { entry: FavoriteEntry }) {
  * Grid component that renders favorite fighters and wires up drag-and-drop
  * interactions so users can curate their preferred ordering.
  */
-export function CollectionsGrid({ entries, onReorder, isReordering = false }: CollectionsGridProps) {
-  const [orderedEntries, setOrderedEntries] = useState<FavoriteEntry[]>(entries);
+export function CollectionsGrid({
+  entries,
+  onReorder,
+  isReordering = false,
+}: CollectionsGridProps) {
+  const [orderedEntries, setOrderedEntries] =
+    useState<FavoriteEntry[]>(entries);
 
   // Track the previous ordering to allow quick rollback if the API call fails.
-  const [previousEntries, setPreviousEntries] = useState<FavoriteEntry[]>(entries);
+  const [previousEntries, setPreviousEntries] =
+    useState<FavoriteEntry[]>(entries);
 
   useEffect(() => {
     setOrderedEntries(entries);
@@ -110,10 +125,13 @@ export function CollectionsGrid({ entries, onReorder, isReordering = false }: Co
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
-  const entryIds = useMemo(() => orderedEntries.map((entry) => entry.id), [orderedEntries]);
+  const entryIds = useMemo(
+    () => orderedEntries.map((entry) => entry.id),
+    [orderedEntries],
+  );
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -121,7 +139,9 @@ export function CollectionsGrid({ entries, onReorder, isReordering = false }: Co
       return;
     }
 
-    const oldIndex = orderedEntries.findIndex((entry) => entry.id === active.id);
+    const oldIndex = orderedEntries.findIndex(
+      (entry) => entry.id === active.id,
+    );
     const newIndex = orderedEntries.findIndex((entry) => entry.id === over.id);
     if (oldIndex === -1 || newIndex === -1) {
       return;
@@ -142,7 +162,8 @@ export function CollectionsGrid({ entries, onReorder, isReordering = false }: Co
   if (!orderedEntries.length) {
     return (
       <div className="rounded-3xl border border-dashed border-border/60 bg-card/40 p-10 text-center text-sm text-muted-foreground">
-        No fighters in this collection yet. Use the search tools to add your first favorite.
+        No fighters in this collection yet. Use the search tools to add your
+        first favorite.
       </div>
     );
   }
@@ -151,7 +172,10 @@ export function CollectionsGrid({ entries, onReorder, isReordering = false }: Co
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <SortableContext items={entryIds} strategy={verticalListSortingStrategy}>
         <div
-          className={cn("grid gap-4 md:grid-cols-2", isReordering && "pointer-events-none opacity-70")}
+          className={cn(
+            "grid gap-4 md:grid-cols-2",
+            isReordering && "pointer-events-none opacity-70",
+          )}
           aria-busy={isReordering}
         >
           {orderedEntries.map((entry) => (

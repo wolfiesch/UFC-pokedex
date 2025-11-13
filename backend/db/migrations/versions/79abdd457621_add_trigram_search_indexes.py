@@ -5,13 +5,14 @@ Revises: bf57252535f6
 Create Date: 2025-11-05 00:24:01.876371
 
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '79abdd457621'
-down_revision: str | None = 'bf57252535f6'
+revision: str = "79abdd457621"
+down_revision: str | None = "bf57252535f6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -33,6 +34,7 @@ def upgrade() -> None:
         # Log warning but don't fail the migration
         # The extension might not be available in all environments
         import logging
+
         logging.warning(f"pg_trgm extension not available: {e}")
         logging.warning("Skipping trigram indexes. Text search will use standard LIKE queries.")
         return

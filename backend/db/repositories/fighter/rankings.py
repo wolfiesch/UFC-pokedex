@@ -15,9 +15,7 @@ class FighterRankingMixin:
     """Provide utilities to hydrate ranking metadata for fighters."""
 
     _DEFAULT_RANKING_SOURCE = (
-        os.getenv("FIGHTER_RANKING_SOURCE")
-        or os.getenv("DEFAULT_RANKING_SOURCE")
-        or "fightmatrix"
+        os.getenv("FIGHTER_RANKING_SOURCE") or os.getenv("DEFAULT_RANKING_SOURCE") or "fightmatrix"
     ).strip() or None
 
     def _ranking_source(self) -> str | None:

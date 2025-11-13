@@ -102,18 +102,14 @@ class FavoritesPersistence:
         query = (
             select(FavoriteCollection)
             .options(
-                selectinload(FavoriteCollection.entries).selectinload(
-                    FavoriteEntryModel.fighter
-                )
+                selectinload(FavoriteCollection.entries).selectinload(FavoriteEntryModel.fighter)
             )
             .where(FavoriteCollection.id == collection_id)
         )
         result = await self._session.execute(query)
         return result.scalars().unique().one_or_none()
 
-    async def create_collection(
-        self, payload: FavoriteCollectionCreate
-    ) -> FavoriteCollection:
+    async def create_collection(self, payload: FavoriteCollectionCreate) -> FavoriteCollection:
         """Persist a new collection from the provided payload."""
 
         collection = FavoriteCollection(
@@ -160,11 +156,7 @@ class FavoritesPersistence:
         """Create a new entry within a collection."""
 
         existing = next(
-            (
-                entry
-                for entry in collection.entries
-                if entry.fighter_id == payload.fighter_id
-            ),
+            (entry for entry in collection.entries if entry.fighter_id == payload.fighter_id),
             None,
         )
         if existing is not None:
@@ -212,9 +204,7 @@ class FavoritesPersistence:
         await self._session.flush()
         return entry
 
-    async def delete_entry(
-        self, collection: FavoriteCollection, entry: FavoriteEntryModel
-    ) -> None:
+    async def delete_entry(self, collection: FavoriteCollection, entry: FavoriteEntryModel) -> None:
         """Delete an entry and normalize remaining positions."""
 
         await self._session.delete(entry)
@@ -243,9 +233,7 @@ class FavoritesPersistence:
 
         await self._session.refresh(collection, ["entries"])
 
-    async def fetch_fights_for_entries(
-        self, collection: FavoriteCollection
-    ) -> list[Fight]:
+    async def fetch_fights_for_entries(self, collection: FavoriteCollection) -> list[Fight]:
         """Fetch fights associated with the fighters in the collection."""
 
         fighter_ids = [entry.fighter_id for entry in collection.entries]

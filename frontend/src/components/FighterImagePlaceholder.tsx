@@ -8,7 +8,11 @@ type Props = {
   className?: string;
 };
 
-function FighterImagePlaceholderComponent({ name, division, className }: Props) {
+function FighterImagePlaceholderComponent({
+  name,
+  division,
+  className,
+}: Props) {
   const initials = getInitials(name);
   const colorClasses = getColorFromString(name);
 

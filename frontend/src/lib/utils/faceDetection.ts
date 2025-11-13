@@ -15,9 +15,10 @@
  * @param imageData - ImageData from canvas
  * @returns Object with x, y coordinates (0-1 normalized) for crop center
  */
-export function detectSubjectCenter(
-  imageData: ImageData
-): { x: number; y: number } {
+export function detectSubjectCenter(imageData: ImageData): {
+  x: number;
+  y: number;
+} {
   const { width, height, data } = imageData;
 
   // Grid size for analysis (smaller = more precise but slower)
@@ -176,7 +177,7 @@ export async function loadImageData(imageUrl: string): Promise<ImageData> {
  * @returns Promise resolving to normalized crop center coordinates
  */
 export async function getSmartCropCenter(
-  imageUrl: string
+  imageUrl: string,
 ): Promise<{ x: number; y: number }> {
   try {
     const imageData = await loadImageData(imageUrl);
@@ -200,7 +201,7 @@ const cropCenterCache = new Map<string, { x: number; y: number }>();
  * @returns Promise resolving to crop center (cached if available)
  */
 export async function getSmartCropCenterCached(
-  imageUrl: string
+  imageUrl: string,
 ): Promise<{ x: number; y: number }> {
   if (cropCenterCache.has(imageUrl)) {
     return cropCenterCache.get(imageUrl)!;

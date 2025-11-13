@@ -32,13 +32,9 @@ class FighterDetailMixin:
         start_time = time.time()
 
         base_columns = self._fighter_detail_columns()
-        load_columns, supports_was_interim = await self._resolve_fighter_columns(
-            base_columns
-        )
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(base_columns)
         fighter_query = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .where(Fighter.id == fighter_id)
+            select(Fighter).options(load_only(*load_columns)).where(Fighter.id == fighter_id)
         )
         fighter_result = await self._session.execute(fighter_query)
         fighter = fighter_result.scalar_one_or_none()
@@ -84,9 +80,7 @@ class FighterDetailMixin:
             ).where(Fight.opponent_id == fighter_id)
         ).cte("opponent_fights")
 
-        combined_query = select(primary_fights_cte).union_all(
-            select(opponent_fights_cte)
-        )
+        combined_query = select(primary_fights_cte).union_all(select(opponent_fights_cte))
 
         all_fights_result = await self._session.execute(combined_query)
         all_fights_rows = all_fights_result.all()
@@ -109,9 +103,7 @@ class FighterDetailMixin:
 
         for row in all_fights_rows:
             if row.is_primary:
-                opponent_name = row.opponent_name or opponent_lookup.get(
-                    row.opponent_id, "Unknown"
-                )
+                opponent_name = row.opponent_name or opponent_lookup.get(row.opponent_id, "Unknown")
                 fight_key = create_fight_key(
                     row.event_name,
                     row.event_date,
@@ -163,9 +155,7 @@ class FighterDetailMixin:
 
                 if fight_key not in fight_dict:
                     fight_dict[fight_key] = new_entry
-                elif should_replace_fight(
-                    fight_dict[fight_key].result, inverted_result
-                ):
+                elif should_replace_fight(fight_dict[fight_key].result, inverted_result):
                     fight_dict[fight_key] = new_entry
 
         fight_history: list[FightHistoryEntry] = list(fight_dict.values())

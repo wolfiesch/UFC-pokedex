@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 UFC Fighter Pokedex is a full-stack application that scrapes UFC fighter data from UFCStats.com and presents it in a Pokedex-style interface. The project follows a three-tier architecture with a clear data pipeline: Scraper → Database → API → Frontend.
 
 **Tech Stack:**
-- Backend: FastAPI + SQLAlchemy (async) + PostgreSQL (or SQLite for development)
+- Backend: FastAPI + SQLAlchemy (async) + PostgreSQL
 - Scraper: Scrapy + BeautifulSoup4
 - Frontend: Next.js 14 + React + Tailwind CSS + Zustand
 - Package Manager: `uv` (not pip)
@@ -102,164 +102,45 @@ cat frontend/.env.local
 
 **For detailed tunnel documentation:** See [docs/TUNNEL.md](../../docs/TUNNEL.md)
 
-## Database Setup: PostgreSQL vs SQLite
+## Database Setup (PostgreSQL only)
 
-### Quick Decision Guide
+PostgreSQL is now the single supported database engine for the project. Every local, staging, and production environment must target a running PostgreSQL instance (Docker Compose is the recommended way to satisfy the dependency).
 
-**Use PostgreSQL when:**
-- ✅ Working on production-ready features
-- ✅ Testing with full dataset (10,000+ fighters)
-- ✅ Testing concurrent requests or write-heavy operations
-- ✅ Creating or testing database migrations (Alembic)
-- ✅ Developing features that require advanced SQL features (full-text search, complex joins)
+### Required services
 
-**Use SQLite when:**
-- ✅ Quick prototyping or testing UI changes
-- ✅ Docker is not available or not desired
-- ✅ Working with small sample datasets (< 100 fighters)
-- ✅ Running CI/CD tests that need fast database setup
-- ✅ No database schema changes are needed
+- Run `docker compose up -d` to provision PostgreSQL and Redis before starting any Python processes.
+- Copy `.env.example` to `.env` and fill in `DATABASE_URL` with a PostgreSQL connection string (for example `postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex`).
+- Use `make ensure-docker` if you need a quick health check/auto-start for the Compose services.
 
-### Key Differences
-
-| Feature | PostgreSQL | SQLite |
-|---------|-----------|---------|
-| **Setup Complexity** | Requires Docker or manual PostgreSQL install | Zero setup - just run the app |
-| **Database Migrations** | Uses Alembic migrations (version-controlled) | Uses SQLAlchemy `create_all()` (no migrations) |
-| **Schema Changes** | Must create migration files manually | Tables auto-created from models |
-| **Data Persistence** | Persists in Docker volume | Single file: `data/app.db` |
-| **Performance** | Optimized for large datasets & concurrency | Fast for small datasets, single-threaded |
-| **Production Use** | ✅ Production-ready | ❌ Development/testing only |
-| **Full Dataset Support** | ✅ Handles 10K+ fighters easily | ⚠️ Possible but not recommended (blocked by default) |
-| **Concurrent Writes** | ✅ Multiple connections supported | ❌ Single writer at a time |
-| **Advanced SQL Features** | ✅ Full PostgreSQL features | ⚠️ Limited (no full-text search, simpler query planner) |
-
-### PostgreSQL Setup (Recommended for Regular Development)
+### Initializing the schema
 
 ```bash
-# 1. Install dependencies
-make bootstrap
-
-# 2. Start PostgreSQL + Redis containers
-docker-compose up -d
-
-# 3. Run database migrations (creates schema)
-make db-upgrade
-
-# 4. Load data into database
-make load-data              # Load fighter list only
-make load-data-details      # Load fighter details from JSON files
-# OR
-make reload-data            # Load both list + details (full refresh)
-
-# 5. Start backend (connects to PostgreSQL automatically)
-make api
-
-# 6. Start frontend (separate terminal)
-make frontend
+make bootstrap        # Install Python + Node dependencies
+docker compose up -d  # Launch PostgreSQL + Redis
+make db-upgrade       # Apply Alembic migrations
 ```
 
-**Environment configuration:**
+### Working with data
+
 ```bash
-# .env file (use this for PostgreSQL)
-DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
+make api:seed         # Load lightweight sample fighters
+make reload-data      # Load scraped list + detail JSONL payloads
+make load-data        # Load list-only dataset
+make load-data-details  # Load detail-only dataset
 ```
 
-### SQLite Development Mode (Docker-Free)
+### Development entry points
 
-The backend can run without Docker using SQLite as a lightweight alternative to PostgreSQL. This is ideal for quick local development, testing, or when Docker isn't available.
+- `make dev-local` and `make dev-tunnel` both expect PostgreSQL to be running; they will fail fast if `DATABASE_URL` is missing or the server is unavailable.
+- `make api-dev` now shells into the same Postgres-backed environment as `make api` while keeping auto-reload enabled. It calls `ensure-docker` first so Compose services come online automatically.
+- There is no SQLite fallback—the backend will log a clear error if `DATABASE_URL` points anywhere other than PostgreSQL.
 
-**Quickstart (no Docker required):**
-```bash
-# 1. Install dependencies
-make bootstrap
+### Troubleshooting
 
-# 2. Seed database with sample fighters
-make api:seed          # 8 sample fighters from fixtures
-
-# 3. Start backend (auto-creates SQLite database)
-make api:dev           # Uses SQLite if DATABASE_URL is not set
-
-# 4. Start frontend (separate terminal)
-make frontend
-```
-
-**Available SQLite commands:**
-```bash
-make api:dev           # Start backend with SQLite fallback (if DATABASE_URL unset)
-make api:sqlite        # Force SQLite mode (USE_SQLITE=1, ignores DATABASE_URL)
-make api:seed          # Seed with sample fighters (data/fixtures/fighters.jsonl)
-make api:seed-full     # Seed with all scraped fighters (data/processed/fighters_list.jsonl)
-```
-
-**How it works:**
-- **No DATABASE_URL set**: Automatically uses `sqlite+aiosqlite:///./data/app.db`
-- **USE_SQLITE=1 env var**: Forces SQLite even if DATABASE_URL is set
-- **Tables auto-created**: On startup, SQLite mode automatically creates all tables (no Alembic needed)
-- **Seeding is idempotent**: Running `make api:seed` multiple times won't create duplicates (uses upsert)
-
-**Environment variables for SQLite:**
-```bash
-# Optional - force SQLite mode
-USE_SQLITE=1
-
-# Optional - if unset, falls back to SQLite automatically
-# DATABASE_URL=sqlite+aiosqlite:///./data/app.db
-```
-
-**Important notes:**
-- SQLite is for **development only** (single-writer, not for production)
-- When switching back to PostgreSQL, just set DATABASE_URL and run `make db-upgrade`
-- SQLite database file: `data/app.db` (in data directory)
-- Alembic migrations **only** apply to PostgreSQL (SQLite uses `create_all()`)
-
-**Production seed safety:**
-- `make api:seed` (8 sample fighters) - ✅ Always allowed on SQLite
-- `make api:seed-full` (10K+ fighters) - ❌ Blocked on SQLite by default
-- To override the safety check (NOT RECOMMENDED):
-  ```bash
-  ALLOW_SQLITE_PROD_SEED=1 make api:seed-full
-  ```
-- This safety check prevents accidentally seeding large datasets into SQLite, which is not designed for production workloads
-
-### Switching Between Databases
-
-**From SQLite to PostgreSQL:**
-```bash
-# 1. Start PostgreSQL container
-docker-compose up -d
-
-# 2. Set DATABASE_URL in .env
-echo "DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex" >> .env
-
-# 3. Run Alembic migrations to create schema
-make db-upgrade
-
-# 4. Load your data
-make reload-data            # If you have scraped data
-# OR
-make api:seed               # For sample data
-
-# 5. Restart backend
-make api
-```
-
-**From PostgreSQL to SQLite:**
-```bash
-# 1. Remove or comment out DATABASE_URL in .env
-# DATABASE_URL=postgresql+psycopg://...
-
-# 2. (Optional) Remove USE_SQLITE if set
-# USE_SQLITE=1
-
-# 3. Backend will automatically create SQLite database on startup
-make api:dev
-
-# 4. Seed with sample data
-make api:seed
-```
-
-**Important:** When switching databases, your data does NOT automatically transfer. You need to re-seed or re-load scraped data after switching.
+- Verify the container: `docker compose ps` should show `postgres` as healthy before starting FastAPI.
+- Inspect migrations: `alembic history --verbose` lists the revisions that `make db-upgrade` will apply.
+- Reset the database if needed: `make db-reset` drops and recreates the schema using PostgreSQL.
+- Connection errors typically indicate a missing `.env` file or an offline Compose stack; re-run `make ensure-docker` and confirm credentials.
 
 ### Cloudflare Tunnel (Public Access)
 
@@ -719,18 +600,10 @@ make scraper       # Uses .venv/bin/scrapy internally
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-**Backend (all optional with fallbacks):**
+**Backend (configure via `.env`):**
 ```
-# Database (optional - falls back to SQLite if unset)
+# Database (required - PostgreSQL only)
 DATABASE_URL=postgresql+psycopg://ufc_pokedex:ufc_pokedex@localhost:5432/ufc_pokedex
-
-# Force SQLite mode (optional)
-USE_SQLITE=1
-
-# Allow production data seeding on SQLite (NOT RECOMMENDED - optional)
-# By default, seeding production data (10K+ fighters) on SQLite is blocked
-# Set to "1" to override this safety check
-ALLOW_SQLITE_PROD_SEED=1
 
 # Redis cache (optional - gracefully degrades if unavailable)
 REDIS_URL=redis://localhost:6379/0

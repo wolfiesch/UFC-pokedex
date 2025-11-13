@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 class EventListItem(BaseModel):
     """Event from the events list page (UFCStats)"""
+
     event_id: str
     detail_url: HttpUrl
     name: str
@@ -18,6 +19,7 @@ class EventListItem(BaseModel):
 
 class EventFight(BaseModel):
     """Individual fight in an event fight card"""
+
     fight_id: str | None = None
     fighter_1_id: str | None = None
     fighter_1_name: str
@@ -34,6 +36,7 @@ class EventFight(BaseModel):
 
 class EventDetail(EventListItem):
     """Detailed event information from event detail page (UFCStats)"""
+
     venue: str | None = None
     promotion: str = "UFC"
     fight_card: list[EventFight] = Field(default_factory=list)
@@ -41,6 +44,7 @@ class EventDetail(EventListItem):
 
 class TapologyEnrichment(BaseModel):
     """Enrichment data from Tapology"""
+
     event_id: str  # UFCStats event ID for matching
     tapology_url: HttpUrl
     sherdog_url: HttpUrl | None = None

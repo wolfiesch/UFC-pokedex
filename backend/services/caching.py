@@ -117,9 +117,7 @@ def cached(
 
     def decorator(func: DecoratedCallable) -> DecoratedCallable:
         @wraps(func)
-        async def wrapper(
-            self: "CacheableService", *args: P.args, **kwargs: P.kwargs
-        ) -> T:
+        async def wrapper(self: "CacheableService", *args: P.args, **kwargs: P.kwargs) -> T:
             cache_key = key_builder(self, *args, **kwargs)
             if cache_key:
                 cached_value = await self._cache_get(cache_key)
@@ -130,9 +128,7 @@ def cached(
                         except Exception as exc:  # pragma: no cover - defensive logging
                             if deserialize_error_message:
                                 logger.warning(
-                                    deserialize_error_message.format(
-                                        key=cache_key, error=exc
-                                    )
+                                    deserialize_error_message.format(key=cache_key, error=exc)
                                 )
                     else:
                         return cast(T, cached_value)
@@ -146,9 +142,7 @@ def cached(
                 try:
                     await self._cache_set(cache_key, payload, ttl=ttl)
                 except Exception as exc:  # pragma: no cover - cache backend issues
-                    logger.warning(
-                        "Failed to persist cache entry for key %s: %s", cache_key, exc
-                    )
+                    logger.warning("Failed to persist cache entry for key %s: %s", cache_key, exc)
 
             return result
 

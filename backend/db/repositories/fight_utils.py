@@ -84,15 +84,9 @@ def compute_record_from_fights(fights: list[FightHistoryEntry]) -> str | None:
     if not fights:
         return None
 
-    wins = sum(
-        1 for fight in fights if _normalize_result_category(fight.result) == "win"
-    )
-    losses = sum(
-        1 for fight in fights if _normalize_result_category(fight.result) == "loss"
-    )
-    draws = sum(
-        1 for fight in fights if _normalize_result_category(fight.result) == "draw"
-    )
+    wins = sum(1 for fight in fights if _normalize_result_category(fight.result) == "win")
+    losses = sum(1 for fight in fights if _normalize_result_category(fight.result) == "loss")
+    draws = sum(1 for fight in fights if _normalize_result_category(fight.result) == "draw")
 
     # Only return computed record if at least one completed fight exists
     if wins + losses + draws > 0:

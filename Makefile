@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-chronological scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run scrape-mean-odds-test scrape-mean-odds-sample scrape-mean-odds-full scrape-mean-odds-resume tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-chronological scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run scrape-mean-odds-test scrape-mean-odds-sample scrape-mean-odds-full scrape-mean-odds-resume tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -140,19 +140,12 @@ api: ensure-docker ## Start only the FastAPI backend (kills existing process on 
 	@echo "Starting backend..."
 	@.venv/bin/uvicorn backend.main:app --reload --host $${API_HOST:-0.0.0.0} --port $${API_PORT:-8000}
 
-api-dev: ## Start backend with auto-reload (without Docker - uses SQLite if DATABASE_URL unset)
+api-dev: ensure-docker ## Start backend with auto-reload against PostgreSQL
 	@echo ""
-	@echo "🚀 Starting backend in development mode (SQLite if DATABASE_URL not set)..."
+	@echo "🚀 Starting backend in development mode against PostgreSQL..."
 	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
 	@sleep 1
 	@uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-
-api-sqlite: ## Start backend with SQLite (forced, no Docker required)
-	@echo ""
-	@echo "🗄️  Starting backend with SQLite (forced mode)..."
-	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
-	@sleep 1
-	@USE_SQLITE=1 uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
 api-seed: ## Seed database with sample fighters from fixtures
 	@echo "🌱 Seeding database with sample fighters..."

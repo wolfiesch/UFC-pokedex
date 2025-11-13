@@ -4,3462 +4,3468 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Healthcheck
-         * @description Simple health endpoint for readiness checks.
-         */
-        get: operations["healthcheck_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/fighters/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Fighters
-         * @description List fighters with pagination and location filtering.
-         *
-         *     Examples:
-         *         /fighters/?birthplace_country=Ireland
-         *         /fighters/?training_gym=American Kickboxing Academy
-         *         /fighters/?nationality=Brazilian&division=Lightweight
-         */
-        get: operations["list_fighters_fighters__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Healthcheck
+     * @description Simple health endpoint for readiness checks.
+     */
+    get: operations["healthcheck_health_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/fighters/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/fighters/random": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Random Fighter
-         * @description Get a random fighter from the database.
-         */
-        get: operations["get_random_fighter_fighters_random_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List Fighters
+     * @description List fighters with pagination and location filtering.
+     *
+     *     Examples:
+     *         /fighters/?birthplace_country=Ireland
+     *         /fighters/?training_gym=American Kickboxing Academy
+     *         /fighters/?nationality=Brazilian&division=Lightweight
+     */
+    get: operations["list_fighters_fighters__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/fighters/random": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/fighters/compare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Compare Fighters
-         * @description Return side-by-side stat snapshots for the requested fighters.
-         */
-        get: operations["compare_fighters_fighters_compare_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Random Fighter
+     * @description Get a random fighter from the database.
+     */
+    get: operations["get_random_fighter_fighters_random_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/fighters/compare": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/fighters/{fighter_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Fighter */
-        get: operations["get_fighter_fighters__fighter_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Compare Fighters
+     * @description Return side-by-side stat snapshots for the requested fighters.
+     */
+    get: operations["compare_fighters_fighters_compare_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/fighters/{fighter_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Events
-         * @description List events with optional filtering and pagination.
-         */
-        get: operations["list_events_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Fighter */
+    get: operations["get_fighter_fighters__fighter_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/upcoming": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Upcoming Events
-         * @description List all upcoming UFC events.
-         */
-        get: operations["list_upcoming_events_events_upcoming_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List Events
+     * @description List events with optional filtering and pagination.
+     */
+    get: operations["list_events_events__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/upcoming": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/completed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Completed Events
-         * @description List completed UFC events with pagination.
-         */
-        get: operations["list_completed_events_events_completed_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List Upcoming Events
+     * @description List all upcoming UFC events.
+     */
+    get: operations["list_upcoming_events_events_upcoming_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/completed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/search/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search Events
-         * @description Search and filter events with advanced options.
-         */
-        get: operations["search_events_events_search__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List Completed Events
+     * @description List completed UFC events with pagination.
+     */
+    get: operations["list_completed_events_events_completed_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/search/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/filters/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Filter Options
-         * @description Get available filter options (unique years, locations, event types).
-         */
-        get: operations["get_filter_options_events_filters_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Search Events
+     * @description Search and filter events with advanced options.
+     */
+    get: operations["search_events_events_search__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/filters/options": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event
-         * @description Get detailed information about a specific event, including fight card.
-         */
-        get: operations["get_event_events__event_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Filter Options
+     * @description Get available filter options (unique years, locations, event types).
+     */
+    get: operations["get_filter_options_events_filters_options_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/{event_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/search/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search Fighters
-         * @description Search fighters by name, nickname, or location.
-         *
-         *     Examples:
-         *         /search/?q=dublin      # Finds fighters from Dublin
-         *         /search/?q=aka         # Finds fighters from AKA gym
-         *         /search/?q=brazilian   # Finds Brazilian fighters
-         */
-        get: operations["search_fighters_search__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Event
+     * @description Get detailed information about a specific event, including fight card.
+     */
+    get: operations["get_event_events__event_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/search/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stats Summary */
-        get: operations["stats_summary_stats_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Search Fighters
+     * @description Search fighters by name, nickname, or location.
+     *
+     *     Examples:
+     *         /search/?q=dublin      # Finds fighters from Dublin
+     *         /search/?q=aka         # Finds fighters from AKA gym
+     *         /search/?q=brazilian   # Finds Brazilian fighters
+     */
+    get: operations["search_fighters_search__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/leaderboards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Stats Leaderboards
-         * @description Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering.
-         */
-        get: operations["stats_leaderboards_stats_leaderboards_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Stats Summary */
+    get: operations["stats_summary_stats_summary_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/leaderboards": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/trends": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Stats Trends
-         * @description Return historical streaks and fight duration aggregations for dashboards.
-         */
-        get: operations["stats_trends_stats_trends_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Stats Leaderboards
+     * @description Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering.
+     */
+    get: operations["stats_leaderboards_stats_leaderboards_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/trends": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/countries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Country Stats
-         * @description Get fighter count by country.
-         *
-         *     Examples:
-         *         /stats/countries?group_by=birthplace
-         *         /stats/countries?group_by=nationality&min_fighters=10
-         */
-        get: operations["get_country_stats_stats_countries_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Stats Trends
+     * @description Return historical streaks and fight duration aggregations for dashboards.
+     */
+    get: operations["stats_trends_stats_trends_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/countries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/cities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get City Stats
-         * @description Get fighter count by city.
-         *
-         *     Examples:
-         *         /stats/cities?group_by=training&min_fighters=10
-         *         /stats/cities?group_by=birthplace&country=United States
-         */
-        get: operations["get_city_stats_stats_cities_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Country Stats
+     * @description Get fighter count by country.
+     *
+     *     Examples:
+     *         /stats/countries?group_by=birthplace
+     *         /stats/countries?group_by=nationality&min_fighters=10
+     */
+    get: operations["get_country_stats_stats_countries_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/cities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats/gyms": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Gym Stats
-         * @description Get fighter count by training gym.
-         *
-         *     Examples:
-         *         /stats/gyms?min_fighters=10
-         *         /stats/gyms?country=United States&sort_by=fighters
-         */
-        get: operations["get_gym_stats_stats_gyms_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get City Stats
+     * @description Get fighter count by city.
+     *
+     *     Examples:
+     *         /stats/cities?group_by=training&min_fighters=10
+     *         /stats/cities?group_by=birthplace&country=United States
+     */
+    get: operations["get_city_stats_stats_cities_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/gyms": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/rankings/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get All Rankings
-         * @description Get current rankings for all divisions.
-         *
-         *     Returns the most recent rankings snapshot across all weight classes
-         *     from the specified source.
-         *
-         *     Args:
-         *         source: Ranking source (ufc, fightmatrix, tapology)
-         *         service: Ranking service dependency
-         *
-         *     Returns:
-         *         All rankings organized by division
-         */
-        get: operations["get_all_rankings_rankings__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Gym Stats
+     * @description Get fighter count by training gym.
+     *
+     *     Examples:
+     *         /stats/gyms?min_fighters=10
+     *         /stats/gyms?country=United States&sort_by=fighters
+     */
+    get: operations["get_gym_stats_stats_gyms_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/rankings/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/rankings/divisions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Divisions
-         * @description Get list of all divisions with rankings available.
-         *
-         *     Args:
-         *         source: Ranking source
-         *         service: Ranking service dependency
-         *
-         *     Returns:
-         *         List of division names
-         */
-        get: operations["get_divisions_rankings_divisions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get All Rankings
+     * @description Get current rankings for all divisions.
+     *
+     *     Returns the most recent rankings snapshot across all weight classes
+     *     from the specified source.
+     *
+     *     Args:
+     *         source: Ranking source (ufc, fightmatrix, tapology)
+     *         service: Ranking service dependency
+     *
+     *     Returns:
+     *         All rankings organized by division
+     */
+    get: operations["get_all_rankings_rankings__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/rankings/divisions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/rankings/{division}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Division Rankings
-         * @description Get current rankings for a specific division.
-         *
-         *     Returns the most recent ranking snapshot for the specified weight class.
-         *
-         *     Args:
-         *         division: Weight class (e.g., 'Lightweight', 'Heavyweight')
-         *         source: Ranking source
-         *         service: Ranking service dependency
-         *
-         *     Returns:
-         *         Division rankings with fighter details
-         */
-        get: operations["get_division_rankings_rankings__division__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Divisions
+     * @description Get list of all divisions with rankings available.
+     *
+     *     Args:
+     *         source: Ranking source
+     *         service: Ranking service dependency
+     *
+     *     Returns:
+     *         List of division names
+     */
+    get: operations["get_divisions_rankings_divisions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/rankings/{division}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/rankings/fighter/{fighter_id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fighter Ranking History
-         * @description Get historical ranking progression for a fighter.
-         *
-         *     Returns a timeline of the fighter's ranking snapshots ordered by date
-         *     (most recent first).
-         *
-         *     Args:
-         *         fighter_id: Fighter's UUID
-         *         source: Ranking source
-         *         limit: Optional limit on number of records
-         *         service: Ranking service dependency
-         *         session: Database session
-         *
-         *     Returns:
-         *         Fighter's ranking history
-         */
-        get: operations["get_fighter_ranking_history_rankings_fighter__fighter_id__history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Division Rankings
+     * @description Get current rankings for a specific division.
+     *
+     *     Returns the most recent ranking snapshot for the specified weight class.
+     *
+     *     Args:
+     *         division: Weight class (e.g., 'Lightweight', 'Heavyweight')
+     *         source: Ranking source
+     *         service: Ranking service dependency
+     *
+     *     Returns:
+     *         Division rankings with fighter details
+     */
+    get: operations["get_division_rankings_rankings__division__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/rankings/fighter/{fighter_id}/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/rankings/fighter/{fighter_id}/peak": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fighter Peak Ranking
-         * @description Get fighter's best ranking achievement.
-         *
-         *     Returns the fighter's highest (lowest number) ranking ever achieved
-         *     from the specified source.
-         *
-         *     Args:
-         *         fighter_id: Fighter's UUID
-         *         source: Ranking source
-         *         service: Ranking service dependency
-         *         session: Database session
-         *
-         *     Returns:
-         *         Fighter's peak ranking
-         */
-        get: operations["get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Fighter Ranking History
+     * @description Get historical ranking progression for a fighter.
+     *
+     *     Returns a timeline of the fighter's ranking snapshots ordered by date
+     *     (most recent first).
+     *
+     *     Args:
+     *         fighter_id: Fighter's UUID
+     *         source: Ranking source
+     *         limit: Optional limit on number of records
+     *         service: Ranking service dependency
+     *         session: Database session
+     *
+     *     Returns:
+     *         Fighter's ranking history
+     */
+    get: operations["get_fighter_ranking_history_rankings_fighter__fighter_id__history_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/rankings/fighter/{fighter_id}/peak": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Collections
-         * @description Return the caller's collections, hydrating stats summaries.
-         */
-        get: operations["list_collections_favorites_collections_get"];
-        put?: never;
-        /**
-         * Create Collection
-         * @description Create a new collection and return the fully hydrated payload.
-         */
-        post: operations["create_collection_favorites_collections_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Fighter Peak Ranking
+     * @description Get fighter's best ranking achievement.
+     *
+     *     Returns the fighter's highest (lowest number) ranking ever achieved
+     *     from the specified source.
+     *
+     *     Args:
+     *         fighter_id: Fighter's UUID
+     *         source: Ranking source
+     *         service: Ranking service dependency
+     *         session: Database session
+     *
+     *     Returns:
+     *         Fighter's peak ranking
+     */
+    get: operations["get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/favorites/collections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections/{collection_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Collection
-         * @description Retrieve a single collection by identifier.
-         */
-        get: operations["get_collection_favorites_collections__collection_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Collection
-         * @description Remove a collection and all of its entries.
-         */
-        delete: operations["delete_collection_favorites_collections__collection_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Collection
-         * @description Apply partial updates to a collection.
-         */
-        patch: operations["update_collection_favorites_collections__collection_id__patch"];
-        trace?: never;
+    /**
+     * List Collections
+     * @description Return the caller's collections, hydrating stats summaries.
+     */
+    get: operations["list_collections_favorites_collections_get"];
+    put?: never;
+    /**
+     * Create Collection
+     * @description Create a new collection and return the fully hydrated payload.
+     */
+    post: operations["create_collection_favorites_collections_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/favorites/collections/{collection_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections/{collection_id}/entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Entry
-         * @description Insert a fighter into the requested collection.
-         */
-        post: operations["add_entry_favorites_collections__collection_id__entries_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Collection
+     * @description Retrieve a single collection by identifier.
+     */
+    get: operations["get_collection_favorites_collections__collection_id__get"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete Collection
+     * @description Remove a collection and all of its entries.
+     */
+    delete: operations["delete_collection_favorites_collections__collection_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Update Collection
+     * @description Apply partial updates to a collection.
+     */
+    patch: operations["update_collection_favorites_collections__collection_id__patch"];
+    trace?: never;
+  };
+  "/favorites/collections/{collection_id}/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections/{collection_id}/entries/{entry_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete Entry
-         * @description Remove an entry from a collection.
-         */
-        delete: operations["delete_entry_favorites_collections__collection_id__entries__entry_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Entry
-         * @description Mutate entry metadata such as notes, tags, or ordering.
-         */
-        patch: operations["update_entry_favorites_collections__collection_id__entries__entry_id__patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Add Entry
+     * @description Insert a fighter into the requested collection.
+     */
+    post: operations["add_entry_favorites_collections__collection_id__entries_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/favorites/collections/{collection_id}/entries/{entry_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections/{collection_id}/entries/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reorder Entries
-         * @description Persist drag-and-drop ordering from the UI.
-         */
-        post: operations["reorder_entries_favorites_collections__collection_id__entries_reorder_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Entry
+     * @description Remove an entry from a collection.
+     */
+    delete: operations["delete_entry_favorites_collections__collection_id__entries__entry_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Update Entry
+     * @description Mutate entry metadata such as notes, tags, or ordering.
+     */
+    patch: operations["update_entry_favorites_collections__collection_id__entries__entry_id__patch"];
+    trace?: never;
+  };
+  "/favorites/collections/{collection_id}/entries/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/favorites/collections/{collection_id}/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Collection Stats
-         * @description Return stats for a collection without fetching entries.
-         */
-        get: operations["get_collection_stats_favorites_collections__collection_id__stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Reorder Entries
+     * @description Persist drag-and-drop ordering from the UI.
+     */
+    post: operations["reorder_entries_favorites_collections__collection_id__entries_reorder_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/favorites/collections/{collection_id}/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/fightweb/graph": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fight Graph
-         * @description Return a graph-friendly representation of fighters and their shared bouts.
-         */
-        get: operations["get_fight_graph_fightweb_graph_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Collection Stats
+     * @description Return stats for a collection without fetching entries.
+     */
+    get: operations["get_collection_stats_favorites_collections__collection_id__stats_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/fightweb/graph": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Validation Stats
-         * @description Get overall image validation statistics.
-         *
-         *     Returns:
-         *         Dictionary with validation statistics including:
-         *         - total_fighters: Total number of fighters
-         *         - validated: Number of fighters with validated images
-         *         - with_faces: Number with detected faces
-         *         - without_faces: Number without detected faces
-         *         - low_quality: Number with quality score < 50
-         *         - with_flags: Number with validation flags
-         *         - flag_breakdown: Count of each flag type
-         */
-        get: operations["get_validation_stats_image_validation_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Fight Graph
+     * @description Return a graph-friendly representation of fighters and their shared bouts.
+     */
+    get: operations["get_fight_graph_fightweb_graph_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/low-quality": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Low Quality Images
-         * @description Get fighters with low-quality images.
-         *
-         *     Args:
-         *         min_score: Quality score threshold (return fighters below this score)
-         *         limit: Maximum number of results
-         *         offset: Number of results to skip
-         *
-         *     Returns:
-         *         Dictionary with fighters list and metadata
-         */
-        get: operations["get_low_quality_images_image_validation_low_quality_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Validation Stats
+     * @description Get overall image validation statistics.
+     *
+     *     Returns:
+     *         Dictionary with validation statistics including:
+     *         - total_fighters: Total number of fighters
+     *         - validated: Number of fighters with validated images
+     *         - with_faces: Number with detected faces
+     *         - without_faces: Number without detected faces
+     *         - low_quality: Number with quality score < 50
+     *         - with_flags: Number with validation flags
+     *         - flag_breakdown: Count of each flag type
+     */
+    get: operations["get_validation_stats_image_validation_stats_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/low-quality": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/no-face": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fighters Without Faces
-         * @description Get fighters where no face was detected.
-         *
-         *     These images may be:
-         *     - Not actual fighter photos
-         *     - Poor quality or corrupted
-         *     - Action shots without clear face
-         *     - Placeholder images
-         *
-         *     Returns:
-         *         Dictionary with fighters list and metadata
-         */
-        get: operations["get_fighters_without_faces_image_validation_no_face_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Low Quality Images
+     * @description Get fighters with low-quality images.
+     *
+     *     Args:
+     *         min_score: Quality score threshold (return fighters below this score)
+     *         limit: Maximum number of results
+     *         offset: Number of results to skip
+     *
+     *     Returns:
+     *         Dictionary with fighters list and metadata
+     */
+    get: operations["get_low_quality_images_image_validation_low_quality_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/no-face": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/duplicates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Duplicate Images
-         * @description Get fighters with potential duplicate images.
-         *
-         *     Uses perceptual hashing to identify visually similar images.
-         *     Duplicates may indicate:
-         *     - Same fighter with multiple IDs
-         *     - Incorrectly assigned images
-         *     - Stock placeholder photos
-         *
-         *     Returns:
-         *         Dictionary with fighters and their duplicate matches
-         */
-        get: operations["get_duplicate_images_image_validation_duplicates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Fighters Without Faces
+     * @description Get fighters where no face was detected.
+     *
+     *     These images may be:
+     *     - Not actual fighter photos
+     *     - Poor quality or corrupted
+     *     - Action shots without clear face
+     *     - Placeholder images
+     *
+     *     Returns:
+     *         Dictionary with fighters list and metadata
+     */
+    get: operations["get_fighters_without_faces_image_validation_no_face_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/duplicates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/flags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fighters By Flag
-         * @description Get fighters with a specific validation flag.
-         *
-         *     Args:
-         *         flag: Flag type to filter by
-         *         limit: Maximum number of results
-         *         offset: Number of results to skip
-         *
-         *     Returns:
-         *         Dictionary with fighters list and metadata
-         */
-        get: operations["get_fighters_by_flag_image_validation_flags_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Duplicate Images
+     * @description Get fighters with potential duplicate images.
+     *
+     *     Uses perceptual hashing to identify visually similar images.
+     *     Duplicates may indicate:
+     *     - Same fighter with multiple IDs
+     *     - Incorrectly assigned images
+     *     - Stock placeholder photos
+     *
+     *     Returns:
+     *         Dictionary with fighters and their duplicate matches
+     */
+    get: operations["get_duplicate_images_image_validation_duplicates_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/flags": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/image-validation/{fighter_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Fighter Validation
-         * @description Get validation details for a specific fighter.
-         *
-         *     Args:
-         *         fighter_id: Fighter ID
-         *
-         *     Returns:
-         *         Dictionary with complete validation data
-         */
-        get: operations["get_fighter_validation_image_validation__fighter_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get Fighters By Flag
+     * @description Get fighters with a specific validation flag.
+     *
+     *     Args:
+     *         flag: Flag type to filter by
+     *         limit: Maximum number of results
+     *         offset: Number of results to skip
+     *
+     *     Returns:
+     *         Dictionary with fighters list and metadata
+     */
+    get: operations["get_fighters_by_flag_image_validation_flags_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/image-validation/{fighter_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /**
+     * Get Fighter Validation
+     * @description Get validation details for a specific fighter.
+     *
+     *     Args:
+     *         fighter_id: Fighter ID
+     *
+     *     Returns:
+     *         Dictionary with complete validation data
+     */
+    get: operations["get_fighter_validation_image_validation__fighter_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /**
-         * AllRankingsResponse
-         * @description All current rankings across all divisions.
-         */
-        AllRankingsResponse: {
-            /**
-             * Source
-             * @description Ranking source
-             */
-            source: string;
-            /**
-             * Division Rank Dates
-             * @description Latest snapshot date per division
-             */
-            division_rank_dates?: components["schemas"]["DivisionRankDate"][];
-            /**
-             * Divisions
-             * @description Rankings for each division
-             */
-            divisions?: components["schemas"]["CurrentRankingsResponse"][];
-            /**
-             * Total Divisions
-             * @description Number of divisions included
-             */
-            total_divisions: number;
-            /**
-             * Total Fighters
-             * @description Total ranked fighters across all divisions
-             */
-            total_fighters: number;
-        };
-        /**
-         * CityStat
-         * @description Fighter count by city.
-         */
-        CityStat: {
-            /** City */
-            city: string;
-            /** Country */
-            country?: string | null;
-            /** Count */
-            count: number;
-            /**
-             * Percentage
-             * @description Percentage of total fighters (rounded to 1 decimal place)
-             */
-            percentage: number;
-        };
-        /**
-         * CityStatsResponse
-         * @description City statistics response.
-         */
-        CityStatsResponse: {
-            /**
-             * Group By
-             * @enum {string}
-             */
-            group_by: "birthplace" | "training";
-            /** Cities */
-            cities?: components["schemas"]["CityStat"][];
-            /** Total Fighters */
-            total_fighters: number;
-            /** Generated At */
-            generated_at?: string;
-        };
-        /**
-         * CountryStat
-         * @description Fighter count by country.
-         */
-        CountryStat: {
-            /** Country */
-            country: string;
-            /** Count */
-            count: number;
-            /**
-             * Percentage
-             * @description Percentage of total fighters (rounded to 1 decimal place)
-             */
-            percentage: number;
-        };
-        /**
-         * CountryStatsResponse
-         * @description Country statistics response.
-         */
-        CountryStatsResponse: {
-            /**
-             * Group By
-             * @enum {string}
-             */
-            group_by: "birthplace" | "training" | "nationality";
-            /** Countries */
-            countries?: components["schemas"]["CountryStat"][];
-            /** Total Fighters */
-            total_fighters: number;
-            /** Generated At */
-            generated_at?: string;
-        };
-        /**
-         * CurrentRankingsResponse
-         * @description Current rankings for a specific division.
-         */
-        CurrentRankingsResponse: {
-            /**
-             * Division
-             * @description Weight class (e.g., 'Lightweight')
-             */
-            division: string;
-            /**
-             * Source
-             * @description Ranking source: 'ufc', 'fightmatrix', 'tapology'
-             */
-            source: string;
-            /**
-             * Rank Date
-             * Format: date
-             * @description Date of this ranking snapshot
-             */
-            rank_date: string;
-            /**
-             * Rankings
-             * @description List of ranked fighters
-             */
-            rankings?: components["schemas"]["RankingEntry"][];
-            /**
-             * Total Fighters
-             * @description Total number of fighters in rankings
-             */
-            total_fighters: number;
-        };
-        /**
-         * DivisionListResponse
-         * @description List of divisions with rankings available.
-         */
-        DivisionListResponse: {
-            /**
-             * Divisions
-             * @description Available division names
-             */
-            divisions?: string[];
-            /**
-             * Source
-             * @description Ranking source
-             */
-            source: string;
-            /**
-             * Total Divisions
-             * @description Total number of divisions
-             */
-            total_divisions: number;
-        };
-        /**
-         * DivisionRankDate
-         * @description Summary of the latest snapshot date for a specific division.
-         */
-        DivisionRankDate: {
-            /**
-             * Division
-             * @description Weight class name
-             */
-            division: string;
-            /**
-             * Rank Date
-             * Format: date
-             * @description Date of the most recent ranking snapshot
-             */
-            rank_date: string;
-        };
-        /**
-         * EventDetail
-         * @description Detailed event information including fight card
-         */
-        EventDetail: {
-            /** Event Id */
-            event_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /** Location */
-            location?: string | null;
-            /** Status */
-            status: string;
-            /** Venue */
-            venue?: string | null;
-            /** Broadcast */
-            broadcast?: string | null;
-            /** Event Type */
-            event_type?: string | null;
-            /**
-             * Promotion
-             * @default UFC
-             */
-            promotion: string;
-            /** Ufcstats Url */
-            ufcstats_url?: string | null;
-            /** Tapology Url */
-            tapology_url?: string | null;
-            /** Sherdog Url */
-            sherdog_url?: string | null;
-            /** Fight Card */
-            fight_card?: components["schemas"]["EventFight"][];
-        };
-        /**
-         * EventFight
-         * @description A fight in an event's fight card
-         */
-        EventFight: {
-            /** Fight Id */
-            fight_id?: string | null;
-            /** Fighter 1 Id */
-            fighter_1_id?: string | null;
-            /** Fighter 1 Name */
-            fighter_1_name: string;
-            /** Fighter 2 Id */
-            fighter_2_id?: string | null;
-            /** Fighter 2 Name */
-            fighter_2_name: string;
-            /** Weight Class */
-            weight_class?: string | null;
-            /** Result */
-            result?: string | null;
-            /** Method */
-            method?: string | null;
-            /** Round */
-            round?: number | null;
-            /** Time */
-            time?: string | null;
-        };
-        /**
-         * EventFilterOptions
-         * @description Available filter options for events.
-         */
-        EventFilterOptions: {
-            /** Years */
-            years: number[];
-            /** Locations */
-            locations: string[];
-            /** Event Types */
-            event_types: string[];
-        };
-        /**
-         * EventListItem
-         * @description Event summary for list views
-         */
-        EventListItem: {
-            /** Event Id */
-            event_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /** Location */
-            location?: string | null;
-            /** Status */
-            status: string;
-            /** Venue */
-            venue?: string | null;
-            /** Broadcast */
-            broadcast?: string | null;
-            /** Event Type */
-            event_type?: string | null;
-        };
-        /**
-         * FavoriteActivityItem
-         * @description Single entry in the activity feed timeline.
-         */
-        FavoriteActivityItem: {
-            /** Entry Id */
-            entry_id: number;
-            /** Fighter Id */
-            fighter_id: string;
-            /** Action */
-            action: string;
-            /**
-             * Occurred At
-             * Format: date-time
-             */
-            occurred_at: string;
-            /** Metadata */
-            metadata?: Record<string, never>;
-        };
-        /**
-         * FavoriteCollectionCreate
-         * @description Payload for creating a brand-new collection.
-         */
-        FavoriteCollectionCreate: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Is Public
-             * @description Flag that toggles visibility in the upcoming sharing flow.
-             * @default false
-             */
-            is_public: boolean;
-            /**
-             * Slug
-             * @description Optional stable slug used to build friendly URLs.
-             */
-            slug?: string | null;
-            /**
-             * Metadata
-             * @description Key/value bag with future customization switches.
-             */
-            metadata?: Record<string, never>;
-            /**
-             * User Id
-             * @description Opaque identifier for the collection owner.
-             */
-            user_id: string;
-        };
-        /**
-         * FavoriteCollectionDetail
-         * @description Full payload that includes entry information and activity feed.
-         */
-        FavoriteCollectionDetail: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Is Public
-             * @description Flag that toggles visibility in the upcoming sharing flow.
-             * @default false
-             */
-            is_public: boolean;
-            /**
-             * Slug
-             * @description Optional stable slug used to build friendly URLs.
-             */
-            slug?: string | null;
-            /**
-             * Metadata
-             * @description Key/value bag with future customization switches.
-             */
-            metadata?: Record<string, never>;
-            /** Id */
-            id: number;
-            /** User Id */
-            user_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            stats?: components["schemas"]["FavoriteCollectionStats"] | null;
-            /** Entries */
-            entries?: components["schemas"]["FavoriteEntry"][];
-            /** Activity */
-            activity?: components["schemas"]["FavoriteActivityItem"][];
-        };
-        /**
-         * FavoriteCollectionListResponse
-         * @description Container returned by the listing endpoint.
-         */
-        FavoriteCollectionListResponse: {
-            /** Total */
-            total: number;
-            /** Collections */
-            collections: components["schemas"]["FavoriteCollectionSummary"][];
-        };
-        /**
-         * FavoriteCollectionStats
-         * @description Aggregated statistics for a single collection.
-         */
-        FavoriteCollectionStats: {
-            /** Total Fighters */
-            total_fighters: number;
-            /** Win Rate */
-            win_rate: number;
-            /** Result Breakdown */
-            result_breakdown: {
-                [key: string]: number;
-            };
-            /** Divisions */
-            divisions?: string[];
-            /** Upcoming Fights */
-            upcoming_fights?: components["schemas"]["FavoriteUpcomingFight"][];
-        };
-        /**
-         * FavoriteCollectionSummary
-         * @description Lightweight representation used by listing endpoints.
-         */
-        FavoriteCollectionSummary: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Is Public
-             * @description Flag that toggles visibility in the upcoming sharing flow.
-             * @default false
-             */
-            is_public: boolean;
-            /**
-             * Slug
-             * @description Optional stable slug used to build friendly URLs.
-             */
-            slug?: string | null;
-            /**
-             * Metadata
-             * @description Key/value bag with future customization switches.
-             */
-            metadata?: Record<string, never>;
-            /** Id */
-            id: number;
-            /** User Id */
-            user_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            stats?: components["schemas"]["FavoriteCollectionStats"] | null;
-        };
-        /**
-         * FavoriteCollectionUpdate
-         * @description Partial update payload for a collection.
-         */
-        FavoriteCollectionUpdate: {
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Is Public */
-            is_public?: boolean | null;
-            /** Slug */
-            slug?: string | null;
-            /** Metadata */
-            metadata?: Record<string, never> | null;
-        };
-        /**
-         * FavoriteEntry
-         * @description Read model exposed in API responses.
-         */
-        FavoriteEntry: {
-            /**
-             * Fighter Id
-             * @description Primary key from the fighters table
-             */
-            fighter_id: string;
-            /**
-             * Position
-             * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
-             * @default 0
-             */
-            position: number;
-            /**
-             * Notes
-             * @description Optional scouting report written by the curator.
-             */
-            notes?: string | null;
-            /**
-             * Tags
-             * @description User-defined labels that help cluster fighters.
-             */
-            tags?: string[];
-            /**
-             * Metadata
-             * @description Arbitrary structured metadata persisted alongside the entry.
-             */
-            metadata?: Record<string, never>;
-            /**
-             * Id
-             * @description Surrogate primary key for the entry row
-             */
-            id: number;
-            /**
-             * Created At
-             * Format: date-time
-             * @description Timestamp when the fighter was added to the collection.
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             * @description Last mutation timestamp
-             */
-            updated_at: string;
-        };
-        /**
-         * FavoriteEntryCreate
-         * @description Payload for inserting a fighter into a collection.
-         */
-        FavoriteEntryCreate: {
-            /**
-             * Fighter Id
-             * @description Primary key from the fighters table
-             */
-            fighter_id: string;
-            /**
-             * Position
-             * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
-             * @default 0
-             */
-            position: number;
-            /**
-             * Notes
-             * @description Optional scouting report written by the curator.
-             */
-            notes?: string | null;
-            /**
-             * Tags
-             * @description User-defined labels that help cluster fighters.
-             */
-            tags?: string[];
-            /**
-             * Metadata
-             * @description Arbitrary structured metadata persisted alongside the entry.
-             */
-            metadata?: Record<string, never>;
-        };
-        /**
-         * FavoriteEntryReorderRequest
-         * @description Payload used by the drag-and-drop UI to persist ordering changes.
-         */
-        FavoriteEntryReorderRequest: {
-            /**
-             * Entry Ids
-             * @description Ordered list of entry identifiers representing the desired front-end arrangement.
-             */
-            entry_ids: number[];
-        };
-        /**
-         * FavoriteEntryUpdate
-         * @description Partial update payload for an existing entry.
-         */
-        FavoriteEntryUpdate: {
-            /**
-             * Position
-             * @description New zero-based ordering index when drag-and-drop is used.
-             */
-            position?: number | null;
-            /** Notes */
-            notes?: string | null;
-            /** Tags */
-            tags?: string[] | null;
-            /** Metadata */
-            metadata?: Record<string, never> | null;
-        };
-        /**
-         * FavoriteUpcomingFight
-         * @description Normalized summary describing an upcoming booked fight.
-         */
-        FavoriteUpcomingFight: {
-            /** Fighter Id */
-            fighter_id: string;
-            /** Opponent Name */
-            opponent_name: string;
-            /** Event Name */
-            event_name: string;
-            /**
-             * Event Date
-             * @description Scheduled date for the fight
-             */
-            event_date?: string | null;
-            /** Weight Class */
-            weight_class?: string | null;
-        };
-        /** FightGraphLink */
-        FightGraphLink: {
-            /** Source */
-            source: string;
-            /** Target */
-            target: string;
-            /** Fights */
-            fights: number;
-            /** First Event Name */
-            first_event_name?: string | null;
-            /** First Event Date */
-            first_event_date?: string | null;
-            /** Last Event Name */
-            last_event_name?: string | null;
-            /** Last Event Date */
-            last_event_date?: string | null;
-            /** Result Breakdown */
-            result_breakdown?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            };
-        };
-        /** FightGraphNode */
-        FightGraphNode: {
-            /** Fighter Id */
-            fighter_id: string;
-            /** Name */
-            name: string;
-            /** Division */
-            division?: string | null;
-            /** Record */
-            record?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Total Fights
-             * @default 0
-             */
-            total_fights: number;
-            /** Latest Event Date */
-            latest_event_date?: string | null;
-        };
-        /** FightGraphResponse */
-        FightGraphResponse: {
-            /** Nodes */
-            nodes?: components["schemas"]["FightGraphNode"][];
-            /** Links */
-            links?: components["schemas"]["FightGraphLink"][];
-            /** Metadata */
-            metadata?: Record<string, never>;
-        };
-        /** FightHistoryEntry */
-        FightHistoryEntry: {
-            /** Fight Id */
-            fight_id: string;
-            /** Event Name */
-            event_name: string;
-            /** Event Date */
-            event_date?: string | null;
-            /** Opponent */
-            opponent: string;
-            /** Opponent Id */
-            opponent_id?: string | null;
-            /** Result */
-            result: string;
-            /** Method */
-            method: string;
-            /** Round */
-            round?: number | null;
-            /** Time */
-            time?: string | null;
-            /** Fight Card Url */
-            fight_card_url?: string | null;
-            /** Stats */
-            stats?: Record<string, never>;
-        };
-        /** FighterComparisonEntry */
-        FighterComparisonEntry: {
-            /** Fighter Id */
-            fighter_id: string;
-            /** Name */
-            name: string;
-            /** Record */
-            record?: string | null;
-            /** Division */
-            division?: string | null;
-            /** Age */
-            age?: number | null;
-            /** Striking */
-            striking?: Record<string, never>;
-            /** Grappling */
-            grappling?: Record<string, never>;
-            /** Significant Strikes */
-            significant_strikes?: Record<string, never>;
-            /** Takedown Stats */
-            takedown_stats?: Record<string, never>;
-            /** Career */
-            career?: Record<string, never>;
-            /**
-             * Is Current Champion
-             * @default false
-             */
-            is_current_champion: boolean;
-            /**
-             * Is Former Champion
-             * @default false
-             */
-            is_former_champion: boolean;
-            /**
-             * Was Interim
-             * @default false
-             */
-            was_interim: boolean;
-        };
-        /** FighterComparisonResponse */
-        FighterComparisonResponse: {
-            /** Fighters */
-            fighters?: components["schemas"]["FighterComparisonEntry"][];
-        };
-        /** FighterDetail */
-        FighterDetail: {
-            /** Fighter Id */
-            fighter_id: string;
-            /**
-             * Detail Url
-             * Format: uri
-             */
-            detail_url: string;
-            /** Name */
-            name: string;
-            /** Nickname */
-            nickname?: string | null;
-            /** Record */
-            record?: string | null;
-            /** Division */
-            division?: string | null;
-            /** Height */
-            height?: string | null;
-            /** Weight */
-            weight?: string | null;
-            /** Reach */
-            reach?: string | null;
-            /** Stance */
-            stance?: string | null;
-            /** Dob */
-            dob?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /** Age */
-            age?: number | null;
-            /**
-             * Is Current Champion
-             * @default false
-             */
-            is_current_champion: boolean;
-            /**
-             * Is Former Champion
-             * @default false
-             */
-            is_former_champion: boolean;
-            /**
-             * Was Interim
-             * @default false
-             */
-            was_interim: boolean;
-            /**
-             * Current Streak Type
-             * @default none
-             * @enum {string}
-             */
-            current_streak_type: "win" | "loss" | "draw" | "none";
-            /**
-             * Current Streak Count
-             * @default 0
-             */
-            current_streak_count: number;
-            /** Current Rank */
-            current_rank?: number | null;
-            /** Current Rank Source */
-            current_rank_source?: string | null;
-            /** Current Rank Division */
-            current_rank_division?: string | null;
-            /** Current Rank Date */
-            current_rank_date?: string | null;
-            /** Peak Rank */
-            peak_rank?: number | null;
-            /** Peak Rank Source */
-            peak_rank_source?: string | null;
-            /** Peak Rank Division */
-            peak_rank_division?: string | null;
-            /** Peak Rank Date */
-            peak_rank_date?: string | null;
-            /** Birthplace */
-            birthplace?: string | null;
-            /** Birthplace City */
-            birthplace_city?: string | null;
-            /** Birthplace Country */
-            birthplace_country?: string | null;
-            /** Nationality */
-            nationality?: string | null;
-            /** Fighting Out Of */
-            fighting_out_of?: string | null;
-            /** Training Gym */
-            training_gym?: string | null;
-            /** Training City */
-            training_city?: string | null;
-            /** Training Country */
-            training_country?: string | null;
-            /** Next Fight Date */
-            next_fight_date?: string | null;
-            /** Last Fight Date */
-            last_fight_date?: string | null;
-            /** Last Fight Result */
-            last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
-            /** Leg Reach */
-            leg_reach?: string | null;
-            /** Striking */
-            striking?: Record<string, never>;
-            /** Grappling */
-            grappling?: Record<string, never>;
-            /** Significant Strikes */
-            significant_strikes?: Record<string, never>;
-            /** Takedown Stats */
-            takedown_stats?: Record<string, never>;
-            /** Career */
-            career?: Record<string, never>;
-            /** Fight History */
-            fight_history?: components["schemas"]["FightHistoryEntry"][];
-            /** Championship History */
-            championship_history?: Record<string, never>;
-        };
-        /** FighterListItem */
-        FighterListItem: {
-            /** Fighter Id */
-            fighter_id: string;
-            /**
-             * Detail Url
-             * Format: uri
-             */
-            detail_url: string;
-            /** Name */
-            name: string;
-            /** Nickname */
-            nickname?: string | null;
-            /** Record */
-            record?: string | null;
-            /** Division */
-            division?: string | null;
-            /** Height */
-            height?: string | null;
-            /** Weight */
-            weight?: string | null;
-            /** Reach */
-            reach?: string | null;
-            /** Stance */
-            stance?: string | null;
-            /** Dob */
-            dob?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /** Age */
-            age?: number | null;
-            /**
-             * Is Current Champion
-             * @default false
-             */
-            is_current_champion: boolean;
-            /**
-             * Is Former Champion
-             * @default false
-             */
-            is_former_champion: boolean;
-            /**
-             * Was Interim
-             * @default false
-             */
-            was_interim: boolean;
-            /**
-             * Current Streak Type
-             * @default none
-             * @enum {string}
-             */
-            current_streak_type: "win" | "loss" | "draw" | "none";
-            /**
-             * Current Streak Count
-             * @default 0
-             */
-            current_streak_count: number;
-            /** Current Rank */
-            current_rank?: number | null;
-            /** Current Rank Source */
-            current_rank_source?: string | null;
-            /** Current Rank Division */
-            current_rank_division?: string | null;
-            /** Current Rank Date */
-            current_rank_date?: string | null;
-            /** Peak Rank */
-            peak_rank?: number | null;
-            /** Peak Rank Source */
-            peak_rank_source?: string | null;
-            /** Peak Rank Division */
-            peak_rank_division?: string | null;
-            /** Peak Rank Date */
-            peak_rank_date?: string | null;
-            /** Birthplace */
-            birthplace?: string | null;
-            /** Birthplace City */
-            birthplace_city?: string | null;
-            /** Birthplace Country */
-            birthplace_country?: string | null;
-            /** Nationality */
-            nationality?: string | null;
-            /** Fighting Out Of */
-            fighting_out_of?: string | null;
-            /** Training Gym */
-            training_gym?: string | null;
-            /** Training City */
-            training_city?: string | null;
-            /** Training Country */
-            training_country?: string | null;
-            /** Next Fight Date */
-            next_fight_date?: string | null;
-            /** Last Fight Date */
-            last_fight_date?: string | null;
-            /** Last Fight Result */
-            last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
-        };
-        /**
-         * GymStat
-         * @description Fighter count by training gym.
-         */
-        GymStat: {
-            /** Gym */
-            gym: string;
-            /** City */
-            city?: string | null;
-            /** Country */
-            country?: string | null;
-            /** Fighter Count */
-            fighter_count: number;
-            /**
-             * Notable Fighters
-             * @description Top 2 fighters from this gym (by last fight date)
-             */
-            notable_fighters?: string[];
-        };
-        /**
-         * GymStatsResponse
-         * @description Gym statistics response.
-         */
-        GymStatsResponse: {
-            /** Gyms */
-            gyms?: components["schemas"]["GymStat"][];
-            /** Total Gyms */
-            total_gyms: number;
-            /** Generated At */
-            generated_at?: string;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * LeaderboardDefinition
-         * @description Container for leaderboard metadata and ranked entries for a metric.
-         */
-        LeaderboardDefinition: {
-            /**
-             * Metric Id
-             * @enum {string}
-             */
-            metric_id: "sig_strikes_accuracy_pct" | "avg_submissions";
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Entries */
-            entries?: components["schemas"]["LeaderboardEntry"][];
-        };
-        /**
-         * LeaderboardEntry
-         * @description Represents a single ranked fighter in a leaderboard view.
-         */
-        LeaderboardEntry: {
-            /** Fighter Id */
-            fighter_id: string;
-            /** Fighter Name */
-            fighter_name: string;
-            /** Metric Value */
-            metric_value: number;
-            /** Detail Url */
-            detail_url?: string | null;
-            /**
-             * Fight Count
-             * @description Number of UFC fights used to calculate this metric (data quality indicator)
-             */
-            fight_count?: number | null;
-        };
-        /**
-         * LeaderboardsResponse
-         * @description Envelope bundling all leaderboard segments for the stats endpoint.
-         */
-        LeaderboardsResponse: {
-            /** Leaderboards */
-            leaderboards?: components["schemas"]["LeaderboardDefinition"][];
-            /** Generated At */
-            generated_at?: string;
-        };
-        /**
-         * PaginatedEventsResponse
-         * @description Paginated list of events
-         */
-        PaginatedEventsResponse: {
-            /** Events */
-            events: components["schemas"]["EventListItem"][];
-            /** Total */
-            total: number;
-            /** Limit */
-            limit: number;
-            /** Offset */
-            offset: number;
-            /** Has More */
-            has_more: boolean;
-        };
-        /** PaginatedFightersResponse */
-        PaginatedFightersResponse: {
-            /** Fighters */
-            fighters: components["schemas"]["FighterListItem"][];
-            /** Total */
-            total: number;
-            /** Limit */
-            limit: number;
-            /** Offset */
-            offset: number;
-            /** Has More */
-            has_more: boolean;
-        };
-        /**
-         * PeakRankingResponse
-         * @description Fighter's best ranking achievement.
-         */
-        PeakRankingResponse: {
-            /**
-             * Fighter Id
-             * @description Fighter's UUID
-             */
-            fighter_id: string;
-            /**
-             * Fighter Name
-             * @description Fighter's full name
-             */
-            fighter_name: string;
-            /**
-             * Division
-             * @description Division where peak was achieved
-             */
-            division: string;
-            /**
-             * Peak Rank
-             * @description Best rank achieved (lower is better)
-             */
-            peak_rank: number;
-            /**
-             * Rank Date
-             * Format: date
-             * @description Date when peak rank was achieved
-             */
-            rank_date: string;
-            /**
-             * Is Interim
-             * @description Was this an interim title
-             * @default false
-             */
-            is_interim: boolean;
-            /**
-             * Source
-             * @description Ranking source
-             */
-            source: string;
-        };
-        /**
-         * RankingEntry
-         * @description Single ranking entry within a division leaderboard.
-         */
-        RankingEntry: {
-            /**
-             * Ranking Id
-             * @description Unique ranking record ID
-             */
-            ranking_id: string;
-            /**
-             * Fighter Id
-             * @description Fighter's UUID
-             */
-            fighter_id: string;
-            /**
-             * Fighter Name
-             * @description Fighter's full name
-             */
-            fighter_name: string;
-            /**
-             * Nickname
-             * @description Fighter's nickname
-             */
-            nickname?: string | null;
-            /**
-             * Rank
-             * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked (NR)
-             */
-            rank: number | null;
-            /**
-             * Previous Rank
-             * @description Previous rank position
-             */
-            previous_rank?: number | null;
-            /**
-             * Rank Movement
-             * @description Rank movement delta (positive=moved up, negative=moved down)
-             * @default 0
-             */
-            rank_movement: number;
-            /**
-             * Is Interim
-             * @description Whether this is an interim championship
-             * @default false
-             */
-            is_interim: boolean;
-        };
-        /**
-         * RankingHistoryEntry
-         * @description Single point in a fighter's ranking history timeline.
-         */
-        RankingHistoryEntry: {
-            /**
-             * Ranking Id
-             * @description Unique ranking record ID
-             */
-            ranking_id: string;
-            /**
-             * Division
-             * @description Weight class
-             */
-            division: string;
-            /**
-             * Rank
-             * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked
-             */
-            rank: number | null;
-            /**
-             * Previous Rank
-             * @description Previous rank
-             */
-            previous_rank?: number | null;
-            /**
-             * Rank Movement
-             * @description Rank movement delta
-             * @default 0
-             */
-            rank_movement: number;
-            /**
-             * Is Interim
-             * @description Interim championship flag
-             * @default false
-             */
-            is_interim: boolean;
-            /**
-             * Rank Date
-             * Format: date
-             * @description Date of this snapshot
-             */
-            rank_date: string;
-            /**
-             * Source
-             * @description Ranking source
-             */
-            source: string;
-        };
-        /**
-         * RankingHistoryResponse
-         * @description Historical ranking progression for a fighter.
-         */
-        RankingHistoryResponse: {
-            /**
-             * Fighter Id
-             * @description Fighter's UUID
-             */
-            fighter_id: string;
-            /**
-             * Fighter Name
-             * @description Fighter's full name
-             */
-            fighter_name: string;
-            /**
-             * Source
-             * @description Ranking source
-             */
-            source: string;
-            /**
-             * History
-             * @description Ranking snapshots ordered by date (most recent first)
-             */
-            history?: components["schemas"]["RankingHistoryEntry"][];
-            /**
-             * Total Snapshots
-             * @description Total number of ranking snapshots
-             */
-            total_snapshots: number;
-        };
-        /**
-         * StatsSummaryMetric
-         * @description Individual metric displayed in the summary KPIs section.
-         */
-        StatsSummaryMetric: {
-            /**
-             * Id
-             * @enum {string}
-             */
-            id: "fighters_indexed" | "avg_sig_strikes_accuracy_pct" | "avg_takedown_accuracy_pct" | "avg_submission_attempts" | "avg_fight_duration_minutes" | "max_win_streak";
-            /** Label */
-            label: string;
-            /** Value */
-            value: number;
-            /** Description */
-            description?: string | null;
-        };
-        /**
-         * StatsSummaryResponse
-         * @description Summary statistics response containing key performance indicators.
-         */
-        StatsSummaryResponse: {
-            /** Metrics */
-            metrics?: components["schemas"]["StatsSummaryMetric"][];
-            /** Generated At */
-            generated_at?: string;
-        };
-        /**
-         * TrendPoint
-         * @description Data point used to render a trend line on the time-series chart.
-         */
-        TrendPoint: {
-            /** Timestamp */
-            timestamp: string;
-            /** Value */
-            value: number;
-        };
-        /**
-         * TrendSeries
-         * @description Series definition representing a tracked metric for a given entity.
-         */
-        TrendSeries: {
-            /** Metric Id */
-            metric_id: string;
-            /** Fighter Id */
-            fighter_id?: string | null;
-            /** Label */
-            label: string;
-            /** Points */
-            points?: components["schemas"]["TrendPoint"][];
-        };
-        /**
-         * TrendsResponse
-         * @description Aggregated trends combining time-series data for multiple metrics.
-         */
-        TrendsResponse: {
-            /** Trends */
-            trends?: components["schemas"]["TrendSeries"][];
-            /** Generated At */
-            generated_at?: string;
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
+  schemas: {
+    /**
+     * AllRankingsResponse
+     * @description All current rankings across all divisions.
+     */
+    AllRankingsResponse: {
+      /**
+       * Source
+       * @description Ranking source
+       */
+      source: string;
+      /**
+       * Division Rank Dates
+       * @description Latest snapshot date per division
+       */
+      division_rank_dates?: components["schemas"]["DivisionRankDate"][];
+      /**
+       * Divisions
+       * @description Rankings for each division
+       */
+      divisions?: components["schemas"]["CurrentRankingsResponse"][];
+      /**
+       * Total Divisions
+       * @description Number of divisions included
+       */
+      total_divisions: number;
+      /**
+       * Total Fighters
+       * @description Total ranked fighters across all divisions
+       */
+      total_fighters: number;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /**
+     * CityStat
+     * @description Fighter count by city.
+     */
+    CityStat: {
+      /** City */
+      city: string;
+      /** Country */
+      country?: string | null;
+      /** Count */
+      count: number;
+      /**
+       * Percentage
+       * @description Percentage of total fighters (rounded to 1 decimal place)
+       */
+      percentage: number;
+    };
+    /**
+     * CityStatsResponse
+     * @description City statistics response.
+     */
+    CityStatsResponse: {
+      /**
+       * Group By
+       * @enum {string}
+       */
+      group_by: "birthplace" | "training";
+      /** Cities */
+      cities?: components["schemas"]["CityStat"][];
+      /** Total Fighters */
+      total_fighters: number;
+      /** Generated At */
+      generated_at?: string;
+    };
+    /**
+     * CountryStat
+     * @description Fighter count by country.
+     */
+    CountryStat: {
+      /** Country */
+      country: string;
+      /** Count */
+      count: number;
+      /**
+       * Percentage
+       * @description Percentage of total fighters (rounded to 1 decimal place)
+       */
+      percentage: number;
+    };
+    /**
+     * CountryStatsResponse
+     * @description Country statistics response.
+     */
+    CountryStatsResponse: {
+      /**
+       * Group By
+       * @enum {string}
+       */
+      group_by: "birthplace" | "training" | "nationality";
+      /** Countries */
+      countries?: components["schemas"]["CountryStat"][];
+      /** Total Fighters */
+      total_fighters: number;
+      /** Generated At */
+      generated_at?: string;
+    };
+    /**
+     * CurrentRankingsResponse
+     * @description Current rankings for a specific division.
+     */
+    CurrentRankingsResponse: {
+      /**
+       * Division
+       * @description Weight class (e.g., 'Lightweight')
+       */
+      division: string;
+      /**
+       * Source
+       * @description Ranking source: 'ufc', 'fightmatrix', 'tapology'
+       */
+      source: string;
+      /**
+       * Rank Date
+       * Format: date
+       * @description Date of this ranking snapshot
+       */
+      rank_date: string;
+      /**
+       * Rankings
+       * @description List of ranked fighters
+       */
+      rankings?: components["schemas"]["RankingEntry"][];
+      /**
+       * Total Fighters
+       * @description Total number of fighters in rankings
+       */
+      total_fighters: number;
+    };
+    /**
+     * DivisionListResponse
+     * @description List of divisions with rankings available.
+     */
+    DivisionListResponse: {
+      /**
+       * Divisions
+       * @description Available division names
+       */
+      divisions?: string[];
+      /**
+       * Source
+       * @description Ranking source
+       */
+      source: string;
+      /**
+       * Total Divisions
+       * @description Total number of divisions
+       */
+      total_divisions: number;
+    };
+    /**
+     * DivisionRankDate
+     * @description Summary of the latest snapshot date for a specific division.
+     */
+    DivisionRankDate: {
+      /**
+       * Division
+       * @description Weight class name
+       */
+      division: string;
+      /**
+       * Rank Date
+       * Format: date
+       * @description Date of the most recent ranking snapshot
+       */
+      rank_date: string;
+    };
+    /**
+     * EventDetail
+     * @description Detailed event information including fight card
+     */
+    EventDetail: {
+      /** Event Id */
+      event_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date
+       */
+      date: string;
+      /** Location */
+      location?: string | null;
+      /** Status */
+      status: string;
+      /** Venue */
+      venue?: string | null;
+      /** Broadcast */
+      broadcast?: string | null;
+      /** Event Type */
+      event_type?: string | null;
+      /**
+       * Promotion
+       * @default UFC
+       */
+      promotion: string;
+      /** Ufcstats Url */
+      ufcstats_url?: string | null;
+      /** Tapology Url */
+      tapology_url?: string | null;
+      /** Sherdog Url */
+      sherdog_url?: string | null;
+      /** Fight Card */
+      fight_card?: components["schemas"]["EventFight"][];
+    };
+    /**
+     * EventFight
+     * @description A fight in an event's fight card
+     */
+    EventFight: {
+      /** Fight Id */
+      fight_id?: string | null;
+      /** Fighter 1 Id */
+      fighter_1_id?: string | null;
+      /** Fighter 1 Name */
+      fighter_1_name: string;
+      /** Fighter 2 Id */
+      fighter_2_id?: string | null;
+      /** Fighter 2 Name */
+      fighter_2_name: string;
+      /** Weight Class */
+      weight_class?: string | null;
+      /** Result */
+      result?: string | null;
+      /** Method */
+      method?: string | null;
+      /** Round */
+      round?: number | null;
+      /** Time */
+      time?: string | null;
+    };
+    /**
+     * EventFilterOptions
+     * @description Available filter options for events.
+     */
+    EventFilterOptions: {
+      /** Years */
+      years: number[];
+      /** Locations */
+      locations: string[];
+      /** Event Types */
+      event_types: string[];
+    };
+    /**
+     * EventListItem
+     * @description Event summary for list views
+     */
+    EventListItem: {
+      /** Event Id */
+      event_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date
+       */
+      date: string;
+      /** Location */
+      location?: string | null;
+      /** Status */
+      status: string;
+      /** Venue */
+      venue?: string | null;
+      /** Broadcast */
+      broadcast?: string | null;
+      /** Event Type */
+      event_type?: string | null;
+    };
+    /**
+     * FavoriteActivityItem
+     * @description Single entry in the activity feed timeline.
+     */
+    FavoriteActivityItem: {
+      /** Entry Id */
+      entry_id: number;
+      /** Fighter Id */
+      fighter_id: string;
+      /** Action */
+      action: string;
+      /**
+       * Occurred At
+       * Format: date-time
+       */
+      occurred_at: string;
+      /** Metadata */
+      metadata?: Record<string, never>;
+    };
+    /**
+     * FavoriteCollectionCreate
+     * @description Payload for creating a brand-new collection.
+     */
+    FavoriteCollectionCreate: {
+      /** Title */
+      title: string;
+      /** Description */
+      description?: string | null;
+      /**
+       * Is Public
+       * @description Flag that toggles visibility in the upcoming sharing flow.
+       * @default false
+       */
+      is_public: boolean;
+      /**
+       * Slug
+       * @description Optional stable slug used to build friendly URLs.
+       */
+      slug?: string | null;
+      /**
+       * Metadata
+       * @description Key/value bag with future customization switches.
+       */
+      metadata?: Record<string, never>;
+      /**
+       * User Id
+       * @description Opaque identifier for the collection owner.
+       */
+      user_id: string;
+    };
+    /**
+     * FavoriteCollectionDetail
+     * @description Full payload that includes entry information and activity feed.
+     */
+    FavoriteCollectionDetail: {
+      /** Title */
+      title: string;
+      /** Description */
+      description?: string | null;
+      /**
+       * Is Public
+       * @description Flag that toggles visibility in the upcoming sharing flow.
+       * @default false
+       */
+      is_public: boolean;
+      /**
+       * Slug
+       * @description Optional stable slug used to build friendly URLs.
+       */
+      slug?: string | null;
+      /**
+       * Metadata
+       * @description Key/value bag with future customization switches.
+       */
+      metadata?: Record<string, never>;
+      /** Id */
+      id: number;
+      /** User Id */
+      user_id: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      stats?: components["schemas"]["FavoriteCollectionStats"] | null;
+      /** Entries */
+      entries?: components["schemas"]["FavoriteEntry"][];
+      /** Activity */
+      activity?: components["schemas"]["FavoriteActivityItem"][];
+    };
+    /**
+     * FavoriteCollectionListResponse
+     * @description Container returned by the listing endpoint.
+     */
+    FavoriteCollectionListResponse: {
+      /** Total */
+      total: number;
+      /** Collections */
+      collections: components["schemas"]["FavoriteCollectionSummary"][];
+    };
+    /**
+     * FavoriteCollectionStats
+     * @description Aggregated statistics for a single collection.
+     */
+    FavoriteCollectionStats: {
+      /** Total Fighters */
+      total_fighters: number;
+      /** Win Rate */
+      win_rate: number;
+      /** Result Breakdown */
+      result_breakdown: {
+        [key: string]: number;
+      };
+      /** Divisions */
+      divisions?: string[];
+      /** Upcoming Fights */
+      upcoming_fights?: components["schemas"]["FavoriteUpcomingFight"][];
+    };
+    /**
+     * FavoriteCollectionSummary
+     * @description Lightweight representation used by listing endpoints.
+     */
+    FavoriteCollectionSummary: {
+      /** Title */
+      title: string;
+      /** Description */
+      description?: string | null;
+      /**
+       * Is Public
+       * @description Flag that toggles visibility in the upcoming sharing flow.
+       * @default false
+       */
+      is_public: boolean;
+      /**
+       * Slug
+       * @description Optional stable slug used to build friendly URLs.
+       */
+      slug?: string | null;
+      /**
+       * Metadata
+       * @description Key/value bag with future customization switches.
+       */
+      metadata?: Record<string, never>;
+      /** Id */
+      id: number;
+      /** User Id */
+      user_id: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      stats?: components["schemas"]["FavoriteCollectionStats"] | null;
+    };
+    /**
+     * FavoriteCollectionUpdate
+     * @description Partial update payload for a collection.
+     */
+    FavoriteCollectionUpdate: {
+      /** Title */
+      title?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Is Public */
+      is_public?: boolean | null;
+      /** Slug */
+      slug?: string | null;
+      /** Metadata */
+      metadata?: Record<string, never> | null;
+    };
+    /**
+     * FavoriteEntry
+     * @description Read model exposed in API responses.
+     */
+    FavoriteEntry: {
+      /**
+       * Fighter Id
+       * @description Primary key from the fighters table
+       */
+      fighter_id: string;
+      /**
+       * Position
+       * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
+       * @default 0
+       */
+      position: number;
+      /**
+       * Notes
+       * @description Optional scouting report written by the curator.
+       */
+      notes?: string | null;
+      /**
+       * Tags
+       * @description User-defined labels that help cluster fighters.
+       */
+      tags?: string[];
+      /**
+       * Metadata
+       * @description Arbitrary structured metadata persisted alongside the entry.
+       */
+      metadata?: Record<string, never>;
+      /**
+       * Id
+       * @description Surrogate primary key for the entry row
+       */
+      id: number;
+      /**
+       * Created At
+       * Format: date-time
+       * @description Timestamp when the fighter was added to the collection.
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       * @description Last mutation timestamp
+       */
+      updated_at: string;
+    };
+    /**
+     * FavoriteEntryCreate
+     * @description Payload for inserting a fighter into a collection.
+     */
+    FavoriteEntryCreate: {
+      /**
+       * Fighter Id
+       * @description Primary key from the fighters table
+       */
+      fighter_id: string;
+      /**
+       * Position
+       * @description Zero-based ordering index maintained by the drag-and-drop interactions on the dashboard.
+       * @default 0
+       */
+      position: number;
+      /**
+       * Notes
+       * @description Optional scouting report written by the curator.
+       */
+      notes?: string | null;
+      /**
+       * Tags
+       * @description User-defined labels that help cluster fighters.
+       */
+      tags?: string[];
+      /**
+       * Metadata
+       * @description Arbitrary structured metadata persisted alongside the entry.
+       */
+      metadata?: Record<string, never>;
+    };
+    /**
+     * FavoriteEntryReorderRequest
+     * @description Payload used by the drag-and-drop UI to persist ordering changes.
+     */
+    FavoriteEntryReorderRequest: {
+      /**
+       * Entry Ids
+       * @description Ordered list of entry identifiers representing the desired front-end arrangement.
+       */
+      entry_ids: number[];
+    };
+    /**
+     * FavoriteEntryUpdate
+     * @description Partial update payload for an existing entry.
+     */
+    FavoriteEntryUpdate: {
+      /**
+       * Position
+       * @description New zero-based ordering index when drag-and-drop is used.
+       */
+      position?: number | null;
+      /** Notes */
+      notes?: string | null;
+      /** Tags */
+      tags?: string[] | null;
+      /** Metadata */
+      metadata?: Record<string, never> | null;
+    };
+    /**
+     * FavoriteUpcomingFight
+     * @description Normalized summary describing an upcoming booked fight.
+     */
+    FavoriteUpcomingFight: {
+      /** Fighter Id */
+      fighter_id: string;
+      /** Opponent Name */
+      opponent_name: string;
+      /** Event Name */
+      event_name: string;
+      /**
+       * Event Date
+       * @description Scheduled date for the fight
+       */
+      event_date?: string | null;
+      /** Weight Class */
+      weight_class?: string | null;
+    };
+    /** FightGraphLink */
+    FightGraphLink: {
+      /** Source */
+      source: string;
+      /** Target */
+      target: string;
+      /** Fights */
+      fights: number;
+      /** First Event Name */
+      first_event_name?: string | null;
+      /** First Event Date */
+      first_event_date?: string | null;
+      /** Last Event Name */
+      last_event_name?: string | null;
+      /** Last Event Date */
+      last_event_date?: string | null;
+      /** Result Breakdown */
+      result_breakdown?: {
+        [key: string]: {
+          [key: string]: number;
+        };
+      };
+    };
+    /** FightGraphNode */
+    FightGraphNode: {
+      /** Fighter Id */
+      fighter_id: string;
+      /** Name */
+      name: string;
+      /** Division */
+      division?: string | null;
+      /** Record */
+      record?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /**
+       * Total Fights
+       * @default 0
+       */
+      total_fights: number;
+      /** Latest Event Date */
+      latest_event_date?: string | null;
+    };
+    /** FightGraphResponse */
+    FightGraphResponse: {
+      /** Nodes */
+      nodes?: components["schemas"]["FightGraphNode"][];
+      /** Links */
+      links?: components["schemas"]["FightGraphLink"][];
+      /** Metadata */
+      metadata?: Record<string, never>;
+    };
+    /** FightHistoryEntry */
+    FightHistoryEntry: {
+      /** Fight Id */
+      fight_id: string;
+      /** Event Name */
+      event_name: string;
+      /** Event Date */
+      event_date?: string | null;
+      /** Opponent */
+      opponent: string;
+      /** Opponent Id */
+      opponent_id?: string | null;
+      /** Result */
+      result: string;
+      /** Method */
+      method: string;
+      /** Round */
+      round?: number | null;
+      /** Time */
+      time?: string | null;
+      /** Fight Card Url */
+      fight_card_url?: string | null;
+      /** Stats */
+      stats?: Record<string, never>;
+    };
+    /** FighterComparisonEntry */
+    FighterComparisonEntry: {
+      /** Fighter Id */
+      fighter_id: string;
+      /** Name */
+      name: string;
+      /** Record */
+      record?: string | null;
+      /** Division */
+      division?: string | null;
+      /** Age */
+      age?: number | null;
+      /** Striking */
+      striking?: Record<string, never>;
+      /** Grappling */
+      grappling?: Record<string, never>;
+      /** Significant Strikes */
+      significant_strikes?: Record<string, never>;
+      /** Takedown Stats */
+      takedown_stats?: Record<string, never>;
+      /** Career */
+      career?: Record<string, never>;
+      /**
+       * Is Current Champion
+       * @default false
+       */
+      is_current_champion: boolean;
+      /**
+       * Is Former Champion
+       * @default false
+       */
+      is_former_champion: boolean;
+      /**
+       * Was Interim
+       * @default false
+       */
+      was_interim: boolean;
+    };
+    /** FighterComparisonResponse */
+    FighterComparisonResponse: {
+      /** Fighters */
+      fighters?: components["schemas"]["FighterComparisonEntry"][];
+    };
+    /** FighterDetail */
+    FighterDetail: {
+      /** Fighter Id */
+      fighter_id: string;
+      /**
+       * Detail Url
+       * Format: uri
+       */
+      detail_url: string;
+      /** Name */
+      name: string;
+      /** Nickname */
+      nickname?: string | null;
+      /** Record */
+      record?: string | null;
+      /** Division */
+      division?: string | null;
+      /** Height */
+      height?: string | null;
+      /** Weight */
+      weight?: string | null;
+      /** Reach */
+      reach?: string | null;
+      /** Stance */
+      stance?: string | null;
+      /** Dob */
+      dob?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /** Age */
+      age?: number | null;
+      /**
+       * Is Current Champion
+       * @default false
+       */
+      is_current_champion: boolean;
+      /**
+       * Is Former Champion
+       * @default false
+       */
+      is_former_champion: boolean;
+      /**
+       * Was Interim
+       * @default false
+       */
+      was_interim: boolean;
+      /**
+       * Current Streak Type
+       * @default none
+       * @enum {string}
+       */
+      current_streak_type: "win" | "loss" | "draw" | "none";
+      /**
+       * Current Streak Count
+       * @default 0
+       */
+      current_streak_count: number;
+      /** Current Rank */
+      current_rank?: number | null;
+      /** Current Rank Source */
+      current_rank_source?: string | null;
+      /** Current Rank Division */
+      current_rank_division?: string | null;
+      /** Current Rank Date */
+      current_rank_date?: string | null;
+      /** Peak Rank */
+      peak_rank?: number | null;
+      /** Peak Rank Source */
+      peak_rank_source?: string | null;
+      /** Peak Rank Division */
+      peak_rank_division?: string | null;
+      /** Peak Rank Date */
+      peak_rank_date?: string | null;
+      /** Birthplace */
+      birthplace?: string | null;
+      /** Birthplace City */
+      birthplace_city?: string | null;
+      /** Birthplace Country */
+      birthplace_country?: string | null;
+      /** Nationality */
+      nationality?: string | null;
+      /** Fighting Out Of */
+      fighting_out_of?: string | null;
+      /** Training Gym */
+      training_gym?: string | null;
+      /** Training City */
+      training_city?: string | null;
+      /** Training Country */
+      training_country?: string | null;
+      /** Next Fight Date */
+      next_fight_date?: string | null;
+      /** Last Fight Date */
+      last_fight_date?: string | null;
+      /** Last Fight Result */
+      last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
+      /** Leg Reach */
+      leg_reach?: string | null;
+      /** Striking */
+      striking?: Record<string, never>;
+      /** Grappling */
+      grappling?: Record<string, never>;
+      /** Significant Strikes */
+      significant_strikes?: Record<string, never>;
+      /** Takedown Stats */
+      takedown_stats?: Record<string, never>;
+      /** Career */
+      career?: Record<string, never>;
+      /** Fight History */
+      fight_history?: components["schemas"]["FightHistoryEntry"][];
+      /** Championship History */
+      championship_history?: Record<string, never>;
+    };
+    /** FighterListItem */
+    FighterListItem: {
+      /** Fighter Id */
+      fighter_id: string;
+      /**
+       * Detail Url
+       * Format: uri
+       */
+      detail_url: string;
+      /** Name */
+      name: string;
+      /** Nickname */
+      nickname?: string | null;
+      /** Record */
+      record?: string | null;
+      /** Division */
+      division?: string | null;
+      /** Height */
+      height?: string | null;
+      /** Weight */
+      weight?: string | null;
+      /** Reach */
+      reach?: string | null;
+      /** Stance */
+      stance?: string | null;
+      /** Dob */
+      dob?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /** Age */
+      age?: number | null;
+      /**
+       * Is Current Champion
+       * @default false
+       */
+      is_current_champion: boolean;
+      /**
+       * Is Former Champion
+       * @default false
+       */
+      is_former_champion: boolean;
+      /**
+       * Was Interim
+       * @default false
+       */
+      was_interim: boolean;
+      /**
+       * Current Streak Type
+       * @default none
+       * @enum {string}
+       */
+      current_streak_type: "win" | "loss" | "draw" | "none";
+      /**
+       * Current Streak Count
+       * @default 0
+       */
+      current_streak_count: number;
+      /** Current Rank */
+      current_rank?: number | null;
+      /** Current Rank Source */
+      current_rank_source?: string | null;
+      /** Current Rank Division */
+      current_rank_division?: string | null;
+      /** Current Rank Date */
+      current_rank_date?: string | null;
+      /** Peak Rank */
+      peak_rank?: number | null;
+      /** Peak Rank Source */
+      peak_rank_source?: string | null;
+      /** Peak Rank Division */
+      peak_rank_division?: string | null;
+      /** Peak Rank Date */
+      peak_rank_date?: string | null;
+      /** Birthplace */
+      birthplace?: string | null;
+      /** Birthplace City */
+      birthplace_city?: string | null;
+      /** Birthplace Country */
+      birthplace_country?: string | null;
+      /** Nationality */
+      nationality?: string | null;
+      /** Fighting Out Of */
+      fighting_out_of?: string | null;
+      /** Training Gym */
+      training_gym?: string | null;
+      /** Training City */
+      training_city?: string | null;
+      /** Training Country */
+      training_country?: string | null;
+      /** Next Fight Date */
+      next_fight_date?: string | null;
+      /** Last Fight Date */
+      last_fight_date?: string | null;
+      /** Last Fight Result */
+      last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
+    };
+    /**
+     * GymStat
+     * @description Fighter count by training gym.
+     */
+    GymStat: {
+      /** Gym */
+      gym: string;
+      /** City */
+      city?: string | null;
+      /** Country */
+      country?: string | null;
+      /** Fighter Count */
+      fighter_count: number;
+      /**
+       * Notable Fighters
+       * @description Top 2 fighters from this gym (by last fight date)
+       */
+      notable_fighters?: string[];
+    };
+    /**
+     * GymStatsResponse
+     * @description Gym statistics response.
+     */
+    GymStatsResponse: {
+      /** Gyms */
+      gyms?: components["schemas"]["GymStat"][];
+      /** Total Gyms */
+      total_gyms: number;
+      /** Generated At */
+      generated_at?: string;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
+    };
+    /**
+     * LeaderboardDefinition
+     * @description Container for leaderboard metadata and ranked entries for a metric.
+     */
+    LeaderboardDefinition: {
+      /**
+       * Metric Id
+       * @enum {string}
+       */
+      metric_id: "sig_strikes_accuracy_pct" | "avg_submissions";
+      /** Title */
+      title: string;
+      /** Description */
+      description?: string | null;
+      /** Entries */
+      entries?: components["schemas"]["LeaderboardEntry"][];
+    };
+    /**
+     * LeaderboardEntry
+     * @description Represents a single ranked fighter in a leaderboard view.
+     */
+    LeaderboardEntry: {
+      /** Fighter Id */
+      fighter_id: string;
+      /** Fighter Name */
+      fighter_name: string;
+      /** Metric Value */
+      metric_value: number;
+      /** Detail Url */
+      detail_url?: string | null;
+      /**
+       * Fight Count
+       * @description Number of UFC fights used to calculate this metric (data quality indicator)
+       */
+      fight_count?: number | null;
+    };
+    /**
+     * LeaderboardsResponse
+     * @description Envelope bundling all leaderboard segments for the stats endpoint.
+     */
+    LeaderboardsResponse: {
+      /** Leaderboards */
+      leaderboards?: components["schemas"]["LeaderboardDefinition"][];
+      /** Generated At */
+      generated_at?: string;
+    };
+    /**
+     * PaginatedEventsResponse
+     * @description Paginated list of events
+     */
+    PaginatedEventsResponse: {
+      /** Events */
+      events: components["schemas"]["EventListItem"][];
+      /** Total */
+      total: number;
+      /** Limit */
+      limit: number;
+      /** Offset */
+      offset: number;
+      /** Has More */
+      has_more: boolean;
+    };
+    /** PaginatedFightersResponse */
+    PaginatedFightersResponse: {
+      /** Fighters */
+      fighters: components["schemas"]["FighterListItem"][];
+      /** Total */
+      total: number;
+      /** Limit */
+      limit: number;
+      /** Offset */
+      offset: number;
+      /** Has More */
+      has_more: boolean;
+    };
+    /**
+     * PeakRankingResponse
+     * @description Fighter's best ranking achievement.
+     */
+    PeakRankingResponse: {
+      /**
+       * Fighter Id
+       * @description Fighter's UUID
+       */
+      fighter_id: string;
+      /**
+       * Fighter Name
+       * @description Fighter's full name
+       */
+      fighter_name: string;
+      /**
+       * Division
+       * @description Division where peak was achieved
+       */
+      division: string;
+      /**
+       * Peak Rank
+       * @description Best rank achieved (lower is better)
+       */
+      peak_rank: number;
+      /**
+       * Rank Date
+       * Format: date
+       * @description Date when peak rank was achieved
+       */
+      rank_date: string;
+      /**
+       * Is Interim
+       * @description Was this an interim title
+       * @default false
+       */
+      is_interim: boolean;
+      /**
+       * Source
+       * @description Ranking source
+       */
+      source: string;
+    };
+    /**
+     * RankingEntry
+     * @description Single ranking entry within a division leaderboard.
+     */
+    RankingEntry: {
+      /**
+       * Ranking Id
+       * @description Unique ranking record ID
+       */
+      ranking_id: string;
+      /**
+       * Fighter Id
+       * @description Fighter's UUID
+       */
+      fighter_id: string;
+      /**
+       * Fighter Name
+       * @description Fighter's full name
+       */
+      fighter_name: string;
+      /**
+       * Nickname
+       * @description Fighter's nickname
+       */
+      nickname?: string | null;
+      /**
+       * Rank
+       * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked (NR)
+       */
+      rank: number | null;
+      /**
+       * Previous Rank
+       * @description Previous rank position
+       */
+      previous_rank?: number | null;
+      /**
+       * Rank Movement
+       * @description Rank movement delta (positive=moved up, negative=moved down)
+       * @default 0
+       */
+      rank_movement: number;
+      /**
+       * Is Interim
+       * @description Whether this is an interim championship
+       * @default false
+       */
+      is_interim: boolean;
+    };
+    /**
+     * RankingHistoryEntry
+     * @description Single point in a fighter's ranking history timeline.
+     */
+    RankingHistoryEntry: {
+      /**
+       * Ranking Id
+       * @description Unique ranking record ID
+       */
+      ranking_id: string;
+      /**
+       * Division
+       * @description Weight class
+       */
+      division: string;
+      /**
+       * Rank
+       * @description Rank position: 0=Champion, 1-15=Ranked, null=Not Ranked
+       */
+      rank: number | null;
+      /**
+       * Previous Rank
+       * @description Previous rank
+       */
+      previous_rank?: number | null;
+      /**
+       * Rank Movement
+       * @description Rank movement delta
+       * @default 0
+       */
+      rank_movement: number;
+      /**
+       * Is Interim
+       * @description Interim championship flag
+       * @default false
+       */
+      is_interim: boolean;
+      /**
+       * Rank Date
+       * Format: date
+       * @description Date of this snapshot
+       */
+      rank_date: string;
+      /**
+       * Source
+       * @description Ranking source
+       */
+      source: string;
+    };
+    /**
+     * RankingHistoryResponse
+     * @description Historical ranking progression for a fighter.
+     */
+    RankingHistoryResponse: {
+      /**
+       * Fighter Id
+       * @description Fighter's UUID
+       */
+      fighter_id: string;
+      /**
+       * Fighter Name
+       * @description Fighter's full name
+       */
+      fighter_name: string;
+      /**
+       * Source
+       * @description Ranking source
+       */
+      source: string;
+      /**
+       * History
+       * @description Ranking snapshots ordered by date (most recent first)
+       */
+      history?: components["schemas"]["RankingHistoryEntry"][];
+      /**
+       * Total Snapshots
+       * @description Total number of ranking snapshots
+       */
+      total_snapshots: number;
+    };
+    /**
+     * StatsSummaryMetric
+     * @description Individual metric displayed in the summary KPIs section.
+     */
+    StatsSummaryMetric: {
+      /**
+       * Id
+       * @enum {string}
+       */
+      id:
+        | "fighters_indexed"
+        | "avg_sig_strikes_accuracy_pct"
+        | "avg_takedown_accuracy_pct"
+        | "avg_submission_attempts"
+        | "avg_fight_duration_minutes"
+        | "max_win_streak";
+      /** Label */
+      label: string;
+      /** Value */
+      value: number;
+      /** Description */
+      description?: string | null;
+    };
+    /**
+     * StatsSummaryResponse
+     * @description Summary statistics response containing key performance indicators.
+     */
+    StatsSummaryResponse: {
+      /** Metrics */
+      metrics?: components["schemas"]["StatsSummaryMetric"][];
+      /** Generated At */
+      generated_at?: string;
+    };
+    /**
+     * TrendPoint
+     * @description Data point used to render a trend line on the time-series chart.
+     */
+    TrendPoint: {
+      /** Timestamp */
+      timestamp: string;
+      /** Value */
+      value: number;
+    };
+    /**
+     * TrendSeries
+     * @description Series definition representing a tracked metric for a given entity.
+     */
+    TrendSeries: {
+      /** Metric Id */
+      metric_id: string;
+      /** Fighter Id */
+      fighter_id?: string | null;
+      /** Label */
+      label: string;
+      /** Points */
+      points?: components["schemas"]["TrendPoint"][];
+    };
+    /**
+     * TrendsResponse
+     * @description Aggregated trends combining time-series data for multiple metrics.
+     */
+    TrendsResponse: {
+      /** Trends */
+      trends?: components["schemas"]["TrendSeries"][];
+      /** Generated At */
+      generated_at?: string;
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    healthcheck_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
+  healthcheck_health_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_fighters_fighters__get: {
-        parameters: {
-            query?: {
-                /** @description Number of fighters to return */
-                limit?: number;
-                /** @description Number of fighters to skip */
-                offset?: number;
-                /** @description Filter by ISO country code (e.g., US, BR, IE) */
-                nationality?: string | null;
-                /** @description Filter by birthplace country */
-                birthplace_country?: string | null;
-                /** @description Filter by birthplace city */
-                birthplace_city?: string | null;
-                /** @description Filter by training country */
-                training_country?: string | null;
-                /** @description Filter by training city */
-                training_city?: string | null;
-                /** @description Filter by training gym (partial match) */
-                training_gym?: string | null;
-                /** @description Filter by presence of location data (birthplace or training gym) */
-                has_location_data?: boolean | null;
-                /** @description When true, include lightweight current streak fields in list payloads. */
-                include_streak?: boolean;
-                /** @description How many recent fights to examine when computing a current streak. */
-                streak_window?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedFightersResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
         };
+      };
     };
-    get_random_fighter_fighters_random_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FighterListItem"];
-                };
-            };
-        };
+  };
+  list_fighters_fighters__get: {
+    parameters: {
+      query?: {
+        /** @description Number of fighters to return */
+        limit?: number;
+        /** @description Number of fighters to skip */
+        offset?: number;
+        /** @description Filter by ISO country code (e.g., US, BR, IE) */
+        nationality?: string | null;
+        /** @description Filter by birthplace country */
+        birthplace_country?: string | null;
+        /** @description Filter by birthplace city */
+        birthplace_city?: string | null;
+        /** @description Filter by training country */
+        training_country?: string | null;
+        /** @description Filter by training city */
+        training_city?: string | null;
+        /** @description Filter by training gym (partial match) */
+        training_gym?: string | null;
+        /** @description Filter by presence of location data (birthplace or training gym) */
+        has_location_data?: boolean | null;
+        /** @description When true, include lightweight current streak fields in list payloads. */
+        include_streak?: boolean;
+        /** @description How many recent fights to examine when computing a current streak. */
+        streak_window?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    compare_fighters_fighters_compare_get: {
-        parameters: {
-            query: {
-                /** @description Repeated or comma-separated fighter IDs to compare */
-                fighter_ids: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FighterComparisonResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["PaginatedFightersResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_fighter_fighters__fighter_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fighter_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FighterDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_random_fighter_fighters_random_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_events_events__get: {
-        parameters: {
-            query?: {
-                /** @description Filter by status: 'upcoming' or 'completed' */
-                status?: string | null;
-                /** @description Number of events to return */
-                limit?: number;
-                /** @description Number of events to skip */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedEventsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["FighterListItem"];
         };
+      };
     };
-    list_upcoming_events_events_upcoming_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventListItem"][];
-                };
-            };
-        };
+  };
+  compare_fighters_fighters_compare_get: {
+    parameters: {
+      query: {
+        /** @description Repeated or comma-separated fighter IDs to compare */
+        fighter_ids: string[];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_completed_events_events_completed_get: {
-        parameters: {
-            query?: {
-                /** @description Number of events to return */
-                limit?: number;
-                /** @description Number of events to skip */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedEventsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["FighterComparisonResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    search_events_events_search__get: {
-        parameters: {
-            query?: {
-                /** @description Search query for event name or location */
-                q?: string | null;
-                /** @description Filter by year */
-                year?: number | null;
-                /** @description Filter by location */
-                location?: string | null;
-                /** @description Filter by event type (ppv, fight_night, etc.) */
-                event_type?: string | null;
-                /** @description Filter by status (upcoming, completed) */
-                status?: string | null;
-                /** @description Number of events to return */
-                limit?: number;
-                /** @description Number of events to skip */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedEventsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_fighter_fighters__fighter_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fighter_id: string;
+      };
+      cookie?: never;
     };
-    get_filter_options_events_filters_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFilterOptions"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["FighterDetail"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_event_events__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  list_events_events__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by status: 'upcoming' or 'completed' */
+        status?: string | null;
+        /** @description Number of events to return */
+        limit?: number;
+        /** @description Number of events to skip */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    search_fighters_search__get: {
-        parameters: {
-            query?: {
-                /** @description Fighter name, nickname, or location query. */
-                q?: string;
-                /** @description Optional stance filter. */
-                stance?: string | null;
-                /** @description Optional division filter. */
-                division?: string | null;
-                /** @description Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic). */
-                champion_statuses?: string[] | null;
-                /** @description Filter by streak type. Options: 'win', 'loss'. */
-                streak_type?: ("win" | "loss") | null;
-                /** @description Minimum streak count (only used when streak_type is specified). */
-                min_streak_count?: number | null;
-                /** @description Include location fields in search (birthplace, nationality, training gym). */
-                include_locations?: boolean;
-                /** @description Number of results to return. */
-                limit?: number;
-                /** @description Number of matches to skip. */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedFightersResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["PaginatedEventsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    stats_summary_stats_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatsSummaryResponse"];
-                };
-            };
-        };
+  };
+  list_upcoming_events_events_upcoming_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    stats_leaderboards_stats_leaderboards_get: {
-        parameters: {
-            query?: {
-                /** @description Maximum entries per leaderboard. */
-                limit?: number;
-                /** @description Pagination offset for leaderboard entries. */
-                offset?: number;
-                /** @description fighter_stats.metric name representing accuracy to rank. */
-                accuracy_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
-                /** @description fighter_stats.metric name representing submissions to rank. */
-                submissions_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
-                /** @description Filter by weight division (e.g., 'Lightweight', 'Heavyweight'). */
-                division?: string | null;
-                /** @description Minimum number of UFC fights required. */
-                min_fights?: number | null;
-                /** @description Optional inclusive lower bound on fight event dates. */
-                start_date?: string | null;
-                /** @description Optional inclusive upper bound on fight event dates. */
-                end_date?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeaderboardsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["EventListItem"][];
         };
+      };
     };
-    stats_trends_stats_trends_get: {
-        parameters: {
-            query?: {
-                /** @description Optional inclusive lower bound on fight event dates. */
-                start_date?: string | null;
-                /** @description Optional inclusive upper bound on fight event dates. */
-                end_date?: string | null;
-                /** @description Temporal grouping for average fight durations. */
-                time_bucket?: "month" | "quarter" | "year";
-                /** @description Maximum fighters returned for win streak trends. */
-                streak_limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrendsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  list_completed_events_events_completed_get: {
+    parameters: {
+      query?: {
+        /** @description Number of events to return */
+        limit?: number;
+        /** @description Number of events to skip */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_country_stats_stats_countries_get: {
-        parameters: {
-            query?: {
-                /** @description Group by birthplace, training country, or nationality */
-                group_by?: string;
-                /** @description Minimum number of fighters */
-                min_fighters?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CountryStatsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["PaginatedEventsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_city_stats_stats_cities_get: {
-        parameters: {
-            query?: {
-                /** @description Group by birthplace or training city */
-                group_by?: string;
-                /** @description Filter by country */
-                country?: string | null;
-                /** @description Minimum number of fighters */
-                min_fighters?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CityStatsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  search_events_events_search__get: {
+    parameters: {
+      query?: {
+        /** @description Search query for event name or location */
+        q?: string | null;
+        /** @description Filter by year */
+        year?: number | null;
+        /** @description Filter by location */
+        location?: string | null;
+        /** @description Filter by event type (ppv, fight_night, etc.) */
+        event_type?: string | null;
+        /** @description Filter by status (upcoming, completed) */
+        status?: string | null;
+        /** @description Number of events to return */
+        limit?: number;
+        /** @description Number of events to skip */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_gym_stats_stats_gyms_get: {
-        parameters: {
-            query?: {
-                /** @description Filter by country */
-                country?: string | null;
-                /** @description Minimum number of fighters */
-                min_fighters?: number;
-                /** @description Sort by fighter count or gym name */
-                sort_by?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GymStatsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["PaginatedEventsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_all_rankings_rankings__get: {
-        parameters: {
-            query?: {
-                /** @description Ranking source: 'ufc', 'fightmatrix', or 'tapology' */
-                source?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AllRankingsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_filter_options_events_filters_options_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_divisions_rankings_divisions_get: {
-        parameters: {
-            query?: {
-                /** @description Ranking source */
-                source?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DivisionListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["EventFilterOptions"];
         };
+      };
     };
-    get_division_rankings_rankings__division__get: {
-        parameters: {
-            query?: {
-                /** @description Ranking source */
-                source?: string;
-            };
-            header?: never;
-            path: {
-                division: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CurrentRankingsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_event_events__event_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        event_id: string;
+      };
+      cookie?: never;
     };
-    get_fighter_ranking_history_rankings_fighter__fighter_id__history_get: {
-        parameters: {
-            query?: {
-                /** @description Ranking source */
-                source?: string;
-                /** @description Optional limit on number of historical snapshots */
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                fighter_id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RankingHistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["EventDetail"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get: {
-        parameters: {
-            query?: {
-                /** @description Ranking source */
-                source?: string;
-            };
-            header?: never;
-            path: {
-                fighter_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PeakRankingResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  search_fighters_search__get: {
+    parameters: {
+      query?: {
+        /** @description Fighter name, nickname, or location query. */
+        q?: string;
+        /** @description Optional stance filter. */
+        stance?: string | null;
+        /** @description Optional division filter. */
+        division?: string | null;
+        /** @description Filter by champion status. Options: 'current', 'former'. Multiple values allowed (OR logic). */
+        champion_statuses?: string[] | null;
+        /** @description Filter by streak type. Options: 'win', 'loss'. */
+        streak_type?: ("win" | "loss") | null;
+        /** @description Minimum streak count (only used when streak_type is specified). */
+        min_streak_count?: number | null;
+        /** @description Include location fields in search (birthplace, nationality, training gym). */
+        include_locations?: boolean;
+        /** @description Number of results to return. */
+        limit?: number;
+        /** @description Number of matches to skip. */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_collections_favorites_collections_get: {
-        parameters: {
-            query?: {
-                /** @description Identifier for the owner */
-                user_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["PaginatedFightersResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    create_collection_favorites_collections_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FavoriteCollectionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  stats_summary_stats_summary_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_collection_favorites_collections__collection_id__get: {
-        parameters: {
-            query?: {
-                /** @description Optional owner identifier used to ensure the caller can only access their own collections. */
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["StatsSummaryResponse"];
         };
+      };
     };
-    delete_collection_favorites_collections__collection_id__delete: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  stats_leaderboards_stats_leaderboards_get: {
+    parameters: {
+      query?: {
+        /** @description Maximum entries per leaderboard. */
+        limit?: number;
+        /** @description Pagination offset for leaderboard entries. */
+        offset?: number;
+        /** @description fighter_stats.metric name representing accuracy to rank. */
+        accuracy_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
+        /** @description fighter_stats.metric name representing submissions to rank. */
+        submissions_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
+        /** @description Filter by weight division (e.g., 'Lightweight', 'Heavyweight'). */
+        division?: string | null;
+        /** @description Minimum number of UFC fights required. */
+        min_fights?: number | null;
+        /** @description Optional inclusive lower bound on fight event dates. */
+        start_date?: string | null;
+        /** @description Optional inclusive upper bound on fight event dates. */
+        end_date?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    update_collection_favorites_collections__collection_id__patch: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FavoriteCollectionUpdate"];
-            };
+        content: {
+          "application/json": components["schemas"]["LeaderboardsResponse"];
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    add_entry_favorites_collections__collection_id__entries_post: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FavoriteEntryCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteEntry"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  stats_trends_stats_trends_get: {
+    parameters: {
+      query?: {
+        /** @description Optional inclusive lower bound on fight event dates. */
+        start_date?: string | null;
+        /** @description Optional inclusive upper bound on fight event dates. */
+        end_date?: string | null;
+        /** @description Temporal grouping for average fight durations. */
+        time_bucket?: "month" | "quarter" | "year";
+        /** @description Maximum fighters returned for win streak trends. */
+        streak_limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    delete_entry_favorites_collections__collection_id__entries__entry_id__delete: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-                entry_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["TrendsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    update_entry_favorites_collections__collection_id__entries__entry_id__patch: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-                entry_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FavoriteEntryUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteEntry"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_country_stats_stats_countries_get: {
+    parameters: {
+      query?: {
+        /** @description Group by birthplace, training country, or nationality */
+        group_by?: string;
+        /** @description Minimum number of fighters */
+        min_fighters?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    reorder_entries_favorites_collections__collection_id__entries_reorder_post: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FavoriteEntryReorderRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CountryStatsResponse"];
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_collection_stats_favorites_collections__collection_id__stats_get: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-            };
-            header?: never;
-            path: {
-                collection_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteCollectionStats"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_city_stats_stats_cities_get: {
+    parameters: {
+      query?: {
+        /** @description Group by birthplace or training city */
+        group_by?: string;
+        /** @description Filter by country */
+        country?: string | null;
+        /** @description Minimum number of fighters */
+        min_fighters?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_fight_graph_fightweb_graph_get: {
-        parameters: {
-            query?: {
-                /** @description Optional weight class / division filter (e.g., 'Lightweight'). */
-                division?: string | null;
-                /** @description Earliest fight year to include. */
-                start_year?: number | null;
-                /** @description Latest fight year to include. */
-                end_year?: number | null;
-                /** @description Maximum number of fighters to include in the graph payload. */
-                limit?: number;
-                /** @description Include bouts marked as upcoming (result='Next'). */
-                include_upcoming?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FightGraphResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["CityStatsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_validation_stats_image_validation_stats_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
+  };
+  get_gym_stats_stats_gyms_get: {
+    parameters: {
+      query?: {
+        /** @description Filter by country */
+        country?: string | null;
+        /** @description Minimum number of fighters */
+        min_fighters?: number;
+        /** @description Sort by fighter count or gym name */
+        sort_by?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_low_quality_images_image_validation_low_quality_get: {
-        parameters: {
-            query?: {
-                /** @description Minimum quality score threshold */
-                min_score?: number;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["GymStatsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_fighters_without_faces_image_validation_no_face_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_all_rankings_rankings__get: {
+    parameters: {
+      query?: {
+        /** @description Ranking source: 'ufc', 'fightmatrix', or 'tapology' */
+        source?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_duplicate_images_image_validation_duplicates_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["AllRankingsResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_fighters_by_flag_image_validation_flags_get: {
-        parameters: {
-            query: {
-                /** @description Flag type: low_resolution, no_face_detected, multiple_faces, blurry_image, too_dark, too_bright */
-                flag: string;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_divisions_rankings_divisions_get: {
+    parameters: {
+      query?: {
+        /** @description Ranking source */
+        source?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_fighter_validation_image_validation__fighter_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fighter_id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["DivisionListResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
+  };
+  get_division_rankings_rankings__division__get: {
+    parameters: {
+      query?: {
+        /** @description Ranking source */
+        source?: string;
+      };
+      header?: never;
+      path: {
+        division: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CurrentRankingsResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fighter_ranking_history_rankings_fighter__fighter_id__history_get: {
+    parameters: {
+      query?: {
+        /** @description Ranking source */
+        source?: string;
+        /** @description Optional limit on number of historical snapshots */
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        fighter_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RankingHistoryResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fighter_peak_ranking_rankings_fighter__fighter_id__peak_get: {
+    parameters: {
+      query?: {
+        /** @description Ranking source */
+        source?: string;
+      };
+      header?: never;
+      path: {
+        fighter_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PeakRankingResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_collections_favorites_collections_get: {
+    parameters: {
+      query?: {
+        /** @description Identifier for the owner */
+        user_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionListResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  create_collection_favorites_collections_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FavoriteCollectionCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionDetail"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_collection_favorites_collections__collection_id__get: {
+    parameters: {
+      query?: {
+        /** @description Optional owner identifier used to ensure the caller can only access their own collections. */
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionDetail"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  delete_collection_favorites_collections__collection_id__delete: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_collection_favorites_collections__collection_id__patch: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FavoriteCollectionUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionDetail"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  add_entry_favorites_collections__collection_id__entries_post: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FavoriteEntryCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteEntry"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  delete_entry_favorites_collections__collection_id__entries__entry_id__delete: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+        entry_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_entry_favorites_collections__collection_id__entries__entry_id__patch: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+        entry_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FavoriteEntryUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteEntry"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  reorder_entries_favorites_collections__collection_id__entries_reorder_post: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FavoriteEntryReorderRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionDetail"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_collection_stats_favorites_collections__collection_id__stats_get: {
+    parameters: {
+      query?: {
+        user_id?: string | null;
+      };
+      header?: never;
+      path: {
+        collection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FavoriteCollectionStats"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fight_graph_fightweb_graph_get: {
+    parameters: {
+      query?: {
+        /** @description Optional weight class / division filter (e.g., 'Lightweight'). */
+        division?: string | null;
+        /** @description Earliest fight year to include. */
+        start_year?: number | null;
+        /** @description Latest fight year to include. */
+        end_year?: number | null;
+        /** @description Maximum number of fighters to include in the graph payload. */
+        limit?: number;
+        /** @description Include bouts marked as upcoming (result='Next'). */
+        include_upcoming?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FightGraphResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_validation_stats_image_validation_stats_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+    };
+  };
+  get_low_quality_images_image_validation_low_quality_get: {
+    parameters: {
+      query?: {
+        /** @description Minimum quality score threshold */
+        min_score?: number;
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fighters_without_faces_image_validation_no_face_get: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_duplicate_images_image_validation_duplicates_get: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fighters_by_flag_image_validation_flags_get: {
+    parameters: {
+      query: {
+        /** @description Flag type: low_resolution, no_face_detected, multiple_faces, blurry_image, too_dark, too_bright */
+        flag: string;
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_fighter_validation_image_validation__fighter_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fighter_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
 }

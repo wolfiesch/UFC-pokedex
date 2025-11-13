@@ -1,7 +1,13 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type PeakRankingProps = {
   fighterName: string;
@@ -28,7 +34,13 @@ export default function PeakRanking({
   });
 
   return (
-    <Card className={isChampion ? "bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border-yellow-500/30" : ""}>
+    <Card
+      className={
+        isChampion
+          ? "border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-amber-500/10"
+          : ""
+      }
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <svg
@@ -49,7 +61,7 @@ export default function PeakRanking({
             {isChampion ? "C" : `#${peakRank}`}
           </span>
           {isChampion && (
-            <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0">
+            <Badge className="border-0 bg-gradient-to-r from-yellow-500 to-amber-600 text-white">
               {isInterim ? "INTERIM CHAMPION" : "CHAMPION"}
             </Badge>
           )}

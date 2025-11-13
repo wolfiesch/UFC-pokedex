@@ -23,14 +23,20 @@ def _prepare_lifespan_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
 
         return "postgresql://tester:secret@example.com/ufc"
 
-    async def _noop_async() -> None:
-        """Provide an awaitable that does nothing (for warmup + teardown)."""
+    async def _noop_async(**_: object) -> None:
+        """Provide an awaitable that ignores any keyword arguments."""
 
         return None
 
-    monkeypatch.setattr("backend.db.connection.get_database_type", _postgresql, raising=False)
+    monkeypatch.setattr(
+        "backend.db.connection.get_database_type", _postgresql, raising=False
+    )
     monkeypatch.setattr(
         "backend.db.connection.get_database_url", _synthetic_database_url, raising=False
+    )
+    monkeypatch.setattr(backend_main, "get_database_type", _postgresql, raising=False)
+    monkeypatch.setattr(
+        backend_main, "get_database_url", _synthetic_database_url, raising=False
     )
     monkeypatch.setattr("backend.warmup.warmup_all", _noop_async, raising=False)
     monkeypatch.setattr("backend.cache.close_redis", _noop_async, raising=False)

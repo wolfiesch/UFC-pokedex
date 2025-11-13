@@ -40,7 +40,7 @@ describe("CollectionsGrid", () => {
   it("renders a helpful placeholder when no entries exist", () => {
     render(<CollectionsGrid entries={[]} onReorder={vi.fn()} />);
     expect(
-      screen.getByText(/No fighters in this collection yet/i)
+      screen.getByText(/No fighters in this collection yet/i),
     ).toBeInTheDocument();
   });
 

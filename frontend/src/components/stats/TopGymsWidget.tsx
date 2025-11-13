@@ -89,10 +89,12 @@ export function TopGymsWidget({
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">Loading gyms...</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              Loading gyms...
+            </span>
           </div>
         ) : error ? (
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         ) : gyms && gyms.length > 0 ? (
@@ -101,27 +103,29 @@ export function TopGymsWidget({
               <Link
                 key={gym.gym}
                 href={`/?training_gym=${encodeURIComponent(gym.gym)}`}
-                className="flex items-start gap-3 p-2 rounded-md hover:bg-accent transition-colors"
+                className="flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-accent"
               >
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-primary">
                     {getGymInitials(gym.gym)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate">{gym.gym}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold">{gym.gym}</div>
                   {(gym.city || gym.country) && (
                     <div className="text-sm text-muted-foreground">
                       {[gym.city, gym.country].filter(Boolean).join(", ")}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {gym.fighter_count} fighter{gym.fighter_count !== 1 ? "s" : ""}
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {gym.fighter_count} fighter
+                    {gym.fighter_count !== 1 ? "s" : ""}
                   </div>
                   {gym.notable_fighters && gym.notable_fighters.length > 0 && (
-                    <div className="text-xs text-primary mt-1 truncate">
+                    <div className="mt-1 truncate text-xs text-primary">
                       {gym.notable_fighters.slice(0, 2).join(", ")}
-                      {gym.notable_fighters.length > 2 && ` +${gym.notable_fighters.length - 2} more`}
+                      {gym.notable_fighters.length > 2 &&
+                        ` +${gym.notable_fighters.length - 2} more`}
                     </div>
                   )}
                 </div>
@@ -129,7 +133,7 @@ export function TopGymsWidget({
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">No gyms found</p>
           </div>
         )}

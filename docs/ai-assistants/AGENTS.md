@@ -6,9 +6,7 @@ Source lives in `backend/` (FastAPI services), `frontend/` (Next.js 14 UI), and 
 ## Build, Test, and Development Commands
 Run `make bootstrap` once to install Python deps via `uv` plus frontend packages via `pnpm`.
 
-**For PostgreSQL setup:** Use `make dev` for the full stack in watch mode (FastAPI reload + Next.js dev server). Database migrations use `make db-upgrade` and `make db-downgrade`. Load data with `make reload-data` or `make api:seed`.
-
-**For SQLite setup:** Use `make api:dev` to start the backend (auto-creates SQLite database). Seed with `make api:seed` for sample data.
+**PostgreSQL setup:** Use `make dev` for the full stack in watch mode (FastAPI reload + Next.js dev server). Database migrations use `make db-upgrade` and `make db-downgrade`. Load data with `make reload-data` or `make api:seed`.
 
 `pnpm build` or `npm run build` compiles the UI bundle. Crawlers are exposed through `make scraper` and `make scraper-details`.
 
@@ -24,8 +22,6 @@ Write commit subjects in imperative mood (`Add fighter detail endpoint`) and kee
 ## Environment & Data Notes
 Copy `.env.example` for both root and `frontend/` environments; avoid committing secrets.
 
-**PostgreSQL mode:** Use `make load-data` or `make reload-data` to hydrate the database after scraping. Use `make api:seed` for sample data.
-
-**SQLite mode:** Use `make api:seed` for sample data (8 fighters). The `make api:seed-full` command (10K+ fighters) is blocked by default on SQLite as it's not designed for large datasets. Override with `ALLOW_SQLITE_PROD_SEED=1` only if absolutely necessary.
+Use `make load-data` or `make reload-data` to hydrate PostgreSQL after scraping. Use `make api:seed` for sample data.
 
 Cache artifacts in `data/` only—never store raw scrapes elsewhere.

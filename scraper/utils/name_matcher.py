@@ -23,9 +23,7 @@ class FighterNameMatcher:
         """
         self.fighters_db = fighters_db
         # Build normalized name lookup for faster matching
-        self.name_lookup = {
-            normalize_name(f["name"]): f for f in fighters_db
-        }
+        self.name_lookup = {normalize_name(f["name"]): f for f in fighters_db}
 
         # Build additional lookups for nickname-based matching
         # This handles cases like "Patricio Pitbull" -> "Patricio Freire" (nickname: "Pitbull")
@@ -93,7 +91,9 @@ class FighterNameMatcher:
             normalized_input,
             name_choices,
             scorer=fuzz.token_set_ratio,
-            processor=lambda x: x[0] if isinstance(x, tuple) else x,  # Extract normalized name from tuple
+            processor=lambda x: x[0]
+            if isinstance(x, tuple)
+            else x,  # Extract normalized name from tuple
             score_cutoff=50.0,  # Minimum score to consider
         )
 
@@ -160,15 +160,15 @@ class FighterNameMatcher:
         """
         results = []
         for name in ranking_names:
-            fighter_id, confidence, reason = self.match_fighter(
-                name, division, min_confidence
+            fighter_id, confidence, reason = self.match_fighter(name, division, min_confidence)
+            results.append(
+                {
+                    "ranking_name": name,
+                    "fighter_id": fighter_id,
+                    "confidence": confidence,
+                    "match_reason": reason,
+                }
             )
-            results.append({
-                "ranking_name": name,
-                "fighter_id": fighter_id,
-                "confidence": confidence,
-                "match_reason": reason,
-            })
         return results
 
     def get_match_statistics(self, match_results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -193,8 +193,7 @@ class FighterNameMatcher:
             r["confidence"] for r in match_results if r["fighter_id"] is not None
         ]
         avg_confidence = (
-            sum(matched_confidences) / len(matched_confidences)
-            if matched_confidences else 0.0
+            sum(matched_confidences) / len(matched_confidences) if matched_confidences else 0.0
         )
 
         return {

@@ -42,7 +42,7 @@ export function FightWebFilters({
   isLoading = false,
 }: FightWebFiltersProps) {
   const [draft, setDraft] = useState<FightGraphQueryParams>(
-    normalizeFilters(filters)
+    normalizeFilters(filters),
   );
   const isInitialMount = useRef(true);
 

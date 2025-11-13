@@ -5,14 +5,15 @@ Revises: 6b7a839d5f5c
 Create Date: 2025-11-04 12:32:44.088286
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'ce39f523263a'
-down_revision: str | None = '6b7a839d5f5c'
+revision: str = "ce39f523263a"
+down_revision: str | None = "6b7a839d5f5c"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -21,39 +22,39 @@ def upgrade() -> None:
     """Add champion status fields to fighters table."""
     # Add champion status columns
     op.add_column(
-        'fighters',
+        "fighters",
         sa.Column(
-            'is_current_champion',
+            "is_current_champion",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text('false'),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
-        'fighters',
+        "fighters",
         sa.Column(
-            'is_former_champion',
+            "is_former_champion",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text('false'),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
-        'fighters',
-        sa.Column('championship_history', sa.JSON(), nullable=True),
+        "fighters",
+        sa.Column("championship_history", sa.JSON(), nullable=True),
     )
 
     # Create indexes for champion status fields
     op.create_index(
-        op.f('ix_fighters_is_current_champion'),
-        'fighters',
-        ['is_current_champion'],
+        op.f("ix_fighters_is_current_champion"),
+        "fighters",
+        ["is_current_champion"],
         unique=False,
     )
     op.create_index(
-        op.f('ix_fighters_is_former_champion'),
-        'fighters',
-        ['is_former_champion'],
+        op.f("ix_fighters_is_former_champion"),
+        "fighters",
+        ["is_former_champion"],
         unique=False,
     )
 
@@ -61,10 +62,10 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Remove champion status fields from fighters table."""
     # Drop indexes
-    op.drop_index(op.f('ix_fighters_is_former_champion'), table_name='fighters')
-    op.drop_index(op.f('ix_fighters_is_current_champion'), table_name='fighters')
+    op.drop_index(op.f("ix_fighters_is_former_champion"), table_name="fighters")
+    op.drop_index(op.f("ix_fighters_is_current_champion"), table_name="fighters")
 
     # Drop columns
-    op.drop_column('fighters', 'championship_history')
-    op.drop_column('fighters', 'is_former_champion')
-    op.drop_column('fighters', 'is_current_champion')
+    op.drop_column("fighters", "championship_history")
+    op.drop_column("fighters", "is_former_champion")
+    op.drop_column("fighters", "is_current_champion")

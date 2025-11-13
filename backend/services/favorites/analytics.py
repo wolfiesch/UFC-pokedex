@@ -70,9 +70,7 @@ class FavoritesAnalytics:
             activity=list(activity),
         )
 
-    def sort_entries(
-        self, entries: Iterable[FavoriteEntryModel]
-    ) -> list[FavoriteEntryModel]:
+    def sort_entries(self, entries: Iterable[FavoriteEntryModel]) -> list[FavoriteEntryModel]:
         """Return entries ordered by their persisted position."""
 
         return sorted(entries, key=lambda entry: entry.position)
@@ -91,23 +89,17 @@ class FavoritesAnalytics:
             updated_at=entry.updated_at,
         )
 
-    def entries_to_schema(
-        self, entries: Iterable[FavoriteEntryModel]
-    ) -> list[FavoriteEntrySchema]:
+    def entries_to_schema(self, entries: Iterable[FavoriteEntryModel]) -> list[FavoriteEntrySchema]:
         """Convert ORM entries into API schemas."""
         return [self.entry_to_schema(entry) for entry in self.sort_entries(entries)]
 
-    def build_activity(
-        self, entries: Iterable[FavoriteEntryModel]
-    ) -> list[FavoriteActivityItem]:
+    def build_activity(self, entries: Iterable[FavoriteEntryModel]) -> list[FavoriteActivityItem]:
         """Generate a simple activity feed from entry timestamps."""
 
         feed: list[FavoriteActivityItem] = []
         for entry in sorted(entries, key=lambda item: item.updated_at, reverse=True):
             action = (
-                "updated"
-                if entry.updated_at and entry.updated_at > entry.added_at
-                else "added"
+                "updated" if entry.updated_at and entry.updated_at > entry.added_at else "added"
             )
             metadata: dict[str, object] = {}
             if entry.notes:
@@ -119,9 +111,7 @@ class FavoritesAnalytics:
                     entry_id=entry.id,
                     fighter_id=entry.fighter_id,
                     action=action,
-                    occurred_at=(
-                        entry.updated_at if action == "updated" else entry.added_at
-                    ),
+                    occurred_at=(entry.updated_at if action == "updated" else entry.added_at),
                     metadata=metadata,
                 )
             )

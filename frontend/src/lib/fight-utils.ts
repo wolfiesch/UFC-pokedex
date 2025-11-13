@@ -27,7 +27,8 @@ export interface FightCardSection {
  * Detect if a fight is a title fight based on event name, fighter names, or keywords
  */
 export function isTitleFight(fight: Fight, eventName: string): boolean {
-  const searchText = `${eventName} ${fight.fighter_1_name} ${fight.fighter_2_name}`.toLowerCase();
+  const searchText =
+    `${eventName} ${fight.fighter_1_name} ${fight.fighter_2_name}`.toLowerCase();
 
   const titleKeywords = [
     "championship",
@@ -38,19 +39,24 @@ export function isTitleFight(fight: Fight, eventName: string): boolean {
     "interim",
   ];
 
-  return titleKeywords.some(keyword => searchText.includes(keyword));
+  return titleKeywords.some((keyword) => searchText.includes(keyword));
 }
 
 /**
  * Detect if a fight is the main event (typically the first fight in the card)
  */
-export function isMainEvent(fight: Fight, fights: Fight[], eventName: string): boolean {
+export function isMainEvent(
+  fight: Fight,
+  fights: Fight[],
+  eventName: string,
+): boolean {
   // Main event is usually the first fight
   const isFirstFight = fights.indexOf(fight) === 0;
 
   // Also check if it's mentioned in the event name
-  const fightMentionedInName = eventName.toLowerCase().includes(fight.fighter_1_name.toLowerCase()) ||
-                                eventName.toLowerCase().includes(fight.fighter_2_name.toLowerCase());
+  const fightMentionedInName =
+    eventName.toLowerCase().includes(fight.fighter_1_name.toLowerCase()) ||
+    eventName.toLowerCase().includes(fight.fighter_2_name.toLowerCase());
 
   return isFirstFight || fightMentionedInName;
 }
@@ -136,11 +142,13 @@ export function getFightOutcomeColor(result: string | null): string {
 /**
  * Parse fighter record string into wins, losses, draws
  */
-export function parseRecord(record: string | null): { wins: number; losses: number; draws: number } | null {
+export function parseRecord(
+  record: string | null,
+): { wins: number; losses: number; draws: number } | null {
   if (!record) return null;
 
   // Format: "17-8-0" or "17-8" (W-L-D)
-  const parts = record.split("-").map(n => parseInt(n, 10));
+  const parts = record.split("-").map((n) => parseInt(n, 10));
 
   if (parts.length < 2 || parts.some(isNaN)) {
     return null;
@@ -166,32 +174,35 @@ export interface EventStats {
   decisions: number;
 }
 
-export function calculateEventStats(fights: Fight[], eventName: string): EventStats {
+export function calculateEventStats(
+  fights: Fight[],
+  eventName: string,
+): EventStats {
   const sections = groupFightsBySection(fights);
 
   const weightClasses = Array.from(
     new Set(
       fights
-        .map(f => f.weight_class)
-        .filter((wc): wc is string => wc !== null && wc !== "")
-    )
+        .map((f) => f.weight_class)
+        .filter((wc): wc is string => wc !== null && wc !== ""),
+    ),
   );
 
-  const finishes = fights.filter(f =>
-    f.method &&
-    !f.method.toLowerCase().includes("decision") &&
-    !f.method.toLowerCase().includes("n/a")
+  const finishes = fights.filter(
+    (f) =>
+      f.method &&
+      !f.method.toLowerCase().includes("decision") &&
+      !f.method.toLowerCase().includes("n/a"),
   ).length;
 
-  const decisions = fights.filter(f =>
-    f.method &&
-    f.method.toLowerCase().includes("decision")
+  const decisions = fights.filter(
+    (f) => f.method && f.method.toLowerCase().includes("decision"),
   ).length;
 
-  const titleFights = fights.filter(f => isTitleFight(f, eventName)).length;
+  const titleFights = fights.filter((f) => isTitleFight(f, eventName)).length;
 
-  const mainCardSection = sections.find(s => s.section === "main");
-  const prelimSection = sections.find(s => s.section === "prelims");
+  const mainCardSection = sections.find((s) => s.section === "main");
+  const prelimSection = sections.find((s) => s.section === "prelims");
 
   return {
     totalFights: fights.length,

@@ -2,6 +2,7 @@
 
 This module provides tools to monitor slow database queries and identify performance bottlenecks.
 """
+
 import logging
 import time
 from typing import Any

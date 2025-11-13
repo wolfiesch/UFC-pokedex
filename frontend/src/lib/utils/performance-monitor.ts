@@ -6,7 +6,7 @@
 interface PerformanceMetric {
   name: string;
   value: number;
-  rating: 'good' | 'needs-improvement' | 'poor';
+  rating: "good" | "needs-improvement" | "poor";
   timestamp: number;
 }
 
@@ -17,27 +17,28 @@ let memoryIntervalId: number | null = null;
  * Track Core Web Vitals
  */
 export function initPerformanceMonitoring() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   // Track Largest Contentful Paint (LCP)
-  if ('PerformanceObserver' in window) {
+  if ("PerformanceObserver" in window) {
     try {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
 
         const lcp = lastEntry.startTime;
-        const rating = lcp < 2500 ? 'good' : lcp < 4000 ? 'needs-improvement' : 'poor';
+        const rating =
+          lcp < 2500 ? "good" : lcp < 4000 ? "needs-improvement" : "poor";
 
         logMetric({
-          name: 'LCP',
+          name: "LCP",
           value: lcp,
           rating,
           timestamp: Date.now(),
         });
       });
 
-      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+      lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
     } catch (e) {
       // PerformanceObserver not supported
     }
@@ -48,10 +49,11 @@ export function initPerformanceMonitoring() {
         const entries = list.getEntries();
         entries.forEach((entry: any) => {
           const fid = entry.processingStart - entry.startTime;
-          const rating = fid < 100 ? 'good' : fid < 300 ? 'needs-improvement' : 'poor';
+          const rating =
+            fid < 100 ? "good" : fid < 300 ? "needs-improvement" : "poor";
 
           logMetric({
-            name: 'FID',
+            name: "FID",
             value: fid,
             rating,
             timestamp: Date.now(),
@@ -59,7 +61,7 @@ export function initPerformanceMonitoring() {
         });
       });
 
-      fidObserver.observe({ entryTypes: ['first-input'] });
+      fidObserver.observe({ entryTypes: ["first-input"] });
     } catch (e) {
       // Not supported
     }
@@ -75,17 +77,22 @@ export function initPerformanceMonitoring() {
           }
         });
 
-        const rating = clsValue < 0.1 ? 'good' : clsValue < 0.25 ? 'needs-improvement' : 'poor';
+        const rating =
+          clsValue < 0.1
+            ? "good"
+            : clsValue < 0.25
+              ? "needs-improvement"
+              : "poor";
 
         logMetric({
-          name: 'CLS',
+          name: "CLS",
           value: clsValue,
           rating,
           timestamp: Date.now(),
         });
       });
 
-      clsObserver.observe({ entryTypes: ['layout-shift'] });
+      clsObserver.observe({ entryTypes: ["layout-shift"] });
     } catch (e) {
       // Not supported
     }
@@ -97,7 +104,7 @@ export function initPerformanceMonitoring() {
     clearInterval(memoryIntervalId);
   }
 
-  if ('memory' in performance) {
+  if ("memory" in performance) {
     memoryIntervalId = setInterval(() => {
       const mem = (performance as any).memory;
       const usedMB = mem.usedJSHeapSize / 1048576;
@@ -105,17 +112,20 @@ export function initPerformanceMonitoring() {
       const limitMB = mem.jsHeapSizeLimit / 1048576;
 
       const usage = (usedMB / limitMB) * 100;
-      const rating = usage < 50 ? 'good' : usage < 75 ? 'needs-improvement' : 'poor';
+      const rating =
+        usage < 50 ? "good" : usage < 75 ? "needs-improvement" : "poor";
 
       logMetric({
-        name: 'Memory',
+        name: "Memory",
         value: usedMB,
         rating,
         timestamp: Date.now(),
       });
 
-      if (rating === 'poor') {
-        console.warn(`High memory usage: ${usedMB.toFixed(2)}MB / ${totalMB.toFixed(2)}MB`);
+      if (rating === "poor") {
+        console.warn(
+          `High memory usage: ${usedMB.toFixed(2)}MB / ${totalMB.toFixed(2)}MB`,
+        );
       }
     }, 30000) as unknown as number; // Check every 30 seconds
   }
@@ -130,9 +140,16 @@ function logMetric(metric: PerformanceMetric) {
   }
 
   // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    const emoji = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌';
-    console.log(`${emoji} ${metric.name}: ${metric.value.toFixed(2)}ms (${metric.rating})`);
+  if (process.env.NODE_ENV === "development") {
+    const emoji =
+      metric.rating === "good"
+        ? "✅"
+        : metric.rating === "needs-improvement"
+          ? "⚠️"
+          : "❌";
+    console.log(
+      `${emoji} ${metric.name}: ${metric.value.toFixed(2)}ms (${metric.rating})`,
+    );
   }
 
   // TODO: Send to analytics in production
@@ -153,7 +170,8 @@ export function measureOperation<T>(name: string, operation: () => T): T {
   const result = operation();
   const duration = performance.now() - start;
 
-  const rating = duration < 16 ? 'good' : duration < 50 ? 'needs-improvement' : 'poor';
+  const rating =
+    duration < 16 ? "good" : duration < 50 ? "needs-improvement" : "poor";
 
   logMetric({
     name: `Custom: ${name}`,
@@ -170,13 +188,14 @@ export function measureOperation<T>(name: string, operation: () => T): T {
  */
 export async function measureAsyncOperation<T>(
   name: string,
-  operation: () => Promise<T>
+  operation: () => Promise<T>,
 ): Promise<T> {
   const start = performance.now();
   const result = await operation();
   const duration = performance.now() - start;
 
-  const rating = duration < 100 ? 'good' : duration < 500 ? 'needs-improvement' : 'poor';
+  const rating =
+    duration < 100 ? "good" : duration < 500 ? "needs-improvement" : "poor";
 
   logMetric({
     name: `Async: ${name}`,

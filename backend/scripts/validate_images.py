@@ -216,9 +216,7 @@ async def main():
         action="store_true",
         help="Re-validate already validated images",
     )
-    parser.add_argument(
-        "--limit", type=int, help="Only validate this many images (for testing)"
-    )
+    parser.add_argument("--limit", type=int, help="Only validate this many images (for testing)")
     parser.add_argument(
         "--stats",
         action="store_true",
@@ -236,9 +234,7 @@ async def main():
                 print(f"{key}: {value}")
             print("=" * 40)
     else:
-        await validate_all_images(
-            batch_size=args.batch_size, force=args.force, limit=args.limit
-        )
+        await validate_all_images(batch_size=args.batch_size, force=args.force, limit=args.limit)
 
 
 if __name__ == "__main__":

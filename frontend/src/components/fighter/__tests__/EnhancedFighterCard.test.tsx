@@ -18,17 +18,31 @@ describe("EnhancedFighterCard – list-provided streaks", () => {
   };
 
   it("renders streak badge from list fields without hover", () => {
-    render(<EnhancedFighterCard fighter={{ ...base, current_streak_type: "win", current_streak_count: 3 }} />);
+    render(
+      <EnhancedFighterCard
+        fighter={{
+          ...base,
+          current_streak_type: "win",
+          current_streak_count: 3,
+        }}
+      />,
+    );
 
     // Badge uses the numeric label only (e.g., "3")
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 
   it("does not render badge when count < 2", () => {
-    render(<EnhancedFighterCard fighter={{ ...base, current_streak_type: "win", current_streak_count: 1 }} />);
+    render(
+      <EnhancedFighterCard
+        fighter={{
+          ...base,
+          current_streak_type: "win",
+          current_streak_count: 1,
+        }}
+      />,
+    );
 
     expect(screen.queryByText("1")).toBeNull();
   });
 });
-
-

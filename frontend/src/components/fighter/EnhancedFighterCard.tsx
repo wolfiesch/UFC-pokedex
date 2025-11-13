@@ -3,7 +3,13 @@
 import { memo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import type { FighterListItem } from "@/lib/types";
 import { useFighterDetails } from "@/hooks/useFighterDetails";
 import { RankFlagBadge } from "@/components/rankings/RankFlagBadge";
@@ -84,7 +90,10 @@ function FightBadge({ fighter }: FightBadgeProps): JSX.Element | null {
  * - Smooth animations
  * - Better visual hierarchy
  */
-function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFighterCardProps) {
+function EnhancedFighterCardComponent({
+  fighter,
+  priority = false,
+}: EnhancedFighterCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -97,11 +106,19 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
   // Spring animation for smooth movement
   const springConfig = { stiffness: 150, damping: 20 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), springConfig);
+  const rotateX = useSpring(
+    useTransform(mouseY, [-0.5, 0.5], [10, -10]),
+    springConfig,
+  );
+  const rotateY = useSpring(
+    useTransform(mouseX, [-0.5, 0.5], [-10, 10]),
+    springConfig,
+  );
 
   // Hooks
-  const { isFavorite, toggleFavorite } = useFavorites({ autoInitialize: false });
+  const { isFavorite, toggleFavorite } = useFavorites({
+    autoInitialize: false,
+  });
   const { addToComparison, isInComparison } = useComparison();
   const {
     details,
@@ -180,11 +197,11 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
     return null;
   })();
   // Only use detailed streak when actively fetching/hovering, otherwise use lightweight streak
-  const detailedStreak = details && detailsEnabled
-    ? calculateStreak(details.fight_history)
-    : null;
+  const detailedStreak =
+    details && detailsEnabled ? calculateStreak(details.fight_history) : null;
   const streak = detailedStreak || listStreak;
-  const lastFight = details && detailsEnabled ? getLastFight(details.fight_history) : null;
+  const lastFight =
+    details && detailsEnabled ? getLastFight(details.fight_history) : null;
 
   // Division color coding
   const getDivisionColor = (division?: string | null) => {
@@ -204,8 +221,8 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
   const championGlowClass = fighter.is_current_champion
     ? "ring-2 ring-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
     : fighter.is_former_champion
-    ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-    : "";
+      ? "ring-1 ring-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+      : "";
 
   return (
     <motion.div
@@ -223,7 +240,10 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
         transformStyle: "preserve-3d",
       }}
     >
-      <Link href={`/fighters/${fighter.fighter_id}`} className="h-full flex flex-col">
+      <Link
+        href={`/fighters/${fighter.fighter_id}`}
+        className="flex h-full flex-col"
+      >
         <motion.div
           className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 backdrop-blur-sm transition-colors transition-shadow duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 ${championGlowClass}`}
           style={{
@@ -236,7 +256,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
           <AnimatePresence>
             {isHovered && (
               <motion.div
-                className="absolute top-3 right-3 z-20 flex gap-2"
+                className="absolute right-3 top-3 z-20 flex gap-2"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -305,7 +325,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
           {/* Fighter Image/Avatar Section */}
           <div
-            className="relative flex-shrink-0 aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
+            className="relative aspect-[3/4] flex-shrink-0 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
             style={{
               transform: "translateZ(-20px)",
               transformStyle: "preserve-3d",
@@ -313,7 +333,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
           >
             {/* Depth Layer 1: Deep background glow (moves most) */}
             <div
-              className="absolute inset-0 bg-gradient-radial from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              className="absolute inset-0 bg-gradient-radial from-primary/30 via-primary/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
               style={{
                 transform: "translateZ(-40px) scale(1.2)",
                 transformStyle: "preserve-3d",
@@ -323,7 +343,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
             {/* Depth Layer 2: Mid-ground glow */}
             <div
-              className="absolute inset-0 bg-gradient-radial from-primary/20 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              className="absolute inset-0 bg-gradient-radial from-primary/20 via-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
               style={{
                 transform: "translateZ(-25px) scale(1.1)",
                 transformStyle: "preserve-3d",
@@ -334,7 +354,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
             {/* Fighter Image (foreground) */}
             {shouldShowImage ? (
               <div
-                className="relative w-full h-full"
+                className="relative h-full w-full"
                 style={{
                   transform: "translateZ(5px)",
                   transformStyle: "preserve-3d",
@@ -352,9 +372,10 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
                 {/* Rim light effect - subtle edge glow on hover */}
                 <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                   style={{
-                    background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)",
+                    background:
+                      "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)",
                     mixBlendMode: "overlay",
                   }}
                 />
@@ -362,7 +383,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
             ) : (
               <div
                 className={`flex h-full items-center justify-center bg-gradient-to-br ${getDivisionColor(
-                  fighter.division
+                  fighter.division,
                 )}`}
               >
                 <span className="text-6xl font-bold text-white/20">
@@ -373,14 +394,14 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
             {/* Champion Badges - Stay at top left */}
             <div
-              className="absolute top-3 left-3 flex flex-col gap-2"
+              className="absolute left-3 top-3 flex flex-col gap-2"
               style={{
                 transform: "translateZ(30px)",
                 transformStyle: "preserve-3d",
               }}
             >
               {fighter.is_current_champion && (
-                <span className="rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
                   <svg
                     className="h-3 w-3"
                     fill="currentColor"
@@ -392,7 +413,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                 </span>
               )}
               {!fighter.is_current_champion && fighter.is_former_champion && (
-                <span className="rounded-full border border-amber-600/70 bg-black/60 px-3 py-1 text-xs font-semibold text-amber-500 backdrop-blur-sm flex items-center gap-1">
+                <span className="flex items-center gap-1 rounded-full border border-amber-600/70 bg-black/60 px-3 py-1 text-xs font-semibold text-amber-500 backdrop-blur-sm">
                   <svg
                     className="h-3 w-3"
                     fill="currentColor"
@@ -459,8 +480,12 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span className="text-sm text-white/60">Failed to load stats</span>
-                        <span className="text-xs text-white/40">Click for full profile</span>
+                        <span className="text-sm text-white/60">
+                          Failed to load stats
+                        </span>
+                        <span className="text-xs text-white/40">
+                          Click for full profile
+                        </span>
                       </div>
                     ) : (
                       <>
@@ -481,7 +506,8 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                             {(() => {
                               const isUpcoming =
                                 lastFight.result?.toLowerCase() === "next" ||
-                                (lastFight.date && new Date(lastFight.date) > new Date());
+                                (lastFight.date &&
+                                  new Date(lastFight.date) > new Date());
                               return (
                                 <>
                                   <div className="mb-1 text-xs text-white/60">
@@ -511,34 +537,50 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
                         <div className="grid w-full grid-cols-2 gap-3">
                           <div className="rounded-lg bg-white/10 p-3 text-center">
-                            <div className="text-2xl font-bold">{fighter.record}</div>
+                            <div className="text-2xl font-bold">
+                              {fighter.record}
+                            </div>
                             <div className="text-xs text-white/60">Record</div>
                           </div>
 
                           {streak && streak.count >= 2 && (
                             <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">{streak.label}</div>
-                              <div className="text-xs text-white/60">Current Streak</div>
+                              <div className="text-lg font-bold">
+                                {streak.label}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                Current Streak
+                              </div>
                             </div>
                           )}
 
                           {fighter.stance && (
                             <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">{fighter.stance}</div>
-                              <div className="text-xs text-white/60">Stance</div>
+                              <div className="text-lg font-bold">
+                                {fighter.stance}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                Stance
+                              </div>
                             </div>
                           )}
 
                           {fighter.height && (
                             <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">{fighter.height}</div>
-                              <div className="text-xs text-white/60">Height</div>
+                              <div className="text-lg font-bold">
+                                {fighter.height}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                Height
+                              </div>
                             </div>
                           )}
 
                           {fighter.reach && (
                             <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">{fighter.reach}</div>
+                              <div className="text-lg font-bold">
+                                {fighter.reach}
+                              </div>
                               <div className="text-xs text-white/60">Reach</div>
                             </div>
                           )}
@@ -577,12 +619,15 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
             }}
           >
             <div className="mb-2 min-h-[3rem]">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
                   {fighter.name}
                 </h3>
                 {fighter.is_current_champion && (
-                  <span className="text-amber-500 text-lg" title="Current Champion">
+                  <span
+                    className="text-lg text-amber-500"
+                    title="Current Champion"
+                  >
                     ⭐
                   </span>
                 )}
@@ -598,7 +643,7 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
             {/* Compact Stats Row with All Badges */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Record */}
                 <span className="font-medium">{fighter.record}</span>
 
@@ -623,7 +668,11 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
                             : "text-gray-500"
                       }`}
                     >
-                      {streak.type === "win" ? "🟢" : streak.type === "loss" ? "🔴" : "⚫"}
+                      {streak.type === "win"
+                        ? "🟢"
+                        : streak.type === "loss"
+                          ? "🔴"
+                          : "⚫"}
                       <span className="font-medium">{streak.label}</span>
                     </span>
                   </>
@@ -636,7 +685,11 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
               <div className="flex items-center gap-2">
                 {nationalityFlag && (
                   <div className="flex items-center gap-1">
-                    <CountryFlag countryCode={nationalityFlag} width={16} height={12} />
+                    <CountryFlag
+                      countryCode={nationalityFlag}
+                      width={16}
+                      height={12}
+                    />
                   </div>
                 )}
               </div>
@@ -644,11 +697,17 @@ function EnhancedFighterCardComponent({ fighter, priority = false }: EnhancedFig
 
             {/* Fighting Out Of Section */}
             {fighter.fighting_out_of && (
-              <div className="pt-3 mt-3 border-t border-border/50">
-                <div className="text-xs text-muted-foreground mb-1">Fighting Out Of</div>
-                <div className="text-sm text-foreground flex items-center gap-2">
+              <div className="mt-3 border-t border-border/50 pt-3">
+                <div className="mb-1 text-xs text-muted-foreground">
+                  Fighting Out Of
+                </div>
+                <div className="flex items-center gap-2 text-sm text-foreground">
                   {nationalityFlag && (
-                    <CountryFlag countryCode={nationalityFlag} width={20} height={14} />
+                    <CountryFlag
+                      countryCode={nationalityFlag}
+                      width={20}
+                      height={14}
+                    />
                   )}
                   {fighter.fighting_out_of}
                 </div>
@@ -704,7 +763,7 @@ const fighterEqualityKeys: Array<keyof FighterListItem> = [
 
 const areFighterCardPropsEqual = (
   previousProps: Readonly<EnhancedFighterCardProps>,
-  nextProps: Readonly<EnhancedFighterCardProps>
+  nextProps: Readonly<EnhancedFighterCardProps>,
 ): boolean => {
   const previousFighter = previousProps.fighter;
   const nextFighter = nextProps.fighter;
@@ -712,11 +771,11 @@ const areFighterCardPropsEqual = (
   // Ensure shallow equality across the curated key set so the card only
   // re-renders when user-facing details actually change.
   return fighterEqualityKeys.every(
-    (key) => previousFighter[key] === nextFighter[key]
+    (key) => previousFighter[key] === nextFighter[key],
   );
 };
 
 export const EnhancedFighterCard = memo(
   EnhancedFighterCardComponent,
-  areFighterCardPropsEqual
+  areFighterCardPropsEqual,
 );

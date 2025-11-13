@@ -19,7 +19,10 @@ export function StatsSummary({ collectionName, stats }: StatsSummaryProps) {
   return (
     <section aria-labelledby="favorites-summary-heading" className="space-y-4">
       <header>
-        <h2 id="favorites-summary-heading" className="text-xl font-bold tracking-tight">
+        <h2
+          id="favorites-summary-heading"
+          className="text-xl font-bold tracking-tight"
+        >
           {collectionName} snapshot
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -59,7 +62,9 @@ export function StatsSummary({ collectionName, stats }: StatsSummaryProps) {
           <CardContent>
             <p className="text-3xl font-bold">{stats.divisions.length}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {stats.divisions.length ? stats.divisions.join(", ") : "No divisions recorded"}
+              {stats.divisions.length
+                ? stats.divisions.join(", ")
+                : "No divisions recorded"}
             </p>
           </CardContent>
         </Card>
@@ -76,13 +81,17 @@ export function StatsSummary({ collectionName, stats }: StatsSummaryProps) {
             <dl className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
               {breakdownEntries.map(([key, value]) => (
                 <div key={key} className="rounded-lg bg-muted/40 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">{key}</dt>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {key}
+                  </dt>
                   <dd className="text-lg font-semibold">{value}</dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p className="text-sm text-muted-foreground">No fight history has been recorded yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No fight history has been recorded yet.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -101,18 +110,24 @@ export function StatsSummary({ collectionName, stats }: StatsSummaryProps) {
                   key={`${fight.fighter_id}-${fight.event_name}`}
                   className="flex flex-col gap-1 rounded-lg border border-border/40 bg-background/40 p-3"
                 >
-                  <span className="font-semibold text-foreground">{fight.fighter_id}</span>
+                  <span className="font-semibold text-foreground">
+                    {fight.fighter_id}
+                  </span>
                   <span className="text-muted-foreground">
                     vs {fight.opponent_name} — {fight.event_name}
                   </span>
                   {fight.event_date ? (
-                    <span className="text-xs text-muted-foreground/80">{fight.event_date}</span>
+                    <span className="text-xs text-muted-foreground/80">
+                      {fight.event_date}
+                    </span>
                   ) : null}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">No upcoming bouts scheduled.</p>
+            <p className="text-sm text-muted-foreground">
+              No upcoming bouts scheduled.
+            </p>
           )}
         </CardContent>
       </Card>

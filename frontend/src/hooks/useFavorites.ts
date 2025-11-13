@@ -31,7 +31,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
       isLoading: state.isLoading,
       error: state.error,
     }),
-    shallow
+    shallow,
   );
   const {
     searchTerm,
@@ -53,7 +53,7 @@ export function useFavorites(options?: UseFavoritesOptions) {
       setDivisionFilter: state.setDivisionFilter,
       toggleChampionStatusFilter: state.toggleChampionStatusFilter,
     }),
-    shallow
+    shallow,
   );
   const autoInitialize = options?.autoInitialize ?? false;
 

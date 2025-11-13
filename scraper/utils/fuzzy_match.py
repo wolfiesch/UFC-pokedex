@@ -25,11 +25,16 @@ def normalize_name(name: str) -> str:
     # Manual transliterations for special characters that don't decompose
     # (e.g., Polish Ł, Scandinavian Ø, etc.)
     transliterations = {
-        "ł": "l", "Ł": "l",  # Polish L with stroke
-        "ø": "o", "Ø": "o",  # Scandinavian O with stroke
-        "đ": "d", "Đ": "d",  # Croatian D with stroke
-        "þ": "th", "Þ": "th",  # Icelandic thorn
-        "ð": "d", "Ð": "d",  # Icelandic eth
+        "ł": "l",
+        "Ł": "l",  # Polish L with stroke
+        "ø": "o",
+        "Ø": "o",  # Scandinavian O with stroke
+        "đ": "d",
+        "Đ": "d",  # Croatian D with stroke
+        "þ": "th",
+        "Þ": "th",  # Icelandic thorn
+        "ð": "d",
+        "Ð": "d",  # Icelandic eth
         "ß": "ss",  # German sharp S
     }
 
@@ -44,7 +49,8 @@ def normalize_name(name: str) -> str:
     # Filter out combining characters (diacritics/accents)
     # Keep only base characters
     ascii_name = "".join(
-        char for char in nfd
+        char
+        for char in nfd
         if unicodedata.category(char) != "Mn"  # Mn = Mark, Nonspacing (diacritics)
     )
 
@@ -244,11 +250,7 @@ def calculate_match_confidence(
     record_score = calculate_record_similarity(ufc_record, sherdog_record)
 
     # Weighted average
-    confidence = (
-        name_score * 0.6 +
-        division_score * 0.2 +
-        record_score * 0.2
-    )
+    confidence = name_score * 0.6 + division_score * 0.2 + record_score * 0.2
 
     return round(confidence, 2)
 
@@ -363,9 +365,7 @@ def calculate_disambiguation_score(
     ufcstats_weight = ufcstats_fighter.get("weight")
 
     if ufc_com_weight and ufcstats_weight:
-        weight_diff = calculate_weight_difference(
-            str(ufc_com_weight), str(ufcstats_weight)
-        )
+        weight_diff = calculate_weight_difference(str(ufc_com_weight), str(ufcstats_weight))
         signals["weight_diff_lbs"] = weight_diff
         if weight_diff <= 10:
             bonus_points += 3
@@ -429,6 +429,7 @@ def calculate_weight_difference(weight1: str | None, weight2: str | None) -> flo
 
             # Extract numeric value
             import re
+
             match = re.search(r"(\d+\.?\d*)", weight)
             if not match:
                 return None

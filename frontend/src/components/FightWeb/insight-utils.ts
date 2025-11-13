@@ -193,10 +193,7 @@ export function extractFightWebInsights(
       .map((item) => ({
         fighterId: typeof item.fighter_id === "string" ? item.fighter_id : "",
         name: typeof item.name === "string" ? item.name : "Unknown",
-        division:
-          typeof item.division === "string"
-            ? item.division
-            : null,
+        division: typeof item.division === "string" ? item.division : null,
         totalFights:
           typeof item.total_fights === "number" ? item.total_fights : 0,
         degree: typeof item.degree === "number" ? item.degree : 0,
@@ -215,13 +212,9 @@ export function extractFightWebInsights(
         source: typeof item.source === "string" ? item.source : "",
         target: typeof item.target === "string" ? item.target : "",
         sourceName:
-          typeof item.source_name === "string"
-            ? item.source_name
-            : null,
+          typeof item.source_name === "string" ? item.source_name : null,
         targetName:
-          typeof item.target_name === "string"
-            ? item.target_name
-            : null,
+          typeof item.target_name === "string" ? item.target_name : null,
         fights: typeof item.fights === "number" ? item.fights : 0,
         lastEventName:
           typeof item.last_event_name === "string"

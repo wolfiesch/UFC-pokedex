@@ -148,11 +148,7 @@ def parse_stat_section(section: Selector) -> dict[str, Any]:
             "i::text, span.b-list__info-box-title::text, p.b-list__info-box-title::text"
         )
         label = next(
-            (
-                clean_text(text)
-                for text in label_candidates.getall()
-                if clean_text(text)
-            ),
+            (clean_text(text) for text in label_candidates.getall() if clean_text(text)),
             None,
         )
         if not label:
@@ -266,9 +262,7 @@ def parse_fight_history_rows(fighter_id: str, table: Selector) -> list[dict[str,
             continue
 
         fight_link = row.css("td:nth-child(1) a::attr(href)").get()
-        fight_id = (
-            _extract_uuid(fight_link) if fight_link else f"{fighter_id}-fight-{index}"
-        )
+        fight_id = _extract_uuid(fight_link) if fight_link else f"{fighter_id}-fight-{index}"
 
         fighter_cell = row.css("td:nth-child(2)")
         event_cell = row.css("td:nth-child(7)")
@@ -339,9 +333,7 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
 
     # Try multiple selectors for fighter name with fallbacks
     name_candidates = (
-        selector.css(
-            "h2.b-content__title span.b-content__title-highlight::text"
-        ).getall()
+        selector.css("h2.b-content__title span.b-content__title-highlight::text").getall()
         or selector.css(".b-content__title-highlight::text").getall()
         or selector.css(".b-content__banner h2::text").getall()
         or selector.css(".b-content__title h2::text").getall()
@@ -357,19 +349,13 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
         ".b-content__Nickname::text, .b-content__Nickname *::text"
     ).getall()
     nickname = next(
-        (
-            clean_text(candidate)
-            for candidate in nickname_candidates
-            if clean_text(candidate)
-        ),
+        (clean_text(candidate) for candidate in nickname_candidates if clean_text(candidate)),
         None,
     )
     # Record is in the title heading
     record_text = clean_text(selector.css("span.b-content__title-record::text").get())
     record = (
-        record_text.split(":")[-1].strip()
-        if record_text and ":" in record_text
-        else record_text
+        record_text.split(":")[-1].strip() if record_text and ":" in record_text else record_text
     )
 
     bio_map: dict[str, str | None] = {}
@@ -394,9 +380,7 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
 
     for section in stat_containers:
         title = (
-            clean_text(
-                section.css("h2::text, h3::text, i.b-list__box-item-title::text").get()
-            )
+            clean_text(section.css("h2::text, h3::text, i.b-list__box-item-title::text").get())
             or "stats"
         )
         title = title.replace(":", "")
@@ -409,15 +393,11 @@ def parse_fighter_detail_page(response) -> dict[str, Any]:  # type: ignore[no-un
 
     fight_history_table = selector.css("table.b-fight-details__table")
     fight_history = (
-        parse_fight_history_rows(fighter_id, fight_history_table)
-        if fight_history_table
-        else []
+        parse_fight_history_rows(fighter_id, fight_history_table) if fight_history_table else []
     )
 
     weight = bio_map.get("WEIGHT")
-    scraped_division = clean_text(
-        selector.css("div.b-fight-details__person i::text").get()
-    )
+    scraped_division = clean_text(selector.css("div.b-fight-details__person i::text").get())
 
     # Extract geography fields from bio_map
     birthplace = bio_map.get("BIRTHPLACE")
@@ -614,14 +594,10 @@ def parse_event_detail_page(response) -> dict[str, Any]:  # type: ignore[no-unty
             # Fighter names (column 2) - contains two links
             fighter_links = row.css("td:nth-child(2) p a")
             fighter_1_name = (
-                clean_text(fighter_links[0].css("::text").get())
-                if len(fighter_links) > 0
-                else None
+                clean_text(fighter_links[0].css("::text").get()) if len(fighter_links) > 0 else None
             )
             fighter_2_name = (
-                clean_text(fighter_links[1].css("::text").get())
-                if len(fighter_links) > 1
-                else None
+                clean_text(fighter_links[1].css("::text").get()) if len(fighter_links) > 1 else None
             )
 
             # Fighter IDs

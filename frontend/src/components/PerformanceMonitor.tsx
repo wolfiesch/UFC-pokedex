@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { initPerformanceMonitoring } from '@/lib/utils/performance-monitor';
+import { useEffect } from "react";
+import { initPerformanceMonitoring } from "@/lib/utils/performance-monitor";
 
 /**
  * Client component to initialize performance monitoring

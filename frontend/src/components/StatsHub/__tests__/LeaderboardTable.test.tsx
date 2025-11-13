@@ -24,7 +24,7 @@ describe("LeaderboardTable", () => {
         description="Measured by total finishes."
         entries={sampleEntries}
         metricLabel="Finishes"
-      />
+      />,
     );
 
     expect(screen.getByText("Top Finishers")).toBeInTheDocument();
@@ -37,7 +37,12 @@ describe("LeaderboardTable", () => {
 
   it("renders loading placeholder when isLoading is true", () => {
     render(
-      <LeaderboardTable title="Loading" entries={[]} isLoading metricLabel="Score" />
+      <LeaderboardTable
+        title="Loading"
+        entries={[]}
+        isLoading
+        metricLabel="Score"
+      />,
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("Loading leaderboard");
@@ -45,7 +50,11 @@ describe("LeaderboardTable", () => {
 
   it("renders error message when error prop is set", () => {
     render(
-      <LeaderboardTable title="Error" entries={[]} error="Something went wrong" />
+      <LeaderboardTable
+        title="Error"
+        entries={[]}
+        error="Something went wrong"
+      />,
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
@@ -54,7 +63,9 @@ describe("LeaderboardTable", () => {
   it("renders empty state when no entries provided", () => {
     render(<LeaderboardTable title="Empty" entries={[]} />);
 
-    expect(screen.getByText(/No leaderboard data available/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No leaderboard data available/i),
+    ).toBeInTheDocument();
   });
 
   it("matches snapshot with populated leaderboard data", () => {
@@ -64,7 +75,7 @@ describe("LeaderboardTable", () => {
         description="Measured by total finishes."
         entries={sampleEntries}
         metricLabel="Finishes"
-      />
+      />,
     );
 
     expect(container.firstChild).toMatchSnapshot();

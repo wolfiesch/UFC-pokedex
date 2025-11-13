@@ -35,7 +35,7 @@ if (isVitestEnvironment) {
   void register().catch((error: unknown) => {
     throw new Error(
       "Playwright smoke suite could not be registered; ensure devDependencies include @playwright/test.\n" +
-      String(error)
+        String(error),
     );
   });
 }

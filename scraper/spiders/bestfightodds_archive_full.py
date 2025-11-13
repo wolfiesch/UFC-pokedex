@@ -77,9 +77,7 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
         self.end_id = int(end_id)
         self.organization_filter = organization
 
-        self.logger.info(
-            f"Configured to scrape event IDs {self.start_id} to {self.end_id}"
-        )
+        self.logger.info(f"Configured to scrape event IDs {self.start_id} to {self.end_id}")
         if self.organization_filter:
             self.logger.info(f"Filtering for organization: {self.organization_filter}")
 
@@ -130,14 +128,11 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
             return
 
         if response.status != 200:
-            self.logger.warning(
-                f"Event ID {event_id} returned status {response.status}"
-            )
+            self.logger.warning(f"Event ID {event_id} returned status {response.status}")
             return
 
         # Detect redirects to homepage (invalid event IDs redirect to homepage)
-        if response.url == "https://www.bestfightodds.com/" or \
-           "/events/" not in response.url:
+        if response.url == "https://www.bestfightodds.com/" or "/events/" not in response.url:
             self.stats["not_found"] += 1
             self.logger.debug(f"Event ID {event_id} redirected to homepage (invalid ID)")
             return
@@ -234,7 +229,7 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
         date_selectors = [
             ".event-date::text",
             ".date::text",
-            'time::attr(datetime)',
+            "time::attr(datetime)",
             'meta[property="article:published_time"]::attr(content)',
         ]
 
@@ -248,7 +243,7 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
         # Try to extract from page content using regex
         # Look for patterns like "Nov 9th 2025" or "November 9, 2025"
         text_content = " ".join(response.css("body *::text").getall())
-        date_pattern = r'(\w+ \d{1,2}(?:st|nd|rd|th)?,? \d{4})'
+        date_pattern = r"(\w+ \d{1,2}(?:st|nd|rd|th)?,? \d{4})"
         matches = re.findall(date_pattern, text_content)
         if matches:
             parsed_date = self._parse_date(matches[0])
@@ -264,7 +259,7 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
         URL format: https://www.bestfightodds.com/events/ufc-vegas-111-3917
         Extract: ufc-vegas-111-3917
         """
-        match = re.search(r'/events/([^/]+)$', url)
+        match = re.search(r"/events/([^/]+)$", url)
         if match:
             return match.group(1)
         return None
@@ -306,9 +301,9 @@ class BestFightOddsArchiveFullSpider(scrapy.Spider):
                 return dt.date().isoformat()
 
             # Remove ordinal suffixes (st, nd, rd, th)
-            cleaned = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', date_text.strip())
+            cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", date_text.strip())
             # Remove commas
-            cleaned = cleaned.replace(',', '')
+            cleaned = cleaned.replace(",", "")
 
             # Try different date formats
             for fmt in ["%b %d %Y", "%B %d %Y", "%Y-%m-%d"]:

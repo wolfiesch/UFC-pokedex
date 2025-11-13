@@ -109,14 +109,16 @@ class SherdogSearchSpider(scrapy.Spider):
             # Calculate confidence score
             confidence = calculate_match_confidence(ufc_fighter, sherdog_data)
 
-            matches.append({
-                "sherdog_id": sherdog_data.get("sherdog_id"),
-                "sherdog_url": sherdog_data.get("url"),
-                "name": sherdog_data.get("name"),
-                "division": sherdog_data.get("division"),
-                "record": sherdog_data.get("record"),
-                "confidence": confidence,
-            })
+            matches.append(
+                {
+                    "sherdog_id": sherdog_data.get("sherdog_id"),
+                    "sherdog_url": sherdog_data.get("url"),
+                    "name": sherdog_data.get("name"),
+                    "division": sherdog_data.get("division"),
+                    "record": sherdog_data.get("record"),
+                    "confidence": confidence,
+                }
+            )
 
         # Sort matches by confidence (highest first)
         matches.sort(key=lambda x: x["confidence"], reverse=True)

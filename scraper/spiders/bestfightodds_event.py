@@ -64,9 +64,7 @@ class BestFightOddsEventSpider(scrapy.Spider):
                 urls.extend(self._load_urls_from_file(str(default_file)))
 
         if not urls:
-            self.logger.error(
-                "No event URLs provided. Pass -a event_urls=... or -a input_file=..."
-            )
+            self.logger.error("No event URLs provided. Pass -a event_urls=... or -a input_file=...")
             return
 
         # Make requests
@@ -88,7 +86,7 @@ class BestFightOddsEventSpider(scrapy.Spider):
         event_url = response.url
 
         # Extract event ID from URL
-        event_id_match = re.search(r'/events/(.+-(\d+))$', event_url)
+        event_id_match = re.search(r"/events/(.+-(\d+))$", event_url)
         event_id = event_id_match.group(1) if event_id_match else None
 
         # Parse all fight matchups

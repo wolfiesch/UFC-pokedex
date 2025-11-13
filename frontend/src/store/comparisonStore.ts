@@ -31,7 +31,7 @@ export const useComparisonStore = createWithEqualityFn<ComparisonState>()(
 
       removeFromComparison: (fighterId) => {
         set({
-          comparisonList: get().comparisonList.filter((id) => id !== fighterId)
+          comparisonList: get().comparisonList.filter((id) => id !== fighterId),
         });
       },
 

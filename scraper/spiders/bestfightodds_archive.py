@@ -67,7 +67,7 @@ class BestFightOddsArchiveSpider(scrapy.Spider):
 
             # Parse the event URL to extract event ID
             # URL format: /events/ufc-vegas-111-3917
-            event_id_match = re.search(r'/events/(.+-(\d+))$', event_url)
+            event_id_match = re.search(r"/events/(.+-(\d+))$", event_url)
             event_id = event_id_match.group(1) if event_id_match else None
             event_numeric_id = event_id_match.group(2) if event_id_match else None
 
@@ -120,7 +120,7 @@ class BestFightOddsArchiveSpider(scrapy.Spider):
 
         try:
             # Remove ordinal suffixes (st, nd, rd, th)
-            cleaned = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', date_text.strip())
+            cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", date_text.strip())
             # Parse with strptime
             dt = datetime.strptime(cleaned, "%b %d %Y")
             return dt.date().isoformat()

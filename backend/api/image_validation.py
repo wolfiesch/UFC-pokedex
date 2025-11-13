@@ -9,6 +9,7 @@ from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import ColumnElement
 
+from backend.db import connection as db_connection
 from backend.db.connection import get_async_session
 from backend.db.models import Fighter
 from backend.schemas.fighter import FighterListItem
@@ -130,9 +131,7 @@ async def get_low_quality_images(
                 "has_face": fighter.has_face_detected,
                 "flags": fighter.image_validation_flags or {},
                 "validated_at": (
-                    fighter.image_validated_at.isoformat()
-                    if fighter.image_validated_at
-                    else None
+                    fighter.image_validated_at.isoformat() if fighter.image_validated_at else None
                 ),
             }
         )
@@ -242,9 +241,7 @@ async def get_duplicate_images(
     # Batch-fetch fighter names for all duplicate IDs.
     duplicate_lookup: dict[str, str] = {}
     if referenced_duplicate_ids:
-        dup_query = select(Fighter.id, Fighter.name).where(
-            Fighter.id.in_(referenced_duplicate_ids)
-        )
+        dup_query = select(Fighter.id, Fighter.name).where(Fighter.id.in_(referenced_duplicate_ids))
         dup_result = await session.execute(dup_query)
         duplicate_lookup = {row.id: row.name for row in dup_result}
 
@@ -305,11 +302,7 @@ async def get_fighters_by_flag(
     # database engine.  This avoids materialising the entire fighters table in
     # Python when only a handful of rows match the requested flag.
     data_query = (
-        select(Fighter)
-        .where(*shared_predicates)
-        .order_by(Fighter.name)
-        .limit(limit)
-        .offset(offset)
+        select(Fighter).where(*shared_predicates).order_by(Fighter.name).limit(limit).offset(offset)
     )
     data_result = await session.execute(data_query)
     paginated_fighters = data_result.scalars().all()
@@ -425,8 +418,6 @@ async def get_fighter_validation(
         },
         "flags": fighter.image_validation_flags or {},
         "validated_at": (
-            fighter.image_validated_at.isoformat()
-            if fighter.image_validated_at
-            else None
+            fighter.image_validated_at.isoformat() if fighter.image_validated_at else None
         ),
     }

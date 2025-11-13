@@ -64,7 +64,10 @@ function renderLeaderboardBody({
 >) {
   if (entries.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+      <div
+        className="py-6 text-center text-sm text-muted-foreground"
+        role="status"
+      >
         No leaderboard data available yet. Check back soon as new fights are
         processed.
       </div>
@@ -78,7 +81,9 @@ function renderLeaderboardBody({
           <TableRow>
             <TableHead className="w-16">Rank</TableHead>
             <TableHead>Fighter</TableHead>
-            <TableHead className="text-right">{metricLabel ?? "Score"}</TableHead>
+            <TableHead className="text-right">
+              {metricLabel ?? "Score"}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -102,7 +107,8 @@ function renderLeaderboardBody({
                     )}
                     {entry.fight_count != null && entry.fight_count < 5 && (
                       <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                        {entry.fight_count} {entry.fight_count === 1 ? "fight" : "fights"}
+                        {entry.fight_count}{" "}
+                        {entry.fight_count === 1 ? "fight" : "fights"}
                       </span>
                     )}
                   </div>
@@ -163,11 +169,20 @@ export default function LeaderboardTable({
             {error}
           </div>
         ) : isLoading ? (
-          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+          <div
+            className="py-6 text-center text-sm text-muted-foreground"
+            role="status"
+          >
             Loading leaderboard…
           </div>
         ) : (
-          renderLeaderboardBody({ entries, metricLabel, offset, hasMore, onLoadMore })
+          renderLeaderboardBody({
+            entries,
+            metricLabel,
+            offset,
+            hasMore,
+            onLoadMore,
+          })
         )}
       </CardContent>
     </Card>

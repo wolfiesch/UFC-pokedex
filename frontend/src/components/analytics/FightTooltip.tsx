@@ -31,7 +31,7 @@ const METHOD_LABELS = {
 function formatFinishTime(
   method: string,
   round: number | null | undefined,
-  time: string | null | undefined
+  time: string | null | undefined,
 ): string {
   if (method === "DEC") {
     return "Decision";
@@ -64,7 +64,11 @@ export function FightTooltip({ fight, x, y }: FightTooltipProps) {
             className="inline-block rounded px-2 py-0.5 text-xs font-bold text-white"
             style={{ backgroundColor: RESULT_COLORS[fight.result] }}
           >
-            {fight.result === "W" ? "WIN" : fight.result === "L" ? "LOSS" : "DRAW"}
+            {fight.result === "W"
+              ? "WIN"
+              : fight.result === "L"
+                ? "LOSS"
+                : "DRAW"}
           </span>
           <span className="text-xs text-gray-400">
             {METHOD_LABELS[fight.method]}

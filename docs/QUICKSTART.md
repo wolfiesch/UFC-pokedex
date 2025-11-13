@@ -6,7 +6,7 @@
 # 1. Install dependencies
 make bootstrap
 
-# 2. Start database
+# 2. Start database (PostgreSQL + Redis)
 docker compose up -d
 
 # 3. Run migrations
@@ -74,7 +74,7 @@ docker compose up -d  # Start if needed
 
 - [Full Development Guide](../docs/ai-assistants/CLAUDE.md)
 - [Tunnel Documentation](TUNNEL.md)
-- [Database Guide](../docs/ai-assistants/CLAUDE.md#database-setup-postgresql-vs-sqlite)
+- [Database Guide](../docs/ai-assistants/CLAUDE.md#database-setup-postgresql-only)
 - [API Documentation](http://localhost:8000/docs) (when backend is running)
 
 ## Key Project Files

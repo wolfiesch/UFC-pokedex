@@ -30,7 +30,7 @@ export default function EnhancedFightCard({
     >
       {/* Title Fight Badge */}
       {isTitleFight && (
-        <div className="absolute -top-2 -right-2 z-10">
+        <div className="absolute -right-2 -top-2 z-10">
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 px-3 py-1 text-xs font-bold text-gray-900 shadow-lg">
             👑 Title Fight
           </span>
@@ -39,7 +39,7 @@ export default function EnhancedFightCard({
 
       {/* Main Event Badge */}
       {isMainEvent && !isTitleFight && (
-        <div className="absolute -top-2 -right-2 z-10">
+        <div className="absolute -right-2 -top-2 z-10">
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-600 to-rose-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
             ⭐ Main Event
           </span>
@@ -103,8 +103,8 @@ export default function EnhancedFightCard({
             )}
             {fight.round && fight.time && (
               <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-500">Time:</span>
-                R{fight.round} {fight.time}
+                <span className="font-medium text-gray-500">Time:</span>R
+                {fight.round} {fight.time}
               </span>
             )}
           </div>

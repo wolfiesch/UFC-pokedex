@@ -140,9 +140,7 @@ class FighterStreakMixin:
         if not fight_entries:
             return {"current_streak_type": "none", "current_streak_count": 0}
 
-        fight_entries.sort(
-            key=lambda entry: (entry[0] is None, entry[0] or date.min), reverse=True
-        )
+        fight_entries.sort(key=lambda entry: (entry[0] is None, entry[0] or date.min), reverse=True)
 
         last_completed: Literal["win", "loss", "draw"] | None = None
         completed_seen = 0
@@ -184,6 +182,4 @@ class FighterStreakMixin:
         """Return the most recent decisive streak for a single fighter."""
 
         result = await self._batch_compute_streaks([fighter_id], window=window)
-        return result.get(
-            fighter_id, {"current_streak_type": "none", "current_streak_count": 0}
-        )
+        return result.get(fighter_id, {"current_streak_type": "none", "current_streak_count": 0})

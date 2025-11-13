@@ -29,13 +29,9 @@ class FighterComparisonMixin:
         ordered_ids = list(dict.fromkeys(fighter_ids))
 
         base_columns = self._fighter_comparison_columns()
-        load_columns, supports_was_interim = await self._resolve_fighter_columns(
-            base_columns
-        )
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(base_columns)
         fighters_stmt = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .where(Fighter.id.in_(ordered_ids))
+            select(Fighter).options(load_only(*load_columns)).where(Fighter.id.in_(ordered_ids))
         )
         fighters_result = await self._session.execute(fighters_stmt)
         fighters = fighters_result.scalars().all()
@@ -87,9 +83,7 @@ class FighterComparisonMixin:
                     ),
                     is_current_champion=fighter.is_current_champion,
                     is_former_champion=fighter.is_former_champion,
-                    was_interim=(
-                        fighter.was_interim if supports_was_interim else False
-                    ),
+                    was_interim=(fighter.was_interim if supports_was_interim else False),
                 )
             )
 

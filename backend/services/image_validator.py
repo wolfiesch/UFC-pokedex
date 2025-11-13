@@ -158,9 +158,7 @@ class ImageValidator:
             print(f"Error validating image {fighter_id}: {e}")
             return None
 
-    def find_duplicates(
-        self, fighter_hashes: dict[str, str]
-    ) -> dict[str, list[str]]:
+    def find_duplicates(self, fighter_hashes: dict[str, str]) -> dict[str, list[str]]:
         """Find potential duplicate images based on perceptual hashes.
 
         Args:

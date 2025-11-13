@@ -14,35 +14,15 @@ A full-stack project that scrapes fighter data from [UFCStats](http://ufcstats.c
 
 ## Getting Started
 
-### Quick Start (SQLite - No Docker Required)
+### Quick Start (PostgreSQL)
 
-Perfect for quick testing or when Docker is unavailable:
-
-```bash
-# 1. Install dependencies
-make bootstrap
-
-# 2. Seed database with sample fighters (creates SQLite database automatically)
-make api:seed
-
-# 3. Start backend (in one terminal)
-make api:dev
-
-# 4. Start frontend (in another terminal)
-make frontend
-```
-
-Visit `http://localhost:3000` to see the application.
-
-### Full Setup (PostgreSQL - Recommended for Development)
-
-For production-like development with full dataset support:
+PostgreSQL backs every environment. Use Docker Compose for a fast local setup:
 
 ```bash
 # 1. Install dependencies
 make bootstrap
 
-# 2. Copy environment file and update if needed
+# 2. Copy environment file and configure DATABASE_URL (PostgreSQL)
 cp .env.example .env
 
 # 3. Start PostgreSQL + Redis containers
@@ -61,10 +41,7 @@ make dev-local             # Backend + Frontend on localhost
 make dev                   # Backend + Frontend with Cloudflare tunnels
 ```
 
-### Database Choice
-
-- **SQLite**: Fast setup, no Docker needed, good for UI work and small datasets
-- **PostgreSQL**: Production-like, handles large datasets, required for migration testing
+### Database Configuration
 
 Accepted `DATABASE_URL` prefixes for PostgreSQL are:
 
@@ -72,7 +49,7 @@ Accepted `DATABASE_URL` prefixes for PostgreSQL are:
 - `postgresql://` (auto-upgraded to `postgresql+psycopg://`)
 - `postgres://` (legacy alias that is auto-upgraded to `postgresql+psycopg://`)
 
-See `docs/ai-assistants/CLAUDE.md` for detailed comparison and switching instructions.
+See `docs/ai-assistants/CLAUDE.md` for detailed PostgreSQL setup instructions.
 
 Refer to `docs/plans/archive/Initial_Plan.md` for the full project roadmap.
 

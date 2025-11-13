@@ -13,7 +13,10 @@ export function ActivityFeed({ activity }: ActivityFeedProps) {
   return (
     <section aria-labelledby="favorites-activity-heading" className="space-y-4">
       <header>
-        <h2 id="favorites-activity-heading" className="text-xl font-bold tracking-tight">
+        <h2
+          id="favorites-activity-heading"
+          className="text-xl font-bold tracking-tight"
+        >
           Activity feed
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -39,7 +42,9 @@ export function ActivityFeed({ activity }: ActivityFeedProps) {
                     <span className="text-sm font-semibold text-foreground">
                       {item.action} – {item.fighter_id}
                     </span>
-                    <span className="text-xs text-muted-foreground/80">{item.occurred_at}</span>
+                    <span className="text-xs text-muted-foreground/80">
+                      {item.occurred_at}
+                    </span>
                   </div>
                   {Object.keys(item.metadata ?? {}).length ? (
                     <pre className="whitespace-pre-wrap text-xs text-muted-foreground">
@@ -50,7 +55,9 @@ export function ActivityFeed({ activity }: ActivityFeedProps) {
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-muted-foreground">No recorded actions yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No recorded actions yet.
+            </p>
           )}
         </CardContent>
       </Card>

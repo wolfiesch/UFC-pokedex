@@ -8,7 +8,7 @@ describe("resolveApiBaseUrl", () => {
     // downstream fetch logic always receives an absolute URL.
     const result: string = resolveApiBaseUrl(
       "localhost:8000",
-      "http://fallback.test"
+      "http://fallback.test",
     );
     expect(result).toBe("http://localhost:8000");
   });
@@ -16,10 +16,7 @@ describe("resolveApiBaseUrl", () => {
   it("returns normalized fallback when raw value is empty", () => {
     // The fallback should be normalized by trimming the trailing slash, matching the
     // behaviour used when parsing environment configuration.
-    const result: string = resolveApiBaseUrl(
-      "   ",
-      "http://example.com/api/"
-    );
+    const result: string = resolveApiBaseUrl("   ", "http://example.com/api/");
     expect(result).toBe("http://example.com/api");
   });
 
@@ -28,7 +25,7 @@ describe("resolveApiBaseUrl", () => {
     // forcing an http downgrade.
     const result: string = resolveApiBaseUrl(
       "https://api.example.com/v1/",
-      "http://fallback.test"
+      "http://fallback.test",
     );
     expect(result).toBe("https://api.example.com/v1");
   });

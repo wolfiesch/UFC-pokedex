@@ -79,7 +79,10 @@ export default function FilterPanel({
     <div className="flex flex-col gap-3 rounded-3xl border border-border bg-card/60 p-4 shadow-subtle sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <div className="flex flex-col gap-1">
-          <label htmlFor="stance-filter" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+          <label
+            htmlFor="stance-filter"
+            className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground"
+          >
             Stance
           </label>
           <select
@@ -97,7 +100,10 @@ export default function FilterPanel({
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="division-filter" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+          <label
+            htmlFor="division-filter"
+            className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground"
+          >
             Division
           </label>
           <select
@@ -116,7 +122,10 @@ export default function FilterPanel({
         </div>
         {nationalities.length > 0 && (
           <div className="flex flex-col gap-1">
-            <label htmlFor="nationality-filter" className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            <label
+              htmlFor="nationality-filter"
+              className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground"
+            >
               Nationality
             </label>
             <select

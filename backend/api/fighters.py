@@ -17,7 +17,9 @@ router = APIRouter()
 async def list_fighters(
     limit: int = Query(20, ge=1, le=100, description="Number of fighters to return"),
     offset: int = Query(0, ge=0, description="Number of fighters to skip"),
-    nationality: str | None = Query(None, description="Filter by ISO country code (e.g., US, BR, IE)"),
+    nationality: str | None = Query(
+        None, description="Filter by ISO country code (e.g., US, BR, IE)"
+    ),
     birthplace_country: str | None = Query(None, description="Filter by birthplace country"),
     birthplace_city: str | None = Query(None, description="Filter by birthplace city"),
     training_country: str | None = Query(None, description="Filter by training country"),
@@ -28,9 +30,7 @@ async def list_fighters(
     ),
     include_streak: bool = Query(
         False,
-        description=(
-            "When true, include lightweight current streak fields in list payloads."
-        ),
+        description=("When true, include lightweight current streak fields in list payloads."),
     ),
     streak_window: int = Query(
         6,

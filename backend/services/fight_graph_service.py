@@ -102,13 +102,9 @@ def _augment_fight_graph_metadata(graph: FightGraphResponse) -> FightGraphRespon
         metadata = dict(graph.metadata)
         metadata.setdefault("insights", {})
         metadata.setdefault("generated_at", datetime.now(UTC).isoformat())
-        return FightGraphResponse(
-            nodes=graph.nodes, links=graph.links, metadata=metadata
-        )
+        return FightGraphResponse(nodes=graph.nodes, links=graph.links, metadata=metadata)
 
-    nodes_by_id: dict[str, FightGraphNode] = {
-        node.fighter_id: node for node in graph.nodes
-    }
+    nodes_by_id: dict[str, FightGraphNode] = {node.fighter_id: node for node in graph.nodes}
     total_fights = sum(node.total_fights for node in graph.nodes)
     average_fights = round(total_fights / max(1, len(graph.nodes)), 2)
     density = _calculate_network_density(len(graph.nodes), len(graph.links))
@@ -176,7 +172,13 @@ class FightGraphService(CacheableService):
         self._repository = repository
 
     @cached(
-        lambda _self, *, division, start_year, end_year, limit, include_upcoming: _fight_graph_cache_key(
+        lambda _self,
+        *,
+        division,
+        start_year,
+        end_year,
+        limit,
+        include_upcoming: _fight_graph_cache_key(
             division=division,
             start_year=start_year,
             end_year=end_year,

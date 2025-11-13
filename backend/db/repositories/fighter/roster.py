@@ -44,16 +44,12 @@ class FighterRosterMixin:
         """List all fighters with optional pagination and filters."""
 
         base_columns = self._fighter_summary_columns()
-        load_columns, supports_was_interim = await self._resolve_fighter_columns(
-            base_columns
-        )
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(base_columns)
 
         query = (
             select(Fighter)
             .options(load_only(*load_columns))
-            .order_by(
-                Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id
-            )
+            .order_by(Fighter.last_fight_date.desc().nulls_last(), Fighter.name, Fighter.id)
         )
 
         if nationality:
@@ -94,13 +90,9 @@ class FighterRosterMixin:
         fighters = result.scalars().all()
         fighter_ids = [f.id for f in fighters]
 
-        streak_by_fighter: dict[
-            str, dict[str, int | Literal["win", "loss", "draw", "none"]]
-        ] = {}
+        streak_by_fighter: dict[str, dict[str, int | Literal["win", "loss", "draw", "none"]]] = {}
         if include_streak and fighters:
-            streak_by_fighter = await self._batch_compute_streaks(
-                fighter_ids, window=streak_window
-            )
+            streak_by_fighter = await self._batch_compute_streaks(fighter_ids, window=streak_window)
 
         fight_status_by_fighter: dict[
             str, dict[str, date | Literal["win", "loss", "draw", "nc"] | None]
@@ -143,18 +135,12 @@ class FighterRosterMixin:
                         ),
                     ),
                     current_streak_count=(
-                        int(streak_bundle.get("current_streak_count", 0))
-                        if include_streak
-                        else 0
+                        int(streak_bundle.get("current_streak_count", 0)) if include_streak else 0
                     ),
                     current_rank=ranking.current_rank if ranking else None,
                     current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=(
-                        ranking.current_rank_division if ranking else None
-                    ),
-                    current_rank_source=(
-                        ranking.current_rank_source if ranking else None
-                    ),
+                    current_rank_division=(ranking.current_rank_division if ranking else None),
+                    current_rank_source=(ranking.current_rank_source if ranking else None),
                     peak_rank=ranking.peak_rank if ranking else None,
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
@@ -167,9 +153,7 @@ class FighterRosterMixin:
                     training_gym=fighter.training_gym,
                     training_city=fighter.training_city,
                     training_country=fighter.training_country,
-                    next_fight_date=typing_cast(
-                        date | None, fight_status.get("next_fight_date")
-                    ),
+                    next_fight_date=typing_cast(date | None, fight_status.get("next_fight_date")),
                     last_fight_date=fighter.last_fight_date,
                     last_fight_result=typing_cast(
                         Literal["win", "loss", "draw", "nc"] | None,
@@ -207,9 +191,7 @@ class FighterRosterMixin:
         )
 
         base_columns = self._fighter_summary_columns()
-        load_columns, supports_was_interim = await self._resolve_fighter_columns(
-            base_columns
-        )
+        load_columns, supports_was_interim = await self._resolve_fighter_columns(base_columns)
 
         # Build query with database-level filtering for performance
         query_stmt = select(Fighter).options(load_only(*load_columns))
@@ -271,13 +253,9 @@ class FighterRosterMixin:
         fighter_ids = [f.id for f in fighters]
 
         # Fetch streak data if requested
-        streak_by_fighter: dict[
-            str, dict[str, int | Literal["win", "loss", "draw", "none"]]
-        ] = {}
+        streak_by_fighter: dict[str, dict[str, int | Literal["win", "loss", "draw", "none"]]] = {}
         if include_streak and fighter_ids:
-            streak_by_fighter = await self._batch_compute_streaks(
-                fighter_ids, window=streak_window
-            )
+            streak_by_fighter = await self._batch_compute_streaks(fighter_ids, window=streak_window)
 
         # Apply streak filter in-memory (can't be done efficiently at DB level)
         if filters.streak_type and filters.min_streak_count is not None:
@@ -324,27 +302,19 @@ class FighterRosterMixin:
                     was_interim=fighter.was_interim if supports_was_interim else False,
                     current_streak_type=(
                         _validate_streak_type(
-                            typing_cast(
-                                str | None, streak_bundle.get("current_streak_type")
-                            )
+                            typing_cast(str | None, streak_bundle.get("current_streak_type"))
                         )
                         if include_streak
                         else "none"
                     )
                     or "none",
                     current_streak_count=(
-                        int(streak_bundle.get("current_streak_count", 0))
-                        if include_streak
-                        else 0
+                        int(streak_bundle.get("current_streak_count", 0)) if include_streak else 0
                     ),
                     current_rank=ranking.current_rank if ranking else None,
                     current_rank_date=ranking.current_rank_date if ranking else None,
-                    current_rank_division=(
-                        ranking.current_rank_division if ranking else None
-                    ),
-                    current_rank_source=(
-                        ranking.current_rank_source if ranking else None
-                    ),
+                    current_rank_division=(ranking.current_rank_division if ranking else None),
+                    current_rank_source=(ranking.current_rank_source if ranking else None),
                     peak_rank=ranking.peak_rank if ranking else None,
                     peak_rank_date=ranking.peak_rank_date if ranking else None,
                     peak_rank_division=ranking.peak_rank_division if ranking else None,
@@ -357,9 +327,7 @@ class FighterRosterMixin:
                     training_gym=fighter.training_gym,
                     training_city=fighter.training_city,
                     training_country=fighter.training_country,
-                    next_fight_date=typing_cast(
-                        date | None, fight_status.get("next_fight_date")
-                    ),
+                    next_fight_date=typing_cast(date | None, fight_status.get("next_fight_date")),
                     last_fight_date=fighter.last_fight_date,
                     last_fight_result=typing_cast(
                         Literal["win", "loss", "draw", "nc"] | None,
@@ -424,12 +392,7 @@ class FighterRosterMixin:
         load_columns, _ = await self._resolve_fighter_columns(
             base_columns, include_was_interim=False
         )
-        query = (
-            select(Fighter)
-            .options(load_only(*load_columns))
-            .order_by(func.random())
-            .limit(1)
-        )
+        query = select(Fighter).options(load_only(*load_columns)).order_by(func.random()).limit(1)
         result = await self._session.execute(query)
         fighter = result.scalar_one_or_none()
 
@@ -468,9 +431,7 @@ class FighterRosterMixin:
             training_country=fighter.training_country,
         )
 
-    async def get_country_stats(
-        self, group_by: str
-    ) -> tuple[list[dict[str, Any]], int]:
+    async def get_country_stats(self, group_by: str) -> tuple[list[dict[str, Any]], int]:
         """Aggregate fighter counts grouped by country metadata."""
 
         if group_by == "birthplace":
@@ -500,9 +461,7 @@ class FighterRosterMixin:
         stats: list[dict[str, Any]] = []
         for row in rows:
             percentage = round((row.count / total * 100), 1) if total > 0 else 0.0
-            stats.append(
-                {"country": row.country, "count": row.count, "percentage": percentage}
-            )
+            stats.append({"country": row.country, "count": row.count, "percentage": percentage})
 
         return stats, total
 
@@ -567,9 +526,7 @@ class FighterRosterMixin:
                 func.count().label("fighter_count"),
             )
             .where(Fighter.training_gym.isnot(None))
-            .group_by(
-                Fighter.training_gym, Fighter.training_city, Fighter.training_country
-            )
+            .group_by(Fighter.training_gym, Fighter.training_city, Fighter.training_country)
             .order_by(func.count().desc())
         )
 
@@ -604,9 +561,7 @@ class FighterRosterMixin:
                 WHERE rn <= 2
             """
             )
-            notable_result = await self._session.execute(
-                notable_query, {"gym_names": gym_names}
-            )
+            notable_result = await self._session.execute(notable_query, {"gym_names": gym_names})
 
             for name, gym in notable_result:
                 notable_by_gym.setdefault(gym, []).append(name)

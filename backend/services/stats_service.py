@@ -134,7 +134,16 @@ class StatsService(CacheableService):
         return await self._repository.stats_summary()
 
     @cached(
-        lambda _self, *, limit, offset, accuracy_metric, submissions_metric, division, min_fights, start_date, end_date: _leaderboard_cache_key(
+        lambda _self,
+        *,
+        limit,
+        offset,
+        accuracy_metric,
+        submissions_metric,
+        division,
+        min_fights,
+        start_date,
+        end_date: _leaderboard_cache_key(
             limit=limit,
             offset=offset,
             accuracy_metric=accuracy_metric,
@@ -190,9 +199,7 @@ class StatsService(CacheableService):
         ttl=180,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=_deserialize_trends,
-        deserialize_error_message=(
-            "Failed to deserialize cached trends for key {key}: {error}"
-        ),
+        deserialize_error_message=("Failed to deserialize cached trends for key {key}: {error}"),
     )
     async def get_trends(
         self,
@@ -216,17 +223,13 @@ class StatsService(CacheableService):
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            CountryStatsResponse.model_validate(payload)
-            if isinstance(payload, dict)
-            else None
+            CountryStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
         ),
         deserialize_error_message=(
             "Failed to deserialize cached country stats for key {key}: {error}"
         ),
     )
-    async def get_country_stats(
-        self, *, group_by: str, min_fighters: int
-    ) -> CountryStatsResponse:
+    async def get_country_stats(self, *, group_by: str, min_fighters: int) -> CountryStatsResponse:
         """Get fighter count by country."""
         stats, total = await self._fighter_repository.get_country_stats(group_by)
 
@@ -240,13 +243,15 @@ class StatsService(CacheableService):
         )
 
     @cached(
-        lambda _self, *, group_by, country, min_fighters: f"stats:cities:{group_by}:{country or 'all'}:{min_fighters}",
+        lambda _self,
+        *,
+        group_by,
+        country,
+        min_fighters: f"stats:cities:{group_by}:{country or 'all'}:{min_fighters}",
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            CityStatsResponse.model_validate(payload)
-            if isinstance(payload, dict)
-            else None
+            CityStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
         ),
         deserialize_error_message=(
             "Failed to deserialize cached city stats for key {key}: {error}"
@@ -268,17 +273,17 @@ class StatsService(CacheableService):
         )
 
     @cached(
-        lambda _self, *, country, min_fighters, sort_by: f"stats:gyms:{country or 'all'}:{min_fighters}:{sort_by}",
+        lambda _self,
+        *,
+        country,
+        min_fighters,
+        sort_by: f"stats:gyms:{country or 'all'}:{min_fighters}:{sort_by}",
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            GymStatsResponse.model_validate(payload)
-            if isinstance(payload, dict)
-            else None
+            GymStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
         ),
-        deserialize_error_message=(
-            "Failed to deserialize cached gym stats for key {key}: {error}"
-        ),
+        deserialize_error_message=("Failed to deserialize cached gym stats for key {key}: {error}"),
     )
     async def get_gym_stats(
         self, *, country: str | None, min_fighters: int, sort_by: str

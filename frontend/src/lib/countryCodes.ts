@@ -45,7 +45,9 @@ const DEMONYM_TO_ISO: Record<string, string> = {
   welsh: "GB",
 };
 
-export function toCountryIsoCode(countryOrDemonym?: string | null): string | null {
+export function toCountryIsoCode(
+  countryOrDemonym?: string | null,
+): string | null {
   if (!countryOrDemonym) {
     return null;
   }

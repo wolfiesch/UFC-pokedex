@@ -29,7 +29,7 @@ type DerivedFavoritesSnapshot = {
 };
 
 function deriveFavoritesSnapshot(
-  collection: FavoriteCollectionDetail | null
+  collection: FavoriteCollectionDetail | null,
 ): DerivedFavoritesSnapshot {
   if (!collection?.entries?.length) {
     return {
@@ -75,7 +75,9 @@ type FavoritesState = {
 
   // Actions
   initialize: () => Promise<void>;
-  toggleFavorite: (fighter: FighterListItem) => Promise<{ success: boolean; error?: string }>;
+  toggleFavorite: (
+    fighter: FighterListItem,
+  ) => Promise<{ success: boolean; error?: string }>;
   isFavorite: (fighterId: string) => boolean;
   getFavorites: () => FighterListItem[];
 
@@ -86,242 +88,258 @@ type FavoritesState = {
 
 const initialDerivedState = deriveFavoritesSnapshot(null);
 
-export const useFavoritesStore = createWithEqualityFn<FavoritesState>((set, get) => ({
-  // Initial state
-  ...initialDerivedState,
-  isLoading: false,
-  isInitialized: false,
-  error: null,
+export const useFavoritesStore = createWithEqualityFn<FavoritesState>(
+  (set, get) => ({
+    // Initial state
+    ...initialDerivedState,
+    isLoading: false,
+    isInitialized: false,
+    error: null,
 
-  // Initialize the store by loading collections from backend
-  initialize: async () => {
-    const state = get();
+    // Initialize the store by loading collections from backend
+    initialize: async () => {
+      const state = get();
 
-    // If already initialized, return immediately
-    if (state.isInitialized) {
-      return;
-    }
+      // If already initialized, return immediately
+      if (state.isInitialized) {
+        return;
+      }
 
-    // If initialization is in progress, wait for it
-    if (initializationPromise) {
+      // If initialization is in progress, wait for it
+      if (initializationPromise) {
+        return initializationPromise;
+      }
+
+      // Set the promise IMMEDIATELY before any async operations
+      // This prevents race conditions where multiple calls check before it's set
+      initializationPromise = (async () => {
+        // Start initialization
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await getFavoriteCollections(DEMO_USER_ID);
+
+          // Find or create default collection
+          let defaultCollection: FavoriteCollectionDetail | null = null;
+
+          if (response.collections && response.collections.length > 0) {
+            // Use first collection as default
+            const firstCollectionId = response.collections[0].collection_id;
+            defaultCollection = await getFavoriteCollectionDetail(
+              firstCollectionId,
+              DEMO_USER_ID,
+            );
+          } else {
+            // Create default collection if none exists
+            logger.info("No collections found, creating default collection");
+            const collectionId = await get()._ensureDefaultCollection();
+            defaultCollection = await getFavoriteCollectionDetail(
+              collectionId,
+              DEMO_USER_ID,
+            );
+          }
+
+          set({
+            ...deriveFavoritesSnapshot(defaultCollection),
+            isLoading: false,
+            isInitialized: true,
+            error: null,
+          });
+        } catch (error) {
+          logger.error(
+            "Failed to initialize favorites store",
+            error instanceof Error ? error : undefined,
+          );
+          set({
+            isLoading: false,
+            isInitialized: true,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to load favorites",
+          });
+        } finally {
+          // Clear the promise when done
+          initializationPromise = null;
+        }
+      })();
+
       return initializationPromise;
-    }
+    },
 
-    // Set the promise IMMEDIATELY before any async operations
-    // This prevents race conditions where multiple calls check before it's set
-    initializationPromise = (async () => {
-      // Start initialization
-      set({ isLoading: true, error: null });
-
+    // Ensure default collection exists, return its ID
+    _ensureDefaultCollection: async () => {
       try {
         const response = await getFavoriteCollections(DEMO_USER_ID);
 
-        // Find or create default collection
-        let defaultCollection: FavoriteCollectionDetail | null = null;
-
         if (response.collections && response.collections.length > 0) {
-          // Use first collection as default
-          const firstCollectionId = response.collections[0].collection_id;
-          defaultCollection = await getFavoriteCollectionDetail(
-            firstCollectionId,
-            DEMO_USER_ID
-          );
-        } else {
-          // Create default collection if none exists
-          logger.info("No collections found, creating default collection");
-          const collectionId = await get()._ensureDefaultCollection();
-          defaultCollection = await getFavoriteCollectionDetail(
-            collectionId,
-            DEMO_USER_ID
-          );
+          return response.collections[0].collection_id;
         }
 
+        // Create new default collection
+        const newCollection = await createFavoriteCollection({
+          user_id: DEMO_USER_ID,
+          title: DEFAULT_COLLECTION_TITLE,
+          description: "Your favorite UFC fighters",
+          is_public: false,
+        });
+
+        return newCollection.collection_id;
+      } catch (error) {
+        logger.error(
+          "Failed to ensure default collection",
+          error instanceof Error ? error : undefined,
+        );
+        throw error;
+      }
+    },
+
+    // Refresh collection data from backend
+    _refreshCollection: async () => {
+      const state = get();
+      if (!state.defaultCollection) {
+        return;
+      }
+
+      try {
+        const updatedCollection = await getFavoriteCollectionDetail(
+          state.defaultCollection.collection_id,
+          DEMO_USER_ID,
+        );
         set({
-          ...deriveFavoritesSnapshot(defaultCollection),
-          isLoading: false,
-          isInitialized: true,
+          ...deriveFavoritesSnapshot(updatedCollection),
           error: null,
         });
       } catch (error) {
         logger.error(
-          "Failed to initialize favorites store",
-          error instanceof Error ? error : undefined
+          "Failed to refresh collection",
+          error instanceof Error ? error : undefined,
         );
         set({
-          isLoading: false,
-          isInitialized: true,
-          error: error instanceof Error ? error.message : "Failed to load favorites",
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to refresh favorites",
         });
-      } finally {
-        // Clear the promise when done
-        initializationPromise = null;
       }
-    })();
+    },
 
-    return initializationPromise;
-  },
-
-  // Ensure default collection exists, return its ID
-  _ensureDefaultCollection: async () => {
-    try {
-      const response = await getFavoriteCollections(DEMO_USER_ID);
-
-      if (response.collections && response.collections.length > 0) {
-        return response.collections[0].collection_id;
+    // Toggle favorite status for a fighter
+    toggleFavorite: async (
+      fighter: FighterListItem,
+    ): Promise<{ success: boolean; error?: string }> => {
+      if (!get().isInitialized) {
+        await get().initialize();
       }
 
-      // Create new default collection
-      const newCollection = await createFavoriteCollection({
-        user_id: DEMO_USER_ID,
-        title: DEFAULT_COLLECTION_TITLE,
-        description: "Your favorite UFC fighters",
-        is_public: false,
-      });
+      try {
+        const collectionId = await get()._ensureDefaultCollection();
+        const { favoriteEntryMap } = get();
+        const existingEntry = favoriteEntryMap.get(fighter.fighter_id);
 
-      return newCollection.collection_id;
-    } catch (error) {
-      logger.error(
-        "Failed to ensure default collection",
-        error instanceof Error ? error : undefined
-      );
-      throw error;
-    }
-  },
+        if (existingEntry) {
+          // Remove from favorites - optimistic update
+          set((store) => {
+            if (!store.defaultCollection) {
+              return {};
+            }
 
-  // Refresh collection data from backend
-  _refreshCollection: async () => {
-    const state = get();
-    if (!state.defaultCollection) {
-      return;
-    }
+            const updatedCollection: FavoriteCollectionDetail = {
+              ...store.defaultCollection,
+              entries: store.defaultCollection.entries.filter(
+                (entry) => entry.fighter_id !== fighter.fighter_id,
+              ),
+            };
 
-    try {
-      const updatedCollection = await getFavoriteCollectionDetail(
-        state.defaultCollection.collection_id,
-        DEMO_USER_ID
-      );
-      set({
-        ...deriveFavoritesSnapshot(updatedCollection),
-        error: null,
-      });
-    } catch (error) {
-      logger.error(
-        "Failed to refresh collection",
-        error instanceof Error ? error : undefined
-      );
-      set({
-        error: error instanceof Error ? error.message : "Failed to refresh favorites",
-      });
-    }
-  },
+            return deriveFavoritesSnapshot(updatedCollection);
+          });
 
-  // Toggle favorite status for a fighter
-  toggleFavorite: async (fighter: FighterListItem): Promise<{ success: boolean; error?: string }> => {
-    if (!get().isInitialized) {
-      await get().initialize();
-    }
+          await deleteFavoriteEntry(
+            collectionId,
+            existingEntry.entry_id,
+            DEMO_USER_ID,
+          );
+        } else {
+          const now = new Date().toISOString();
+          const tempId = Date.now();
 
-    try {
-      const collectionId = await get()._ensureDefaultCollection();
-      const { favoriteEntryMap } = get();
-      const existingEntry = favoriteEntryMap.get(fighter.fighter_id);
+          set((store) => {
+            if (!store.defaultCollection) {
+              return {};
+            }
 
-      if (existingEntry) {
-        // Remove from favorites - optimistic update
-        set((store) => {
-          if (!store.defaultCollection) {
-            return {};
-          }
+            const newEntry: FavoriteEntry = {
+              id: tempId,
+              entry_id: tempId,
+              collection_id: collectionId,
+              fighter_id: fighter.fighter_id,
+              fighter_name: fighter.name,
+              fighter,
+              position: store.defaultCollection.entries.length + 1,
+              notes: null,
+              tags: [],
+              created_at: now,
+              added_at: now,
+              updated_at: now,
+              metadata: {},
+            };
 
-          const updatedCollection: FavoriteCollectionDetail = {
-            ...store.defaultCollection,
-            entries: store.defaultCollection.entries.filter(
-              (entry) => entry.fighter_id !== fighter.fighter_id
-            ),
-          };
+            const updatedCollection: FavoriteCollectionDetail = {
+              ...store.defaultCollection,
+              entries: [...store.defaultCollection.entries, newEntry],
+            };
 
-          return deriveFavoritesSnapshot(updatedCollection);
-        });
+            return deriveFavoritesSnapshot(updatedCollection);
+          });
 
-        await deleteFavoriteEntry(
-          collectionId,
-          existingEntry.entry_id,
-          DEMO_USER_ID
+          await addFavoriteEntry(
+            collectionId,
+            { fighter_id: fighter.fighter_id },
+            DEMO_USER_ID,
+          );
+        }
+
+        await get()._refreshCollection();
+
+        return { success: true };
+      } catch (error) {
+        logger.error(
+          "Failed to toggle favorite",
+          error instanceof Error ? error : undefined,
         );
-      } else {
-        const now = new Date().toISOString();
-        const tempId = Date.now();
-
-        set((store) => {
-          if (!store.defaultCollection) {
-            return {};
-          }
-
-          const newEntry: FavoriteEntry = {
-            id: tempId,
-            entry_id: tempId,
-            collection_id: collectionId,
-            fighter_id: fighter.fighter_id,
-            fighter_name: fighter.name,
-            fighter,
-            position: store.defaultCollection.entries.length + 1,
-            notes: null,
-            tags: [],
-            created_at: now,
-            added_at: now,
-            updated_at: now,
-            metadata: {},
-          };
-
-          const updatedCollection: FavoriteCollectionDetail = {
-            ...store.defaultCollection,
-            entries: [...store.defaultCollection.entries, newEntry],
-          };
-
-          return deriveFavoritesSnapshot(updatedCollection);
+        set({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to update favorite",
         });
+        await get()._refreshCollection();
 
-        await addFavoriteEntry(
-          collectionId,
-          { fighter_id: fighter.fighter_id },
-          DEMO_USER_ID
-        );
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
       }
+    },
 
-      await get()._refreshCollection();
+    // Check if a fighter is favorited
+    isFavorite: (fighterId: string) => get().favoriteIds.has(fighterId),
 
-      return { success: true };
-    } catch (error) {
-      logger.error(
-        "Failed to toggle favorite",
-        error instanceof Error ? error : undefined
-      );
-      set({
-        error: error instanceof Error ? error.message : "Failed to update favorite",
-      });
-      await get()._refreshCollection();
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  },
-
-  // Check if a fighter is favorited
-  isFavorite: (fighterId: string) => get().favoriteIds.has(fighterId),
-
-  // Get all favorited fighters
-  getFavorites: () => get().favoriteListCache,
-
-}));
+    // Get all favorited fighters
+    getFavorites: () => get().favoriteListCache,
+  }),
+);
 
 // Helper hook with auto-initialization
 export function useFavorites() {
   const store = useFavoritesStore();
 
   // Auto-initialize on first use
-  if (typeof window !== "undefined" && !store.isInitialized && !store.isLoading) {
+  if (
+    typeof window !== "undefined" &&
+    !store.isInitialized &&
+    !store.isLoading
+  ) {
     store.initialize();
   }
 

@@ -30,9 +30,7 @@ class FavoritesCache:
     def __init__(self, client: CacheClient) -> None:
         self._client = client
 
-    async def read_collection_list(
-        self, *, user_id: str
-    ) -> FavoriteCollectionListResponse | None:
+    async def read_collection_list(self, *, user_id: str) -> FavoriteCollectionListResponse | None:
         """Return a cached list response if present."""
 
         cache_key = favorite_list_key(user_id)
@@ -40,9 +38,7 @@ class FavoritesCache:
         if cached is None:
             return None
 
-        summaries = [
-            FavoriteCollectionSummary(**item) for item in cached.get("collections", [])
-        ]
+        summaries = [FavoriteCollectionSummary(**item) for item in cached.get("collections", [])]
         total = cached.get("total", len(summaries))
         return FavoriteCollectionListResponse(total=total, collections=summaries)
 
@@ -77,9 +73,7 @@ class FavoritesCache:
         cache_key = favorite_collection_key(collection_id)
         await self._client.set_json(cache_key, payload.model_dump(mode="json"))
 
-    async def read_collection_stats(
-        self, *, collection_id: int
-    ) -> FavoriteCollectionStats | None:
+    async def read_collection_stats(self, *, collection_id: int) -> FavoriteCollectionStats | None:
         """Return cached statistics when available."""
 
         cache_key = favorite_stats_key(collection_id)

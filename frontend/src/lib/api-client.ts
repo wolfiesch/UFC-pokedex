@@ -37,14 +37,15 @@ function getApiBaseUrl(): string {
 
   if (isServer) {
     // Server-side: use NEXT_API_REWRITE_BASE_URL or fall back to localhost
-    const serverUrl = process.env.NEXT_API_REWRITE_BASE_URL || DEFAULT_CLIENT_API_BASE_URL;
+    const serverUrl =
+      process.env.NEXT_API_REWRITE_BASE_URL || DEFAULT_CLIENT_API_BASE_URL;
     return resolveClientApiBaseUrl(serverUrl, DEFAULT_CLIENT_API_BASE_URL);
   }
 
   // Client-side: use NEXT_PUBLIC_API_BASE_URL (can be "/api" or full URL)
   return resolveClientApiBaseUrl(
     process.env.NEXT_PUBLIC_API_BASE_URL,
-    DEFAULT_CLIENT_API_BASE_URL
+    DEFAULT_CLIENT_API_BASE_URL,
   );
 }
 
@@ -97,14 +98,11 @@ const errorHandlingMiddleware: Middleware = {
           throw error;
         }
         // If we can't parse the error response, create a generic error
-        throw new ApiError(
-          response.statusText || "Request failed",
-          {
-            statusCode: response.status,
-            detail: `HTTP ${response.status} error occurred`,
-            requestId,
-          }
-        );
+        throw new ApiError(response.statusText || "Request failed", {
+          statusCode: response.status,
+          detail: `HTTP ${response.status} error occurred`,
+          requestId,
+        });
       }
     }
     return response;
@@ -117,10 +115,10 @@ const errorHandlingMiddleware: Middleware = {
 async function fetchWithRetry(
   input: RequestInfo | URL,
   init?: RequestInit,
-  maxRetries = MAX_RETRY_ATTEMPTS
+  maxRetries = MAX_RETRY_ATTEMPTS,
 ): Promise<Response> {
   let lastError: Error | null = null;
-  
+
   // Extract URL properly from Request objects, URL objects, or strings
   let url: string;
   if (input instanceof Request) {
@@ -130,9 +128,10 @@ async function fetchWithRetry(
   } else {
     url = String(input);
   }
-  
+
   // Extract method from init or Request object
-  const method = init?.method || (input instanceof Request ? input.method : "GET");
+  const method =
+    init?.method || (input instanceof Request ? input.method : "GET");
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -146,7 +145,10 @@ async function fetchWithRetry(
 
       // Add timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        DEFAULT_TIMEOUT_MS,
+      );
 
       try {
         const response = await fetch(input, {

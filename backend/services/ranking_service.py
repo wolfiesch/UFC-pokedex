@@ -102,9 +102,7 @@ class RankingService:
         Returns:
             RankingHistoryResponse with timeline
         """
-        history_data = await self.repository.get_fighter_ranking_history(
-            fighter_id, source, limit
-        )
+        history_data = await self.repository.get_fighter_ranking_history(fighter_id, source, limit)
 
         history = [
             RankingHistoryEntry(

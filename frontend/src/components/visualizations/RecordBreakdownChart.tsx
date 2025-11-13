@@ -48,7 +48,7 @@ function getMethodBreakdown(fightHistory: FightHistoryEntry[]): {
 
   // Only count wins for method breakdown
   const wins = fightHistory.filter((fight) =>
-    fight.result.toLowerCase().includes("win")
+    fight.result.toLowerCase().includes("win"),
   );
 
   wins.forEach((fight) => {
@@ -113,13 +113,22 @@ export function RecordBreakdownChart({
       color: METHOD_COLORS.decision,
     },
     ...(methodBreakdown.other > 0
-      ? [{ name: "Other", value: methodBreakdown.other, color: METHOD_COLORS.other }]
+      ? [
+          {
+            name: "Other",
+            value: methodBreakdown.other,
+            color: METHOD_COLORS.other,
+          },
+        ]
       : []),
   ].filter((item) => item.value > 0);
 
-  const hasMethodData = methodData.length > 0 && methodData.some(d => d.value > 0);
+  const hasMethodData =
+    methodData.length > 0 && methodData.some((d) => d.value > 0);
   const hasRecordedWins = wins > 0;
-  const hasWinHistory = fightHistory.some(fight => fight.result.toLowerCase().includes("win"));
+  const hasWinHistory = fightHistory.some((fight) =>
+    fight.result.toLowerCase().includes("win"),
+  );
 
   const customLabel = ({
     cx,

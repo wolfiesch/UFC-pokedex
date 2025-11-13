@@ -76,10 +76,12 @@ class SherdogFighterDetail(BaseModel):
     height_cm: float | None = Field(None, description="Height in centimeters")
     weight: str | None = Field(None, description="Weight in pounds (e.g., 185 lbs.)")
     weight_kg: float | None = Field(None, description="Weight in kilograms")
-    reach: str | None = Field(None, description="Reach in inches (e.g., 84\")")
+    reach: str | None = Field(None, description='Reach in inches (e.g., 84")')
     reach_cm: float | None = Field(None, description="Reach in centimeters")
     stance: str | None = Field(None, description="Fighting stance (Orthodox, Southpaw, etc.)")
-    nationality: str | None = Field(None, description="ISO 3166-1 alpha-2 country code (e.g., US, BR, IE)")
+    nationality: str | None = Field(
+        None, description="ISO 3166-1 alpha-2 country code (e.g., US, BR, IE)"
+    )
 
     # Metadata
     item_type: str = Field(default="sherdog_fighter_detail", description="Item type identifier")
@@ -116,30 +118,20 @@ class FighterRankingItem(BaseModel):
     fighter_id: str | None = Field(
         None, description="Matched fighter UUID (populated after name matching)"
     )
-    match_confidence: float | None = Field(
-        None, description="Name match confidence score (0-100)"
-    )
+    match_confidence: float | None = Field(None, description="Name match confidence score (0-100)")
 
     # Ranking data
     division: str = Field(description="Weight class (e.g., 'Lightweight')")
     rank: int | None = Field(
         None, description="Rank position: 0=Champion, 1-15=Ranked, None=Not Ranked (NR)"
     )
-    previous_rank: int | None = Field(
-        None, description="Previous rank for movement tracking"
-    )
-    is_interim: bool = Field(
-        default=False, description="Whether this is an interim championship"
-    )
+    previous_rank: int | None = Field(None, description="Previous rank for movement tracking")
+    is_interim: bool = Field(default=False, description="Whether this is an interim championship")
 
     # Metadata
     rank_date: date = Field(description="Date of this ranking snapshot")
-    source: Literal["ufc", "fightmatrix", "tapology"] = Field(
-        description="Ranking source"
-    )
-    scrape_timestamp: date | None = Field(
-        None, description="Timestamp when data was scraped"
-    )
+    source: Literal["ufc", "fightmatrix", "tapology"] = Field(description="Ranking source")
+    scrape_timestamp: date | None = Field(None, description="Timestamp when data was scraped")
     item_type: str = Field(
         default="fighter_ranking", description="Item type identifier for pipeline routing"
     )

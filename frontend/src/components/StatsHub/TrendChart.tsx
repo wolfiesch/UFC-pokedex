@@ -3,21 +3,27 @@
 import dynamic from "next/dynamic";
 import { Suspense, type ReactNode } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { TrendSeries } from "@/lib/types";
 import type { TrendChartInnerProps } from "./TrendChartInner";
 
-const Chart = dynamic<TrendChartInnerProps>(
-  () => import("./TrendChartInner"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="py-10 text-center text-sm text-muted-foreground" role="status">
-        Preparing chart visualisation…
-      </div>
-    ),
-  }
-);
+const Chart = dynamic<TrendChartInnerProps>(() => import("./TrendChartInner"), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="py-10 text-center text-sm text-muted-foreground"
+      role="status"
+    >
+      Preparing chart visualisation…
+    </div>
+  ),
+});
 
 export interface TrendChartProps {
   title: string;
@@ -47,13 +53,19 @@ export default function TrendChart({
     );
   } else if (isLoading) {
     content = (
-      <div className="py-10 text-center text-sm text-muted-foreground" role="status">
+      <div
+        className="py-10 text-center text-sm text-muted-foreground"
+        role="status"
+      >
         Loading trend data…
       </div>
     );
   } else if (series.length === 0) {
     content = (
-      <div className="py-10 text-center text-sm text-muted-foreground" role="status">
+      <div
+        className="py-10 text-center text-sm text-muted-foreground"
+        role="status"
+      >
         No trend information is available for this metric yet.
       </div>
     );
@@ -61,7 +73,10 @@ export default function TrendChart({
     content = (
       <Suspense
         fallback={
-          <div className="py-10 text-center text-sm text-muted-foreground" role="status">
+          <div
+            className="py-10 text-center text-sm text-muted-foreground"
+            role="status"
+          >
             Preparing chart visualisation…
           </div>
         }

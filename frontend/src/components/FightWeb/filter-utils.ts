@@ -5,7 +5,7 @@ export const MAX_LIMIT = 400;
 
 export function clampLimit(
   value: number | null | undefined,
-  fallback = 150
+  fallback = 150,
 ): number {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return fallback;
@@ -22,7 +22,7 @@ export function sanitizeYear(value: number | null | undefined): number | null {
 
 export function normalizeFilters(
   filters: FightGraphQueryParams,
-  fallbackLimit = 150
+  fallbackLimit = 150,
 ): FightGraphQueryParams {
   const limit = clampLimit(filters.limit, fallbackLimit);
   let startYear = sanitizeYear(filters.startYear);

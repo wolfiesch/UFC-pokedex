@@ -138,7 +138,7 @@ export function FightHistoryTimeline({
     .filter((f) => f.event_date)
     .sort(
       (a, b) =>
-        new Date(b.event_date!).getTime() - new Date(a.event_date!).getTime()
+        new Date(b.event_date!).getTime() - new Date(a.event_date!).getTime(),
     );
 
   if (sortedFights.length === 0) {
@@ -191,9 +191,7 @@ export function FightHistoryTimeline({
         <div className="mb-2 font-semibold text-foreground">
           {data.event_name}
         </div>
-        <div className="mb-1 text-muted-foreground">
-          vs {data.opponent}
-        </div>
+        <div className="mb-1 text-muted-foreground">vs {data.opponent}</div>
         <div className="flex items-center gap-2">
           <Badge
             variant={
@@ -205,7 +203,8 @@ export function FightHistoryTimeline({
           </Badge>
           <span className="text-muted-foreground">
             {data.method}
-            {data.round && ` (R${data.round}${data.time ? `, ${data.time}` : ""})`}
+            {data.round &&
+              ` (R${data.round}${data.time ? `, ${data.time}` : ""})`}
           </span>
         </div>
         <div className="mt-1 text-xs text-muted-foreground/70">
@@ -237,7 +236,8 @@ export function FightHistoryTimeline({
       <CardHeader>
         <CardTitle className="text-xl">Fight Timeline</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Chronological fight history with results. Larger dots = quicker finishes.
+          Chronological fight history with results. Larger dots = quicker
+          finishes.
         </p>
 
         {/* Filters */}
@@ -347,10 +347,11 @@ export function FightHistoryTimeline({
             No fights match the current filters.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(300, filteredFights.length * 40)}>
-            <ScatterChart
-              margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
-            >
+          <ResponsiveContainer
+            width="100%"
+            height={Math.max(300, filteredFights.length * 40)}
+          >
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="hsl(var(--border))"
@@ -373,7 +374,10 @@ export function FightHistoryTimeline({
                 domain={[0, filteredFights.length - 1]}
               />
               <ZAxis type="number" dataKey="size" range={[50, 400]} />
-              <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: "3 3" }} />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ strokeDasharray: "3 3" }}
+              />
               <Scatter data={chartData} fill="hsl(var(--foreground))">
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />

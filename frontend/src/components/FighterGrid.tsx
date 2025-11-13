@@ -10,12 +10,12 @@ import type { ApiError } from "@/lib/errors";
 const EnhancedFighterCard = dynamic(
   () =>
     import("./fighter/EnhancedFighterCard").then(
-      (mod) => mod.EnhancedFighterCard
+      (mod) => mod.EnhancedFighterCard,
     ),
   {
     loading: () => <SkeletonFighterCard />,
     ssr: false,
-  }
+  },
 ) as (props: { fighter: FighterListItem; priority?: boolean }) => JSX.Element;
 
 type Props = {
@@ -52,7 +52,8 @@ export default function FighterGrid({
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
-    if (!sentinelRef.current || !hasMore || isLoadingMore || !onLoadMore) return;
+    if (!sentinelRef.current || !hasMore || isLoadingMore || !onLoadMore)
+      return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -60,7 +61,7 @@ export default function FighterGrid({
           onLoadMore();
         }
       },
-      { rootMargin: "200px" } // Trigger 200px before reaching bottom
+      { rootMargin: "200px" }, // Trigger 200px before reaching bottom
     );
 
     observer.observe(sentinelRef.current);
@@ -111,14 +112,17 @@ export default function FighterGrid({
               </summary>
               <div className="mt-2 space-y-1 rounded-lg border border-destructive/20 bg-background/50 p-3 font-mono text-foreground/90">
                 <p>
-                  <span className="font-semibold">Error Type:</span> {error.errorType}
+                  <span className="font-semibold">Error Type:</span>{" "}
+                  {error.errorType}
                 </p>
                 <p>
-                  <span className="font-semibold">Status Code:</span> {error.statusCode}
+                  <span className="font-semibold">Status Code:</span>{" "}
+                  {error.statusCode}
                 </p>
                 {error.requestId && (
                   <p>
-                    <span className="font-semibold">Request ID:</span> {error.requestId}
+                    <span className="font-semibold">Request ID:</span>{" "}
+                    {error.requestId}
                   </p>
                 )}
                 {error.timestamp && (
@@ -129,12 +133,14 @@ export default function FighterGrid({
                 )}
                 {error.retryCount > 0 && (
                   <p>
-                    <span className="font-semibold">Retry Attempts:</span> {error.retryCount}
+                    <span className="font-semibold">Retry Attempts:</span>{" "}
+                    {error.retryCount}
                   </p>
                 )}
                 {error.retryAfter && (
                   <p>
-                    <span className="font-semibold">Retry After:</span> {error.retryAfter}s
+                    <span className="font-semibold">Retry After:</span>{" "}
+                    {error.retryAfter}s
                   </p>
                 )}
               </div>
@@ -175,7 +181,9 @@ export default function FighterGrid({
   }
 
   if (!fighters.length) {
-    const hasFilters = Boolean((searchTerm ?? "").trim() || stanceFilter || divisionFilter);
+    const hasFilters = Boolean(
+      (searchTerm ?? "").trim() || stanceFilter || divisionFilter,
+    );
     return (
       <div className="rounded-3xl border border-border bg-card/60 p-8 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/60">
@@ -194,7 +202,9 @@ export default function FighterGrid({
             />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-foreground">No fighters found</h3>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">
+          No fighters found
+        </h3>
         <p className="mb-4 text-sm text-muted-foreground">
           {hasFilters
             ? "No fighters match your current search and filters."

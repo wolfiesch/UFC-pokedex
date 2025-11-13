@@ -174,7 +174,7 @@ export function FightWebClient({
 
     // Check if all nodes (with divisions) match the filter
     const nodesWithDivision = graphData.nodes.filter(
-      (node) => node.division && node.division.trim().length > 0
+      (node) => node.division && node.division.trim().length > 0,
     );
 
     if (nodesWithDivision.length === 0) {
@@ -183,7 +183,7 @@ export function FightWebClient({
 
     // All nodes should match the filtered division
     return nodesWithDivision.every(
-      (node) => node.division?.trim() === filterDivision
+      (node) => node.division?.trim() === filterDivision,
     );
   }, [appliedFilters.division, graphData]);
 

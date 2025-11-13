@@ -109,7 +109,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       try {
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(search)}&limit=8`,
-          { signal: controller.signal }
+          { signal: controller.signal },
         );
         const data = await response.json();
         setFighters(data.fighters || []);
@@ -138,7 +138,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       router.push(`/fighters/${fighterId}`);
       onClose();
     },
-    [router, onClose, saveSearch]
+    [router, onClose, saveSearch],
   );
 
   // Navigate to page
@@ -148,7 +148,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       router.push(path);
       onClose();
     },
-    [router, onClose, saveSearch]
+    [router, onClose, saveSearch],
   );
 
   // Quick actions
@@ -159,7 +159,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       label: "Go to Home",
       subtitle: "Browse all fighters",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -177,7 +182,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       label: "Go to Stats Hub",
       subtitle: "View analytics and leaderboards",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -195,7 +205,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       label: "Go to FightWeb",
       subtitle: "Explore fighter connections",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -213,7 +228,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       label: "Go to Favorites",
       subtitle: "View your saved fighters",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -418,15 +438,21 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           <div className="flex items-center justify-between border-t border-border/80 px-4 py-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
-                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">↑↓</kbd>
+                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                  ↑↓
+                </kbd>
                 <span>Navigate</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">↵</kbd>
+                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                  ↵
+                </kbd>
                 <span>Select</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">esc</kbd>
+                <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                  esc
+                </kbd>
                 <span>Close</span>
               </div>
             </div>

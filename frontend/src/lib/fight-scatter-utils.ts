@@ -89,7 +89,7 @@ export function calculateFinishSeconds(
   round: number | null | undefined,
   time: string | null | undefined,
   isDecision: boolean,
-  roundLimit: number = 3
+  roundLimit: number = 3,
 ): number {
   // For decisions, return the full fight time
   if (isDecision || !round || !time) {
@@ -127,7 +127,7 @@ export function calculateFinishSeconds(
  */
 export function convertFightToScatterPoint(
   fight: FightHistoryEntry,
-  defaultHeadshotUrl: string = "/img/placeholder-fighter.png"
+  defaultHeadshotUrl: string = "/img/placeholder-fighter.png",
 ): ScatterFight {
   const method = normalizeMethod(fight.method);
   const result = normalizeResult(fight.result);
@@ -141,13 +141,14 @@ export function convertFightToScatterPoint(
     fight.round,
     fight.time,
     isDecision,
-    roundLimit
+    roundLimit,
   );
 
   // Construct headshot URL from opponent_id or use placeholder
   // Images are served from backend at /images/fighters/{id}.jpg
   const headshot_url = fight.opponent_id
-    ? (resolveImageUrl(`/images/fighters/${fight.opponent_id}.jpg`) ?? defaultHeadshotUrl)
+    ? (resolveImageUrl(`/images/fighters/${fight.opponent_id}.jpg`) ??
+      defaultHeadshotUrl)
     : defaultHeadshotUrl;
 
   return {
@@ -184,7 +185,7 @@ export function computeHexbins(
   xMin: number,
   xMax: number,
   yMin: number,
-  yMax: number
+  yMax: number,
 ): HexbinBucket[] {
   if (fights.length === 0) {
     return [];
@@ -233,7 +234,7 @@ export function computeHexbins(
  */
 export function generateMonthlyTicks(
   startYear: number,
-  endYear: number
+  endYear: number,
 ): number[] {
   const ticks: number[] = [];
   for (let year = startYear; year <= endYear; year++) {
@@ -315,7 +316,7 @@ export function computeDomain(fights: ScatterFight[]): {
 export function filterFights(
   fights: ScatterFight[],
   filterResults: FightResult[] = [],
-  filterMethods: FightMethod[] = []
+  filterMethods: FightMethod[] = [],
 ): { filtered: ScatterFight[]; matchIndices: Set<number> } {
   const matchIndices = new Set<number>();
 

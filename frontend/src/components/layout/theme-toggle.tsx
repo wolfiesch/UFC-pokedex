@@ -22,7 +22,10 @@ export type ThemeToggleProps = DetailedHTMLProps<
  * context. A memoized component avoids unnecessary re-renders whenever parent
  * components update for unrelated reasons.
  */
-function ThemeToggleBase({ className, ...props }: ThemeToggleProps): JSX.Element {
+function ThemeToggleBase({
+  className,
+  ...props
+}: ThemeToggleProps): JSX.Element {
   const { theme, toggleTheme } = useTheme();
 
   return (

@@ -44,7 +44,7 @@ export function SiteHeader() {
                     "rounded-full px-4 py-2 transition-colors",
                     isActive
                       ? "bg-foreground text-background"
-                      : "text-foreground/80 hover:bg-muted"
+                      : "text-foreground/80 hover:bg-muted",
                   )}
                 >
                   {item.label}

@@ -21,7 +21,7 @@ function getApiBaseUrl(): string {
   // resolveApiBaseUrl normalizes the value (adds scheme, strips trailing slash).
   return resolveApiBaseUrl(
     process.env.NEXT_SSR_API_BASE_URL,
-    DEFAULT_SSR_API_BASE_URL
+    DEFAULT_SSR_API_BASE_URL,
   );
 }
 
@@ -33,7 +33,7 @@ const FETCH_TIMEOUT_MS = 4000;
  */
 export async function getFightersSSR(
   limit = 20,
-  offset = 0
+  offset = 0,
 ): Promise<PaginatedFightersResponse> {
   const apiUrl = getApiBaseUrl();
   const response = await fetch(
@@ -41,12 +41,12 @@ export async function getFightersSSR(
     {
       // Cache for 60 seconds (1 minute)
       next: { revalidate: 60 },
-    }
+    },
   );
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch fighters: ${response.status} ${response.statusText}`
+      `Failed to fetch fighters: ${response.status} ${response.statusText}`,
     );
   }
 
@@ -70,7 +70,7 @@ export async function getFighterSSR(fighterId: string): Promise<FighterDetail> {
       throw new Error(`Fighter not found: ${fighterId}`);
     }
     throw new Error(
-      `Failed to fetch fighter: ${response.status} ${response.statusText}`
+      `Failed to fetch fighter: ${response.status} ${response.statusText}`,
     );
   }
 
@@ -82,7 +82,7 @@ export async function getFighterSSR(fighterId: string): Promise<FighterDetail> {
  * Fetches all fighters, sorts by most recent fight date, returns top N
  */
 export async function getAllFighterIdsSSR(
-  topN = 500
+  topN = 500,
 ): Promise<Array<{ id: string }>> {
   const apiUrl = getApiBaseUrl();
 
@@ -102,12 +102,12 @@ export async function getAllFighterIdsSSR(
         {
           next: { revalidate: false }, // Static at build time
           signal: controller.signal,
-        }
+        },
       );
 
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch fighters batch: ${response.status} ${response.statusText}`
+          `Failed to fetch fighters batch: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -127,7 +127,7 @@ export async function getAllFighterIdsSSR(
 
       if (allFighters.length === 0) {
         console.warn(
-          "Skipping fighter prefetch – API unavailable during build. Falling back to ISR."
+          "Skipping fighter prefetch – API unavailable during build. Falling back to ISR.",
         );
         break;
       }

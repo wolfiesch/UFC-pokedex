@@ -18,9 +18,7 @@ from urllib.parse import urlsplit
 # Directory that stores cached fighter images. We compute it relative to the
 # repository root so the helper keeps working no matter where the application
 # is launched from (tests, local dev server, background workers, etc.).
-_IMAGE_ROOT: Final[Path] = (
-    Path(__file__).resolve().parents[2] / "data" / "images" / "fighters"
-)
+_IMAGE_ROOT: Final[Path] = Path(__file__).resolve().parents[2] / "data" / "images" / "fighters"
 
 # Order matters: we prefer JPEG assets first because the majority of our
 # scraped library is JPEG, but we gracefully fall back to PNG and WebP variants
@@ -37,9 +35,7 @@ _RELATIVE_PREFIX: Final[str] = "images/fighters"
 # production frontend attempts to load images from a developer machine.
 # Normalising those artifacts into relative paths keeps responses deployment
 # agnostic.
-_LOCAL_HOSTNAMES: Final[frozenset[str]] = frozenset(
-    {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
-)
+_LOCAL_HOSTNAMES: Final[frozenset[str]] = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})
 
 
 def _strip_local_origin(candidate: str) -> str | None:
