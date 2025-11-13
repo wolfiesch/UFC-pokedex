@@ -9,6 +9,7 @@ from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import ColumnElement
 
+from backend.db import connection as db_connection
 from backend.db.connection import get_async_session
 from backend.db.models import Fighter
 from backend.schemas.fighter import FighterListItem

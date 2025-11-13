@@ -1,13 +1,45 @@
 """Tests for streak parameter validation."""
+
 import os
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
 
-# Set to use SQLite for tests before importing app
-os.environ["USE_SQLITE"] = "1"
+# Provide a dummy PostgreSQL URL for application startup during tests.
+os.environ.setdefault(
+    "DATABASE_URL", "postgresql+psycopg://test_user:test_pass@localhost/test_db"
+)
 
 from backend.main import app
+from backend.schemas.fighter import PaginatedFightersResponse
+from backend.services.search_service import get_search_service
+
+
+class _StubSearchService:
+    """Return a deterministic empty result set for streak validation tests."""
+
+    async def search_fighters(
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+        **_: object,
+    ) -> PaginatedFightersResponse:
+        effective_limit: int = limit if limit is not None else 20
+        effective_offset: int = offset if offset is not None else 0
+        return PaginatedFightersResponse(
+            fighters=[],
+            total=0,
+            limit=effective_limit,
+            offset=effective_offset,
+            has_more=False,
+        )
+
+
+_STUB_SEARCH_SERVICE = _StubSearchService()
+app.dependency_overrides[get_search_service] = lambda: _STUB_SEARCH_SERVICE
 
 client = TestClient(app)
 
@@ -18,7 +50,9 @@ def test_min_streak_count_requires_streak_type():
 
     assert response.status_code == 422
     detail = response.json()["detail"]
-    assert "streak_type" in detail.lower() and ("must be provided together" in detail.lower() or "required" in detail.lower())
+    assert "streak_type" in detail.lower() and (
+        "must be provided together" in detail.lower() or "required" in detail.lower()
+    )
 
 
 def test_streak_type_requires_min_streak_count():
@@ -27,7 +61,9 @@ def test_streak_type_requires_min_streak_count():
 
     assert response.status_code == 422
     detail = response.json()["detail"]
-    assert "min_streak_count" in detail.lower() and ("must be provided together" in detail.lower() or "required" in detail.lower())
+    assert "min_streak_count" in detail.lower() and (
+        "must be provided together" in detail.lower() or "required" in detail.lower()
+    )
 
 
 def test_both_streak_params_work_together():

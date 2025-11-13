@@ -1,4 +1,5 @@
 """Tests for database initialization, preflight checks, and seed safety."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,50 +17,65 @@ from backend.scripts.seed_fighters import (
 class TestDatabaseType:
     """Test database type detection."""
 
-    def test_get_database_type_sqlite_via_use_sqlite(self, monkeypatch):
-        """Test that USE_SQLITE=1 forces SQLite mode."""
-        monkeypatch.setenv("USE_SQLITE", "1")
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        assert get_database_type() == "sqlite"
+    def test_get_database_type_returns_postgresql_when_url_valid(self, monkeypatch):
+        """Validate that PostgreSQL URLs resolve to the expected identifier."""
 
-    def test_get_database_type_sqlite_via_fallback(self, monkeypatch):
-        """Test that missing DATABASE_URL falls back to SQLite."""
-        monkeypatch.delenv("USE_SQLITE", raising=False)
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        assert get_database_type() == "sqlite"
-
-    def test_get_database_type_postgresql(self, monkeypatch):
-        """Test that PostgreSQL URL returns postgresql type."""
-        monkeypatch.delenv("USE_SQLITE", raising=False)
         monkeypatch.setenv(
             "DATABASE_URL", "postgresql+psycopg://user:pass@localhost/db"
         )
+
         assert get_database_type() == "postgresql"
+
+    def test_get_database_type_raises_when_database_url_missing(self, monkeypatch):
+        """Ensure missing configuration surfaces a clear runtime error."""
+
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+
+        with pytest.raises(RuntimeError) as exc_info:
+            get_database_type()
+
+        assert "DATABASE_URL environment variable is required" in str(exc_info.value)
+
+    def test_get_database_type_rejects_non_postgres_scheme(self, monkeypatch):
+        """Ensure unsupported database schemes fail fast during startup checks."""
+
+        monkeypatch.setenv("DATABASE_URL", "mysql://user:pass@localhost/db")
+
+        with pytest.raises(RuntimeError) as exc_info:
+            get_database_type()
+
+        assert "must use the PostgreSQL scheme" in str(exc_info.value)
 
 
 class TestDatabaseURL:
     """Test database URL construction and sanitization."""
 
-    def test_get_database_url_sqlite_via_use_sqlite(self, monkeypatch):
-        """Test that USE_SQLITE=1 returns SQLite URL."""
-        monkeypatch.setenv("USE_SQLITE", "1")
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        url = get_database_url()
-        assert url.startswith("sqlite+aiosqlite")
+    def test_get_database_url_returns_normalised_psycopg_scheme(self, monkeypatch):
+        """Ensure legacy postgres scheme is normalised for async engines."""
 
-    def test_get_database_url_sqlite_via_fallback(self, monkeypatch):
-        """Test that missing DATABASE_URL falls back to SQLite URL."""
-        monkeypatch.delenv("USE_SQLITE", raising=False)
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        url = get_database_url()
-        assert url.startswith("sqlite+aiosqlite")
+        monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
 
-    def test_get_database_url_postgresql(self, monkeypatch):
-        """Test that PostgreSQL DATABASE_URL is returned."""
-        monkeypatch.delenv("USE_SQLITE", raising=False)
-        pg_url = "postgresql+psycopg://user:pass@localhost/db"
-        monkeypatch.setenv("DATABASE_URL", pg_url)
-        assert get_database_url() == pg_url
+        assert get_database_url() == "postgresql+psycopg://user:pass@localhost/db"
+
+    def test_get_database_url_requires_presence(self, monkeypatch):
+        """Missing DATABASE_URL should raise a descriptive runtime error."""
+
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+
+        with pytest.raises(RuntimeError) as exc_info:
+            get_database_url()
+
+        assert "DATABASE_URL environment variable is required" in str(exc_info.value)
+
+    def test_get_database_url_rejects_non_postgresql_scheme(self, monkeypatch):
+        """Unsupported database schemes must raise a runtime error."""
+
+        monkeypatch.setenv("DATABASE_URL", "mysql://user:pass@localhost/db")
+
+        with pytest.raises(RuntimeError) as exc_info:
+            get_database_url()
+
+        assert "must use the PostgreSQL scheme" in str(exc_info.value)
 
 
 class TestPreflightLogging:
@@ -77,12 +93,12 @@ class TestPreflightLogging:
                 "postgresql+psycopg://user:***@localhost/db",
             ),
             (
-                "sqlite+aiosqlite:///./data/app.db",
-                "sqlite+aiosqlite:///./data/app.db",
+                "postgresql+psycopg://user@localhost/db",
+                "postgresql+psycopg://user@localhost/db",
             ),
             (
-                "postgresql+psycopg://user@localhost/db",
-                "postgresql+psycopg://user@localhost/db",
+                "postgresql+psycopg://user:secret@localhost:5432/db",
+                "postgresql+psycopg://user:***@localhost:5432/db",
             ),
         ]
 
@@ -164,46 +180,44 @@ class TestSeedSafetyCheck:
 
 
 class TestDatabaseInitialization:
-    """Test that tables are created correctly based on database type."""
+    """Test application startup behaviour under different database configurations."""
 
     @pytest.mark.asyncio
     @patch("backend.main.get_database_type")
-    @patch("backend.main.get_engine")
-    async def test_sqlite_creates_tables_via_create_all(
-        self, mock_get_engine, mock_get_type
-    ):
-        """Test that SQLite mode calls create_all() during startup."""
+    async def test_lifespan_rejects_non_postgresql_databases(
+        self, mock_get_type: MagicMock
+    ) -> None:
+        """Startup should fail immediately if a non-PostgreSQL backend is configured."""
+
         mock_get_type.return_value = "sqlite"
 
-        # Mock engine and connection
-        mock_conn = AsyncMock()
-        mock_engine = MagicMock()
-        mock_engine.begin = AsyncMock()
-        mock_engine.begin.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_engine.begin.return_value.__aexit__ = AsyncMock(return_value=None)
-        mock_get_engine.return_value = mock_engine
-
-        # Import and run lifespan
         from fastapi import FastAPI
 
         from backend.main import lifespan
 
         app = FastAPI()
 
-        async with lifespan(app):
-            pass
+        with pytest.raises(RuntimeError) as exc_info:
+            async with lifespan(app):
+                pass
 
-        # Verify that run_sync (which calls create_all) was called
-        mock_conn.run_sync.assert_called_once()
+        assert "requires PostgreSQL" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @patch("backend.warmup.warmup_all", new_callable=AsyncMock)
+    @patch("backend.main.get_database_url")
     @patch("backend.main.get_database_type")
-    @patch("backend.main.get_engine")
-    async def test_postgresql_skips_create_all(self, mock_get_engine, mock_get_type):
-        """Test that PostgreSQL mode does NOT call create_all()."""
-        mock_get_type.return_value = "postgresql"
+    async def test_lifespan_logs_and_warmups_postgresql(
+        self,
+        mock_get_type: MagicMock,
+        mock_get_url: MagicMock,
+        mock_warmup_all: AsyncMock,
+    ) -> None:
+        """PostgreSQL startup should proceed to the warmup phase without table creation."""
 
-        # Import and run lifespan
+        mock_get_type.return_value = "postgresql"
+        mock_get_url.return_value = "postgresql+psycopg://user:pass@localhost/db"
+
         from fastapi import FastAPI
 
         from backend.main import lifespan
@@ -213,8 +227,7 @@ class TestDatabaseInitialization:
         async with lifespan(app):
             pass
 
-        # Verify that get_engine was NOT called (only called in SQLite mode)
-        mock_get_engine.assert_not_called()
+        mock_warmup_all.assert_awaited_once()
 
     @pytest.mark.asyncio
     @patch("backend.scripts.seed_fighters.get_database_type")

@@ -138,10 +138,10 @@ def client(
 
     monkeypatch.setattr(backend_main, "get_engine", lambda: stub_engine, raising=False)
     monkeypatch.setattr(
-        backend_main, "get_database_type", lambda: "sqlite", raising=False
+        backend_main, "get_database_type", lambda: "postgresql", raising=False
     )
     monkeypatch.setattr("backend.db.connection.get_engine", lambda: stub_engine)
-    monkeypatch.setattr("backend.db.connection.get_database_type", lambda: "sqlite")
+    monkeypatch.setattr("backend.db.connection.get_database_type", lambda: "postgresql")
 
     with TestClient(app) as test_client:
         yield test_client

@@ -128,7 +128,7 @@ async def test_get_fighters_by_flag_filters_via_database_predicate(
     """The API should delegate JSON flag filtering to the database layer."""
 
     monkeypatch.setattr(
-        "backend.api.image_validation.db_connection.get_database_type",
+        "backend.db.connection.get_database_type",
         lambda: "sqlite",
     )
 
@@ -161,7 +161,7 @@ async def test_get_fighters_by_flag_preserves_total_during_pagination(
     """Paginated responses should expose the full result count alongside the slice."""
 
     monkeypatch.setattr(
-        "backend.api.image_validation.db_connection.get_database_type",
+        "backend.db.connection.get_database_type",
         lambda: "sqlite",
     )
 

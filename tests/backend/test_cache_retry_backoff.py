@@ -61,11 +61,10 @@ async def test_get_redis_retries_after_cooldown(
     _StubRedisFactory.created_clients = []
 
     # Guard against unexpected reconnect attempts by counting instantiations.
-    attempts = 0
+    attempts: dict[str, int] = {"count": 0}
 
     def _increment_attempts() -> None:
-        nonlocal attempts
-        attempts += 1
+        attempts["count"] += 1
 
     _StubRedisFactory.on_instantiate = _increment_attempts
 
@@ -73,6 +72,12 @@ async def test_get_redis_retries_after_cooldown(
         cache,
         "_load_redis_components",
         lambda: (_StubRedisFactory, RedisConnectionError),
+    )
+    monkeypatch.setattr(
+        cache,
+        "_is_redis_connection_error",
+        lambda exc: isinstance(exc, RedisConnectionError),
+        raising=False,
     )
 
     current_time: dict[str, float] = {"value": 0.0}
@@ -105,10 +110,10 @@ async def test_get_redis_retries_after_cooldown(
 
     await cache.close_redis()
     _StubRedisFactory.on_instantiate = None
+
+
 @pytest.mark.asyncio
-async def test_close_redis_clears_backoff(
-    monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_close_redis_clears_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
     """Closing the cache connection also resets any pending backoff metadata."""
 
     await cache.close_redis()
@@ -120,6 +125,12 @@ async def test_close_redis_clears_backoff(
         cache,
         "_load_redis_components",
         lambda: (_StubRedisFactory, RedisConnectionError),
+    )
+    monkeypatch.setattr(
+        cache,
+        "_is_redis_connection_error",
+        lambda exc: isinstance(exc, RedisConnectionError),
+        raising=False,
     )
     monkeypatch.setattr(cache.time, "monotonic", lambda: 0.0)
 
