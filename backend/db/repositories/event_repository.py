@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import Select
 
 from backend.db.models import Event, Fighter
 from backend.schemas.event import EventDetail, EventFight, EventListItem
@@ -150,6 +151,42 @@ class PostgreSQLEventRepository:
         count = result.scalar_one_or_none()
         return count if count is not None else 0
 
+    def _build_search_events_query(
+        self,
+        *,
+        q: str | None = None,
+        year: int | None = None,
+        location: str | None = None,
+        status: str | None = None,
+    ) -> Select[tuple[Event]]:
+        """Construct the reusable ``SELECT`` statement for event searches.
+
+        The repository executes this helper twice per request: once to fetch the
+        actual ``Event`` rows (optionally with pagination) and once wrapped as a
+        subquery to compute ``COUNT(*)``. Centralizing the base filters prevents
+        drift between the data and the pagination metadata, ensuring the total
+        reported to clients always mirrors the applied constraints.
+        """
+
+        query: Select[tuple[Event]] = select(Event).order_by(desc(Event.date), Event.id)
+
+        if q:
+            search_pattern = f"%{q}%"
+            query = query.where(
+                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
+            )
+
+        if year:
+            query = query.where(func.extract("year", Event.date) == year)
+
+        if location:
+            query = query.where(Event.location.ilike(f"%{location}%"))
+
+        if status:
+            query = query.where(Event.status == status)
+
+        return query
+
     async def search_events(
         self,
         *,
@@ -160,59 +197,37 @@ class PostgreSQLEventRepository:
         status: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> Iterable[EventListItem]:
-        """
-        Search and filter events.
+    ) -> tuple[list[EventListItem], int]:
+        """Search and filter events, returning both the page and total count."""
 
-        Args:
-            q: Search query (searches in event name, location)
-            year: Filter by year
-            location: Filter by location (case-insensitive partial match)
-            event_type: Filter by event type (ppv, fight_night, etc.)
-            status: Filter by status (upcoming, completed)
-            limit: Maximum number of results
-            offset: Number of results to skip
+        base_query: Select[tuple[Event]] = self._build_search_events_query(
+            q=q,
+            year=year,
+            location=location,
+            status=status,
+        )
 
-        Returns:
-            List of matching events
-        """
-        query = select(Event).order_by(desc(Event.date), Event.id)
-
-        # Text search in name and location
-        if q:
-            search_pattern = f"%{q}%"
-            query = query.where(
-                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
-            )
-
-        # Year filter
-        if year:
-            query = query.where(func.extract("year", Event.date) == year)
-
-        # Location filter
-        if location:
-            query = query.where(Event.location.ilike(f"%{location}%"))
-
-        # Status filter
-        if status:
-            query = query.where(Event.status == status)
+        # Execute the database-level count using the shared filter set so the
+        # pagination metadata mirrors the page contents.
+        count_query: Select[tuple[int]] = select(func.count()).select_from(
+            base_query.order_by(None).subquery()
+        )
+        count_result = await self._session.execute(count_query)
+        total_from_database = count_result.scalar_one_or_none() or 0
+        total_count: int = int(total_from_database)
 
         apply_manual_pagination = event_type is not None
-
-        # ``detect_event_type`` performs in-memory classification. When an
-        # event_type filter is supplied we must load all matching rows prior to
-        # the post-processing step to ensure pagination remains accurate.
+        rows_query: Select[tuple[Event]] = base_query
         if not apply_manual_pagination:
             if offset is not None:
-                query = query.offset(offset)
+                rows_query = rows_query.offset(offset)
             if limit is not None:
-                query = query.limit(limit)
+                rows_query = rows_query.limit(limit)
 
-        result = await self._session.execute(query)
+        result = await self._session.execute(rows_query)
         events = result.scalars().all()
 
-        # Build event list with event type detection
-        event_list = [
+        event_items: list[EventListItem] = [
             EventListItem(
                 event_id=event.id,
                 name=event.name,
@@ -226,18 +241,25 @@ class PostgreSQLEventRepository:
             for event in events
         ]
 
-        # Filter by event_type after detection (since it's not in DB)
-        if event_type:
-            event_list = [
-                event for event in event_list if event.event_type == event_type
+        filtered_items: list[EventListItem]
+        if event_type is not None:
+            filtered_items = [
+                item for item in event_items if item.event_type == event_type
             ]
+        else:
+            filtered_items = event_items
 
-        if not apply_manual_pagination:
-            return event_list
+        if apply_manual_pagination:
+            # ``detect_event_type`` is computed in Python, so totals must be
+            # derived from the filtered collection instead of the SQL count.
+            total_count = len(filtered_items)
+            start_index: int = 0 if offset is None else offset
+            end_index: int | None = None if limit is None else start_index + limit
+            page_items: list[EventListItem] = filtered_items[start_index:end_index]
+        else:
+            page_items = filtered_items
 
-        start_index: int = 0 if offset is None else offset
-        end_index: int | None = None if limit is None else start_index + limit
-        return event_list[start_index:end_index]
+        return page_items, total_count
 
     async def get_unique_years(self) -> list[int]:
         """Get list of unique years from all events."""
@@ -258,4 +280,3 @@ class PostgreSQLEventRepository:
         result = await self._session.execute(query)
         locations = result.scalars().all()
         return list(locations)
-
