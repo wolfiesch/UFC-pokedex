@@ -152,7 +152,9 @@ class EventService:
         offset: int = 0,
     ) -> PaginatedEventsResponse:
         """Search and filter events with advanced options."""
-        events = await self._repository.search_events(
+        # Retrieve both the current page of events and the total count in a
+        # single repository call to keep pagination metadata consistent.
+        events, total = await self._repository.search_events(
             q=q,
             year=year,
             location=location,
@@ -161,23 +163,10 @@ class EventService:
             limit=limit,
             offset=offset,
         )
-        event_list = list(events)
-
-        # Get total count with same filters (but no pagination)
-        all_matching = await self._repository.search_events(
-            q=q,
-            year=year,
-            location=location,
-            event_type=event_type,
-            status=status,
-            limit=None,
-            offset=None,
-        )
-        total = len(list(all_matching))
         has_more = (offset + limit) < total
 
         return PaginatedEventsResponse(
-            events=event_list,
+            events=events,
             total=total,
             limit=limit,
             offset=offset,

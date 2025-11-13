@@ -38,6 +38,7 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
         # to satisfy interface requirements for test stubs.
         return
         yield  # unreachable, but marks this as an async generator
+
     async def aclose(self) -> None:
         return None
 
@@ -249,6 +250,16 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
             repository = PostgreSQLEventRepository(session)
             service = EventService(repository)
 
+            # Repository should now return both the current slice of events and
+            # the total number of matching fight-night cards in one call.
+            repo_page, repo_total = await repository.search_events(
+                event_type="fight_night",
+                limit=2,
+                offset=0,
+            )
+            assert [event.event_id for event in repo_page] == ["evt-c", "evt-b"]
+            assert repo_total == 3
+
             # Page one should contain the two most recent fight night cards.
             first_page: PaginatedEventsResponse = await service.search_events(
                 event_type="fight_night",
@@ -257,6 +268,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
             )
             assert [event.event_id for event in first_page.events] == ["evt-c", "evt-b"]
             assert len(first_page.events) == 2
+            assert first_page.total == 3
             assert first_page.has_more is True
 
             # Page two should surface the remaining fight night entry with no more pages.
@@ -267,6 +279,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
             )
             assert [event.event_id for event in second_page.events] == ["evt-a"]
             assert len(second_page.events) == 1
+            assert second_page.total == 3
             assert second_page.has_more is False
 
     asyncio.run(runner())
