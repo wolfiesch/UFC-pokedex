@@ -72,26 +72,58 @@
       }
 
       .view-toggle button {
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid rgba(102, 217, 239, 0.3);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        border: 2px solid rgba(102, 217, 239, 0.4);
         background: rgba(15, 22, 41, 0.8);
         color: var(--text-primary);
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 700;
         letter-spacing: 0.05em;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .view-toggle button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(102, 217, 239, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+      }
+
+      .view-toggle button:hover::before {
+        width: 300px;
+        height: 300px;
       }
 
       .view-toggle button:hover {
-        background: rgba(102, 217, 239, 0.2);
+        background: rgba(102, 217, 239, 0.15);
         border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 217, 239, 0.3);
       }
 
       .view-toggle button.active {
         background: linear-gradient(135deg, rgba(102, 217, 239, 0.9), rgba(249, 38, 114, 0.9));
         border-color: transparent;
+        box-shadow: 0 8px 25px rgba(102, 217, 239, 0.4);
+      }
+
+      .view-toggle button span {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
 
       main {
@@ -248,14 +280,102 @@
         position: absolute;
         top: 1.5rem;
         right: 1.5rem;
-        padding: 0.5rem 1rem;
-        background: rgba(5, 7, 15, 0.75);
+        padding: 0.75rem 1.25rem;
+        background: rgba(5, 7, 15, 0.9);
         border: 1px solid rgba(102, 217, 239, 0.3);
-        border-radius: 0.5rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.05em;
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
         color: var(--accent);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stats-panel {
+        position: absolute;
+        top: 1.5rem;
+        left: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: rgba(5, 7, 15, 0.9);
+        border: 1px solid rgba(102, 217, 239, 0.2);
+        border-radius: 0.75rem;
+        min-width: 220px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(8px);
+      }
+
+      .stats-panel h3 {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .stats-panel .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(102, 217, 239, 0.1);
+        font-size: 0.9rem;
+      }
+
+      .stats-panel .stat-row:last-child {
+        border-bottom: none;
+      }
+
+      .stats-panel .stat-label {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      .stats-panel .stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .color-legend {
+        position: absolute;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 1rem;
+        background: rgba(5, 7, 15, 0.9);
+        border: 1px solid rgba(102, 217, 239, 0.2);
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(8px);
+        max-width: 200px;
+      }
+
+      .color-legend h3 {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .legend-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        box-shadow: 0 0 8px currentColor;
       }
 
       @media (max-width: 900px) {
@@ -289,7 +409,12 @@
         </p>
       </div>
       <div class="view-toggle">
-        <button id="toggle2D3D" class="active">Toggle 2D ⟷ 3D</button>
+        <button id="toggle2D3D" class="active">
+          <span>
+            <span id="toggleIcon">🧊</span>
+            <span id="toggleText">3D Mode</span>
+          </span>
+        </button>
       </div>
     </header>
     <main>
@@ -362,7 +487,29 @@
         </div>
       </form>
       <section class="graph-container" aria-live="polite">
-        <div class="mode-indicator" id="modeIndicator">3D Mode</div>
+        <div class="stats-panel" id="statsPanel" style="display: none;">
+          <h3>Graph Statistics</h3>
+          <div class="stat-row">
+            <span class="stat-label">Fighters</span>
+            <span class="stat-value" id="statFighters">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Connections</span>
+            <span class="stat-value" id="statConnections">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Avg Fights</span>
+            <span class="stat-value" id="statAvgDegree">0</span>
+          </div>
+        </div>
+        <div class="mode-indicator" id="modeIndicator">
+          <span>🧊</span>
+          <span>3D Mode</span>
+        </div>
+        <div class="color-legend" id="colorLegend" style="display: none;">
+          <h3>Divisions</h3>
+          <div id="legendItems"></div>
+        </div>
         <div class="tooltip" id="tooltip">Hover a fighter node to inspect details.</div>
       </section>
     </main>
@@ -613,7 +760,16 @@
       function toggle2D3D() {
         is3DMode = !is3DMode;
         targetDepthScale = is3DMode ? 1.0 : 0.0;
-        modeIndicator.textContent = is3DMode ? "3D Mode" : "2D Mode";
+
+        // Update mode indicator
+        const icon = is3DMode ? "🧊" : "🔲";
+        const text = is3DMode ? "3D Mode" : "2D Mode";
+        modeIndicator.innerHTML = `<span>${icon}</span><span>${text}</span>`;
+
+        // Update toggle button
+        document.getElementById("toggleIcon").textContent = icon;
+        document.getElementById("toggleText").textContent = text;
+
         interpolateDepth();
       }
 
@@ -694,17 +850,29 @@
           const colorKey = node.division || "default";
 
           if (!nodeMaterialCache.has(colorKey)) {
+            // More distinct color palette for better differentiation
             const palette = [
-              0x66d9ef, 0xf92672, 0xa6e22e, 0xfd971f, 0xae81ff, 0xf4bf75,
+              0xff4444, // Red
+              0x44ff44, // Green
+              0x4444ff, // Blue
+              0xffaa00, // Orange
+              0xff44ff, // Magenta
+              0x44ffff, // Cyan
+              0xffff44, // Yellow
+              0xff8844, // Light Orange
+              0x88ff44, // Lime
+              0x4488ff, // Light Blue
+              0xff4488, // Pink
+              0x88ff88, // Light Green
             ];
             const hash = [...colorKey].reduce((acc, char) => acc + char.charCodeAt(0), 0);
             const color = palette[hash % palette.length];
             const material = new THREE.MeshStandardMaterial({
               color,
               emissive: color,
-              emissiveIntensity: 0.2,
-              roughness: 0.45,
-              metalness: 0.05,
+              emissiveIntensity: 0.3,
+              roughness: 0.4,
+              metalness: 0.1,
             });
             nodeMaterialCache.set(colorKey, material);
           }
@@ -716,18 +884,25 @@
           mesh.userData.baseScale = radius;
           nodeGroup.add(mesh);
 
-          // Create label sprite
+          // Create label sprite with better visibility
           const labelCanvas = document.createElement("canvas");
-          labelCanvas.width = 256;
-          labelCanvas.height = 64;
+          labelCanvas.width = 384;
+          labelCanvas.height = 96;
           const labelContext = labelCanvas.getContext("2d");
           if (labelContext) {
             labelContext.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
-            labelContext.fillStyle = "rgba(5, 7, 15, 0.7)";
+            // Semi-transparent background
+            labelContext.fillStyle = "rgba(5, 7, 15, 0.85)";
             labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
-            labelContext.fillStyle = "#66d9ef";
-            labelContext.font = "600 26px 'Inter', sans-serif";
-            labelContext.fillText(node.label ?? node.id, 16, 38);
+            // Text with shadow for better readability
+            labelContext.shadowColor = "rgba(0, 0, 0, 0.8)";
+            labelContext.shadowBlur = 4;
+            labelContext.shadowOffsetX = 2;
+            labelContext.shadowOffsetY = 2;
+            labelContext.fillStyle = "#ffffff";
+            labelContext.font = "700 36px 'Inter', sans-serif";
+            labelContext.textAlign = "left";
+            labelContext.fillText(node.label ?? node.id, 20, 60);
           }
 
           const texture = new THREE.CanvasTexture(labelCanvas);
@@ -737,8 +912,8 @@
             transparent: true,
           });
           const sprite = new THREE.Sprite(spriteMaterial);
-          sprite.scale.set(60, 15, 1);
-          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3, node.z || 0);
+          sprite.scale.set(80, 20, 1);
+          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, node.z || 0);
           nodeGroup.add(sprite);
 
           // Store node data for depth interpolation
@@ -750,17 +925,19 @@
           });
         }
 
-        // Create edges
+        // Create edges with better visibility
         for (const link of graph.links) {
           const sourceNode = link.source;
           const targetNode = link.target;
 
-          const opacity = 0.25;
+          // Increase opacity and add glow for better visibility
+          const opacity = 0.5;
           const color = new THREE.Color(0x66d9ef);
           const material = new THREE.LineBasicMaterial({
             color,
             transparent: true,
             opacity,
+            linewidth: 2, // Note: linewidth > 1 only works with THREE.Line2
           });
 
           const geometry = new THREE.BufferGeometry();
@@ -861,6 +1038,38 @@
         };
 
         window.addEventListener("resize", resizeHandler);
+
+        // Populate stats panel
+        document.getElementById("statFighters").textContent = graph.nodes.length;
+        document.getElementById("statConnections").textContent = graph.links.length;
+        const avgDegree = graph.nodes.length > 0
+          ? (graph.links.length * 2 / graph.nodes.length).toFixed(1)
+          : "0";
+        document.getElementById("statAvgDegree").textContent = avgDegree;
+        document.getElementById("statsPanel").style.display = "block";
+
+        // Build color legend
+        const divisionColors = new Map();
+        for (const [key, material] of nodeMaterialCache.entries()) {
+          if (key !== "default") {
+            divisionColors.set(key, `#${material.color.getHexString()}`);
+          }
+        }
+
+        const legendItems = document.getElementById("legendItems");
+        legendItems.innerHTML = "";
+        for (const [division, color] of divisionColors.entries()) {
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.innerHTML = `
+            <span class="legend-color" style="background-color: ${color}; color: ${color};"></span>
+            <span>${division}</span>
+          `;
+          legendItems.appendChild(item);
+        }
+        if (divisionColors.size > 0) {
+          document.getElementById("colorLegend").style.display = "block";
+        }
       }
 
       // Form submit handler
