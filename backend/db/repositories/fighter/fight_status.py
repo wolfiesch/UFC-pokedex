@@ -40,16 +40,39 @@ class FighterFightStatusMixin:
         if not fighter_ids:
             return {}
 
-        next_fight_subq = (
+        # Build subquery for fighters as fighter_id (primary fighter)
+        next_fight_as_primary = (
             select(
                 Fight.fighter_id.label("fighter_id"),
-                func.min(Fight.event_date).label("next_fight_date"),
+                Fight.event_date.label("next_fight_date"),
             )
             .join(Event, Fight.event_id == Event.id)
             .where(Fight.fighter_id.in_(fighter_ids))
             .where(Event.date > func.current_date())
             .where(Fight.result == "next")
-            .group_by(Fight.fighter_id)
+        )
+
+        # Build subquery for fighters as opponent_id (opponent fighter)
+        next_fight_as_opponent = (
+            select(
+                Fight.opponent_id.label("fighter_id"),
+                Fight.event_date.label("next_fight_date"),
+            )
+            .join(Event, Fight.event_id == Event.id)
+            .where(Fight.opponent_id.in_(fighter_ids))
+            .where(Event.date > func.current_date())
+            .where(Fight.result == "next")
+        )
+
+        # Union both subqueries and group to get min date
+        next_fight_union = next_fight_as_primary.union_all(next_fight_as_opponent).subquery()
+
+        next_fight_subq = (
+            select(
+                next_fight_union.c.fighter_id,
+                func.min(next_fight_union.c.next_fight_date).label("next_fight_date"),
+            )
+            .group_by(next_fight_union.c.fighter_id)
         ).subquery()
 
         last_fight_subq = (
