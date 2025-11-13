@@ -427,12 +427,12 @@
               type="url"
               id="apiBaseInput"
               name="apiBase"
-              placeholder="https://api.example.com"
-              required
+              placeholder="https://api.example.com (leave blank for sample preview)"
             />
           </label>
           <p id="status">
-            Provide the API origin hosting /fightweb/graph. Defaults to localhost if omitted.
+            Provide the API origin hosting /fightweb/graph or clear the field to load bundled
+            sample data.
           </p>
         </fieldset>
 
@@ -561,7 +561,7 @@
       // Initialize API base URL from query params
       const params = new URLSearchParams(window.location.search);
       const providedBaseUrl = params.get("apiBaseUrl") ?? "";
-      const defaultBaseUrl = providedBaseUrl || "http://localhost:8000";
+      const defaultBaseUrl = providedBaseUrl || "";
       apiBaseInput.value = defaultBaseUrl;
 
       // Global state
@@ -581,11 +581,214 @@
       let tooltipsEnabled = true;
 
       /**
+       * Bundled sample dataset for offline/preview usage.
+       * The structure mirrors the backend /fightweb/graph response so we can
+       * run the visualization without a running API.
+       * @type {{
+       *   nodes: Array<{
+       *     fighter_id: string;
+       *     id: string;
+       *     label: string;
+       *     name: string;
+       *     division: string;
+       *     record: string;
+       *     total_fights: number;
+       *     latest_event_date: string;
+       *     image_url: string | null;
+       *   }>;
+       *   links: Array<{ source: string; target: string; weight: number }>;
+       *   metadata: Record<string, unknown>;
+       * }}
+       */
+      const SAMPLE_GRAPH = {
+        nodes: [
+          {
+            fighter_id: "conor-mcgregor",
+            id: "conor-mcgregor",
+            label: "Conor McGregor",
+            name: "Conor McGregor",
+            division: "Lightweight",
+            record: "22-6-0",
+            total_fights: 28,
+            latest_event_date: "2021-07-10",
+            image_url: null,
+          },
+          {
+            fighter_id: "dustin-poirier",
+            id: "dustin-poirier",
+            label: "Dustin Poirier",
+            name: "Dustin Poirier",
+            division: "Lightweight",
+            record: "29-8-0 (1 NC)",
+            total_fights: 38,
+            latest_event_date: "2024-01-20",
+            image_url: null,
+          },
+          {
+            fighter_id: "justin-gaethje",
+            id: "justin-gaethje",
+            label: "Justin Gaethje",
+            name: "Justin Gaethje",
+            division: "Lightweight",
+            record: "25-5-0",
+            total_fights: 30,
+            latest_event_date: "2023-07-29",
+            image_url: null,
+          },
+          {
+            fighter_id: "charles-oliveira",
+            id: "charles-oliveira",
+            label: "Charles Oliveira",
+            name: "Charles Oliveira",
+            division: "Lightweight",
+            record: "34-9-0 (1 NC)",
+            total_fights: 44,
+            latest_event_date: "2023-10-21",
+            image_url: null,
+          },
+          {
+            fighter_id: "islam-makhachev",
+            id: "islam-makhachev",
+            label: "Islam Makhachev",
+            name: "Islam Makhachev",
+            division: "Lightweight",
+            record: "25-1-0",
+            total_fights: 26,
+            latest_event_date: "2023-10-21",
+            image_url: null,
+          },
+          {
+            fighter_id: "beneil-dariush",
+            id: "beneil-dariush",
+            label: "Beneil Dariush",
+            name: "Beneil Dariush",
+            division: "Lightweight",
+            record: "22-6-1",
+            total_fights: 29,
+            latest_event_date: "2023-06-10",
+            image_url: null,
+          },
+          {
+            fighter_id: "michael-chandler",
+            id: "michael-chandler",
+            label: "Michael Chandler",
+            name: "Michael Chandler",
+            division: "Lightweight",
+            record: "23-8-0",
+            total_fights: 31,
+            latest_event_date: "2022-11-12",
+            image_url: null,
+          },
+          {
+            fighter_id: "tony-ferguson",
+            id: "tony-ferguson",
+            label: "Tony Ferguson",
+            name: "Tony Ferguson",
+            division: "Lightweight",
+            record: "25-9-0",
+            total_fights: 34,
+            latest_event_date: "2023-12-16",
+            image_url: null,
+          },
+          {
+            fighter_id: "rafael-dos-anjos",
+            id: "rafael-dos-anjos",
+            label: "Rafael dos Anjos",
+            name: "Rafael dos Anjos",
+            division: "Lightweight",
+            record: "32-15-0",
+            total_fights: 47,
+            latest_event_date: "2023-12-16",
+            image_url: null,
+          },
+          {
+            fighter_id: "dan-hooker",
+            id: "dan-hooker",
+            label: "Dan Hooker",
+            name: "Dan Hooker",
+            division: "Lightweight",
+            record: "23-12-0",
+            total_fights: 35,
+            latest_event_date: "2023-07-08",
+            image_url: null,
+          },
+        ],
+        links: [
+          { source: "conor-mcgregor", target: "dustin-poirier", weight: 3 },
+          { source: "conor-mcgregor", target: "michael-chandler", weight: 1 },
+          { source: "dustin-poirier", target: "justin-gaethje", weight: 2 },
+          { source: "dustin-poirier", target: "charles-oliveira", weight: 1 },
+          { source: "charles-oliveira", target: "islam-makhachev", weight: 1 },
+          { source: "charles-oliveira", target: "justin-gaethje", weight: 1 },
+          { source: "islam-makhachev", target: "beneil-dariush", weight: 1 },
+          { source: "beneil-dariush", target: "michael-chandler", weight: 1 },
+          { source: "michael-chandler", target: "dan-hooker", weight: 1 },
+          { source: "tony-ferguson", target: "rafael-dos-anjos", weight: 1 },
+          { source: "tony-ferguson", target: "justin-gaethje", weight: 1 },
+          { source: "dan-hooker", target: "rafael-dos-anjos", weight: 1 },
+        ],
+        metadata: {
+          generated_at: "2025-11-13",
+          description: "Bundled sample graph for the combined force-directed prototype.",
+          division: "Lightweight",
+        },
+      };
+
+      const latestEventFormatter = new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+
+      /**
+       * Format an ISO-8601 date string from the graph payload into a localized label.
+       * Returns null for missing or invalid values so callers can easily guard their UI.
+       * @param {string | null | undefined} isoDate
+       * @returns {string | null}
+       */
+      function formatLatestEventDate(isoDate) {
+        if (typeof isoDate !== "string" || isoDate.trim() === "") {
+          return null;
+        }
+        const parsed = new Date(isoDate);
+        if (Number.isNaN(parsed.getTime())) {
+          return null;
+        }
+        return latestEventFormatter.format(parsed);
+      }
+
+      /**
+       * Deep clone the bundled sample graph so downstream steps can mutate state safely.
+       * @returns {{ nodes: any[]; links: any[]; metadata: Record<string, unknown> }}
+       */
+      function cloneSampleGraph() {
+        return JSON.parse(JSON.stringify(SAMPLE_GRAPH));
+      }
+
+      /**
        * Update status text area with progress cues
        */
       function updateStatus(text, isError = false) {
         statusElement.textContent = text;
         statusElement.style.color = isError ? "var(--accent-strong)" : "var(--text-muted)";
+      }
+
+      /**
+       * Determine how many bouts a rivalry represents.
+       *
+       * Prefers the `fights` property emitted by the API while
+       * gracefully falling back to legacy `weight` values or a
+       * neutral default when the metric is missing.
+       * @param {Record<string, unknown>} link
+       * @returns {number}
+       */
+      function getLinkFightCount(link) {
+        if (!link || typeof link !== "object") {
+          return 1;
+        }
+        const raw = Reflect.get(link, "fights") ?? Reflect.get(link, "weight") ?? 1;
+        const parsed = typeof raw === "number" ? raw : Number.parseFloat(String(raw));
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
       }
 
       /**
@@ -646,11 +849,20 @@
        */
       async function simulateLayout(graph) {
         // Normalize fighter_id to id for d3-force compatibility
-        const nodes = graph.nodes.map((node) => ({
-          ...node,
-          id: node.fighter_id || node.id
+        const nodes = graph.nodes.map((node) => {
+          const id = node.fighter_id || node.id;
+          const name = node.name ?? node.label ?? node.fighter_id ?? node.id;
+
+          return {
+            ...node,
+            id,
+            name,
+          };
+        });
+        const links = graph.links.map((link) => ({
+          ...link,
+          fights: getLinkFightCount(link),
         }));
-        const links = graph.links.map((link) => ({ ...link }));
 
         // Compute degree centrality
         const adjacency = new Map();
@@ -675,8 +887,14 @@
             "link",
             forceLink(links)
               .id((d) => d.id)
-              .strength((d) => (d.weight ? Math.min(1, d.weight / 5) : 0.2))
-              .distance((d) => (d.weight ? 60 / Math.max(1, d.weight) : 75))
+              .strength((link) => {
+                const fights = getLinkFightCount(link);
+                return fights > 0 ? Math.min(1, fights / 5) : 0.2;
+              })
+              .distance((link) => {
+                const fights = getLinkFightCount(link);
+                return fights > 0 ? 60 / Math.max(1, fights) : 75;
+              })
           )
           .force("center", forceCenter(0, 0, 0))
           .alphaDecay(0.05);
@@ -728,24 +946,40 @@
           // Update all node z-coordinates
           currentNodes.forEach((nodeData) => {
             if (nodeData.mesh) {
-              nodeData.mesh.position.z = (nodeData.fz || 0) * depthScale;
+              const originalZ =
+                typeof nodeData.originalZ === "number" ? nodeData.originalZ : 0;
+              nodeData.mesh.position.z = originalZ * depthScale;
             }
             if (nodeData.label) {
-              const radius = nodeData.mesh.userData.baseScale || 1;
-              nodeData.label.position.z = (nodeData.fz || 0) * depthScale;
+              const originalZ =
+                typeof nodeData.originalZ === "number" ? nodeData.originalZ : 0;
+              nodeData.label.position.z = originalZ * depthScale;
             }
           });
 
           // Update link z-coordinates
           if (linkGroup) {
             linkGroup.children.forEach((line, index) => {
-              if (line.geometry && line.userData.sourceNode && line.userData.targetNode) {
-                const sourceNode = line.userData.sourceNode;
-                const targetNode = line.userData.targetNode;
+              if (line.geometry && line.userData) {
+                const sourceZ =
+                  (line.userData.source &&
+                    typeof line.userData.source.originalZ === "number" &&
+                    line.userData.source.originalZ) ??
+                  (typeof line.userData.sourceOriginalZ === "number"
+                    ? line.userData.sourceOriginalZ
+                    : 0);
+                const targetZ =
+                  (line.userData.target &&
+                    typeof line.userData.target.originalZ === "number" &&
+                    line.userData.target.originalZ) ??
+                  (typeof line.userData.targetOriginalZ === "number"
+                    ? line.userData.targetOriginalZ
+                    : 0);
                 const positions = line.geometry.attributes.position.array;
-                positions[2] = (sourceNode.fz || 0) * depthScale;
-                positions[5] = (targetNode.fz || 0) * depthScale;
+                positions[2] = sourceZ * depthScale;
+                positions[5] = targetZ * depthScale;
                 line.geometry.attributes.position.needsUpdate = true;
+                line.geometry.computeBoundingSphere?.();
               }
             });
           }
@@ -843,11 +1077,28 @@
         const nodeMaterialCache = new Map();
         const nodeGeometry = new THREE.SphereGeometry(1, 16, 16);
 
+        /**
+         * Ensure every node retains its simulated depth so we can toggle between 2D/3D
+         * without losing the original z coordinate returned by d3-force-3d.
+         */
+        graph.nodes.forEach((node) => {
+          const fallbackZ = Number.isFinite(node.z) ? node.z : 0;
+          if (typeof node.originalZ !== "number") {
+            node.originalZ = fallbackZ;
+          }
+        });
+
+        const nodeMetaById = new Map();
+
         // Create nodes
         currentNodes = [];
         for (const node of graph.nodes) {
           const radius = 4 + Math.sqrt(node.degree || 0) * 0.9;
           const colorKey = node.division || "default";
+          const nodeId =
+            node.id || node.fighter_id || node.label || `node-${currentNodes.length}`;
+          const originalZ = typeof node.originalZ === "number" ? node.originalZ : 0;
+          const initialZ = originalZ * depthScale;
 
           if (!nodeMaterialCache.has(colorKey)) {
             // More distinct color palette for better differentiation
@@ -879,9 +1130,10 @@
 
           const mesh = new THREE.Mesh(nodeGeometry, nodeMaterialCache.get(colorKey));
           mesh.scale.setScalar(radius);
-          mesh.position.set(node.x || 0, node.y || 0, node.z || 0);
+          mesh.position.set(node.x || 0, node.y || 0, initialZ);
           mesh.userData.node = node;
           mesh.userData.baseScale = radius;
+          mesh.userData.originalZ = originalZ;
           nodeGroup.add(mesh);
 
           // Create label sprite with better visibility
@@ -902,7 +1154,8 @@
             labelContext.fillStyle = "#ffffff";
             labelContext.font = "700 36px 'Inter', sans-serif";
             labelContext.textAlign = "left";
-            labelContext.fillText(node.label ?? node.id, 20, 60);
+            const labelText = node.name ?? node.fighter_id ?? node.id;
+            labelContext.fillText(labelText, 20, 60);
           }
 
           const texture = new THREE.CanvasTexture(labelCanvas);
@@ -913,16 +1166,19 @@
           });
           const sprite = new THREE.Sprite(spriteMaterial);
           sprite.scale.set(80, 20, 1);
-          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, node.z || 0);
+          sprite.position.set(node.x || 0, (node.y || 0) + radius * 3.5, initialZ);
           nodeGroup.add(sprite);
 
           // Store node data for depth interpolation
-          currentNodes.push({
+          const nodeMeta = {
             mesh,
             label: sprite,
-            fz: node.z || 0,
+            originalZ,
             node,
-          });
+            id: nodeId,
+          };
+          currentNodes.push(nodeMeta);
+          nodeMetaById.set(nodeId, nodeMeta);
         }
 
         // Create edges with better visibility
@@ -930,29 +1186,56 @@
           const sourceNode = link.source;
           const targetNode = link.target;
 
+          const fights = getLinkFightCount(link);
+          const normalized = Math.min(1, fights / 5);
+
+          const sourceId =
+            (sourceNode && (sourceNode.id || sourceNode.fighter_id || sourceNode.label)) ||
+            undefined;
+          const targetId =
+            (targetNode && (targetNode.id || targetNode.fighter_id || targetNode.label)) ||
+            undefined;
+          const sourceMeta = (sourceId && nodeMetaById.get(sourceId)) || null;
+          const targetMeta = (targetId && nodeMetaById.get(targetId)) || null;
+          const sourceOriginalZ =
+            (sourceMeta && sourceMeta.originalZ) ||
+            (typeof sourceNode?.originalZ === "number" ? sourceNode.originalZ : 0);
+          const targetOriginalZ =
+            (targetMeta && targetMeta.originalZ) ||
+            (typeof targetNode?.originalZ === "number" ? targetNode.originalZ : 0);
+          const scaledSourceZ = sourceOriginalZ * depthScale;
+          const scaledTargetZ = targetOriginalZ * depthScale;
+
           // Increase opacity and add glow for better visibility
-          const opacity = 0.5;
+          const opacity = THREE.MathUtils.lerp(0.2, 0.85, normalized);
           const color = new THREE.Color(0x66d9ef);
           const material = new THREE.LineBasicMaterial({
             color,
             transparent: true,
             opacity,
-            linewidth: 2, // Note: linewidth > 1 only works with THREE.Line2
+            linewidth: THREE.MathUtils.lerp(1, 4, normalized), // Note: linewidth > 1 only works with THREE.Line2
           });
 
           const geometry = new THREE.BufferGeometry();
           const points = new Float32Array([
             sourceNode.x || 0,
             sourceNode.y || 0,
-            sourceNode.z || 0,
+            scaledSourceZ,
             targetNode.x || 0,
             targetNode.y || 0,
-            targetNode.z || 0,
+            scaledTargetZ,
           ]);
           geometry.setAttribute("position", new THREE.BufferAttribute(points, 3));
           const line = new THREE.Line(geometry, material);
-          line.userData.sourceNode = sourceNode;
-          line.userData.targetNode = targetNode;
+          line.userData = {
+            sourceNode,
+            targetNode,
+            fights,
+            source: sourceMeta,
+            target: targetMeta,
+            sourceOriginalZ,
+            targetOriginalZ,
+          };
           linkGroup.add(line);
         }
 
@@ -995,12 +1278,26 @@
             if (first.userData.node) {
               const { node } = first.userData;
               hovered.add(first);
-              tooltipElement.innerHTML = `
-                <strong>${node.label ?? node.id}</strong><br />
-                Division: ${node.division ?? "Unknown"}<br />
-                Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
-                Recent activity: ${node.year ?? "Unknown"}
-              `;
+              const displayName = node.name ?? node.label ?? node.fighter_id ?? node.id;
+              const tooltipLines = [
+                `<strong>${displayName}</strong>`,
+                `Division: ${node.division ?? "Unknown"}`,
+              ];
+
+              const recordLabel =
+                typeof node.record === "string" && node.record.trim() !== ""
+                  ? node.record
+                  : "Unknown";
+              tooltipLines.push(`Record: ${recordLabel}`);
+
+              const recentActivityLabel = formatLatestEventDate(
+                node.latest_event_date
+              );
+              if (recentActivityLabel) {
+                tooltipLines.push(`Recent activity: ${recentActivityLabel}`);
+              }
+
+              tooltipElement.innerHTML = tooltipLines.join("<br />");
             }
           } else if (tooltipsEnabled) {
             tooltipElement.innerHTML = "Hover a fighter node to inspect details.";
@@ -1075,15 +1372,20 @@
       // Form submit handler
       controlsForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const apiBaseUrl = apiBaseInput.value.trim();
-        if (!apiBaseUrl) {
-          updateStatus("Please supply an API base URL before loading the graph.", true);
-          return;
-        }
+        const rawBaseUrl = apiBaseInput.value.trim();
+        const useSampleData =
+          rawBaseUrl.length === 0 || rawBaseUrl.toLowerCase() === "sample";
 
         try {
-          updateStatus("Preparing simulation...");
-          const graph = await fetchFightGraph(apiBaseUrl, readFilters());
+          let graph;
+          if (useSampleData) {
+            updateStatus("Using bundled sample fight graph for preview...");
+            graph = cloneSampleGraph();
+          } else {
+            updateStatus("Preparing simulation...");
+            graph = await fetchFightGraph(rawBaseUrl, readFilters());
+          }
+
           const { nodes, links } = await simulateLayout(graph);
 
           // Hydrate links with node references
@@ -1098,7 +1400,9 @@
 
           renderGraph({ nodes, links: hydratedLinks });
           updateStatus(
-            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts. Use keyboard shortcuts!`
+            `Rendered ${nodes.length} fighters and ${hydratedLinks.length} bouts${
+              useSampleData ? " from bundled sample data" : ""
+            }. Use keyboard shortcuts!`
           );
         } catch (error) {
           console.error(error);
