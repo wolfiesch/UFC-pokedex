@@ -841,6 +841,8 @@
         scene.add(nodeGroup);
 
         const nodeMaterialCache = new Map();
+        const resolveNodeLabel = (node) =>
+          node.label ?? node.name ?? node.fighter_id ?? node.id;
         const nodeGeometry = new THREE.SphereGeometry(1, 16, 16);
 
         // Create nodes
@@ -902,7 +904,7 @@
             labelContext.fillStyle = "#ffffff";
             labelContext.font = "700 36px 'Inter', sans-serif";
             labelContext.textAlign = "left";
-            labelContext.fillText(node.label ?? node.id, 20, 60);
+            labelContext.fillText(resolveNodeLabel(node), 20, 60);
           }
 
           const texture = new THREE.CanvasTexture(labelCanvas);
@@ -996,7 +998,7 @@
               const { node } = first.userData;
               hovered.add(first);
               tooltipElement.innerHTML = `
-                <strong>${node.label ?? node.id}</strong><br />
+                <strong>${resolveNodeLabel(node)}</strong><br />
                 Division: ${node.division ?? "Unknown"}<br />
                 Record: ${node.wins ?? "?"}-${node.losses ?? "?"}-${node.draws ?? "?"}<br />
                 Recent activity: ${node.year ?? "Unknown"}
