@@ -47,6 +47,47 @@
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
+
+  .fightweb-sidebar-base {
+    @apply flex-col lg:flex lg:shrink-0;
+  }
+
+  .fightweb-sidebar-overlay {
+    @apply fixed inset-x-4 top-24 bottom-4 z-50 flex max-h-[calc(100vh-3rem)] w-auto max-w-3xl flex-col overflow-y-auto rounded-3xl border border-border/80 bg-background/95 p-4 shadow-2xl backdrop-blur-lg transition-all duration-200 ease-out;
+  }
+
+  .fightweb-sidebar-visible {
+    @apply flex pointer-events-auto visible opacity-100 translate-y-0 transition-all duration-200 ease-out;
+  }
+
+  .fightweb-sidebar-hidden {
+    @apply pointer-events-none invisible opacity-0 translate-y-2 transition-all duration-200 ease-out;
+  }
+
+  .fightweb-sidebar-backdrop {
+    @apply fixed inset-0 z-40 bg-background/60 backdrop-blur-sm transition-opacity duration-200 ease-out;
+  }
+
+  .fightweb-resize-handle {
+    @apply relative hidden lg:block lg:h-auto lg:w-[12px] lg:shrink-0 lg:cursor-col-resize lg:self-stretch;
+  }
+
+  .fightweb-resize-handle::after {
+    content: "";
+    @apply absolute inset-y-1/4 left-1/2 w-px -translate-x-1/2 rounded-full bg-border/80;
+  }
+
+  .fightweb-sidebar-toggle {
+    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-foreground/60 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 active:scale-95;
+  }
+
+  .fightweb-keyboard-hints {
+    @apply text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground;
+  }
+
+  .fightweb-sidebar-surface {
+    @apply h-full rounded-3xl border border-border/80 bg-card/60 p-6 shadow-sm backdrop-blur;
+  }
 }
 
 .dark {

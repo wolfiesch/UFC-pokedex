@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { getFightGraph } from "@/lib/api";
 import type { FightGraphQueryParams, FightGraphResponse } from "@/lib/types";
 
+import {
+  ResizablePanels,
+  type ResizableContentRenderContext,
+  type ResizableSidebarRenderContext,
+} from "@/components/layout/ResizablePanels";
 import { FightGraphCanvas } from "./FightGraphCanvas";
 import { FightWebFilters } from "./FightWebFilters";
 import { FightWebInsightsPanel } from "./FightWebInsightsPanel";
@@ -52,6 +57,9 @@ function buildDivisionList(data: FightGraphResponse | null): string[] {
   return Array.from(divisions);
 }
 
+/** Default height (in pixels) dedicated to the FightWeb force-directed canvas. */
+const GRAPH_HEIGHT: number = 520;
+
 export function FightWebClient({
   initialData,
   initialFilters,
@@ -93,6 +101,10 @@ export function FightWebClient({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const requestIdRef = useRef(0);
+  /** Tracks the sidebar visibility when rendered as an overlay on smaller viewports. */
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  /** Stable id linking the overlay toggle and the sidebar container for accessibility. */
+  const sidebarId = useId();
 
   const applyFilters = useCallback(
     async (nextFilters: FightGraphQueryParams) => {
@@ -274,6 +286,15 @@ export function FightWebClient({
     [nodeById],
   );
 
+  const handleClearSelection = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  const handleOpenSidebar = useCallback(() => {
+    setIsSidebarOpen(true);
+  }, []);
+
+
   return (
     <div className="space-y-10">
       {error ? (
@@ -293,49 +314,108 @@ export function FightWebClient({
         insights={insights}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[360px,1fr]">
-        <div className="space-y-6">
-          <FightWebFilters
-            filters={appliedFilters}
-            onApply={applyFilters}
-            onReset={handleReset}
-            availableDivisions={availableDivisions}
-            yearBounds={eventYearBounds}
-            isLoading={isLoading}
-          />
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <p className="fightweb-keyboard-hints" aria-label="Graph interaction tips">
+            Drag the background to pan • Scroll or pinch to zoom • Use Tab to reach filters and
+            search.
+          </p>
 
-          <FightWebSearch
-            nodes={graphData?.nodes ?? []}
-            onSelect={handleSelectFighter}
-            onClear={() => setSelectedNodeId(null)}
-          />
-
-          <FightWebInsightsPanel
-            insights={insights}
-            onSelectFighter={handleSelectFighter}
-          />
-
-          <FightWebLegend
-            palette={palette}
-            breakdown={insights.divisionBreakdown}
-          />
+          <button
+            type="button"
+            className="fightweb-sidebar-toggle lg:hidden"
+            onClick={handleOpenSidebar}
+            aria-expanded={isSidebarOpen}
+            aria-controls={sidebarId}
+          >
+            Open filters &amp; tools
+          </button>
         </div>
 
-        <div className="space-y-6">
-          <FightGraphCanvas
-            data={graphData}
-            isLoading={isLoading}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={setSelectedNodeId}
-            palette={palette}
-            nodeColorMap={nodeColorMap}
-          />
+        <ResizablePanels
+          sidebarId={sidebarId}
+          isSidebarOpen={isSidebarOpen}
+          onSidebarOpenChange={setIsSidebarOpen}
+          minSidebarWidth={300}
+          minContentWidth={480}
+          initialSidebarWidth={360}
+          sidebarClassName="lg:pr-4"
+          contentClassName="gap-6"
+          handleClassName="lg:mx-1"
+          sidebar={({ closeSidebar, isOverlay }: ResizableSidebarRenderContext) => {
+            const overlayAwareSelect = (fighterId: string) => {
+              handleSelectFighter(fighterId);
+              if (isOverlay) {
+                closeSidebar();
+              }
+            };
 
-          <FightWebSelectedFighter
-            selectedNode={selectedNode}
-            connections={selectedConnections}
-          />
-        </div>
+            return (
+              <div className="fightweb-sidebar-surface space-y-6">
+                {isOverlay ? (
+                  <div className="flex items-center justify-between gap-3 pb-2">
+                    <span className="fightweb-keyboard-hints text-[0.65rem] uppercase">
+                      Filters &amp; tools
+                    </span>
+                    <button
+                      type="button"
+                      className="fightweb-sidebar-toggle"
+                      onClick={closeSidebar}
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : null}
+
+                <FightWebFilters
+                  filters={appliedFilters}
+                  onApply={applyFilters}
+                  onReset={handleReset}
+                  availableDivisions={availableDivisions}
+                  yearBounds={eventYearBounds}
+                  isLoading={isLoading}
+                />
+
+                <FightWebSearch
+                  nodes={graphData?.nodes ?? []}
+                  onSelect={overlayAwareSelect}
+                  onClear={handleClearSelection}
+                />
+
+                <FightWebInsightsPanel
+                  insights={insights}
+                  onSelectFighter={overlayAwareSelect}
+                />
+
+                <FightWebLegend
+                  palette={palette}
+                  breakdown={insights.divisionBreakdown}
+                />
+              </div>
+            );
+          }}
+          content={({ width }: ResizableContentRenderContext) => {
+            const derivedWidth: number | undefined = width > 0 ? width : undefined;
+            return (
+              <div className="flex flex-col gap-6">
+                <FightGraphCanvas
+                  data={graphData}
+                  isLoading={isLoading}
+                  selectedNodeId={selectedNodeId}
+                  onSelectNode={setSelectedNodeId}
+                  palette={palette}
+                  nodeColorMap={nodeColorMap}
+                  dimensions={{ width: derivedWidth, height: GRAPH_HEIGHT }}
+                />
+
+                <FightWebSelectedFighter
+                  selectedNode={selectedNode}
+                  connections={selectedConnections}
+                />
+              </div>
+            );
+          }}
+        />
       </div>
     </div>
   );

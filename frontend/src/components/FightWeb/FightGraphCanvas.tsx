@@ -20,6 +20,15 @@ type FightGraphCanvasProps = {
   palette?: Map<string, string> | null;
   nodeColorMap?: Map<string, string> | null;
   minFightsThreshold?: number; // Add this prop
+  /**
+   * Optional dimensions supplied by layout containers. When present, the canvas
+   * synchronises its internal rendering surface with these measurements instead
+   * of relying solely on the ResizeObserver.
+   */
+  dimensions?: {
+    width?: number;
+    height?: number;
+  };
 };
 
 type TooltipState = {
@@ -50,13 +59,14 @@ export function FightGraphCanvas({
   palette: paletteProp = null,
   nodeColorMap = null,
   minFightsThreshold = 2, // Default: show edges with 2+ fights
+  dimensions,
 }: FightGraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [size, setSize] = useState<{ width: number; height: number }>({
-    width: 800,
-    height: CANVAS_HEIGHT,
-  });
+  const [size, setSize] = useState<{ width: number; height: number }>(() => ({
+    width: dimensions?.width ?? 800,
+    height: dimensions?.height ?? CANVAS_HEIGHT,
+  }));
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState>(null);
   const [transform, setTransform] = useState<{
@@ -78,23 +88,36 @@ export function FightGraphCanvas({
   }>({ x: 0, y: 0, translateX: 0, translateY: 0, pointerId: null });
 
   useEffect(() => {
-    const element = containerRef.current;
-    if (!element) {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) {
+    if (!dimensions) {
+      const element = containerRef.current;
+      if (!element) {
         return;
       }
-      setSize({
-        width: entry.contentRect.width,
-        height: entry.contentRect.height,
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) {
+          return;
+        }
+        setSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
       });
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+    return undefined;
+  }, [dimensions]);
+
+  useEffect(() => {
+    if (!dimensions) {
+      return;
+    }
+    setSize((current) => ({
+      width: dimensions.width ?? current.width,
+      height: dimensions.height ?? current.height,
+    }));
+  }, [dimensions]);
 
   const layout = useMemo(() => {
     if (!data) {
@@ -315,6 +338,13 @@ export function FightGraphCanvas({
       <div
         ref={containerRef}
         className="flex h-[520px] w-full flex-col rounded-3xl border border-border/80 bg-muted/10 p-6"
+        style={
+          dimensions?.height
+            ? {
+                height: dimensions.height,
+              }
+            : undefined
+        }
       >
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-muted-foreground/90">
           <span>FightWeb Graph</span>
@@ -334,6 +364,13 @@ export function FightGraphCanvas({
     <div
       ref={containerRef}
       className="relative flex h-[520px] w-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card/60"
+      style={
+        dimensions?.height
+          ? {
+              height: dimensions.height,
+            }
+          : undefined
+      }
     >
       <header className="flex items-center justify-between px-6 py-4 text-xs uppercase tracking-[0.3em] text-muted-foreground/90">
         <span>FightWeb Graph</span>
