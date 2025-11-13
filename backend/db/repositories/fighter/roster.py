@@ -553,7 +553,7 @@ class FighterRosterMixin:
                             PARTITION BY training_gym
                             ORDER BY last_fight_date DESC NULLS LAST
                         ) as rn
-                    FROM fighter
+                    FROM fighters
                     WHERE training_gym = ANY(:gym_names)
                 )
                 SELECT name, training_gym

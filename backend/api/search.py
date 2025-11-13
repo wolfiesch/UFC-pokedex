@@ -8,6 +8,7 @@ from backend.services.search_service import SearchService, get_search_service
 router = APIRouter()
 
 
+@router.get("", response_model=PaginatedFightersResponse)
 @router.get("/", response_model=PaginatedFightersResponse)
 async def search_fighters(
     q: str = Query("", description="Fighter name, nickname, or location query."),

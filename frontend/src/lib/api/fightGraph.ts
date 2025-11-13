@@ -17,7 +17,9 @@ const fightGraphNodeSchema = z.object({
   name: z.string().min(1, "name is required"),
   division: z.string().nullable().optional(),
   record: z.string().nullable().optional(),
-  image_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  // Accept both absolute URLs and relative paths (e.g., "images/fighters/abc123.jpg")
+  // Backend returns relative paths that frontend resolves against base URL
+  image_url: z.string().nullable().optional(),
   total_fights: z.number().int().nonnegative(),
   latest_event_date: z.string().nullable().optional(),
 });

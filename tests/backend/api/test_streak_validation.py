@@ -77,3 +77,11 @@ def test_both_streak_params_work_together(api_client: TestClient) -> None:
     response = api_client.get("/search/?q=fighter&streak_type=win&min_streak_count=3")
 
     assert response.status_code == 200
+
+
+def test_search_endpoint_without_trailing_slash(api_client: TestClient) -> None:
+    """Ensure ``/search`` resolves so the frontend can omit the trailing slash."""
+
+    response = api_client.get("/search?q=sample")
+
+    assert response.status_code == 200
