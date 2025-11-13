@@ -202,27 +202,47 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                         # td_cells[2] is the "..." dash
                         closing_range_end = await td_cells[3].text_content()
 
-                    # Extract chart data from the chart cell (has class="chart-cell" and data-sparkline attribute)
+                    # DEBUG: Check all cells to find the bar chart icon
+                    all_tds = await row.query_selector_all("td")
+                    self.logger.info(f"  Row has {len(all_tds)} td cells total")
+
+                    # Check last few cells for debugging
+                    for i in range(max(0, len(all_tds) - 3), len(all_tds)):
+                        cell_html = await all_tds[i].evaluate("el => el.outerHTML")
+                        self.logger.info(f"  Cell {i} HTML: {cell_html[:200]}")
+
+                    # The bar chart icon should be a clickable element
+                    # It might be an <a> with onclick, or an <img> inside the sparkline cell
+                    chart_link = None
+
+                    # Try looking for the sparkline chart itself - it might be clickable
                     chart_cell = await row.query_selector("td.chart-cell")
-                    if not chart_cell:
-                        self.logger.warning(f"  No chart cell found for {opponent_name} - skipping")
+                    if chart_cell:
+                        # Try clicking the chart cell directly
+                        chart_link = chart_cell
+                        self.logger.info(f"  Found chart-cell, will try clicking it")
+                    else:
+                        self.logger.warning(f"  No chart-cell found for {opponent_name}")
+
+                    if not chart_link:
+                        self.logger.warning(f"  No clickable chart element found for {opponent_name} - skipping")
                         continue
 
-                    # Get the sparkline data attribute
-                    sparkline_data = await chart_cell.get_attribute("data-sparkline")
+                    # Click the bar chart icon to open the modal
+                    await chart_link.click()
+                    await page.wait_for_timeout(1500)  # Wait for modal to open and chart to render
 
-                    # The sparkline data is comma-separated odds values over time
-                    mean_odds_values = []
-                    if sparkline_data:
-                        try:
-                            mean_odds_values = [float(x.strip()) for x in sparkline_data.split(',') if x.strip()]
-                        except ValueError as e:
-                            self.logger.warning(f"  Error parsing sparkline data: {e}")
+                    # Extract mean odds data from the modal's Highcharts
+                    mean_odds_data = await self._extract_mean_odds_chart(page)
+
+                    # Close the modal
+                    await self._close_chart_modal(page)
+                    await page.wait_for_timeout(500)
 
                     fights_processed += 1
 
                     # Yield the data
-                    yield {
+                    result = {
                         "fighter_id": fighter_id,
                         "fighter_name": fighter_name.strip() if fighter_name else None,
                         "fighter_url": fighter_url,
@@ -232,10 +252,19 @@ class BestFightOddsFighterMeanOddsSpider(scrapy.Spider):
                         "opening_odds": opening_odds.strip() if opening_odds else None,
                         "closing_range_start": closing_range_start.strip() if closing_range_start else None,
                         "closing_range_end": closing_range_end.strip() if closing_range_end else None,
-                        "mean_odds_values": mean_odds_values,  # Sparkline data - list of float odds
-                        "num_odds_points": len(mean_odds_values),
                         "scraped_at": datetime.utcnow().isoformat(),
                     }
+
+                    # Add mean odds time-series data if available
+                    if mean_odds_data and 'data_points' in mean_odds_data:
+                        result["mean_odds_history"] = mean_odds_data["data_points"]
+                        result["num_odds_points"] = len(mean_odds_data["data_points"])
+                        result["series_name"] = mean_odds_data.get("series_name")
+                    else:
+                        result["mean_odds_history"] = []
+                        result["num_odds_points"] = 0
+
+                    yield result
 
                 except Exception as e:
                     self.logger.error(f"  Error processing fight: {e}")

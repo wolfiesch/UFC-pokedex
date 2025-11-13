@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-chronological scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
+.PHONY: help bootstrap install-dev lint test check format scrape-sample dev dev-local dev-clean stop api api-dev api-sqlite api-seed api-seed-full backend scraper scraper-details export-active-fighters export-active-fighters-sample scrape-sherdog-search verify-sherdog-matches verify-sherdog-matches-auto scrape-sherdog-images update-fighter-images sherdog-workflow sherdog-workflow-auto sherdog-workflow-sample scrape-sherdog-fight-history scrape-sherdog-fight-history-incremental load-sherdog-fight-history load-sherdog-fight-history-dry-run sherdog-fight-history-workflow scrape-images-wikimedia scrape-images-wikimedia-test scrape-images-orchestrator scrape-images-orchestrator-test scrape-images-orchestrator-all sync-images-to-db review-recent-images remove-bad-images frontend db-upgrade db-downgrade db-reset load-data load-data-sample load-data-details load-data-dry-run load-data-details-dry-run reload-data update-records champions-scrape champions-refresh scraper-events scraper-events-details scraper-events-details-sample load-events load-events-sample load-events-dry-run load-events-details load-events-details-sample load-events-details-dry-run scrape-archive scrape-odds-batch scrape-odds-dry-run scrape-odds-resume scrape-odds-optimized scrape-odds-chronological scrape-odds-recent-only scrape-line-movement-test scrape-line-movement-estimate scrape-line-movement-recent scrape-line-movement-full scrape-line-movement-resume scrape-line-movement-dry-run scrape-mean-odds-test scrape-mean-odds-sample scrape-mean-odds-full scrape-mean-odds-resume tunnel-frontend tunnel-api tunnel-stop deploy deploy-config deploy-build deploy-test deploy-check ensure-docker docker-up docker-down docker-status
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -688,6 +688,29 @@ scrape-line-movement-dry-run: ## Preview what events would be scraped for line m
 		--archive-file data/raw/bfo_numbered_events.jsonl \
 		--organization UFC \
 		--dry-run
+
+scrape-mean-odds-test: ## Test mean odds scraper with 5 fighters (~1 minute)
+	@echo "Testing mean odds scraper with 5 fighters..."
+	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --limit 5 --batch-size 2
+
+scrape-mean-odds-sample: ## Scrape mean odds for 50 fighters (~7 minutes)
+	@echo "Scraping mean odds for 50 fighters..."
+	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --limit 50 --batch-size 10
+
+scrape-mean-odds-full: ## Scrape mean odds for ALL 1,262 fighters (~2.5 hours)
+	@echo "================================================"
+	@echo "Mean Odds Full Scrape"
+	@echo "================================================"
+	@echo "Total fighters: 1,262"
+	@echo "Estimated time: 2.5 hours"
+	@echo "Output: data/raw/bfo_fighter_mean_odds.jsonl"
+	@echo "================================================"
+	@.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --batch-size 20
+
+scrape-mean-odds-resume: ## Resume mean odds scraping from specific fighter index
+	@read -p "Resume from fighter index: " index; \
+	echo "Resuming from fighter $$index..."; \
+	.venv/bin/python scripts/scrape_bfo_fighter_mean_odds.py --start $$index --batch-size 20
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DEPLOYMENT (cPanel via SSH)
