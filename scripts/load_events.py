@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.cache import CacheClient, close_redis, get_cache_client
 from backend.db.connection import get_session
 from backend.db.models import Event
+from backend.utils.event_utils import detect_event_type
 
 # Load environment variables
 load_dotenv()
@@ -105,6 +106,9 @@ async def load_events_from_jsonl(
                         date=event_date,
                         location=data.get("location"),
                         status=status,
+                        # Persist normalized classification so downstream queries can filter
+                        # directly in SQL without recomputing detection heuristics.
+                        event_type=detect_event_type(event_name).value,
                         venue=None,  # Will be populated from detail scraper
                         broadcast=None,  # Will be populated from detail scraper
                         promotion="UFC",
@@ -182,9 +186,7 @@ async def main(args: argparse.Namespace) -> None:
             session, list_path, limit=args.limit, dry_run=args.dry_run
         )
 
-        console.print(
-            f"\n[green]✓ Loaded {loaded_count} events from list[/green]"
-        )
+        console.print(f"\n[green]✓ Loaded {loaded_count} events from list[/green]")
 
     if cache_client is not None and not args.dry_run:
         # Invalidate event cache keys

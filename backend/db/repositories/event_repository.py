@@ -10,7 +10,6 @@ from sqlalchemy.orm import selectinload
 
 from backend.db.models import Event, Fighter
 from backend.schemas.event import EventDetail, EventFight, EventListItem
-from backend.utils.event_utils import detect_event_type
 
 
 class PostgreSQLEventRepository:
@@ -50,7 +49,7 @@ class PostgreSQLEventRepository:
                 status=event.status,
                 venue=event.venue,
                 broadcast=event.broadcast,
-                event_type=detect_event_type(event.name).value,
+                event_type=event.event_type,
             )
             for event in events
         ]
@@ -122,7 +121,7 @@ class PostgreSQLEventRepository:
             status=event.status,
             venue=event.venue,
             broadcast=event.broadcast,
-            event_type=detect_event_type(event.name).value,
+            event_type=event.event_type,
             promotion=event.promotion,
             ufcstats_url=event.ufcstats_url,
             tapology_url=event.tapology_url,
@@ -197,16 +196,16 @@ class PostgreSQLEventRepository:
         if status:
             query = query.where(Event.status == status)
 
-        apply_manual_pagination = event_type is not None
+        # Event type filter
+        if event_type:
+            # ``events.event_type`` is persisted and indexed, allowing the database to
+            # efficiently apply this predicate without resorting to post-processing.
+            query = query.where(Event.event_type == event_type)
 
-        # ``detect_event_type`` performs in-memory classification. When an
-        # event_type filter is supplied we must load all matching rows prior to
-        # the post-processing step to ensure pagination remains accurate.
-        if not apply_manual_pagination:
-            if offset is not None:
-                query = query.offset(offset)
-            if limit is not None:
-                query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
 
         result = await self._session.execute(query)
         events = result.scalars().all()
@@ -221,23 +220,11 @@ class PostgreSQLEventRepository:
                 status=event.status,
                 venue=event.venue,
                 broadcast=event.broadcast,
-                event_type=detect_event_type(event.name).value,
+                event_type=event.event_type,
             )
             for event in events
         ]
-
-        # Filter by event_type after detection (since it's not in DB)
-        if event_type:
-            event_list = [
-                event for event in event_list if event.event_type == event_type
-            ]
-
-        if not apply_manual_pagination:
-            return event_list
-
-        start_index: int = 0 if offset is None else offset
-        end_index: int | None = None if limit is None else start_index + limit
-        return event_list[start_index:end_index]
+        return event_list
 
     async def get_unique_years(self) -> list[int]:
         """Get list of unique years from all events."""
@@ -258,4 +245,3 @@ class PostgreSQLEventRepository:
         result = await self._session.execute(query)
         locations = result.scalars().all()
         return list(locations)
-

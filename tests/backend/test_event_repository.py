@@ -38,6 +38,7 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
         # to satisfy interface requirements for test stubs.
         return
         yield  # unreachable, but marks this as an async generator
+
     async def aclose(self) -> None:
         return None
 
@@ -81,8 +82,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
 # Import backend modules after dependency stubs are registered to avoid optional import errors.
 from backend.db.models import Base, Event, Fight, Fighter  # noqa: E402
 from backend.db.repositories import PostgreSQLEventRepository  # noqa: E402
-from backend.schemas.event import PaginatedEventsResponse  # noqa: E402
-from backend.services.event_service import EventService  # noqa: E402
 
 
 @asynccontextmanager
@@ -115,6 +114,7 @@ def test_get_event_includes_weight_class() -> None:
                 date=date(2024, 1, 1),
                 location="Testville",
                 status="completed",
+                event_type="fight_night",
                 venue="Test Arena",
                 broadcast="Test Network",
                 promotion="UFC",
@@ -148,6 +148,7 @@ def test_get_event_includes_weight_class() -> None:
             assert detail is not None
             assert detail.fight_card, "Expected at least one fight in the fight card"
             assert detail.fight_card[0].weight_class == "Lightweight"
+            assert detail.event_type == "fight_night"
 
     asyncio.run(runner())
 
@@ -163,6 +164,7 @@ def test_get_event_with_missing_weight_class() -> None:
                 date=date(2024, 2, 2),
                 location="Mystery City",
                 status="completed",
+                event_type="fight_night",
                 venue="Mystery Arena",
                 broadcast="Mystery Network",
                 promotion="UFC",
@@ -196,12 +198,13 @@ def test_get_event_with_missing_weight_class() -> None:
             assert detail is not None
             assert detail.fight_card, "Expected at least one fight in the fight card"
             assert detail.fight_card[0].weight_class is None
+            assert detail.event_type == "fight_night"
 
     asyncio.run(runner())
 
 
-def test_search_events_filters_event_type_with_manual_pagination() -> None:
-    """Ensure event-type filtering paginates after in-memory classification."""
+def test_search_events_filters_event_type_via_sql_pagination() -> None:
+    """Event-type filters should be handled directly by the SQL query layer."""
 
     async def runner() -> None:
         async with session_ctx() as session:
@@ -212,6 +215,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
                     date=date(2024, 3, 1),
                     location="Test City",
                     status="completed",
+                    event_type="fight_night",
                 ),
                 Event(
                     id="evt-b",
@@ -219,6 +223,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
                     date=date(2024, 4, 1),
                     location="Test City",
                     status="completed",
+                    event_type="fight_night",
                 ),
                 Event(
                     id="evt-c",
@@ -226,6 +231,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
                     date=date(2024, 5, 1),
                     location="Test City",
                     status="completed",
+                    event_type="fight_night",
                 ),
                 Event(
                     id="evt-d",
@@ -233,6 +239,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
                     date=date(2024, 6, 1),
                     location="Another City",
                     status="completed",
+                    event_type="ppv",
                 ),
                 Event(
                     id="evt-e",
@@ -240,6 +247,7 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
                     date=date(2024, 7, 1),
                     location="Another City",
                     status="completed",
+                    event_type="contender_series",
                 ),
             ]
 
@@ -247,26 +255,22 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
             await session.flush()
 
             repository = PostgreSQLEventRepository(session)
-            service = EventService(repository)
 
-            # Page one should contain the two most recent fight night cards.
-            first_page: PaginatedEventsResponse = await service.search_events(
+            # ``search_events`` should respect SQL-level pagination when filtering by type.
+            first_page = await repository.search_events(
                 event_type="fight_night",
                 limit=2,
                 offset=0,
             )
-            assert [event.event_id for event in first_page.events] == ["evt-c", "evt-b"]
-            assert len(first_page.events) == 2
-            assert first_page.has_more is True
+            assert [event.event_id for event in first_page] == ["evt-c", "evt-b"]
+            assert all(event.event_type == "fight_night" for event in first_page)
 
-            # Page two should surface the remaining fight night entry with no more pages.
-            second_page: PaginatedEventsResponse = await service.search_events(
+            second_page = await repository.search_events(
                 event_type="fight_night",
                 limit=2,
                 offset=2,
             )
-            assert [event.event_id for event in second_page.events] == ["evt-a"]
-            assert len(second_page.events) == 1
-            assert second_page.has_more is False
+            assert [event.event_id for event in second_page] == ["evt-a"]
+            assert all(event.event_type == "fight_night" for event in second_page)
 
     asyncio.run(runner())
