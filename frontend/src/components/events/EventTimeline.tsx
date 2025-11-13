@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import {
   groupEventsByMonth,
   formatMonthYear,
@@ -38,74 +38,103 @@ export default function EventTimeline({ events }: EventTimelineProps) {
   }
 
   return (
-    <div className="space-y-8">
-      {sortedMonths.map(([monthKey, monthEvents]) => (
-        <div key={monthKey}>
-          {/* Month Header */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-900 to-gray-800 border-l-4 border-blue-600 pl-4 py-2 mb-4 rounded-r-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-white">{formatMonthYear(monthKey)}</h2>
-            <p className="text-sm text-gray-400">{monthEvents.length} {monthEvents.length === 1 ? "event" : "events"}</p>
-          </div>
+    <div className="space-y-12">
+      {sortedMonths.map(([monthKey, monthEvents]) => {
+        const monthSorted = [...monthEvents].sort(
+          (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+        );
 
-          {/* Events for this month */}
-          <div className="space-y-3 ml-8">
-            {monthEvents.map((event) => {
-              const eventType =
-                normalizeEventType(event.event_type ?? null) ??
-                detectEventType(event.name);
-              const typeConfig = getEventTypeConfig(eventType);
-              const isUpcoming = event.status === "upcoming";
-              const isPPV = eventType === "ppv";
+        return (
+          <section key={monthKey} className="space-y-6">
+            <div className="sticky top-20 z-30 inline-flex min-w-[14rem] items-center gap-3 rounded-full border border-white/20 bg-slate-900/80 px-6 py-3 shadow-[0_20px_60px_-40px_rgba(59,130,246,0.6)] backdrop-blur">
+              <span className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-200">
+                {formatMonthYear(monthKey)}
+              </span>
+              <span className="rounded-full bg-slate-800 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                {monthEvents.length} {monthEvents.length === 1 ? "event" : "events"}
+              </span>
+            </div>
 
-              return (
-                <Link
-                  key={event.event_id}
-                  href={`/events/${event.event_id}`}
-                  className="block group"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Timeline connector */}
-                    <div className="flex-shrink-0 flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${isPPV ? "bg-amber-400" : "bg-blue-500"} group-hover:scale-125 transition-transform shadow-lg`} />
-                      <div className="w-0.5 h-full bg-gray-700 mt-1" />
+            <div className="relative grid gap-8 lg:grid-cols-2">
+              {monthSorted.map((event, index) => {
+                const eventType =
+                  normalizeEventType(event.event_type ?? null) ?? detectEventType(event.name);
+                const typeConfig = getEventTypeConfig(eventType);
+                const isUpcoming = event.status === "upcoming";
+                const isPPV = eventType === "ppv";
+                const previous = index > 0 ? monthSorted[index - 1] : null;
+                const daysBetween = previous
+                  ? differenceInCalendarDays(parseISO(event.date), parseISO(previous.date))
+                  : null;
+
+                return (
+                  <div
+                    key={event.event_id}
+                    className="relative flex scroll-mt-24 scroll-smooth flex-col gap-3 rounded-3xl border border-white/10 bg-slate-950/70 p-5 shadow-[0_30px_60px_-50px_rgba(15,23,42,0.85)] backdrop-blur-lg"
+                    style={{ scrollSnapAlign: "start" }}
+                  >
+                    <div className="absolute -left-6 top-1/2 hidden h-20 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-white/30 to-transparent lg:block" />
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200">
+                        {format(parseISO(event.date), "MMM d")}
+                        <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${typeConfig.badgeClass}`}>
+                          {typeConfig.label}
+                        </span>
+                        {isUpcoming && (
+                          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[0.6rem] font-semibold text-emerald-200">
+                            Upcoming
+                          </span>
+                        )}
+                      </div>
+                      {daysBetween && (
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                          +{daysBetween} days
+                        </span>
+                      )}
                     </div>
 
-                    {/* Event content */}
-                    <div className={`flex-1 p-4 rounded-lg border transition-all duration-200 ${typeConfig.bgClass} group-hover:scale-[1.01] group-hover:shadow-lg`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-xs ${isPPV ? "text-amber-300 font-medium" : "text-gray-400"}`}>
-                              {format(parseISO(event.date), "MMM d")}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs ${typeConfig.badgeClass}`}>
-                              {typeConfig.label}
-                            </span>
-                            {isUpcoming && (
-                              <span className="px-2 py-0.5 bg-green-700 text-white rounded-full text-xs font-semibold">
-                                Upcoming
-                              </span>
-                            )}
-                          </div>
-                          <h3 className={`font-bold ${isPPV ? "text-amber-200 text-lg" : "text-white"} line-clamp-1 mb-1`}>
+                    <Link
+                      href={`/events/${event.event_id}`}
+                      className="group grid gap-4 lg:grid-cols-[0.25fr_1fr]"
+                    >
+                      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 via-transparent to-white/5">
+                        <div
+                          className="absolute inset-0 opacity-60 transition duration-500 group-hover:opacity-90"
+                          style={{
+                            backgroundImage: `linear-gradient(135deg, rgba(15,23,42,0.8), rgba(15,23,42,0.3)), url('https://images.unsplash.com/photo-1533560904424-4b9d0f06e5d4?auto=format&fit=crop&w=700&q=80')`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent p-3 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-white">
+                          {eventType === "ppv" ? "PPV Poster" : "Event Poster"}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col justify-between gap-4">
+                        <div>
+                          <h3 className={`text-lg font-black leading-tight ${isPPV ? "text-amber-200" : "text-white"}`}>
                             {event.name}
                           </h3>
                           {event.location && (
-                            <p className={`text-sm flex items-center gap-1 ${isPPV ? "text-amber-200" : "text-gray-300"}`}>
-                              <span className="text-gray-400">📍</span>
-                              <span className="truncate">{event.location}</span>
-                            </p>
+                            <p className="text-sm text-slate-300">{event.location}</p>
                           )}
                         </div>
+                        <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.3em] text-slate-400">
+                          <span>Swipe for card</span>
+                          <span className="inline-flex items-center gap-2 text-sky-300 transition group-hover:translate-x-1">
+                            Explore
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
