@@ -1,10 +1,26 @@
-Execute the PR consolidation and merge workflow.
+Execute the PR consolidation and merge workflow with intelligent PR discovery.
 
 When invoked, you will:
 
-1. **Ask the user for PR numbers** to consolidate (e.g., "105, 106, 110, 115, 119")
-2. **Ask for target branch** (default: master)
-3. **Follow the consolidate-prs.md workflow** step by step:
+1. **Ask how to select PRs** with these options:
+   - **Manual**: User provides PR numbers (e.g., "105, 106, 110")
+   - **Semantic**: Search by topic/keywords, time range, files, or labels
+
+   Examples of semantic queries:
+   - "All PRs about 'fight web refactor' from last 24 hours"
+   - "PRs touching backend/api/fighters.py from last week"
+   - "PRs with 'enhancement' label created since Nov 10"
+   - "My PRs from today"
+
+2. **Execute PR discovery**:
+   - For manual: Fetch specified PRs directly
+   - For semantic: Use `gh pr list` with filters and `jq` to match criteria
+   - Present discovered PRs with summary
+   - Ask user to confirm or refine selection
+
+3. **Ask for target branch** (default: master)
+
+4. **Follow the consolidate-prs.md workflow** step by step:
    - Analyze PRs and create consolidation plan
    - Get user approval via ExitPlanMode
    - Execute consolidation with proper conflict resolution

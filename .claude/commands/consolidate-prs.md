@@ -5,9 +5,91 @@ You are helping consolidate multiple related pull requests into a single compreh
 ## Workflow Steps
 
 ### 1. Initial Analysis
-- Ask the user which PR numbers to consolidate
+
+**Step 1.1: Determine PR Selection Method**
+
+Ask the user how they want to select PRs:
+
+**Option A: Manual PR Numbers**
+- User provides explicit PR numbers (e.g., "105, 106, 110")
+- Straightforward, works for any PRs
+
+**Option B: Semantic Filtering**
+- User provides semantic criteria:
+  - **Topic/keywords**: "fight web refactor", "SQLite removal", "image validation"
+  - **Time range**: "last 24 hours", "last week", "since Nov 10"
+  - **Author**: PRs by specific user
+  - **Labels**: PRs with specific labels
+  - **File patterns**: PRs touching specific files (e.g., "backend/api/*")
+
+**Step 1.2: Execute PR Discovery**
+
+**For Manual Selection:**
+```bash
+# User provides: 105, 106, 110
+for pr in <numbers>; do
+  gh pr view $pr --json number,title,state,createdAt,author,labels,files
+done
+```
+
+**For Semantic Filtering:**
+
+A. **Search by title/body keywords:**
+```bash
+# Search for PRs with "fight web" or "fight graph" in title/body
+gh pr list --search "fight web in:title,body" --state all --limit 100 \
+  --json number,title,body,createdAt,author,labels,files
+```
+
+B. **Filter by time range:**
+```bash
+# Get PRs from last 24 hours
+gh pr list --state all --limit 100 \
+  --json number,title,createdAt,author,labels,files | \
+  jq --arg since "$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)" \
+     '.[] | select(.createdAt > $since)'
+```
+
+C. **Filter by file patterns:**
+```bash
+# Get PRs touching fight graph files
+gh pr list --state all --limit 100 \
+  --json number,title,files | \
+  jq '.[] | select(.files[].path | test("fight.?graph|fight.?web"))'
+```
+
+D. **Combine filters:**
+```bash
+# Fight web PRs from last 24 hours
+gh pr list --search "fight web in:title,body" --state all --limit 100 \
+  --json number,title,body,createdAt,files | \
+  jq --arg since "$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)" \
+     '.[] | select(.createdAt > $since)'
+```
+
+**Step 1.3: Present Discovered PRs**
+
+Show the user:
+- PR number, title, author, created date
+- Number of files changed
+- Labels (if any)
+- Brief summary of changes
+
+Ask for confirmation:
+- "Found 5 PRs matching 'fight web refactor' from last 24 hours"
+- List them with key details
+- "Should I consolidate all of these? (or specify which ones)"
+
+**Step 1.4: Fetch Full Metadata**
+
+Once PRs are confirmed:
+```bash
+for pr in <selected-numbers>; do
+  gh pr view $pr --json title,body,headRefName,baseRefName,state,files,reviews,comments
+done
+```
+
 - Ask which branch to merge into (default: master)
-- Fetch metadata for all PRs using `gh pr view <number> --json title,body,headRefName,baseRefName,state,files`
 - Analyze file overlap and identify potential conflicts
 - Identify which PR has the best implementation for overlapping files
 
@@ -205,9 +287,86 @@ If merge fails:
 3. Ask user for next steps
 4. Document any blockers
 
+## Example Semantic Queries
+
+### By Topic/Keywords
+```
+User: "Find all PRs about fight web refactor from the last 24 hours"
+
+Execute:
+gh pr list --search "fight web OR fight graph in:title,body" --state all --limit 100 \
+  --json number,title,body,createdAt,author,files | \
+  jq --arg since "$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)" \
+     '[.[] | select(.createdAt > $since)]'
+```
+
+### By File Patterns
+```
+User: "Find PRs touching fight graph components from last week"
+
+Execute:
+gh pr list --state all --limit 100 \
+  --json number,title,createdAt,files | \
+  jq --arg since "$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)" \
+     '[.[] | select(.createdAt > $since and (.files[].path | test("FightGraph|FightWeb|fight-graph")))]'
+```
+
+### By Author and Time
+```
+User: "My PRs from today"
+
+Execute:
+gh pr list --author @me --state all --limit 100 \
+  --json number,title,createdAt | \
+  jq --arg since "$(date -u +%Y-%m-%dT00:00:00Z)" \
+     '[.[] | select(.createdAt > $since)]'
+```
+
+### By Labels
+```
+User: "All enhancement PRs from this week"
+
+Execute:
+gh pr list --label enhancement --state all --limit 100 \
+  --json number,title,createdAt,labels | \
+  jq --arg since "$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)" \
+     '[.[] | select(.createdAt > $since)]'
+```
+
+### Complex Queries
+```
+User: "SQLite removal PRs touching backend from last 2 days"
+
+Execute:
+gh pr list --search "sqlite OR SQLite in:title,body" --state all --limit 100 \
+  --json number,title,body,createdAt,files | \
+  jq --arg since "$(date -u -v-2d +%Y-%m-%dT%H:%M:%SZ)" \
+     '[.[] | select(.createdAt > $since and (.files[].path | test("^backend/")))]'
+```
+
+## Date Handling Notes
+
+**macOS (BSD date):**
+```bash
+date -u -v-24H +%Y-%m-%dT%H:%M:%SZ  # 24 hours ago
+date -u -v-7d +%Y-%m-%dT%H:%M:%SZ   # 7 days ago
+date -u +%Y-%m-%dT00:00:00Z         # Today at midnight
+```
+
+**Linux (GNU date):**
+```bash
+date -u -d "24 hours ago" +%Y-%m-%dT%H:%M:%SZ
+date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ
+date -u -d "today 00:00:00" +%Y-%m-%dT%H:%M:%SZ
+```
+
+Use appropriate syntax based on detected OS.
+
 ## Notes
 
 - This workflow assumes GitHub CLI (`gh`) is installed and authenticated
 - Adjust git commands based on repository's branch protection settings
 - Always verify base branch before creating consolidated branch
 - Consider running tests locally before pushing if test suite is fast
+- Semantic filtering requires `jq` for JSON processing
+- Date calculations differ between macOS and Linux - detect OS first
