@@ -264,16 +264,24 @@
       </section>
     </main>
 
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+      }
+    }
+    </script>
     <script type="module">
       // Import the ES module variants of Three.js and helper utilities.
-      import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
-      import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js";
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import {
         forceSimulation,
         forceManyBody,
         forceLink,
         forceCenter,
-      } from "https://cdn.jsdelivr.net/npm/d3-force-3d@3/+esm";
+      } from "https://cdn.skypack.dev/d3-force-3d@3.0.5";
 
       /**
        * @typedef {Object} FightGraphNode

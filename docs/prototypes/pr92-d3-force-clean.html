@@ -126,6 +126,14 @@
         color: #38bdf8;
       }
     </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+      }
+    }
+    </script>
   </head>
   <body>
     <header>
@@ -169,7 +177,7 @@
         forceManyBody,
         forceLink,
         forceCenter,
-      } from "https://unpkg.com/d3-force-3d@3.0.5/dist/d3-force-3d.js";
+      } from "https://cdn.skypack.dev/d3-force-3d@3.0.5";
 
       /**
        * @typedef {Object} FightGraphNode

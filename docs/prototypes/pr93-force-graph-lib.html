@@ -220,19 +220,9 @@
       Three.js to provide a 3D force-directed layout. OrbitControls from Three.js are exposed
       automatically via the 3D library for intuitive navigation.
     -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js",
-          "force-graph": "https://unpkg.com/force-graph@1.45.3/dist/force-graph.module.js",
-          "3d-force-graph": "https://unpkg.com/3d-force-graph@1.73.4/dist/3d-force-graph.module.js"
-        }
-      }
-    </script>
     <script type="module">
-      import ForceGraph2D from "force-graph";
-      import ForceGraph3D from "3d-force-graph";
+      import ForceGraph2D from "https://cdn.skypack.dev/force-graph@1.45.3";
+      import ForceGraph3D from "https://cdn.skypack.dev/3d-force-graph@1.73.4";
 
       /**
        * Regular expression describing hostnames that should be considered "local".
