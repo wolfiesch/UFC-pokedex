@@ -5,6 +5,11 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "frontend/.next",
   "env": {
-    "NEXT_TELEMETRY_DISABLED": "1"
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "NEXT_PUBLIC_API_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app",
+    "NEXT_PUBLIC_ASSETS_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app",
+    "NEXT_SSR_API_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app",
+    "NEXT_API_REWRITE_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app",
+    "NEXT_PUBLIC_DEPLOYMENT_API_BASE_URL": "https://fulfilling-nourishment-production.up.railway.app"
   }
 }

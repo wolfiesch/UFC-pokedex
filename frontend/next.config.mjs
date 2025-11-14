@@ -3,6 +3,14 @@ import path from "node:path";
 const SCHEME_REGEX = /^[a-zA-Z][\w+.-]*:\/\//;
 const LOCAL_ADDRESS_PREFIXES = ["localhost", "127.", "0.0.0.0", "[::1]"];
 
+// Fallback API endpoint used when Vercel environment variables are missing.
+// Keeping the value close to the rewrite helper ensures preview deployments
+// automatically proxy requests to the hosted Railway backend rather than the
+// local development server (which is unreachable in serverless environments).
+const DEFAULT_DEPLOYMENT_API_BASE_URL =
+  process.env.NEXT_PUBLIC_DEPLOYMENT_API_BASE_URL ??
+  "https://fulfilling-nourishment-production.up.railway.app";
+
 function isLikelyLocalAddress(value) {
   const lower = value.toLowerCase();
   return LOCAL_ADDRESS_PREFIXES.some((prefix) => lower.startsWith(prefix));
@@ -47,7 +55,10 @@ function getRewriteDestination() {
   const raw =
     process.env.NEXT_API_REWRITE_BASE_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
-    process.env.NEXT_SSR_API_BASE_URL;
+    process.env.NEXT_SSR_API_BASE_URL ??
+    (process.env.NODE_ENV === "production"
+      ? DEFAULT_DEPLOYMENT_API_BASE_URL
+      : undefined);
 
   return resolveRewriteBaseUrl(raw);
 }
