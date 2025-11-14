@@ -235,7 +235,12 @@ class FighterRosterMixin:
             if champion_conditions:
                 query_stmt = query_stmt.where(or_(*champion_conditions))
 
-        query_stmt = query_stmt.order_by(Fighter.name, Fighter.id)
+        # Sort by recent activity (matches list_fighters default sort)
+        query_stmt = query_stmt.order_by(
+            Fighter.last_fight_date.desc().nulls_last(),
+            Fighter.name,
+            Fighter.id,
+        )
 
         # Get total count before pagination
         count_stmt = select(func.count()).select_from(query_stmt.subquery())
