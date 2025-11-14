@@ -27,8 +27,8 @@ from backend.schemas.stats import (
     LeaderboardMetricId,
     LeaderboardsResponse,
     StatsSummaryResponse,
-    TrendTimeBucket,
     TrendsResponse,
+    TrendTimeBucket,
 )
 
 
@@ -79,18 +79,25 @@ class PostgreSQLFighterRepository:
 
     async def search_fighters(
         self,
+        *,
         query: str | None = None,
         stance: str | None = None,
         division: str | None = None,
-        champion_statuses: list[str] | None = None,
+        champion_statuses: Sequence[str] | None = None,
         streak_type: str | None = None,
         min_streak_count: int | None = None,
-        include_streak: bool = False,
-        *,
         limit: int | None = None,
         offset: int | None = None,
+        include_streak: bool = False,
+        streak_window: int = 6,
+        include_locations: bool = True,
     ) -> tuple[list[FighterListItem], int]:
         """Search fighters by various criteria."""
+
+        # ``include_locations`` and ``streak_window`` were recently added to the
+        # protocol; forwarding them here keeps the compatibility facade aligned
+        # with ``FighterRepository`` and prevents subtle ``TypeError`` regressions
+        # when existing call sites adopt the richer signature.
         return await self._fighter_repo.search_fighters(
             query=query,
             stance=stance,
@@ -98,9 +105,11 @@ class PostgreSQLFighterRepository:
             champion_statuses=champion_statuses,
             streak_type=streak_type,
             min_streak_count=min_streak_count,
-            include_streak=include_streak,
             limit=limit,
             offset=offset,
+            include_streak=include_streak,
+            streak_window=streak_window,
+            include_locations=include_locations,
         )
 
     async def get_fighters_for_comparison(
@@ -170,16 +179,22 @@ class PostgreSQLFighterRepository:
         self,
         *,
         limit: int,
+        offset: int = 0,
         accuracy_metric: LeaderboardMetricId,
         submissions_metric: LeaderboardMetricId,
-        start_date: date | None,
-        end_date: date | None,
+        division: str | None = None,
+        min_fights: int | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> LeaderboardsResponse:
         """Compute leaderboard slices."""
         return await self._stats_repo.get_leaderboards(
             limit=limit,
+            offset=offset,
             accuracy_metric=accuracy_metric,
             submissions_metric=submissions_metric,
+            division=division,
+            min_fights=min_fights,
             start_date=start_date,
             end_date=end_date,
         )
