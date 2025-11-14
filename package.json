@@ -1,0 +1,17 @@
+{
+  "name": "ufc-pokedex",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend install --no-audit --no-fund && npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "lint": "npm --prefix frontend run lint",
+    "test": "npm --prefix frontend run test"
+  },
+  "devDependencies": {
+    "next": "14.2.3"
+  }
+}
