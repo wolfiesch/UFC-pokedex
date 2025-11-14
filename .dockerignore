@@ -1,0 +1,50 @@
+# Exclude frontend - it's deployed separately to Vercel
+frontend/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+package.json
+vercel.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Test data
+data/
+tests/
+pytest.ini
+.pytest_cache/
+
+# Development
+.env
+.env.local
+.env.*.local
