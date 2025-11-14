@@ -1,15 +1,57 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import FighterGrid from "@/components/FighterGrid";
 import FilterPanel from "@/components/FilterPanel";
-import SearchBar from "@/components/SearchBar";
 import { useFighters } from "@/hooks/useFighters";
 import { useSearch } from "@/hooks/useSearch";
 import { getRandomFighter } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PaginatedFightersResponse } from "@/lib/types";
+
+const STANCES = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
+const DIVISIONS = [
+  "Bantamweight",
+  "Featherweight",
+  "Flyweight",
+  "Heavyweight",
+  "Light Heavyweight",
+  "Lightweight",
+  "Middleweight",
+  "Strawweight",
+  "Super Heavyweight",
+  "Welterweight",
+];
+
+const NATIONALITIES = [
+  { code: "US", label: "United States" },
+  { code: "BR", label: "Brazil" },
+  { code: "IE", label: "Ireland" },
+  { code: "RU", label: "Russia" },
+  { code: "CA", label: "Canada" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "MX", label: "Mexico" },
+  { code: "AU", label: "Australia" },
+  { code: "PL", label: "Poland" },
+  { code: "FR", label: "France" },
+  { code: "NL", label: "Netherlands" },
+  { code: "SE", label: "Sweden" },
+];
+
+const NATIONALITY_LABELS = NATIONALITIES.reduce<Record<string, string>>(
+  (acc, nationality) => {
+    acc[nationality.code] = nationality.label;
+    return acc;
+  },
+  {},
+);
+
+const CHAMPION_LABELS: Record<string, string> = {
+  current: "Current champion",
+  former: "Former champion",
+};
 
 type HomePageClientProps = {
   initialData?: PaginatedFightersResponse;
@@ -29,7 +71,6 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
   } = useFighters(initialData);
   const {
     searchTerm,
-    setSearchTerm,
     stanceFilter,
     setStanceFilter,
     divisionFilter,
@@ -42,34 +83,8 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
     lossStreakCount,
     setWinStreakCount,
     setLossStreakCount,
+    resetFilters,
   } = useSearch();
-  const stances = ["Orthodox", "Southpaw", "Switch", "Open Stance"];
-  const divisions = [
-    "Bantamweight",
-    "Featherweight",
-    "Flyweight",
-    "Heavyweight",
-    "Light Heavyweight",
-    "Lightweight",
-    "Middleweight",
-    "Strawweight",
-    "Super Heavyweight",
-    "Welterweight",
-  ];
-  const nationalities = [
-    { code: "US", label: "United States" },
-    { code: "BR", label: "Brazil" },
-    { code: "IE", label: "Ireland" },
-    { code: "RU", label: "Russia" },
-    { code: "CA", label: "Canada" },
-    { code: "GB", label: "United Kingdom" },
-    { code: "MX", label: "Mexico" },
-    { code: "AU", label: "Australia" },
-    { code: "PL", label: "Poland" },
-    { code: "FR", label: "France" },
-    { code: "NL", label: "Netherlands" },
-    { code: "SE", label: "Sweden" },
-  ];
 
   const handleRandomFighter = async () => {
     try {
@@ -79,6 +94,55 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
       console.error("Failed to get random fighter:", err);
     }
   };
+
+  const handleResetFilters = () => {
+    resetFilters();
+  };
+
+  const filterSummaryParts = useMemo(() => {
+    const parts: string[] = [];
+    const trimmedSearch = searchTerm?.trim();
+    if (trimmedSearch) {
+      parts.push(`Search: “${trimmedSearch}”`);
+    }
+    if (divisionFilter) {
+      parts.push(divisionFilter);
+    }
+    if (stanceFilter) {
+      parts.push(stanceFilter);
+    }
+    if (nationalityFilter) {
+      parts.push(
+        NATIONALITY_LABELS[nationalityFilter] ?? nationalityFilter,
+      );
+    }
+    if (championStatusFilters.length > 0) {
+      championStatusFilters.forEach((status) => {
+        parts.push(CHAMPION_LABELS[status] ?? status);
+      });
+    }
+    if (winStreakCount !== null) {
+      parts.push(`Win streak ≥ ${winStreakCount}`);
+    }
+    if (lossStreakCount !== null) {
+      parts.push(`Losing streak ≥ ${lossStreakCount}`);
+    }
+    return parts;
+  }, [
+    searchTerm,
+    divisionFilter,
+    stanceFilter,
+    nationalityFilter,
+    championStatusFilters,
+    winStreakCount,
+    lossStreakCount,
+  ]);
+
+  const hasActiveFilters = filterSummaryParts.length > 0;
+  const totalText = total && total > 0 ? total.toLocaleString() : "0";
+  const filtersDescription = hasActiveFilters
+    ? filterSummaryParts.join(", ")
+    : "No filters applied";
 
   return (
     <section className="container flex flex-col gap-10 py-12">
@@ -97,23 +161,15 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
             monochrome UI.
           </p>
         </div>
-        <Button
-          onClick={handleRandomFighter}
-          size="lg"
-          className="w-full justify-center sm:w-fit"
-        >
-          🎲 Random Fighter
-        </Button>
       </header>
-      <SearchBar />
       <FilterPanel
-        stances={stances}
+        stances={STANCES}
         selectedStance={stanceFilter}
         onStanceChange={setStanceFilter}
-        divisions={divisions}
+        divisions={DIVISIONS}
         selectedDivision={divisionFilter}
         onDivisionChange={setDivisionFilter}
-        nationalities={nationalities}
+        nationalities={NATIONALITIES}
         selectedNationality={nationalityFilter}
         onNationalityChange={setNationalityFilter}
         championStatusFilters={championStatusFilters}
@@ -122,7 +178,42 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
         lossStreakCount={lossStreakCount}
         onWinStreakChange={setWinStreakCount}
         onLossStreakChange={setLossStreakCount}
+        isSearching={isLoading}
+        onResetFilters={handleResetFilters}
       />
+      <section className="rounded-3xl border border-border bg-card/70 p-6 shadow-subtle">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Roster summary
+            </p>
+            <p className="text-2xl font-semibold text-foreground">
+              {totalText} fighters
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Filters: {filtersDescription}
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
+            {hasActiveFilters ? (
+              <Button
+                variant="ghost"
+                className="w-full justify-center sm:w-auto"
+                onClick={handleResetFilters}
+              >
+                Reset filters
+              </Button>
+            ) : null}
+            <Button
+              onClick={handleRandomFighter}
+              size="lg"
+              className="w-full justify-center sm:w-fit"
+            >
+              🎲 Random Fighter
+            </Button>
+          </div>
+        </div>
+      </section>
       <FighterGrid
         fighters={fighters}
         isLoading={isLoading}
@@ -135,12 +226,7 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
         searchTerm={searchTerm}
         stanceFilter={stanceFilter}
         divisionFilter={divisionFilter}
-        onClearFilters={() => {
-          setSearchTerm("");
-          setStanceFilter(null);
-          setDivisionFilter(null);
-          setNationalityFilter(null);
-        }}
+        onClearFilters={handleResetFilters}
       />
     </section>
   );

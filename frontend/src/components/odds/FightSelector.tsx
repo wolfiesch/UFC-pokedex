@@ -26,16 +26,20 @@ export function FightSelector({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2" role="listbox" aria-label="Available fights">
       {fights.map((fight) => {
         const isSelected = fight.fight_id === selectedId;
         return (
           <button
             key={fight.fight_id}
+            role="option"
+            aria-selected={isSelected}
             onClick={() => onSelect?.(fight.fight_id)}
             className={cn(
-              "flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition hover:border-primary/40 hover:bg-muted/40",
-              isSelected && "border-primary bg-primary/5 shadow-inner",
+              "relative flex w-full flex-col gap-2 rounded-xl border border-border/60 border-l-4 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-muted/40",
+              isSelected
+                ? "border-l-primary bg-primary/10 shadow-inner ring-2 ring-primary/20"
+                : "border-l-transparent",
             )}
           >
             <div className="flex items-center justify-between gap-3">
@@ -50,7 +54,14 @@ export function FightSelector({
                     : "Date TBA"}
                 </p>
               </div>
-              <QualityBadge tier={fight.quality} />
+              <div className="flex items-center gap-2">
+                {isSelected ? (
+                  <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-primary">
+                    Selected
+                  </span>
+                ) : null}
+                <QualityBadge tier={fight.quality} />
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
               <span>

@@ -95,9 +95,20 @@ function FightGraphCanvasInner({
     [],
   );
 
-  const { nodes, links, stats, updateWorkerOptions } = useFightLayout(data, {
-    workerOptions,
-  });
+  const { nodes, links, stats, layoutState, updateWorkerOptions } =
+    useFightLayout(data, {
+      workerOptions,
+    });
+
+  const datasetNodeCount = data?.nodes.length ?? 0;
+  const showEmptyState = !isLoading && data !== null && datasetNodeCount === 0;
+  const showFallbackNotice =
+    layoutState.mode === "fallback" || layoutState.mode === "error";
+  const fallbackMessage =
+    layoutState.reason ??
+    (layoutState.mode === "error"
+      ? "Unable to render the fight graph layout on this device."
+      : "Using a simplified fight graph layout.");
 
   const focusNodeId = hoverState?.nodeId ?? selectedNodeId ?? null;
   const filteredLinks = useFilteredLinks(
@@ -176,7 +187,12 @@ function FightGraphCanvasInner({
         ref={containerRef}
         className="relative h-full w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950/70"
       >
-        {!isLoading && nodes.length === 0 ? (
+        {showFallbackNotice ? (
+          <div className="pointer-events-none absolute left-4 top-4 z-30 max-w-sm rounded-md border border-amber-400/60 bg-slate-950/90 px-3 py-2 text-xs text-amber-100 shadow-lg">
+            {fallbackMessage}
+          </div>
+        ) : null}
+        {showEmptyState ? (
           <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
             We could not find enough data to construct the fight network.
           </div>
@@ -188,18 +204,18 @@ function FightGraphCanvasInner({
               </div>
             ) : null}
             <FightGraphScene
-          nodes={nodes}
-          links={filteredLinks}
-          nodeColorMap={nodeColorMap ?? null}
-          palette={palette}
-          selectedNodeId={selectedNodeId ?? null}
-          hoveredNodeId={hoverState?.nodeId ?? null}
-          defaultColor={DEFAULT_NODE_COLOR}
-          onNodeHover={handleHover}
-          onNodeSelect={handleSelect}
-          onPerformanceDrop={handlePerformanceDrop}
-          onPerformanceRecover={handlePerformanceRecover}
-        />
+              nodes={nodes}
+              links={filteredLinks}
+              nodeColorMap={nodeColorMap ?? null}
+              palette={palette}
+              selectedNodeId={selectedNodeId ?? null}
+              hoveredNodeId={hoverState?.nodeId ?? null}
+              defaultColor={DEFAULT_NODE_COLOR}
+              onNodeHover={handleHover}
+              onNodeSelect={handleSelect}
+              onPerformanceDrop={handlePerformanceDrop}
+              onPerformanceRecover={handlePerformanceRecover}
+            />
             {hoveredNode && tooltipPosition ? (
               <div
                 className="pointer-events-none absolute z-30 rounded-lg border border-slate-800 bg-slate-900/90 px-3 py-2 text-xs text-slate-100 shadow-lg"

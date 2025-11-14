@@ -8,9 +8,15 @@ import { cn } from "@/lib/utils";
 
 type SearchBarProps = {
   isLoading?: boolean;
+  className?: string;
+  inputClassName?: string;
 };
 
-export default function SearchBar({ isLoading = false }: SearchBarProps) {
+export default function SearchBar({
+  isLoading = false,
+  className,
+  inputClassName,
+}: SearchBarProps) {
   const current = useFavoritesFiltersStore((state) => state.searchTerm);
   const setSearchTerm = useFavoritesFiltersStore(
     (state) => state.setSearchTerm,
@@ -47,7 +53,12 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 shadow-subtle sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 shadow-subtle sm:flex-row sm:items-center",
+        className,
+      )}
+    >
       <div className="relative flex-1">
         {/* Left search icon */}
         <svg
@@ -70,7 +81,11 @@ export default function SearchBar({ isLoading = false }: SearchBarProps) {
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search fighters by name or nickname..."
           aria-label="Search fighters"
-          className={cn("bg-background/70 pl-10", value ? "pr-20" : "pr-12")}
+          className={cn(
+            "bg-background/70 pl-10",
+            value ? "pr-20" : "pr-12",
+            inputClassName,
+          )}
         />
 
         {/* Right controls */}

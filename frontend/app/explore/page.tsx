@@ -37,7 +37,7 @@ export default function ExplorePage() {
         </TabsList>
 
         {/* Countries Tab */}
-        <TabsContent value="countries" className="space-y-6">
+        <TabsContent value="countries" className="min-h-[520px] space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             {/* Birthplace Countries */}
             <div>
@@ -72,7 +72,7 @@ export default function ExplorePage() {
         </TabsContent>
 
         {/* Cities Tab */}
-        <TabsContent value="cities" className="space-y-6">
+        <TabsContent value="cities" className="min-h-[520px] space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>City Statistics</CardTitle>
@@ -93,7 +93,7 @@ export default function ExplorePage() {
         </TabsContent>
 
         {/* Gyms Tab */}
-        <TabsContent value="gyms" className="space-y-6">
+        <TabsContent value="gyms" className="min-h-[520px] space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Top Gyms - All */}
             <div className="md:col-span-2 lg:col-span-3">

@@ -5,6 +5,7 @@ import EventCard from "@/components/events/EventCard";
 import EventSearch from "@/components/events/EventSearch";
 import EventFilters from "@/components/events/EventFilters";
 import EventTimeline from "@/components/events/EventTimeline";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { EventType } from "@/lib/event-utils";
 
 interface Event {
@@ -183,16 +184,13 @@ export default function EventsPage() {
     setOffset(0);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading events...</div>
-      </div>
-    );
-  }
-
   const hasActiveFilters = searchQuery || selectedYear || selectedLocation || selectedEventType;
-  const showPagination = statusFilter !== "upcoming" && total > EVENTS_PER_PAGE && !hasActiveFilters;
+  const isInitialLoading = loading && events.length === 0;
+  const showPagination =
+    statusFilter !== "upcoming" &&
+    total > EVENTS_PER_PAGE &&
+    !hasActiveFilters &&
+    !isInitialLoading;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -305,13 +303,23 @@ export default function EventsPage() {
 
       {/* Events Display */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 gap-4">
-          {events.map((event) => (
-            <EventCard key={event.event_id} event={event} />
-          ))}
+        <div className="grid min-h-[480px] grid-cols-1 gap-4">
+          {isInitialLoading
+            ? Array.from({ length: 6 }).map((_, index) => (
+                <EventCardSkeleton key={index} />
+              ))
+            : events.map((event) => (
+                <EventCard key={event.event_id} event={event} />
+              ))}
         </div>
       ) : (
-        <EventTimeline events={events} />
+        <div className="min-h-[480px]">
+          {isInitialLoading ? (
+            <EventTimelineSkeleton />
+          ) : (
+            <EventTimeline events={events} />
+          )}
+        </div>
       )}
 
       {/* Pagination */}
@@ -346,6 +354,42 @@ export default function EventsPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function EventCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-gray-700 bg-gray-800/60 p-6 shadow-inner">
+      <Skeleton className="h-6 w-2/3" />
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-4 w-1/4" />
+        <Skeleton className="h-4 w-1/5" />
+      </div>
+      <div className="mt-6 flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function EventTimelineSkeleton() {
+  return (
+    <div className="space-y-6">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="rounded-lg border border-gray-700 bg-gray-800/50 p-4"
+        >
+          <Skeleton className="h-4 w-24" />
+          <div className="mt-3 space-y-2">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

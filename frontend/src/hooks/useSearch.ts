@@ -43,6 +43,9 @@ export function useSearch() {
   const setLossStreakCount = useFavoritesFiltersStore(
     (state) => state.setLossStreakCount,
   );
+  const resetFilters = useFavoritesFiltersStore(
+    (state) => state.resetFilters,
+  );
 
   return useMemo(
     () => ({
@@ -60,6 +63,7 @@ export function useSearch() {
       toggleChampionStatusFilter,
       setWinStreakCount,
       setLossStreakCount,
+      resetFilters,
     }),
     [
       searchTerm,
@@ -76,6 +80,7 @@ export function useSearch() {
       toggleChampionStatusFilter,
       setWinStreakCount,
       setLossStreakCount,
+      resetFilters,
     ],
   );
 }

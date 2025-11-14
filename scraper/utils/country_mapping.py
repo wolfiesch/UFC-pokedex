@@ -71,6 +71,19 @@ COUNTRY_NAME_TO_ISO = {
     "Saudi Arabia": "SA",
     "United Arab Emirates": "AE",
     "UAE": "AE",
+    # Additional countries from Sherdog scraping
+    "Ghana": "GH",
+    "Kyrgyzstan": "KG",
+    "Ecuador": "EC",
+    "American Samoa": "AS",
+    "Costa Rica": "CR",
+    "Luxembourg": "LU",
+    "Colombia": "CO",
+    "Jordan": "JO",
+    "Azerbaijan": "AZ",
+    "Armenia": "AM",
+    "Macedonia": "MK",
+    "North Macedonia": "MK",
 }
 
 

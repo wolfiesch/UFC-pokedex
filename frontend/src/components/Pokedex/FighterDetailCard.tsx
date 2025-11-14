@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -433,8 +433,12 @@ export default function FighterDetailCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-8">
-        <section>
+      <CardContent className="space-y-10">
+        <DetailSection
+          title="Vitals"
+          description="Key physical attributes to understand reach, stance, and frame."
+          borderTop={false}
+        >
           <dl className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
             <Info label="Height" value={fighter.height} />
             <Info label="Weight" value={fighter.weight} />
@@ -443,182 +447,199 @@ export default function FighterDetailCard({
             <Info label="Stance" value={fighter.stance} />
             <Info label="DOB" value={fighter.dob ?? "—"} />
           </dl>
-        </section>
+        </DetailSection>
 
-        {/* Performance Visualizations */}
-        <RecordBreakdownChart
-          record={fighter.record}
-          fightHistory={fightHistory}
-        />
-
-        <div className="grid gap-8 lg:grid-cols-2">
-          <StatsRadarChart
-            striking={fighter.striking}
-            grappling={fighter.grappling}
+        <DetailSection
+          title="Record summary"
+          description="Win/loss breakdown alongside the most recent fight history."
+        >
+          <RecordBreakdownChart
+            record={fighter.record}
+            fightHistory={fightHistory}
           />
-          <PerformanceBarCharts
-            striking={fighter.striking}
-            grappling={fighter.grappling}
-          />
-        </div>
+        </DetailSection>
 
-        {/* Detailed Stats (collapsible sections) */}
-        {Object.keys(fighter.striking).length > 0 ? (
-          <StatsDisplay title="Striking" stats={fighter.striking} />
-        ) : null}
-        {Object.keys(fighter.grappling).length > 0 ? (
-          <StatsDisplay title="Grappling" stats={fighter.grappling} />
-        ) : null}
-        {Object.keys(fighter.significant_strikes).length > 0 ? (
-          <StatsDisplay
-            title="Significant Strikes"
-            stats={fighter.significant_strikes}
-          />
-        ) : null}
-        {Object.keys(fighter.takedown_stats).length > 0 ? (
-          <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />
-        ) : null}
-        {Object.keys(fighter.career).length > 0 ? (
-          <StatsDisplay title="Career" stats={fighter.career} />
-        ) : null}
+        <DetailSection
+          title="Performance metrics"
+          description="Compare striking, grappling, and defensive metrics in one place."
+        >
+          <div className="grid gap-8 lg:grid-cols-2">
+            <StatsRadarChart
+              striking={fighter.striking}
+              grappling={fighter.grappling}
+            />
+            <PerformanceBarCharts
+              striking={fighter.striking}
+              grappling={fighter.grappling}
+            />
+          </div>
+          <div className="space-y-6">
+            {Object.keys(fighter.striking).length > 0 ? (
+              <StatsDisplay title="Striking" stats={fighter.striking} />
+            ) : null}
+            {Object.keys(fighter.grappling).length > 0 ? (
+              <StatsDisplay title="Grappling" stats={fighter.grappling} />
+            ) : null}
+            {Object.keys(fighter.significant_strikes).length > 0 ? (
+              <StatsDisplay
+                title="Significant Strikes"
+                stats={fighter.significant_strikes}
+              />
+            ) : null}
+            {Object.keys(fighter.takedown_stats).length > 0 ? (
+              <StatsDisplay title="Takedowns" stats={fighter.takedown_stats} />
+            ) : null}
+            {Object.keys(fighter.career).length > 0 ? (
+              <StatsDisplay title="Career" stats={fighter.career} />
+            ) : null}
+          </div>
+        </DetailSection>
 
-        {/* Fight History Visualization */}
         {fightHistory.length > 0 ? (
-          <section className="space-y-4">
-            <h3 className="text-xl font-semibold">Fight History Analysis</h3>
-            <FightScatterDemo fightHistory={fightHistory} />
-          </section>
-        ) : null}
-
-        {fightHistory.length > 0 ? (
-          <section className="space-y-4">
-            <h3 className="text-xl font-semibold">
-              Fight History (Table View)
-            </h3>
-
-            {/* Desktop table view */}
-            <div className="hidden overflow-x-auto md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Opponent</TableHead>
-                    <TableHead className="text-center">Result</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-center">Round</TableHead>
-                    <TableHead className="text-center">Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fightHistory.map((fight) => (
-                    <TableRow key={fight.fight_id}>
-                      <TableCell className="font-medium">
-                        {fight.event_name}
-                      </TableCell>
-                      <TableCell>{fight.event_date ?? "—"}</TableCell>
-                      <TableCell>
-                        {fight.opponent_id ? (
-                          <Link
-                            href={`/fighters/${fight.opponent_id}`}
-                            className="text-primary underline-offset-4 hover:underline"
-                          >
-                            {fight.opponent}
-                          </Link>
-                        ) : (
-                          fight.opponent
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={
-                            fight.result.toLowerCase().includes("win")
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {fight.result}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{fight.method}</TableCell>
-                      <TableCell className="text-center">
-                        {fight.round ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {fight.time ?? "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile card view */}
-            <div className="space-y-3 md:hidden">
-              {fightHistory.map((fight) => (
-                <Card key={fight.fight_id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-semibold">
-                          {fight.event_name}
-                        </h4>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {fight.event_date ?? "—"}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          fight.result.toLowerCase().includes("win")
-                            ? "default"
-                            : "outline"
-                        }
-                      >
-                        {fight.result}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Opponent
-                        </p>
-                        <p className="font-medium">
-                          {fight.opponent_id ? (
-                            <Link
-                              href={`/fighters/${fight.opponent_id}`}
-                              className="text-primary underline-offset-4 hover:underline"
+          <DetailSection
+            title="Fight history"
+            description="Timeline and full table view of UFC appearances."
+          >
+            <div className="space-y-6">
+              <FightScatterDemo fightHistory={fightHistory} />
+              <div className="space-y-4">
+                <h4 className="text-base font-semibold">
+                  Fight history table
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Tap any opponent to jump to their profile or open the mobile
+                  cards for compact browsing.
+                </p>
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Opponent</TableHead>
+                        <TableHead className="text-center">Result</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead className="text-center">Round</TableHead>
+                        <TableHead className="text-center">Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fightHistory.map((fight) => (
+                        <TableRow key={fight.fight_id}>
+                          <TableCell className="font-medium">
+                            {fight.event_name}
+                          </TableCell>
+                          <TableCell>{fight.event_date ?? "—"}</TableCell>
+                          <TableCell>
+                            {fight.opponent_id ? (
+                              <Link
+                                href={`/fighters/${fight.opponent_id}`}
+                                className="text-primary underline-offset-4 hover:underline"
+                              >
+                                {fight.opponent}
+                              </Link>
+                            ) : (
+                              fight.opponent
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                fight.result.toLowerCase().includes("win")
+                                  ? "default"
+                                  : "outline"
+                              }
                             >
-                              {fight.opponent}
-                            </Link>
-                          ) : (
-                            fight.opponent
-                          )}
-                        </p>
+                              {fight.result}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{fight.method}</TableCell>
+                          <TableCell className="text-center">
+                            {fight.round ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {fight.time ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="space-y-3 md:hidden">
+                  {fightHistory.map((fight) => (
+                    <Card key={fight.fight_id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold">
+                              {fight.event_name}
+                            </h4>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {fight.event_date ?? "—"}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              fight.result.toLowerCase().includes("win")
+                                ? "default"
+                                : "outline"
+                            }
+                          >
+                            {fight.result}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Opponent
+                            </p>
+                            <p className="font-medium">
+                              {fight.opponent_id ? (
+                                <Link
+                                  href={`/fighters/${fight.opponent_id}`}
+                                  className="text-primary underline-offset-4 hover:underline"
+                                >
+                                  {fight.opponent}
+                                </Link>
+                              ) : (
+                                fight.opponent
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Method
+                            </p>
+                            <p>{fight.method}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Round
+                            </p>
+                            <p>{fight.round ?? "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Time
+                            </p>
+                            <p>{fight.time ?? "—"}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Method</p>
-                        <p>{fight.method}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Round</p>
-                        <p>{fight.round ?? "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Time</p>
-                        <p>{fight.time ?? "—"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
-          </section>
+          </DetailSection>
         ) : null}
 
-        {/* Rankings Section */}
-        {!rankingsLoading && (rankingHistory || peakRanking) && (
-          <section className="space-y-6">
-            <h3 className="text-xl font-semibold">Rankings</h3>
+        {!rankingsLoading && (rankingHistory || peakRanking) ? (
+          <DetailSection
+            title="Rankings"
+            description="FightMatrix sourcing with historical placement."
+          >
             <div className="grid gap-6 lg:grid-cols-2">
               {peakRanking && (
                 <PeakRanking
@@ -639,10 +660,41 @@ export default function FighterDetailCard({
                 </div>
               )}
             </div>
-          </section>
-        )}
+          </DetailSection>
+        ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+type DetailSectionProps = {
+  title: string;
+  description?: string;
+  borderTop?: boolean;
+  children: ReactNode;
+};
+
+function DetailSection({
+  title,
+  description,
+  borderTop = true,
+  children,
+}: DetailSectionProps) {
+  return (
+    <section
+      className={cn(
+        "space-y-4",
+        borderTop ? "border-t border-border/50 pt-8" : "",
+      )}
+    >
+      <div>
+        <h3 className="text-xl font-semibold">{title}</h3>
+        {description ? (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
   );
 }
 

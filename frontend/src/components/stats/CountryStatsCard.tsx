@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import client from "@/lib/api-client";
 import { Flag, Loader2 } from "lucide-react";
 
@@ -74,11 +75,22 @@ export function CountryStatsCard({
       </CardHeader>
       <CardContent className="min-h-[360px]">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">
-              Loading statistics...
-            </span>
+          <div className="space-y-3">
+            {Array.from({ length: limit }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between rounded-md border border-border/50 p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="py-8 text-center">

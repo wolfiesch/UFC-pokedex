@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dumbbell, Loader2 } from "lucide-react";
 import client from "@/lib/api-client";
 
@@ -87,11 +88,21 @@ export function TopGymsWidget({
       </CardHeader>
       <CardContent className="min-h-[360px]">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">
-              Loading gyms...
-            </span>
+          <div className="space-y-4">
+            {Array.from({ length: limit }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-3 rounded-md border border-border/60 p-3"
+              >
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-12 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="py-8 text-center">

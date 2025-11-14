@@ -3,6 +3,11 @@ import type {
   FightGraphNode,
   FightGraphResponse,
 } from "@/lib/types";
+import type {
+  FightLayoutLinkPosition,
+  FightLayoutNodePosition,
+  FightLayoutProfilingStats,
+} from "@/types/fight-graph";
 
 const COLOR_PALETTE = [
   "#2563eb",
@@ -53,6 +58,14 @@ interface MutableNode {
 
 const EPSILON = 1e-3;
 
+function resolveIterationCount(
+  nodeCount: number,
+  options?: ForceLayoutOptions,
+): number {
+  const defaultIterations = Math.min(280, Math.max(120, nodeCount * 4));
+  return options?.iterations ?? defaultIterations;
+}
+
 export function computeForceLayout(
   nodes: FightGraphNode[],
   links: FightGraphLink[],
@@ -70,8 +83,7 @@ export function computeForceLayout(
     };
   }
 
-  const iterations =
-    options.iterations ?? Math.min(280, Math.max(120, nodes.length * 4));
+  const iterations = resolveIterationCount(nodes.length, options);
   const repulsionStrength = options.repulsionStrength ?? 2000; // Increased from 1400
   const linkDistance = options.linkDistance ?? 180; // Increased from 140 (more spacing)
   const springStrength = options.springStrength ?? 0.06; // Reduced from 0.08 (softer springs)
@@ -221,6 +233,60 @@ export function computeForceLayout(
     edges: filteredLinks.slice(),
     bounds: { minX, maxX, minY, maxY },
   };
+}
+
+export function buildSynchronousFightLayout(
+  graph: FightGraphResponse,
+  options: ForceLayoutOptions = {},
+): {
+  nodes: FightLayoutNodePosition[];
+  links: FightLayoutLinkPosition[];
+  stats: FightLayoutProfilingStats;
+} {
+  const iterationCount = resolveIterationCount(graph.nodes.length, options);
+  const hasPerformance = typeof performance !== "undefined";
+  const start = hasPerformance ? performance.now() : Date.now();
+  const layout = computeForceLayout(graph.nodes, graph.links, options);
+  const end = hasPerformance ? performance.now() : Date.now();
+  const duration = Math.max(end - start, 0);
+
+  const nodes: FightLayoutNodePosition[] = layout.nodes.map((node) => ({
+    fighter_id: node.fighter_id,
+    name: node.name,
+    division: node.division,
+    record: node.record,
+    image_url: node.image_url,
+    total_fights: node.total_fights,
+    latest_event_date: node.latest_event_date,
+    id: node.id,
+    x: node.x,
+    y: node.y,
+    z: 0,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    degree: node.degree,
+  }));
+
+  const links: FightLayoutLinkPosition[] = layout.edges.map((edge) => ({
+    source: edge.source,
+    target: edge.target,
+    fights: edge.fights,
+    first_event_name: edge.first_event_name,
+    first_event_date: edge.first_event_date,
+    last_event_name: edge.last_event_name,
+    last_event_date: edge.last_event_date,
+    result_breakdown: edge.result_breakdown,
+  }));
+
+  const stats: FightLayoutProfilingStats = {
+    tickCount: iterationCount,
+    meanTickMs: iterationCount > 0 ? duration / iterationCount : duration,
+    lastTickMs: duration,
+    alpha: 0,
+  };
+
+  return { nodes, links, stats };
 }
 
 export function createDivisionColorScale(

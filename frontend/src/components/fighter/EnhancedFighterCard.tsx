@@ -97,7 +97,6 @@ function EnhancedFighterCardComponent({
   const [isHovered, setIsHovered] = useState(false);
   const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // 3D Parallax Motion Values
@@ -126,14 +125,33 @@ function EnhancedFighterCardComponent({
     error: detailsError,
   } = useFighterDetails(fighter.fighter_id, detailsEnabled);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
+    const cardNode = cardRef.current;
+    if (!cardNode || detailsEnabled) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setDetailsEnabled(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: "200px 0px",
+        threshold: 0.35,
+      },
+    );
+
+    observer.observe(cardNode);
+
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
+      observer.disconnect();
     };
-  }, []);
+  }, [detailsEnabled, fighter.fighter_id]);
 
   // Mouse move handler for 3D parallax effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -157,20 +175,13 @@ function EnhancedFighterCardComponent({
     mouseY.set(0);
   };
 
-  // Debounce API calls without delaying the hover animation
+  // Trigger quick stats overlay + ensure details fetch
   const handleHoverStart = () => {
     setIsHovered(true);
-    hoverTimeoutRef.current = setTimeout(() => {
-      setDetailsEnabled(true);
-    }, 300);
+    setDetailsEnabled(true);
   };
 
   const handleHoverEnd = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setDetailsEnabled(false);
     setIsHovered(false);
     handleMouseLeave();
   };
@@ -458,135 +469,161 @@ function EnhancedFighterCardComponent({
             <AnimatePresence>
               {isHovered && (
                 <motion.div
-                  className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                  className="absolute inset-0 bg-black/85 backdrop-blur-sm overflow-hidden"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-white">
+                  <div className="flex h-full flex-col text-white">
                     {detailsError ? (
-                      <div className="flex flex-col items-center gap-2 text-center">
-                        <svg
-                          className="h-8 w-8 text-white/40"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-sm text-white/60">
+                      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+                        <div className="rounded-full bg-white/10 p-3">
+                          <svg
+                            className="h-6 w-6 text-white/70"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-white/70">
                           Failed to load stats
                         </span>
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-white/50">
                           Click for full profile
                         </span>
                       </div>
                     ) : (
                       <>
-                        <h4 className="text-center text-sm font-semibold uppercase tracking-wider text-white/60">
-                          Quick Stats
-                        </h4>
+                        <div className="px-6 pb-3 pt-6 text-center">
+                          <h4 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+                            Quick Stats
+                          </h4>
 
-                        {isLoadingDetails && !details && (
-                          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
-                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            <span>Fetching fight details...</span>
-                          </div>
-                        )}
-
-                        {/* Last Fight / Next Fight Info */}
-                        {lastFight && (
-                          <div className="w-full rounded-lg bg-white/10 p-3">
-                            {(() => {
-                              const isUpcoming =
-                                lastFight.result?.toLowerCase() === "next" ||
-                                (lastFight.date &&
-                                  new Date(lastFight.date) > new Date());
-                              return (
-                                <>
-                                  <div className="mb-1 text-xs text-white/60">
-                                    {isUpcoming ? "Next Fight" : "Last Fight"}
-                                  </div>
-                                  <div className="text-sm font-bold">
-                                    {lastFight.result} vs {lastFight.opponent}
-                                  </div>
-                                  <div className="text-xs text-white/70">
-                                    {lastFight.method}
-                                  </div>
-                                  <div className="mt-1 text-xs text-white/50">
-                                    {getRelativeTime(lastFight.date)}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        )}
-                        {!lastFight && detailsEnabled && (
-                          <div className="w-full rounded-lg border border-white/10 p-3 text-center text-xs text-white/60">
-                            {isLoadingDetails
-                              ? "Pulling fight history..."
-                              : "Fight history loads after a brief hover."}
-                          </div>
-                        )}
-
-                        <div className="grid w-full grid-cols-2 gap-3">
-                          <div className="rounded-lg bg-white/10 p-3 text-center">
-                            <div className="text-2xl font-bold">
-                              {fighter.record}
-                            </div>
-                            <div className="text-xs text-white/60">Record</div>
-                          </div>
-
-                          {streak && streak.count >= 2 && (
-                            <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">
-                                {streak.label}
-                              </div>
-                              <div className="text-xs text-white/60">
-                                Current Streak
-                              </div>
-                            </div>
-                          )}
-
-                          {fighter.stance && (
-                            <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">
-                                {fighter.stance}
-                              </div>
-                              <div className="text-xs text-white/60">
-                                Stance
-                              </div>
-                            </div>
-                          )}
-
-                          {fighter.height && (
-                            <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">
-                                {fighter.height}
-                              </div>
-                              <div className="text-xs text-white/60">
-                                Height
-                              </div>
-                            </div>
-                          )}
-
-                          {fighter.reach && (
-                            <div className="rounded-lg bg-white/10 p-3 text-center">
-                              <div className="text-lg font-bold">
-                                {fighter.reach}
-                              </div>
-                              <div className="text-xs text-white/60">Reach</div>
+                          {isLoadingDetails && !details && (
+                            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                              <span>Fetching fight details...</span>
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-2 flex items-center gap-2 text-xs text-white/80">
+                        <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-6">
+                          {/* Last Fight / Next Fight Info */}
+                          <div className="w-full min-h-[116px] rounded-2xl bg-white/10 p-4 shadow-inner">
+                            {lastFight ? (
+                              (() => {
+                                const isUpcoming =
+                                  lastFight.result?.toLowerCase() === "next" ||
+                                  (lastFight.date &&
+                                    new Date(lastFight.date) > new Date());
+                                return (
+                                  <div className="flex h-full flex-col justify-between gap-2">
+                                    <div className="space-y-1">
+                                      <div className="mb-1 text-xs text-white/60">
+                                        {isUpcoming
+                                          ? "Next Fight"
+                                          : "Last Fight"}
+                                      </div>
+                                      <div className="text-sm font-bold">
+                                        {lastFight.result} vs{" "}
+                                        {lastFight.opponent}
+                                      </div>
+                                      {lastFight.method ? (
+                                        <div className="text-xs text-white/70">
+                                          {lastFight.method}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                    <div className="text-xs text-white/50">
+                                      {getRelativeTime(lastFight.date)}
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            ) : detailsEnabled ? (
+                              <div className="space-y-2">
+                                {isLoadingDetails ? (
+                                  <>
+                                    <div className="h-3 w-24 animate-pulse rounded-full bg-white/20" />
+                                    <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/30" />
+                                    <div className="h-3 w-1/2 animate-pulse rounded-full bg-white/20" />
+                                  </>
+                                ) : (
+                                  <p className="text-center text-xs text-white/60">
+                                    Fight history data is on the way.
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center text-xs text-white/60">
+                                Hover to load recent fight data.
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grid w-full grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-white/10 p-3 text-center">
+                              <div className="text-2xl font-bold leading-tight">
+                                {fighter.record}
+                              </div>
+                              <div className="text-xs text-white/60">Record</div>
+                            </div>
+
+                            {streak && streak.count >= 2 && (
+                              <div className="rounded-xl bg-white/10 p-3 text-center">
+                                <div className="text-lg font-bold leading-tight">
+                                  {streak.label}
+                                </div>
+                                <div className="text-xs text-white/60">
+                                  Current Streak
+                                </div>
+                              </div>
+                            )}
+
+                            {fighter.stance && (
+                              <div className="rounded-xl bg-white/10 p-3 text-center">
+                                <div className="text-lg font-bold leading-tight">
+                                  {fighter.stance}
+                                </div>
+                                <div className="text-xs text-white/60">
+                                  Stance
+                                </div>
+                              </div>
+                            )}
+
+                            {fighter.height && (
+                              <div className="rounded-xl bg-white/10 p-3 text-center">
+                                <div className="text-lg font-bold leading-tight">
+                                  {fighter.height}
+                                </div>
+                                <div className="text-xs text-white/60">
+                                  Height
+                                </div>
+                              </div>
+                            )}
+
+                            {fighter.reach && (
+                              <div className="rounded-xl bg-white/10 p-3 text-center">
+                                <div className="text-lg font-bold leading-tight">
+                                  {fighter.reach}
+                                </div>
+                                <div className="text-xs text-white/60">
+                                  Reach
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-2 px-6 pb-6 pt-3 text-xs text-white/80">
                           <svg
                             className="h-4 w-4"
                             fill="none"

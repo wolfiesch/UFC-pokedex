@@ -71,8 +71,13 @@ export function FighterOddsChart({
     <Card className="bg-card/60">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl">Betting Odds Timeline</CardTitle>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <CardTitle className="text-xl">Betting Odds Timeline</CardTitle>
+              <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary">
+                Selected fight
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground">
               vs. {selectedFight.opponent} ·{" "}
               {selectedFight.event} ·{" "}

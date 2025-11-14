@@ -57,6 +57,11 @@ export function toCountryIsoCode(
     return null;
   }
 
+  // If input is already a 2-letter ISO code (uppercase), return it as-is
+  if (/^[A-Z]{2}$/.test(normalized)) {
+    return normalized;
+  }
+
   const isoFromName = countries.getAlpha2Code(normalized, "en");
   if (isoFromName) {
     return isoFromName.toUpperCase();

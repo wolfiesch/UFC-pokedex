@@ -30,7 +30,10 @@ export function FighterOddsPageClient({
     error: historyError,
   } = useFighterOddsHistory(fighterId);
 
-  const fights = chartData?.fights ?? [];
+  const fights = useMemo(
+    () => chartData?.fights ?? [],
+    [chartData?.fights],
+  );
 
   useEffect(() => {
     if (!selectedFightId && fights.length) {
