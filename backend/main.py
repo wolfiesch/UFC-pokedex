@@ -41,6 +41,7 @@ from .api import (
     fighters,
     fightweb,
     image_validation,
+    odds,
     rankings,
     search,
     stats,
@@ -592,6 +593,7 @@ app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(rankings.router, prefix="/rankings", tags=["rankings"])
+app.include_router(odds.router, prefix="/odds", tags=["odds"])
 app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])
 app.include_router(

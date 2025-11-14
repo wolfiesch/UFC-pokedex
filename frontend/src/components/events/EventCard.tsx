@@ -32,7 +32,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Link
       href={`/events/${event.event_id}`}
-      className={`block rounded-lg border p-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg ${typeConfig.bgClass} ${
+      className={`block min-h-[180px] rounded-lg border p-6 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg ${typeConfig.bgClass} ${
         isPPV ? "shadow-amber-900/20" : ""
       }`}
     >

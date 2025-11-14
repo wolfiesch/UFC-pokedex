@@ -29,6 +29,10 @@ import type {
   StatsSummaryResponse,
   StatsTrendsResponse,
 } from "./types";
+import type {
+  FighterOddsChartResponse,
+  FighterOddsHistoryResponse,
+} from "@/types/odds";
 import client from "./api-client";
 import { fetchFightGraph } from "./api/fightGraph";
 import { ApiError, NotFoundError } from "./errors";
@@ -868,4 +872,78 @@ export async function compareFighters(fighterIds: string[]) {
   }
 
   return data;
+}
+
+/**
+ * Fetch betting odds history for a fighter.
+ */
+export async function getFighterOddsHistory(
+  fighterId: string,
+  options?: { limit?: number; qualityMin?: string },
+): Promise<FighterOddsHistoryResponse> {
+  if (!fighterId) {
+    throw new ApiError("fighterId is required", { statusCode: 400 });
+  }
+
+  const query: Record<string, string | number> = {};
+  if (options?.limit) {
+    query.limit = options.limit;
+  }
+  if (options?.qualityMin) {
+    query.quality_min = options.qualityMin;
+  }
+
+  const { data, error } = await client.GET("/odds/fighter/{fighter_id}", {
+    params: {
+      path: { fighter_id: fighterId },
+      query: Object.keys(query).length ? query : undefined,
+    },
+  });
+
+  if (error) {
+    throwApiError(
+      error,
+      "Failed to fetch fighter odds history",
+      `fighter:${fighterId}`,
+    );
+  }
+
+  if (!data) {
+    throw new ApiError("No odds history returned", { statusCode: 500 });
+  }
+
+  return data as FighterOddsHistoryResponse;
+}
+
+/**
+ * Fetch chart-ready odds data for a fighter.
+ */
+export async function getFighterOddsChart(
+  fighterId: string,
+  options?: { limit?: number },
+): Promise<FighterOddsChartResponse> {
+  if (!fighterId) {
+    throw new ApiError("fighterId is required", { statusCode: 400 });
+  }
+
+  const { data, error } = await client.GET("/odds/fighter/{fighter_id}/chart", {
+    params: {
+      path: { fighter_id: fighterId },
+      query: options?.limit ? { limit: options.limit } : undefined,
+    },
+  });
+
+  if (error) {
+    throwApiError(
+      error,
+      "Failed to fetch fighter odds chart",
+      `fighter:${fighterId}`,
+    );
+  }
+
+  if (!data) {
+    throw new ApiError("No odds chart data returned", { statusCode: 500 });
+  }
+
+  return data as FighterOddsChartResponse;
 }

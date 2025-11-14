@@ -1,5 +1,5 @@
-import { forwardRef } from "react";
-import type { ButtonHTMLAttributes } from "react";
+import { cloneElement, forwardRef, isValidElement } from "react";
+import type { ButtonHTMLAttributes, ReactElement } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ const sizeStyles: Record<ButtonSize, string> = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  asChild?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -33,22 +34,36 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "default",
       size = "default",
       type = "button",
+      asChild = false,
+      children,
       ...props
     },
     ref,
   ) => {
+    const CompClasses = cn(
+      "inline-flex items-center justify-center rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+      variantStyles[variant],
+      sizeStyles[size],
+      className,
+    );
+
+    if (asChild && isValidElement(children)) {
+      return cloneElement(children as ReactElement, {
+        className: cn(CompClasses, (children as ReactElement).props.className),
+        ref,
+        ...props,
+      });
+    }
+
     return (
       <button
         ref={ref}
         type={type}
-        className={cn(
-          "inline-flex items-center justify-center rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
-          variantStyles[variant],
-          sizeStyles[size],
-          className,
-        )}
+        className={CompClasses}
         {...props}
-      />
+      >
+        {children}
+      </button>
     );
   },
 );

@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { toast } from "sonner";
 
 import StatsDisplay from "@/components/StatsDisplay";
@@ -325,11 +325,13 @@ export default function FighterDetailCard({
           <div className="flex items-start justify-center">
             <FighterImageFrame size="lg" className="md:w-full">
               {shouldShowImage ? (
-                <img
+                <Image
                   src={imageSrc ?? ""}
                   alt={fighter.name}
+                  fill
+                  priority
                   className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_22px_35px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:rotate-[0.65deg] group-hover/fighter-frame:scale-[1.06]"
-                  loading="lazy"
+                  sizes="(max-width: 768px) 320px, 380px"
                   onError={() => setImageError(true)}
                 />
               ) : (
@@ -375,35 +377,42 @@ export default function FighterDetailCard({
                   </Badge>
                 )}
               </div>
-              <Button
-                variant={isFavorited ? "default" : "outline"}
-                size="lg"
-                onClick={handleFavoriteClick}
-                className={cn(
-                  "group/fav flex-shrink-0 transition-all",
-                  isFavorited && "hover:scale-105",
-                )}
-              >
-                <svg
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={isFavorited ? "default" : "outline"}
+                  size="lg"
+                  onClick={handleFavoriteClick}
                   className={cn(
-                    "mr-2 h-5 w-5 transition-transform",
-                    isFavorited
-                      ? "fill-current group-hover/fav:scale-110"
-                      : "fill-none group-hover/fav:scale-110",
+                    "group/fav flex-shrink-0 transition-all",
+                    isFavorited && "hover:scale-105",
                   )}
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                  />
-                </svg>
-                {isFavorited ? "Favorited" : "Add to Favorites"}
-              </Button>
+                  <svg
+                    className={cn(
+                      "mr-2 h-5 w-5 transition-transform",
+                      isFavorited
+                        ? "fill-current group-hover/fav:scale-110"
+                        : "fill-none group-hover/fav:scale-110",
+                    )}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                    />
+                  </svg>
+                  {isFavorited ? "Favorited" : "Add to Favorites"}
+                </Button>
+                <Button variant="secondary" size="lg" asChild>
+                  <Link href={`/fighters/${fighter.fighter_id}/odds`}>
+                    View Betting Odds
+                  </Link>
+                </Button>
+              </div>
             </div>
             {fighter.nickname ? (
               <CardDescription className="text-base tracking-tight text-muted-foreground">

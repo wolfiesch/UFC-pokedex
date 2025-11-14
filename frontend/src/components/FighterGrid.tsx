@@ -229,7 +229,7 @@ export default function FighterGrid({
           <EnhancedFighterCard
             key={fighter.fighter_id}
             fighter={fighter}
-            priority={index === 0}
+            priority={index < 2}
           />
         ))}
       </div>

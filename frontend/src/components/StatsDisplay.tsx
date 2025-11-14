@@ -18,8 +18,8 @@ function StatsDisplayComponent({ title, stats }: StatsDisplayProps) {
       </CardHeader>
       <CardContent>
         <dl className="grid grid-cols-2 gap-3 text-sm text-foreground/80 sm:grid-cols-3">
-          {Object.entries(stats).map(([key, value]) => (
-            <div key={key}>
+          {Object.entries(stats).map(([key, value], index) => (
+            <div key={`${key}-${index}`}>
               <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {formatMetricLabel(key)}
               </dt>
