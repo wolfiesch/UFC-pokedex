@@ -27,11 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
-)
-from backend.db.connection import (
     get_engine as _connection_get_engine,
-)
-from backend.db.connection import (
     get_session,
 )
 from backend.db.models import Fighter
