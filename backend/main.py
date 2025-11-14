@@ -177,7 +177,8 @@ async def lifespan(app: FastAPI):
 
     if db_type != "postgresql":
         raise RuntimeError(
-            "Unsupported database type detected. Configure DATABASE_URL for PostgreSQL before starting the API."
+            "Unsupported database type detected. Configure DATABASE_URL for "
+            "PostgreSQL before starting the API."
         )
 
     logger.info("Mode: PRODUCTION")
@@ -230,16 +231,66 @@ extra_origins = [
 ]
 
 
-def _extract_origin(url: str | None) -> str | None:
+def _extract_origin(
+    url: str | None,
+    *,
+    default_scheme: str | None = None,
+) -> str | None:
+    """Normalise ``url`` into a canonical CORS origin string.
+
+    Deployment platforms frequently expose hostnames without a URL scheme (for
+    example ``VERCEL_URL=ufc-pokedex.vercel.app``).  The previous
+    implementation rejected those values outright which meant the backend
+    defaulted to localhost-only CORS allow-lists unless operators manually set
+    ``CORS_ALLOW_ORIGINS``.  In production this manifested as a seemingly blank
+    frontend because browsers blocked cross-origin requests to the API.
+
+    The helper now accepts optional ``default_scheme`` hints allowing us to
+    coerce bare hostnames into ``https://`` origins while still validating full
+    URLs.  The returned value is safe to pass directly to FastAPI's
+    ``allow_origins`` configuration.
+    """
+
     if not url:
         return None
-    try:
-        parsed = urlsplit(url.strip())
-        if not parsed.scheme or not parsed.netloc:
-            return None
-        return f"{parsed.scheme}://{parsed.netloc}"
-    except ValueError:
+
+    raw_value = url.strip()
+    if not raw_value:
         return None
+
+    candidates: list[str] = [raw_value]
+
+    if "://" not in raw_value:
+        schemes: list[str]
+        if default_scheme:
+            schemes = [default_scheme]
+        else:
+            schemes = ["https", "http"]
+        candidates.extend(f"{scheme}://{raw_value}" for scheme in schemes)
+
+    for candidate in candidates:
+        try:
+            parsed = urlsplit(candidate)
+        except ValueError:
+            continue
+
+        if not parsed.scheme or not parsed.netloc:
+            continue
+
+        normalized = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        if normalized:
+            return normalized
+
+    logger.debug("Ignoring invalid CORS origin candidate: %s", raw_value)
+    return None
+
+
+def _split_env_values(value: str | None) -> list[str]:
+    """Split comma separated environment variables into trimmed entries."""
+
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _combine_origins(*origin_groups: list[str]) -> list[str]:
@@ -255,15 +306,42 @@ def _combine_origins(*origin_groups: list[str]) -> list[str]:
     return combined
 
 
-derived_origins: list[str] = []
-for env_var in (
-    "PUBLIC_FRONTEND_URL",
-    "NEXT_PUBLIC_SITE_URL",
-    "NEXT_PUBLIC_API_BASE_URL",
-):
-    origin = _extract_origin(os.getenv(env_var))
-    if origin:
-        derived_origins.append(origin)
+_ORIGIN_ENVIRONMENT_VARIABLES: tuple[tuple[str, str | None], ...] = (
+    ("PUBLIC_FRONTEND_URL", None),
+    ("PUBLIC_SITE_URL", None),
+    ("NEXT_PUBLIC_SITE_URL", None),
+    ("NEXT_PUBLIC_FRONTEND_URL", None),
+    ("NEXT_PUBLIC_WEB_URL", None),
+    ("NEXT_PUBLIC_WEBSITE_URL", None),
+    ("NEXT_PUBLIC_APP_URL", None),
+    ("NEXT_PUBLIC_CLIENT_URL", None),
+    ("NEXT_PUBLIC_API_BASE_URL", None),
+    ("NEXT_PUBLIC_VERCEL_URL", "https"),
+    ("VERCEL_URL", "https"),
+    ("VERCEL_BRANCH_URL", "https"),
+    ("VERCEL_PROJECT_PRODUCTION_URL", "https"),
+    ("CF_PAGES_URL", "https"),
+    ("NETLIFY_URL", "https"),
+    ("RENDER_EXTERNAL_URL", "https"),
+    ("RAILWAY_STATIC_URL", "https"),
+    ("RAILWAY_PUBLIC_DOMAIN", "https"),
+)
+
+
+def _collect_derived_origins() -> list[str]:
+    """Derive additional CORS origins from well-known deployment variables."""
+
+    derived: list[str] = []
+    for env_var, default_scheme in _ORIGIN_ENVIRONMENT_VARIABLES:
+        values = _split_env_values(os.getenv(env_var))
+        for value in values:
+            origin = _extract_origin(value, default_scheme=default_scheme)
+            if origin:
+                derived.append(origin)
+    return derived
+
+
+derived_origins = _collect_derived_origins()
 
 if extra_origins:
     allow_origins = _combine_origins(default_origins, extra_origins, derived_origins)
@@ -271,6 +349,11 @@ else:
     allow_origins = _combine_origins(default_origins, derived_origins)
 
 cors_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX") or None
+
+if allow_origins:
+    logger.info("Configured CORS allow_origins: %s", ", ".join(allow_origins))
+if cors_origin_regex:
+    logger.info("Configured CORS allow_origin_regex: %s", cors_origin_regex)
 
 app.add_middleware(
     CORSMiddleware,
@@ -392,7 +475,9 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
+async def database_timeout_exception_handler(
+    request: Request, exc: SQLAlchemyTimeoutError
+):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -444,7 +529,9 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
     request_id = request_id_context.get()
-    logger.error(f"Database error for request {request_id} to {request.url.path}: {str(exc)}")
+    logger.error(
+        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
+    )
 
     error_response = ErrorResponse(
         error_type=ErrorType.DATABASE_ERROR,
@@ -507,4 +594,6 @@ app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(rankings.router, prefix="/rankings", tags=["rankings"])
 app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])
-app.include_router(image_validation.router, prefix="/image-validation", tags=["image-validation"])
+app.include_router(
+    image_validation.router, prefix="/image-validation", tags=["image-validation"]
+)
