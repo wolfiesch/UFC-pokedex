@@ -19,10 +19,26 @@ const DEFAULT_SSR_API_BASE_URL = "http://localhost:8000";
 function getApiBaseUrl(): string {
   // Default to localhost for local development, but allow environment overrides.
   // resolveApiBaseUrl normalizes the value (adds scheme, strips trailing slash).
-  return resolveApiBaseUrl(
+  //
+  // Priority order:
+  // 1. NEXT_SSR_API_BASE_URL – explicit override for server components.
+  // 2. NEXT_API_REWRITE_BASE_URL – mirrors Next.js rewrite target.
+  // 3. NEXT_PUBLIC_API_BASE_URL – ensures parity with client-side fetches.
+  // 4. DEFAULT_SSR_API_BASE_URL – localhost fallback for local development.
+  const candidateUrls = [
     process.env.NEXT_SSR_API_BASE_URL,
-    DEFAULT_SSR_API_BASE_URL,
-  );
+    process.env.NEXT_API_REWRITE_BASE_URL,
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+  ];
+
+  let resolvedBaseUrl = DEFAULT_SSR_API_BASE_URL;
+
+  for (let index = candidateUrls.length - 1; index >= 0; index -= 1) {
+    const candidate = candidateUrls[index];
+    resolvedBaseUrl = resolveApiBaseUrl(candidate, resolvedBaseUrl);
+  }
+
+  return resolvedBaseUrl;
 }
 
 const FETCH_TIMEOUT_MS = 4000;

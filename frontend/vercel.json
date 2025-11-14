@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_API_REWRITE_BASE_URL": "@next_api_rewrite_base_url"
+  }
 }
