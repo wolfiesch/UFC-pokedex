@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="rgba(148, 163, 184, 0.25)" />
+      <stop offset="70%" stop-color="rgba(15, 23, 42, 0.15)" />
+      <stop offset="100%" stop-color="rgba(15, 23, 42, 0.05)" />
+    </radialGradient>
+    <pattern id="octagon" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(15)">
+      <polygon points="20 0 36 4 40 20 36 36 20 40 4 36 0 20 4 4" fill="none" stroke="rgba(148, 163, 184, 0.18)" stroke-width="1.2" />
+    </pattern>
+  </defs>
+  <rect width="120" height="120" fill="url(#glow)" />
+  <rect width="120" height="120" fill="url(#octagon)" />
+</svg>
