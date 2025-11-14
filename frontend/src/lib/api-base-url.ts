@@ -95,3 +95,34 @@ export function resolveClientApiBaseUrl(
 
   return resolveApiBaseUrl(undefined, fallbackUrl);
 }
+
+/**
+ * Resolve the API base URL for server-side environments (e.g., Next.js RSC).
+ *
+ * The resolver inspects multiple environment-provided URLs, prioritising the
+ * rewrite destination before falling back to the public/SSR URLs.  This mirrors
+ * how the frontend is typically configured in production where client and
+ * server renders should both target the same backend without requiring
+ * duplicate configuration.
+ */
+export function resolveServerApiBaseUrl({
+  rewriteUrl,
+  publicUrl,
+  ssrUrl,
+  fallbackUrl = DEFAULT_CLIENT_API_BASE_URL,
+}: {
+  /** Direct backend URL used by Next.js rewrite configuration. */
+  rewriteUrl?: string | null;
+  /** Public-facing API URL exposed to browser bundles. */
+  publicUrl?: string | null;
+  /** Optional SSR-specific API URL override. */
+  ssrUrl?: string | null;
+  /** Fallback URL when no environment variables are provided. */
+  fallbackUrl?: string;
+} = {}): string {
+  const candidate = [rewriteUrl, publicUrl, ssrUrl].find(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+
+  return resolveClientApiBaseUrl(candidate ?? undefined, fallbackUrl);
+}

@@ -16,6 +16,7 @@ import { logger } from "./logger";
 import {
   DEFAULT_CLIENT_API_BASE_URL,
   resolveClientApiBaseUrl,
+  resolveServerApiBaseUrl,
 } from "./api-base-url";
 
 const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
@@ -36,10 +37,13 @@ function getApiBaseUrl(): string {
   const isServer = typeof window === "undefined";
 
   if (isServer) {
-    // Server-side: use NEXT_API_REWRITE_BASE_URL or fall back to localhost
-    const serverUrl =
-      process.env.NEXT_API_REWRITE_BASE_URL || DEFAULT_CLIENT_API_BASE_URL;
-    return resolveClientApiBaseUrl(serverUrl, DEFAULT_CLIENT_API_BASE_URL);
+    // Server-side: prefer rewrite URL, then public/SSR overrides.
+    return resolveServerApiBaseUrl({
+      rewriteUrl: process.env.NEXT_API_REWRITE_BASE_URL,
+      publicUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+      ssrUrl: process.env.NEXT_SSR_API_BASE_URL,
+      fallbackUrl: DEFAULT_CLIENT_API_BASE_URL,
+    });
   }
 
   // Client-side: use NEXT_PUBLIC_API_BASE_URL (can be "/api" or full URL)
