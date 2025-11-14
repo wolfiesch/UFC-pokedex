@@ -359,3 +359,42 @@ async def test_list_fighters_nationality_with_pagination(
     br_page = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
     assert len(br_page) == 2
     assert all(f.nationality == "Brazilian" for f in br_page)
+
+
+@pytest.mark.asyncio
+async def test_search_fighters_facade_forwards_latest_options(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The PostgreSQL facade should forward new search parameters to the modular repo."""
+
+    repo = PostgreSQLFighterRepository(session)
+
+    captured_kwargs: dict[str, object] = {}
+
+    async def stub_search_fighters(**kwargs: object) -> tuple[list[object], int]:
+        """Record the forwarded arguments and return a trivial payload for verification."""
+
+        captured_kwargs.update(kwargs)
+        return ([], 0)
+
+    monkeypatch.setattr(repo._fighter_repo, "search_fighters", stub_search_fighters)
+
+    await repo.search_fighters(
+        query="Alpha",
+        stance="Orthodox",
+        division="Lightweight",
+        champion_statuses=["current", "former"],
+        streak_type="win",
+        min_streak_count=3,
+        limit=5,
+        offset=2,
+        include_streak=True,
+        streak_window=12,
+        include_locations=False,
+    )
+
+    # ``streak_window`` and ``include_locations`` should be forwarded explicitly so that
+    # downstream protocol implementations receive callers' intent without relying on
+    # default values.
+    assert captured_kwargs["streak_window"] == 12
+    assert captured_kwargs["include_locations"] is False
