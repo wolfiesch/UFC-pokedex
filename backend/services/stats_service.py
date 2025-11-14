@@ -23,8 +23,8 @@ from backend.schemas.stats import (
     LeaderboardMetricId,
     LeaderboardsResponse,
     StatsSummaryResponse,
-    TrendTimeBucket,
     TrendsResponse,
+    TrendTimeBucket,
 )
 from backend.services.caching import CacheableService, cached
 
@@ -84,6 +84,32 @@ def _leaderboard_cache_key(
     )
 
 
+def _leaderboard_cache_key_from_args(
+    _service: CacheableService,
+    *,
+    limit: int,
+    offset: int,
+    accuracy_metric: LeaderboardMetricId,
+    submissions_metric: LeaderboardMetricId,
+    division: str | None,
+    min_fights: int | None,
+    start_date: date | None,
+    end_date: date | None,
+) -> str:
+    """Bridge :func:`_leaderboard_cache_key` to the ``@cached`` decorator signature."""
+
+    return _leaderboard_cache_key(
+        limit=limit,
+        offset=offset,
+        accuracy_metric=accuracy_metric,
+        submissions_metric=submissions_metric,
+        division=division,
+        min_fights=min_fights,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
 def _trends_cache_key(
     *,
     start_date: date | None,
@@ -103,6 +129,32 @@ def _trends_cache_key(
             str(streak_limit),
         ]
     )
+
+
+def _city_cache_key(
+    _service: CacheableService,
+    *,
+    group_by: str,
+    country: str | None,
+    min_fighters: int,
+) -> str:
+    """Return the cache key used for grouped city statistics."""
+
+    country_segment = country or "all"
+    return f"stats:cities:{group_by}:{country_segment}:{min_fighters}"
+
+
+def _gym_cache_key(
+    _service: CacheableService,
+    *,
+    country: str | None,
+    min_fighters: int,
+    sort_by: str,
+) -> str:
+    """Return the cache key used for gym aggregation statistics."""
+
+    country_segment = country or "all"
+    return f"stats:gyms:{country_segment}:{min_fighters}:{sort_by}"
 
 
 class StatsService(CacheableService):
@@ -134,25 +186,7 @@ class StatsService(CacheableService):
         return await self._repository.stats_summary()
 
     @cached(
-        lambda _self,
-        *,
-        limit,
-        offset,
-        accuracy_metric,
-        submissions_metric,
-        division,
-        min_fights,
-        start_date,
-        end_date: _leaderboard_cache_key(
-            limit=limit,
-            offset=offset,
-            accuracy_metric=accuracy_metric,
-            submissions_metric=submissions_metric,
-            division=division,
-            min_fights=min_fights,
-            start_date=start_date,
-            end_date=end_date,
-        ),
+        _leaderboard_cache_key_from_args,
         ttl=180,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=_deserialize_leaderboards,
@@ -199,7 +233,9 @@ class StatsService(CacheableService):
         ttl=180,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=_deserialize_trends,
-        deserialize_error_message=("Failed to deserialize cached trends for key {key}: {error}"),
+        deserialize_error_message=(
+            "Failed to deserialize cached trends for key {key}: {error}"
+        ),
     )
     async def get_trends(
         self,
@@ -223,13 +259,17 @@ class StatsService(CacheableService):
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            CountryStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
+            CountryStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
         ),
         deserialize_error_message=(
             "Failed to deserialize cached country stats for key {key}: {error}"
         ),
     )
-    async def get_country_stats(self, *, group_by: str, min_fighters: int) -> CountryStatsResponse:
+    async def get_country_stats(
+        self, *, group_by: str, min_fighters: int
+    ) -> CountryStatsResponse:
         """Get fighter count by country."""
         stats, total = await self._fighter_repository.get_country_stats(group_by)
 
@@ -243,15 +283,13 @@ class StatsService(CacheableService):
         )
 
     @cached(
-        lambda _self,
-        *,
-        group_by,
-        country,
-        min_fighters: f"stats:cities:{group_by}:{country or 'all'}:{min_fighters}",
+        _city_cache_key,
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            CityStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
+            CityStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
         ),
         deserialize_error_message=(
             "Failed to deserialize cached city stats for key {key}: {error}"
@@ -273,17 +311,17 @@ class StatsService(CacheableService):
         )
 
     @cached(
-        lambda _self,
-        *,
-        country,
-        min_fighters,
-        sort_by: f"stats:gyms:{country or 'all'}:{min_fighters}:{sort_by}",
+        _gym_cache_key,
         ttl=600,
         serializer=lambda response: response.model_dump(mode="json"),
         deserializer=lambda payload: (
-            GymStatsResponse.model_validate(payload) if isinstance(payload, dict) else None
+            GymStatsResponse.model_validate(payload)
+            if isinstance(payload, dict)
+            else None
         ),
-        deserialize_error_message=("Failed to deserialize cached gym stats for key {key}: {error}"),
+        deserialize_error_message=(
+            "Failed to deserialize cached gym stats for key {key}: {error}"
+        ),
     )
     async def get_gym_stats(
         self, *, country: str | None, min_fighters: int, sort_by: str
@@ -292,7 +330,9 @@ class StatsService(CacheableService):
         stats = await self._fighter_repository.get_gym_stats(country)
 
         # Filter by min_fighters
-        filtered_stats = [stat for stat in stats if stat["fighter_count"] >= min_fighters]
+        filtered_stats = [
+            stat for stat in stats if stat["fighter_count"] >= min_fighters
+        ]
 
         # Sort based on sort_by parameter
         if sort_by == "name":
