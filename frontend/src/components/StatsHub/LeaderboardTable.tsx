@@ -90,7 +90,7 @@ function renderLeaderboardBody({
           {entries.map((entry, index) => {
             const rank = offset + index + 1;
             return (
-              <TableRow key={`${entry.fighter_id}-${index}`}>
+              <TableRow key={`${entry.fighter_id}-${rank}`}>
                 <TableCell className="text-sm font-semibold">{rank}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">

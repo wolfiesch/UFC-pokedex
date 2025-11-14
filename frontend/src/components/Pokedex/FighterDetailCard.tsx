@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { toast } from "sonner";
 
 import StatsDisplay from "@/components/StatsDisplay";
@@ -325,11 +325,13 @@ export default function FighterDetailCard({
           <div className="flex items-start justify-center">
             <FighterImageFrame size="lg" className="md:w-full">
               {shouldShowImage ? (
-                <img
+                <Image
                   src={imageSrc ?? ""}
                   alt={fighter.name}
+                  fill
+                  priority
                   className="h-full w-full scale-[1.01] object-contain drop-shadow-[0_22px_35px_rgba(15,23,42,0.45)] transition duration-700 ease-out group-hover/fighter-frame:rotate-[0.65deg] group-hover/fighter-frame:scale-[1.06]"
-                  loading="lazy"
+                  sizes="(max-width: 768px) 320px, 380px"
                   onError={() => setImageError(true)}
                 />
               ) : (

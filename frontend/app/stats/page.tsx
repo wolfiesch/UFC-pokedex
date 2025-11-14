@@ -165,9 +165,9 @@ export default async function StatsHubPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {leaderboardDefinitions.length > 0 ? (
-              leaderboardDefinitions.map((leaderboard) => (
+              leaderboardDefinitions.map((leaderboard, index) => (
                 <LeaderboardTable
-                  key={leaderboard.metric_id}
+                  key={`${leaderboard.metric_id}-${index}`}
                   title={leaderboard.title}
                   description={leaderboard.description}
                   entries={leaderboard.entries}

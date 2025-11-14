@@ -85,7 +85,7 @@ export function TopGymsWidget({
           Elite Training Gyms
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[360px]">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
