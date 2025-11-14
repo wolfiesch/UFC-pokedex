@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, case, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import ColumnElement
 
 from backend.db.models import Event, Fighter
 from backend.schemas.event import EventDetail, EventFight, EventListItem
@@ -18,6 +19,100 @@ class PostgreSQLEventRepository:
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    def _build_search_conditions(
+        self,
+        *,
+        q: str | None,
+        year: int | None,
+        location: str | None,
+        status: str | None,
+    ) -> list[ColumnElement[bool]]:
+        """Create SQLAlchemy filter expressions shared by search queries.
+
+        Each generated predicate mirrors the filtering performed within
+        :meth:`search_events` so that both listing and counting paths stay in
+        sync. Centralising this logic avoids subtle drift between the two
+        code paths as new filters are introduced.
+        """
+
+        conditions: list[ColumnElement[bool]] = []
+
+        # Text search in event name and location.
+        if q:
+            search_pattern = f"%{q}%"
+            conditions.append(
+                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
+            )
+
+        # Year filter applied by extracting the year component from the event date.
+        if year:
+            conditions.append(func.extract("year", Event.date) == year)
+
+        # Location filter performs case-insensitive partial matching.
+        if location:
+            conditions.append(Event.location.ilike(f"%{location}%"))
+
+        # Status filter limits results to the desired lifecycle stage.
+        if status:
+            conditions.append(Event.status == status)
+
+        return conditions
+
+    def _event_type_expression(self) -> ColumnElement[str]:
+        """Return SQL expression approximating :func:`detect_event_type`.
+
+        The classification pipeline relies on a series of keyword checks. This
+        helper reproduces the same ordering using SQL ``CASE`` statements so
+        that event-type aware queries can remain entirely server-side.
+        """
+
+        lower_name = func.lower(Event.name)
+
+        return case(
+            # Pay-per-view cards: "UFC <number>: ..." style naming.
+            (
+                and_(
+                    lower_name.like("ufc %:%"),
+                    func.substr(lower_name, 5, 1).between("0", "9"),
+                ),
+                "ppv",
+            ),
+            # Fight Night events explicitly mention the label.
+            (lower_name.like("%fight night%"), "fight_night"),
+            # ESPN and ABC specials rely on their network designations.
+            (
+                or_(
+                    lower_name.like("%ufc on espn%"),
+                    lower_name.like("%espn%"),
+                ),
+                "ufc_on_espn",
+            ),
+            (
+                or_(
+                    lower_name.like("%ufc on abc%"),
+                    lower_name.like("%abc%"),
+                ),
+                "ufc_on_abc",
+            ),
+            # The Ultimate Fighter finales mention both "tuf" and "finale".
+            (
+                and_(
+                    lower_name.like("%tuf%"),
+                    lower_name.like("%finale%"),
+                ),
+                "tuf_finale",
+            ),
+            # Contender Series cards sometimes surface as DWCS branded shows.
+            (
+                or_(
+                    lower_name.like("%contender series%"),
+                    lower_name.like("%dwcs%"),
+                ),
+                "contender_series",
+            ),
+            else_="other",
+        )
 
     async def list_events(
         self,
@@ -172,24 +267,10 @@ class PostgreSQLEventRepository:
         """
         query = select(Event).order_by(desc(Event.date), Event.id)
 
-        # Text search in name and location
-        if q:
-            search_pattern = f"%{q}%"
-            query = query.where(
-                Event.name.ilike(search_pattern) | Event.location.ilike(search_pattern)
-            )
-
-        # Year filter
-        if year:
-            query = query.where(func.extract("year", Event.date) == year)
-
-        # Location filter
-        if location:
-            query = query.where(Event.location.ilike(f"%{location}%"))
-
-        # Status filter
-        if status:
-            query = query.where(Event.status == status)
+        for condition in self._build_search_conditions(
+            q=q, year=year, location=location, status=status
+        ):
+            query = query.where(condition)
 
         apply_manual_pagination = event_type is not None
 
@@ -230,6 +311,43 @@ class PostgreSQLEventRepository:
         start_index: int = 0 if offset is None else offset
         end_index: int | None = None if limit is None else start_index + limit
         return event_list[start_index:end_index]
+
+    async def count_search_events(
+        self,
+        *,
+        q: str | None = None,
+        year: int | None = None,
+        location: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+    ) -> int:
+        """Count events matching the search filters without materialising rows."""
+
+        event_type_expr = self._event_type_expression().label("computed_event_type")
+
+        typed_events_query = select(
+            Event.id.label("event_id"),
+            event_type_expr,
+        )
+
+        for condition in self._build_search_conditions(
+            q=q, year=year, location=location, status=status
+        ):
+            typed_events_query = typed_events_query.where(condition)
+
+        # The common table expression ensures the event-type label is computed
+        # a single time before applying any optional filters.
+        typed_events_cte = typed_events_query.cte("typed_events")
+
+        count_query = select(func.count()).select_from(typed_events_cte)
+        if event_type:
+            count_query = count_query.where(
+                typed_events_cte.c.computed_event_type == event_type
+            )
+
+        result = await self._session.execute(count_query)
+        count = result.scalar_one_or_none()
+        return int(count or 0)
 
     async def get_unique_years(self) -> list[int]:
         """Get list of unique years from all events."""

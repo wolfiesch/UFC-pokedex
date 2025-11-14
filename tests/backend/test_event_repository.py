@@ -6,6 +6,7 @@ import types
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -38,6 +39,7 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
         # to satisfy interface requirements for test stubs.
         return
         yield  # unreachable, but marks this as an async generator
+
     async def aclose(self) -> None:
         return None
 
@@ -81,7 +83,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
 # Import backend modules after dependency stubs are registered to avoid optional import errors.
 from backend.db.models import Base, Event, Fight, Fighter  # noqa: E402
 from backend.db.repositories import PostgreSQLEventRepository  # noqa: E402
-from backend.schemas.event import PaginatedEventsResponse  # noqa: E402
+from backend.schemas.event import EventListItem, PaginatedEventsResponse  # noqa: E402
 from backend.services.event_service import EventService  # noqa: E402
 
 
@@ -268,5 +270,118 @@ def test_search_events_filters_event_type_with_manual_pagination() -> None:
             assert [event.event_id for event in second_page.events] == ["evt-a"]
             assert len(second_page.events) == 1
             assert second_page.has_more is False
+            assert first_page.total == 3
+            assert second_page.total == 3
+
+    asyncio.run(runner())
+
+
+def test_count_search_events_applies_filters() -> None:
+    """The count helper should honour each search filter server-side."""
+
+    async def runner() -> None:
+        async with session_ctx() as session:
+            events = [
+                Event(
+                    id="evt-1",
+                    name="UFC Fight Night: Alpha",
+                    date=date(2024, 3, 1),
+                    location="Metropolis",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-2",
+                    name="UFC 300: Example",
+                    date=date(2024, 4, 1),
+                    location="Metropolis",
+                    status="completed",
+                ),
+                Event(
+                    id="evt-3",
+                    name="Dana White's Contender Series 50",
+                    date=date(2023, 9, 1),
+                    location="Las Vegas",
+                    status="upcoming",
+                ),
+            ]
+
+            session.add_all(events)
+            await session.flush()
+
+            repository = PostgreSQLEventRepository(session)
+
+            total_completed = await repository.count_search_events(status="completed")
+            assert total_completed == 2
+
+            total_fight_night = await repository.count_search_events(
+                event_type="fight_night", status="completed"
+            )
+            assert total_fight_night == 1
+
+            total_filtered = await repository.count_search_events(
+                q="Alpha",
+                year=2024,
+                location="Metro",
+                event_type="fight_night",
+                status="completed",
+            )
+            assert total_filtered == 1
+
+            total_upcoming = await repository.count_search_events(status="upcoming")
+            assert total_upcoming == 1
+
+    asyncio.run(runner())
+
+
+def test_event_service_search_events_uses_count_helper() -> None:
+    """Service search should rely on the repository count helper exactly once."""
+
+    async def runner() -> None:
+        repository = AsyncMock(spec=PostgreSQLEventRepository)
+        repository.search_events.return_value = [
+            EventListItem(
+                event_id="evt-1",
+                name="UFC Fight Night: Alpha",
+                date=date(2024, 3, 1),
+                location="Metropolis",
+                status="completed",
+                venue=None,
+                broadcast=None,
+                event_type="fight_night",
+            )
+        ]
+        repository.count_search_events.return_value = 5
+
+        service = EventService(repository)
+
+        response = await service.search_events(
+            q="Alpha",
+            year=2024,
+            location="Metro",
+            event_type="fight_night",
+            status="completed",
+            limit=1,
+            offset=0,
+        )
+
+        repository.search_events.assert_awaited_once_with(
+            q="Alpha",
+            year=2024,
+            location="Metro",
+            event_type="fight_night",
+            status="completed",
+            limit=1,
+            offset=0,
+        )
+        repository.count_search_events.assert_awaited_once_with(
+            q="Alpha",
+            year=2024,
+            location="Metro",
+            event_type="fight_night",
+            status="completed",
+        )
+
+        assert response.total == 5
+        assert response.events[0].event_id == "evt-1"
 
     asyncio.run(runner())

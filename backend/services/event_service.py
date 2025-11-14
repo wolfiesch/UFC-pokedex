@@ -161,17 +161,15 @@ class EventService:
         )
         event_list = list(events)
 
-        # Get total count with same filters (but no pagination)
-        all_matching = await self._repository.search_events(
+        # Get total count with same filters via a dedicated count query to avoid
+        # materialising the full result set purely to compute pagination metadata.
+        total = await self._repository.count_search_events(
             q=q,
             year=year,
             location=location,
             event_type=event_type,
             status=status,
-            limit=None,
-            offset=None,
         )
-        total = len(list(all_matching))
         has_more = (offset + limit) < total
 
         return PaginatedEventsResponse(
