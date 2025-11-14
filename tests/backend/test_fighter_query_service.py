@@ -116,6 +116,11 @@ async def test_compare_fighters_preserves_requested_order() -> None:
     assert [entry.fighter_id for entry in third] == ["beta", "alpha"]
     assert repository.calls == [("alpha", "beta"), ("beta", "alpha")]
 
+    # Subsequent calls with the same reversed ordering should hit the cache.
+    fourth = await service.compare_fighters(["beta", "alpha"])
+    assert [entry.fighter_id for entry in fourth] == ["beta", "alpha"]
+    assert repository.calls == [("alpha", "beta"), ("beta", "alpha")]
+
 
 def test_in_memory_repository_conforms_to_protocol() -> None:
     """Ensure the built-in in-memory repository satisfies the protocol."""

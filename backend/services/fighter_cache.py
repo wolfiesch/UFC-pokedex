@@ -115,7 +115,9 @@ def fighter_search_cache_key(
     """Produce a deterministic cache key for fighter search responses."""
 
     champion_fragment = (
-        ",".join(sorted(filters.champion_statuses)) if filters.champion_statuses else None
+        ",".join(sorted(filters.champion_statuses))
+        if filters.champion_statuses
+        else None
     )
     return search_key(
         query=filters.query or "",
@@ -153,7 +155,14 @@ def fighter_comparison_cache_key(fighter_ids: Sequence[str]) -> str | None:
     persisting partially filled bundles.
     """
 
-    return comparison_key(sorted(fighter_ids)) if len(fighter_ids) >= 2 else None
+    if len(fighter_ids) < 2:
+        return None
+
+    # ``comparison_key`` consumes the identifiers exactly as provided so that
+    # callers requesting ``["alpha", "beta"]`` and ``["beta", "alpha"]``
+    # persist independent cache entries.  This maintains the requested ordering
+    # semantics when rehydrating cached payloads.
+    return comparison_key(tuple(fighter_ids))
 
 
 def serialize_fighter_comparisons(
