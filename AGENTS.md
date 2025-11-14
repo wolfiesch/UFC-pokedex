@@ -1,12 +1,13 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Backend code lives in `backend/` (FastAPI + SQLAlchemy) with migrations under `alembic/`. Frontend UI and shared hooks/components sit in `frontend/src/`, while `frontend/public/` stores static assets. Scrapy spiders and enrichment utilities live in `scraper/`, with runnable helpers inside `scripts/`. Canonical datasets, fixtures, and backups stay in `data/` and are consumed by both the API and the scraper. Automated suites reside in `tests/`; exploratory smoke flows live in `tests/manual/`. Refer to `docs/` for runbooks, AI guides, and operational checklists before editing shared workflows.
+Backend code lives in `backend/` (FastAPI + SQLAlchemy) with Alembic migrations under `backend/db/migrations/`. Frontend UI lives in `frontend/src/` with feature components under `frontend/src/components/`, hooks under `frontend/src/hooks/`, and shared API/client utilities under `frontend/src/lib/`, while `frontend/public/` stores static assets. Scrapy spiders and enrichment utilities live in `scraper/`, with runnable helpers inside `scripts/`. Canonical datasets, fixtures, and backups stay in `data/` and are consumed by both the API and the scraper. Automated suites reside in `tests/`; exploratory smoke flows live in `tests/manual/`. Refer to `docs/` for runbooks, AI guides, and operational checklists before editing shared workflows.
 
 ## Build, Test, and Development Commands
 - `make bootstrap` – installs Python (via `uv`) and Node dependencies; run after cloning.
-- `make dev-local` – brings up FastAPI and Next.js on localhost using your current database.
-- `make api:dev` / `make frontend` – start either side independently with PostgreSQL (requires `DATABASE_URL`).
+- `make dev-local` – brings up FastAPI and Next.js on localhost using your current database (no public tunnel).
+- `make dev` – smart dev entrypoint that prefers Cloudflare/ngrok tunnels but falls back to `make dev-local`.
+- `make api-dev` / `make frontend` – start either side independently with PostgreSQL (requires `DATABASE_URL`).
 - `make lint`, `make format`, `make test` – run Ruff + Next lint, apply formatters, then execute pytest and Vitest.
 - `make scraper`, `make reload-data` – rebuild the fighter corpus; pair these with `make api:seed` for quick sample data.
 

@@ -13,7 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.cache import CacheClient, get_cache_client
 from backend.db.connection import get_db
 from backend.db.repositories.fighter_repository import FighterRepository
+from backend.db.repositories.odds import OddsRepository
 from backend.services.fighter_query_service import FighterQueryService
+from backend.services.odds_query_service import OddsQueryService
 
 
 def get_fighter_query_service(
@@ -32,4 +34,14 @@ def get_fighter_query_service(
     return FighterQueryService(repository, cache=cache)
 
 
-__all__ = ["get_fighter_query_service"]
+def get_odds_query_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheClient = Depends(get_cache_client),
+) -> OddsQueryService:
+    """Wire repository + cache dependencies for the odds service."""
+
+    repository = OddsRepository(session)
+    return OddsQueryService(repository, cache=cache)
+
+
+__all__ = ["get_fighter_query_service", "get_odds_query_service"]

@@ -445,8 +445,9 @@ fighter_stats = Table(
     Column("value", String, nullable=False),
 )
 
-# Imported late to avoid circular dependency with favorites module.
+# Imported late to avoid circular dependency with favorites module and odds extension.
 from .favorites import FavoriteCollection, FavoriteEntry  # noqa: E402
+from .odds import FighterOdds  # noqa: E402
 
 __all__ = [
     "Base",
@@ -456,5 +457,6 @@ __all__ = [
     "FighterRanking",
     "FavoriteCollection",
     "FavoriteEntry",
+    "FighterOdds",
     "fighter_stats",
 ]

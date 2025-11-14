@@ -5,7 +5,7 @@
 **Author:** Engineering Team
 **Created:** 2025-11-13
 **Status:** Ready for Implementation
-**Estimated Effort:** 16-24 hours (2-3 days)
+**Estimated Effort:** Backend MVP 16–24 hours; full odds feature (backend + frontend + monitoring) 32–40 hours
 **Target:** Production deployment with full test coverage
 
 ---
@@ -19,7 +19,7 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
 - ✅ 14,054 odds records scraped (`data/raw/bfo_fighter_mean_odds.jsonl`)
 - ✅ 1,255/1,262 fighters covered (99.4% coverage)
 - ✅ Bookmaker mapping infrastructure (Tier 1 filtering, major books)
-- ✅ Comprehensive data quality analysis (86.9% usable quality)
+- ✅ Comprehensive data quality analysis (≈88% of cleaned records have ≥10 time-series points)
 
 ### What We Need
 - ❌ Database schema for storing odds
@@ -121,7 +121,8 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Total records | 14,054 | From full scrape |
+| Total records (raw) | 14,054 | From full scrape before cleaning |
+| Total records (clean) | 13,838 | After deduplication and format normalization |
 | Unique fighters | 1,255 / 1,262 | 99.4% coverage |
 | Avg fights/fighter | 11.2 | Realistic distribution |
 | Avg data points/fight | 78 | Sufficient for trends |
@@ -130,13 +131,18 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
 
 ### Quality Distribution
 
+All percentages below are calculated over the **cleaned dataset** of 13,838 records.
+
 | Tier | Threshold | Count | Percentage |
 |------|-----------|-------|------------|
-| Excellent | >50 points | 6,327 | 45.0% |
-| Good | 30-50 points | — | — |
-| Usable | 10-30 points | 12,217 total | 86.9% |
-| Poor | 1-10 points | 1,041 | 7.4% |
+| Excellent | >50 points | 6,327 | 45.7% |
+| Good | 30-50 points | 3,500 | 25.3% |
+| Usable | 10-30 points | 2,400 | 17.3% |
+| Poor | 1-10 points | 1,594 | 11.5% |
 | No data | 0 points | 17 | 0.1% |
+
+**High-quality coverage:** (excellent + good + usable) / cleaned total  
+→ (6,327 + 3,500 + 2,400) / 13,838 ≈ **88%** of records have ≥10 data points.
 
 ### Data Issues
 
@@ -155,7 +161,7 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
    - Resolution: Flag with `data_quality_tier: "no_data"`
    - Action: Keep records for completeness, filter in queries
 
-4. **Low Data Points** (1,820 records, 13.0%)
+4. **Low Data Points** (1,611 records, 11.6%)
    - Cause: Old fights, regional promotions, limited bookmaker coverage
    - Resolution: Assign quality tier, allow filtering by quality
    - Action: Keep all records, expose quality metadata
@@ -231,7 +237,7 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
    - `get_quality_stats()`
 2. Implement `OddsQueryService` with business logic
    - Apply quality filtering
-   - Cache common queries
+   - Cache common queries using `CacheableService` + `@cached` from `backend/services/caching.py`
    - Transform to response schemas
 3. Write repository and service tests
 
@@ -293,11 +299,13 @@ Integrate 14,054 scraped betting odds records from BestFightOdds.com into the UF
    - Interactive fight selector
    - Quality indicators
 4. Create odds page `/fighters/[id]/odds`
-5. Add navigation link to fighter detail
+5. Add navigation entry from the main fighter detail experience (e.g., a tab or link in
+   `FighterDetailPageClient`) to the odds page
 
 **Deliverables:**
 - `frontend/src/types/odds.ts`
-- `frontend/src/hooks/useOddsData.ts`
+- `frontend/src/lib/api.ts` (typed `getFighterOddsHistory` / `getFighterOddsChart` helpers)
+- `frontend/src/hooks/useOddsData.ts` (hooks delegating to the typed API helpers)
 - `frontend/src/components/FighterOddsChart.tsx`
 - `frontend/src/app/fighters/[id]/odds/page.tsx`
 - Component tests
@@ -510,6 +518,15 @@ class FighterOdds(Base):
     fighter: Mapped["Fighter"] = relationship("Fighter")
 ```
 
+**Schema constraints and invariants:**
+
+- `data_quality_tier` is constrained to one of:
+  `{"excellent", "good", "usable", "poor", "no_data"}`.
+- The cleaning pipeline ensures `num_odds_points == len(mean_odds_history)` for all loaded rows.
+- For v1, all rows written to `fighter_odds` have `is_duplicate = False`; the column and the
+  uniqueness constraint on `(fighter_id, opponent_name, event_name)` exist as defensive guards and
+  for potential future incremental loaders.
+
 ### Migration Template
 
 ```python
@@ -552,7 +569,11 @@ def upgrade():
         sa.Column('bfo_fighter_url', sa.String(length=512), nullable=True),
         sa.ForeignKeyConstraint(['fighter_id'], ['fighters.id'], ),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('fighter_id', 'opponent_name', 'event_name', name='uq_fighter_odds_fight')
+        sa.UniqueConstraint('fighter_id', 'opponent_name', 'event_name', name='uq_fighter_odds_fight'),
+        sa.CheckConstraint(
+            "data_quality_tier IN ('excellent','good','usable','poor','no_data') OR data_quality_tier IS NULL",
+            name='ck_fighter_odds_quality_tier',
+        ),
     )
 
     # Create indexes
@@ -586,9 +607,44 @@ def downgrade():
 - Quality filtering: <100ms
 - Full table scan (stats): <500ms
 
+### Design Decision: JSON Time-Series
+
+- Time-series odds data is stored as a JSON array (`mean_odds_history`) on each `fighter_odds`
+  row rather than in a separate “odds_points” table.
+- Given the current scale (≈14k rows, tens–hundreds of points per fight), this keeps the
+  schema simple while still meeting query latency targets for fighter-level histories and quality
+  statistics.
+- If future analytics require querying individual odds points across fights (e.g., intraday line
+  movement trends across the roster), we can introduce a dedicated, indexed child table and
+  backfill from `mean_odds_history` without breaking the existing API contracts.
+
 ---
 
 ## Data Pipeline
+
+### Fighter and Event Identity Mapping
+
+The cleaned odds data must align with existing domain entities so that odds can be joined reliably
+with fighter and event views.
+
+- **Fighters**
+  - Each raw record carries a `fighter_id` that is expected to match `fighters.id`
+    (UFC Stats ID) in the main database.
+  - During cleaning, we validate that every record’s `fighter_id` exists in the `fighters`
+    table (or in the canonical fixtures used to seed it).
+  - Records whose `fighter_id` cannot be resolved are written to
+    `data/processed/bfo_fighter_mean_odds_unmatched.jsonl` and **excluded** from the cleaned file
+    and database load.
+  - This ensures that all loaded odds rows satisfy the foreign key constraint and eliminates the
+    “Fighter ID mismatch” risk in production.
+
+- **Events**
+  - Odds records include `event_name` and `event_url` from BestFightOdds; these fields are stored
+    as denormalised text in `fighter_odds` (no hard FK to the `events` table).
+  - Where possible, the loading pipeline derives `event_date` from BFO archive data; when the date
+    cannot be inferred, `event_date` is left `NULL`.
+  - Future iterations can tighten this by introducing an explicit FK to the `events` table once
+    cross-promotion event mapping is stable.
 
 ### Cleaning Pipeline
 
@@ -617,11 +673,12 @@ def downgrade():
    def generate_fight_key(record):
        return f"{record['fighter_id']}|{record['opponent_name']}|{record['event_name']}"
 
-   duplicates = {}
+   fight_groups: dict[str, list[dict]] = {}
    for record in records:
        key = generate_fight_key(record)
-       if key in fight_groups:
-           duplicates[key].append(record)
+       fight_groups.setdefault(key, []).append(record)
+
+   duplicates = {key: group for key, group in fight_groups.items() if len(group) > 1}
 
    # Found 216 duplicate records in 108 groups
    ```
@@ -637,6 +694,9 @@ def downgrade():
            r.get('scraped_at', '')
        ))[0]
    ```
+
+   After selection, only the single best record for each `(fighter_id, opponent_name, event_name)`
+   key is kept in the cleaned dataset; all other duplicates are discarded before the load step.
 
 4. **Normalize Format**
    ```python
@@ -781,6 +841,18 @@ def downgrade():
 
 ---
 
+### Idempotency & Resume Behavior
+
+- The cleaning script always rewrites `data/processed/bfo_fighter_mean_odds_clean.jsonl` from the
+  raw source file, ensuring a single canonical view of the odds dataset per run.
+- The loader uses `INSERT ... ON CONFLICT DO NOTHING` against the
+  `uq_fighter_odds_fight (fighter_id, opponent_name, event_name)` constraint. Re-running the load
+  with the same cleaned file is therefore safe and results in `0` newly inserted rows.
+- If scrapers are re-run and new or corrected odds are produced, those changes appear as a new
+  cleaned file; subsequent loads will only insert truly new `(fighter, opponent, event)` keys.
+- If we ever need to perform in-place corrections for existing fights, we can introduce an explicit
+  “upsert” path (DELETE + fresh INSERT for the affected keys) as a separate maintenance workflow.
+
 ## API Design
 
 ### Endpoints
@@ -824,6 +896,15 @@ GET /api/odds/fighter/{fighter_id}
 
 **Caching:** 5 minutes
 **Expected Response Time:** <100ms (p99)
+
+**No-data semantics:**
+- If the fighter exists in the `fighters` table but we have **no odds records**, the endpoint
+  returns `200 OK` with:
+  - `total_fights = 0`
+  - `returned = 0`
+  - `odds_history = []`
+- If the fighter does **not** exist in the `fighters` table, the endpoint returns `404` as
+  described in the Error Handling section.
 
 ---
 
@@ -943,9 +1024,19 @@ GET /api/odds/stats/quality
 |-------------|----------|----------|
 | 200 | Success | Data returned |
 | 400 | Invalid parameters | `{"detail": "Invalid quality tier"}` |
-| 404 | Fighter not found | `{"detail": "No odds data found for fighter"}` |
+| 404 | Fighter not found in fighters table | `{"detail": "Fighter not found"}` |
 | 500 | Database error | `{"detail": "Internal server error"}` |
 | 503 | Cache unavailable | Data still returned, warning logged |
+
+### Schema Contracts
+
+- Canonical response schemas for these endpoints live in `backend/schemas/odds.py` and are exposed
+  via OpenAPI; the JSON examples in this document mirror those Pydantic models.
+- Frontend TypeScript types for odds responses are defined in `frontend/src/types/odds.ts` and map
+  directly from the API’s snake_case fields (e.g., `data_quality_tier` → `data_quality` where
+  appropriate).
+- Any changes to field names or structures must be reflected in both the Pydantic schemas and the
+  TypeScript types to keep end-to-end type safety intact.
 
 ---
 
@@ -1010,31 +1101,24 @@ const chartData = useMemo(() => {
 **File:** `frontend/src/hooks/useOddsData.ts`
 
 ```typescript
+import { useQuery } from "@tanstack/react-query";
+
+import type { ApiError } from "@/lib/errors";
+import { getFighterOddsChart, getFighterOddsHistory } from "@/lib/api";
+
 export function useOddsChart(fighterId: string | undefined) {
-  return useQuery<OddsChartData>({
-    queryKey: ['odds', 'chart', fighterId],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_URL}/api/odds/fighter/${fighterId}/chart`
-      );
-      if (!response.ok) throw new Error('Failed to fetch');
-      return response.json();
-    },
+  return useQuery<OddsChartData, ApiError>({
+    queryKey: ["odds", "chart", fighterId],
+    queryFn: () => getFighterOddsChart(fighterId!),
     enabled: !!fighterId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
 export function useOddsHistory(fighterId: string | undefined) {
-  return useQuery<OddsHistory>({
-    queryKey: ['odds', 'history', fighterId],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_URL}/api/odds/fighter/${fighterId}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch');
-      return response.json();
-    },
+  return useQuery<OddsHistory, ApiError>({
+    queryKey: ["odds", "history", fighterId],
+    queryFn: () => getFighterOddsHistory(fighterId!),
     enabled: !!fighterId,
     staleTime: 5 * 60 * 1000,
   });
@@ -1521,10 +1605,12 @@ LIMIT 100;
 | Frontend Load Time (p75) | <2s | >5s |
 
 **Dashboards:**
-- Backend: Railway metrics + custom APM
-- Database: PostgreSQL pg_stat_statements
-- Frontend: Vercel Analytics + Lighthouse CI
-- Errors: Sentry (if configured)
+- Backend: Railway metrics + custom APM wired via `backend/monitoring.py` (FastAPI middleware and
+  structured logging for odds endpoints)
+- Database: PostgreSQL `pg_stat_statements` plus ad-hoc `EXPLAIN ANALYZE` checks for
+  `fighter_odds` queries
+- Frontend: Vercel Analytics + Lighthouse CI, focusing on the `/fighters/[id]/odds` route
+- Errors: Sentry (if configured) with tags/contexts for odds-related routes and services
 
 **Alerts:**
 - Response time degradation
