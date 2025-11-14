@@ -893,8 +893,7 @@ export async function getFighterOddsHistory(
     query.quality_min = options.qualityMin;
   }
 
-  const clientAny = client as any;
-  const { data, error } = await clientAny.GET("/odds/fighter/{fighter_id}", {
+  const { data, error } = await client.GET("/odds/fighter/{fighter_id}", {
     params: {
       path: { fighter_id: fighterId },
       query: Object.keys(query).length ? query : undefined,
@@ -927,16 +926,12 @@ export async function getFighterOddsChart(
     throw new ApiError("fighterId is required", { statusCode: 400 });
   }
 
-  const clientAny = client as any;
-  const { data, error } = await clientAny.GET(
-    "/odds/fighter/{fighter_id}/chart",
-    {
-      params: {
-        path: { fighter_id: fighterId },
-        query: options?.limit ? { limit: options.limit } : undefined,
-      },
+  const { data, error } = await client.GET("/odds/fighter/{fighter_id}/chart", {
+    params: {
+      path: { fighter_id: fighterId },
+      query: options?.limit ? { limit: options.limit } : undefined,
     },
-  );
+  });
 
   if (error) {
     throwApiError(

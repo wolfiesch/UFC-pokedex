@@ -577,6 +577,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/odds/fighter/{fighter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List betting odds for a fighter */
+        get: operations["get_fighter_odds_history_odds_fighter__fighter_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/odds/fighter/{fighter_id}/chart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return chart-ready odds data for a fighter */
+        get: operations["get_fighter_odds_chart_odds_fighter__fighter_id__chart_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/odds/fight/{odds_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve the full odds record for a single fight */
+        get: operations["get_fight_odds_detail_odds_fight__odds_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/odds/stats/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset quality metrics */
+        get: operations["get_odds_quality_stats_odds_stats_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/favorites/collections": {
         parameters: {
             query?: never;
@@ -971,6 +1039,13 @@ export interface components {
             total_fighters: number;
             /** Generated At */
             generated_at?: string;
+        };
+        /** ClosingRange */
+        ClosingRange: {
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
         };
         /**
          * CountryStat
@@ -1565,6 +1640,37 @@ export interface components {
             /** Stats */
             stats?: Record<string, never>;
         };
+        /** FightOddsDetailResponse */
+        FightOddsDetailResponse: {
+            /** Id */
+            id: string;
+            /** Fighter Id */
+            fighter_id: string;
+            /** Opponent Name */
+            opponent_name: string;
+            /** Event Name */
+            event_name: string;
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Url */
+            event_url?: string | null;
+            /** Opening Odds */
+            opening_odds?: string | null;
+            closing_range?: components["schemas"]["ClosingRange"] | null;
+            /** Mean Odds History */
+            mean_odds_history: components["schemas"]["OddsTimeSeriesPoint"][];
+            /** Num Odds Points */
+            num_odds_points: number;
+            /** Data Quality */
+            data_quality: string;
+            /**
+             * Scraped At
+             * Format: date-time
+             */
+            scraped_at: string;
+            /** Bfo Fighter Url */
+            bfo_fighter_url?: string | null;
+        };
         /** FighterComparisonEntry */
         FighterComparisonEntry: {
             /** Fighter Id */
@@ -1816,6 +1922,67 @@ export interface components {
             /** Last Fight Result */
             last_fight_result?: ("win" | "loss" | "draw" | "nc") | null;
         };
+        /** FighterOddsChartFight */
+        FighterOddsChartFight: {
+            /** Fight Id */
+            fight_id: string;
+            /** Opponent */
+            opponent: string;
+            /** Event */
+            event: string;
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Url */
+            event_url?: string | null;
+            /** Opening Odds */
+            opening_odds?: string | null;
+            /** Closing Odds */
+            closing_odds?: string | null;
+            /** Quality */
+            quality: string;
+            /** Num Odds Points */
+            num_odds_points: number;
+            /** Time Series */
+            time_series: components["schemas"]["OddsTimeSeriesPoint"][];
+        };
+        /** FighterOddsChartResponse */
+        FighterOddsChartResponse: {
+            /** Fighter Id */
+            fighter_id: string;
+            /** Fights */
+            fights: components["schemas"]["FighterOddsChartFight"][];
+        };
+        /** FighterOddsHistoryEntry */
+        FighterOddsHistoryEntry: {
+            /** Id */
+            id: string;
+            /** Opponent Name */
+            opponent_name: string;
+            /** Event Name */
+            event_name: string;
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Url */
+            event_url?: string | null;
+            /** Opening Odds */
+            opening_odds?: string | null;
+            closing_range?: components["schemas"]["ClosingRange"] | null;
+            /** Num Odds Points */
+            num_odds_points: number;
+            /** Data Quality */
+            data_quality: string;
+        };
+        /** FighterOddsHistoryResponse */
+        FighterOddsHistoryResponse: {
+            /** Fighter Id */
+            fighter_id: string;
+            /** Total Fights */
+            total_fights: number;
+            /** Returned */
+            returned: number;
+            /** Odds History */
+            odds_history: components["schemas"]["FighterOddsHistoryEntry"][];
+        };
         /**
          * GymStat
          * @description Fighter count by training gym.
@@ -1897,6 +2064,48 @@ export interface components {
             leaderboards?: components["schemas"]["LeaderboardDefinition"][];
             /** Generated At */
             generated_at?: string;
+        };
+        /** OddsCoverageStats */
+        OddsCoverageStats: {
+            /** Fighters With Odds */
+            fighters_with_odds: number;
+            /** Total Fighters */
+            total_fighters: number;
+            /** Coverage Percentage */
+            coverage_percentage: number;
+        };
+        /** OddsQualityStatsResponse */
+        OddsQualityStatsResponse: {
+            /** Total Records */
+            total_records: number;
+            /** Unique Fighters */
+            unique_fighters: number;
+            /** Avg Odds Points */
+            avg_odds_points: number;
+            /** Quality Distribution */
+            quality_distribution: {
+                [key: string]: number;
+            };
+            coverage_stats: components["schemas"]["OddsCoverageStats"];
+        };
+        /** OddsTimeSeriesPoint */
+        OddsTimeSeriesPoint: {
+            /**
+             * Timestamp Ms
+             * @description Epoch timestamp (milliseconds).
+             */
+            timestamp_ms: number;
+            /**
+             * Timestamp
+             * Format: date-time
+             * @description ISO8601 timestamp for the sample.
+             */
+            timestamp: string;
+            /**
+             * Odds
+             * @description Decimal odds value.
+             */
+            odds: number;
         };
         /**
          * PaginatedEventsResponse
@@ -3025,6 +3234,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighter_odds_history_odds_fighter__fighter_id__get: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of fights to return (max 500). */
+                limit?: number;
+                /** @description Minimum quality tier (excellent, good, usable, poor, no_data). */
+                quality_min?: string | null;
+            };
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FighterOddsHistoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fighter_odds_chart_odds_fighter__fighter_id__chart_get: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of fights to include in the chart payload. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FighterOddsChartResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fight_odds_detail_odds_fight__odds_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                odds_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FightOddsDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_odds_quality_stats_odds_stats_quality_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OddsQualityStatsResponse"];
                 };
             };
         };

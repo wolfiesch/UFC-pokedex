@@ -22,3 +22,8 @@ Commits mirror the existing log: imperative, descriptive subject lines (e.g., â€
 
 ## Security & Configuration Tips
 Copy `.env.example` to `.env` and never commit secretsâ€”Docker, Railway, and Cloudflare credentials stay in your local environment managers. Use `make ensure-docker` before scraping or seeding so PostgreSQL/Redis are ready. The project now requires PostgreSQL for all workflows, so ensure `docker compose up -d` is running before touching migrations, Sherdog workflows, or anything under `data/processed/`.
+
+## MCP / Browser Automation Smoke Test
+- Ensure local dev stack is running (`make dev` or `make dev-local`) so Cloudflare/frontend and API tunnels are live.
+- Use the Playwright MCP to `browser_navigate` to `https://ufc.wolfgangschoenberger.com/` and wait for the app shell and fighter data to render.
+- Treat this as a holistic tunnel check: successful render + data load implies the tunneled frontend is reachable and wired correctly to the tunneled API, without modifying any repo code.
