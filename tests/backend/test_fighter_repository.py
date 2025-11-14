@@ -8,44 +8,29 @@ import pytest
 
 try:
     import pytest_asyncio
-    from sqlalchemy.ext.asyncio import (
-        AsyncSession,
-        async_sessionmaker,
-        create_async_engine,
-    )
+    from sqlalchemy.ext.asyncio import AsyncSession
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for fighter repository tests.",
         allow_module_level=True,
     )
 
-try:
-    import aiosqlite  # noqa: F401
-except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
-    pytest.skip(
-        "Optional dependency 'aiosqlite' is required for fighter repository tests.",
-        allow_module_level=True,
-    )
-
 from backend.db.models import Base, Fighter
 from backend.db.repositories import PostgreSQLFighterRepository
+from tests.backend.postgres import (
+    TemporaryPostgresSchema,
+    postgres_schema,
+)  # noqa: F401
 
 
 @pytest_asyncio.fixture
-async def session() -> AsyncIterator[AsyncSession]:
-    """Provide an in-memory SQLite session for repository exercises."""
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Provide an async session bound to a disposable PostgreSQL schema."""
 
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
+    async with postgres_schema.session_scope(Base.metadata) as session:
         yield session
-        if session.in_transaction():
-            await session.rollback()
-
-    await engine.dispose()
 
 
 def freeze_utc_today(
@@ -221,25 +206,33 @@ async def test_list_fighters_filters_by_nationality(
     repo = PostgreSQLFighterRepository(session)
 
     # Test filtering by American nationality
-    us_fighters = list(await repo.list_fighters(nationality="American", limit=10, offset=0))
+    us_fighters = list(
+        await repo.list_fighters(nationality="American", limit=10, offset=0)
+    )
     assert len(us_fighters) == 1
     assert us_fighters[0].fighter_id == "us-fighter"
     assert us_fighters[0].nationality == "American"
 
     # Test filtering by Brazilian nationality
-    br_fighters = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_fighters = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_fighters) == 1
     assert br_fighters[0].fighter_id == "br-fighter"
     assert br_fighters[0].nationality == "Brazilian"
 
     # Test filtering by Irish nationality
-    ie_fighters = list(await repo.list_fighters(nationality="Irish", limit=10, offset=0))
+    ie_fighters = list(
+        await repo.list_fighters(nationality="Irish", limit=10, offset=0)
+    )
     assert len(ie_fighters) == 1
     assert ie_fighters[0].fighter_id == "ie-fighter"
     assert ie_fighters[0].nationality == "Irish"
 
     # Test filtering by non-existent nationality
-    jp_fighters = list(await repo.list_fighters(nationality="Japanese", limit=10, offset=0))
+    jp_fighters = list(
+        await repo.list_fighters(nationality="Japanese", limit=10, offset=0)
+    )
     assert len(jp_fighters) == 0
 
     # Test no filter returns all fighters
@@ -356,6 +349,8 @@ async def test_list_fighters_nationality_with_pagination(
     assert all(f.nationality == "American" for f in page_3)
 
     # Test Brazilian fighters with pagination
-    br_page = list(await repo.list_fighters(nationality="Brazilian", limit=10, offset=0))
+    br_page = list(
+        await repo.list_fighters(nationality="Brazilian", limit=10, offset=0)
+    )
     assert len(br_page) == 2
     assert all(f.nationality == "Brazilian" for f in br_page)

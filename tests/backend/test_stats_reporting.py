@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import AsyncIterator
 
 import pytest
 
 try:
     import pytest_asyncio
     from sqlalchemy import insert
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import AsyncSession
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for stats reporting tests.",
@@ -16,22 +17,20 @@ except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency gua
 
 from backend.db.models import Base, Fight, Fighter, fighter_stats
 from backend.db.repositories import PostgreSQLFighterRepository
+from tests.backend.postgres import (
+    TemporaryPostgresSchema,
+    postgres_schema,
+)  # noqa: F401
 
 
 @pytest_asyncio.fixture
-async def session() -> AsyncSession:
-    """Create an in-memory SQLite session for repository testing."""
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Provide an async session bound to a disposable PostgreSQL schema."""
 
-    pytest.importorskip("aiosqlite")
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    async with async_session() as session:
+    async with postgres_schema.session_scope(Base.metadata) as session:
         yield session
-        if session.in_transaction():
-            await session.rollback()
-    await engine.dispose()
 
 
 @pytest.mark.asyncio
