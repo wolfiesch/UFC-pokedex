@@ -1,4 +1,5 @@
 import { resolveApiBaseUrl } from "./resolve-api-base-url";
+import { getDefaultApiBaseUrl } from "./deployment-config";
 
 const LOCAL_HOSTNAME_REGEX =
   /^(?:localhost|127(?:\.\d+){3}|0\.0\.0\.0|\[::1\])$/i;
@@ -57,10 +58,14 @@ function inferBrowserApiBaseUrl(): string | undefined {
 }
 
 /**
- * Default API base URL for local development.
- * Exported for reuse across modules.
+ * Default API base URL that adapts to the runtime environment.
+ *
+ * Local development keeps using the FastAPI server on port 8000 while
+ * production/preview deployments transparently fall back to the hosted Railway
+ * backend.  Centralising the logic prevents individual modules from shipping
+ * out-of-date hard-coded URLs when environment variables are missing.
  */
-export const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
+export const DEFAULT_CLIENT_API_BASE_URL: string = getDefaultApiBaseUrl();
 
 /**
  * Resolves the API base URL for client-side usage, with smart fallbacks.

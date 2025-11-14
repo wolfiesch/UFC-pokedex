@@ -13,8 +13,19 @@ import type {
   PaginatedFightersResponse,
 } from "./types";
 import { resolveApiBaseUrl } from "./resolve-api-base-url";
+import { getDefaultApiBaseUrl } from "./deployment-config";
 
-const DEFAULT_SSR_API_BASE_URL = "http://localhost:8000";
+/**
+ * Default API base URL for server-side rendering contexts.
+ *
+ * Next.js executes server components during both the build step and runtime
+ * (ISR).  In hosted environments there is no localhost backend, so the helper
+ * switches to the public Railway deployment.  Local development still targets
+ * the developer machine to preserve the fast feedback loop.
+ */
+const DEFAULT_SSR_API_BASE_URL: string = getDefaultApiBaseUrl(
+  "http://localhost:8000",
+);
 
 function getApiBaseUrl(): string {
   // Default to localhost for local development, but allow environment overrides.
