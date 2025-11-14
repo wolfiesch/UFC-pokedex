@@ -25,15 +25,7 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.db.connection import (
-    get_database_type as _connection_get_database_type,
-)
-from backend.db.connection import (
-    get_database_url as _connection_get_database_url,
-)
-from backend.db.connection import (
-    get_engine as _connection_get_engine,
-)
+from backend.db import connection as db_connection
 
 from .api import (
     events,
@@ -129,7 +121,7 @@ def get_database_type() -> str:
     dependency injection without touching private attributes.
     """
 
-    return _connection_get_database_type()
+    return db_connection.get_database_type()
 
 
 def get_database_url() -> str:
@@ -142,7 +134,7 @@ def get_database_url() -> str:
     observability behaviour—such as preflight logging—centralised in this file.
     """
 
-    return _connection_get_database_url()
+    return db_connection.get_database_url()
 
 
 def get_engine() -> AsyncEngine:
@@ -154,7 +146,7 @@ def get_engine() -> AsyncEngine:
     when navigating usages.
     """
 
-    return _connection_get_engine()
+    return db_connection.get_engine()
 
 
 @asynccontextmanager
@@ -177,7 +169,8 @@ async def lifespan(app: FastAPI):
 
     if db_type != "postgresql":
         raise RuntimeError(
-            "Unsupported database type detected. Configure DATABASE_URL for PostgreSQL before starting the API."
+            "Unsupported database type detected. Configure DATABASE_URL for "
+            "PostgreSQL before starting the API."
         )
 
     logger.info("Mode: PRODUCTION")
@@ -392,7 +385,9 @@ async def database_connection_exception_handler(request: Request, exc: Exception
 
 
 @app.exception_handler(SQLAlchemyTimeoutError)
-async def database_timeout_exception_handler(request: Request, exc: SQLAlchemyTimeoutError):
+async def database_timeout_exception_handler(
+    request: Request, exc: SQLAlchemyTimeoutError
+):
     """Handle database query timeout errors."""
     request_id = request_id_context.get()
     logger.error(
@@ -444,7 +439,9 @@ async def database_integrity_exception_handler(request: Request, exc: IntegrityE
 async def database_generic_exception_handler(request: Request, exc: DatabaseError):
     """Handle generic database errors."""
     request_id = request_id_context.get()
-    logger.error(f"Database error for request {request_id} to {request.url.path}: {str(exc)}")
+    logger.error(
+        f"Database error for request {request_id} to {request.url.path}: {str(exc)}"
+    )
 
     error_response = ErrorResponse(
         error_type=ErrorType.DATABASE_ERROR,
@@ -507,4 +504,6 @@ app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(rankings.router, prefix="/rankings", tags=["rankings"])
 app.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 app.include_router(fightweb.router, prefix="/fightweb", tags=["fightweb"])
-app.include_router(image_validation.router, prefix="/image-validation", tags=["image-validation"])
+app.include_router(
+    image_validation.router, prefix="/image-validation", tags=["image-validation"]
+)
