@@ -8,11 +8,7 @@ import pytest
 
 try:
     import pytest_asyncio
-    from sqlalchemy.ext.asyncio import (
-        AsyncSession,
-        async_sessionmaker,
-        create_async_engine,
-    )
+    from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
@@ -34,6 +30,10 @@ from backend.schemas.favorites import (
     FavoriteEntryReorderRequest,
 )
 import backend.services.favorites_service as favorites_module
+from tests.backend.postgres import (
+    TemporaryPostgresSchema,
+    postgres_schema,
+)  # noqa: F401
 
 
 class MemoryCache:
@@ -65,18 +65,13 @@ class MemoryCache:
 
 
 @pytest_asyncio.fixture
-async def session() -> AsyncIterator[AsyncSession]:
-    """Yield an in-memory SQLite session with freshly created tables."""
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Yield an async session scoped to a disposable PostgreSQL schema."""
 
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
+    async with postgres_schema.session_scope(Base.metadata) as session:
         yield session
-        if session.in_transaction():
-            await session.rollback()
-    await engine.dispose()
 
 
 @pytest.fixture(autouse=True)
