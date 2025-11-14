@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-"""Seed minimal fighter data into the database from JSONL file.
+"""Seed minimal fighter data into the PostgreSQL database from a JSONL file.
 
 This script loads minimal fighter columns required by the /fighters endpoint.
-It's designed for quick database seeding in SQLite development mode.
+It now assumes a PostgreSQL backend to mirror the production deployment
+environment and avoid divergence between local and hosted workflows.
 
 Usage:
     python -m backend.scripts.seed_fighters [path_to_jsonl]
@@ -15,14 +16,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
 import sys
 from datetime import date
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.db.connection import begin_engine_transaction
 from backend.db.connection import (
     get_database_type as _connection_get_database_type,
 )
@@ -73,68 +72,45 @@ def is_production_seed_data(jsonl_path: Path) -> bool:
 
 
 def check_sqlite_production_seed_safety(db_type: str, jsonl_path: Path) -> bool:
-    """Check if production seed on SQLite is allowed.
+    """Ensure seeding only runs against PostgreSQL backends.
 
-    Returns:
-        True if seeding should proceed, False if blocked
+    Parameters
+    ----------
+    db_type:
+        The resolved database backend identifier (``postgresql`` in production).
+    jsonl_path:
+        Path to the JSONL data source.  Retained for backward compatibility and
+        parity with the original function signature.
 
-    Raises:
-        SystemExit if blocked (prints error and exits)
+    Returns
+    -------
+    bool
+        ``True`` when seeding is allowed to continue.
+
+    Raises
+    ------
+    RuntimeError
+        Raised whenever the database backend is not PostgreSQL, mirroring the
+        runtime checks enforced by the API startup sequence.
     """
-    # Allow all seeds on PostgreSQL
-    if db_type != "sqlite":
-        return True
 
-    # Allow sample/fixture data on SQLite
-    if not is_production_seed_data(jsonl_path):
-        return True
+    if db_type != "postgresql":
+        raise RuntimeError(
+            "Seeding requires a PostgreSQL DATABASE_URL. "
+            f"Detected unsupported backend '{db_type}'."
+        )
 
-    # Check for override environment variable
-    allow_override = os.getenv("ALLOW_SQLITE_PROD_SEED", "").strip() == "1"
-
-    if allow_override:
-        print("⚠️  WARNING: Production seed on SQLite with ALLOW_SQLITE_PROD_SEED=1")
-        print("⚠️  SQLite is NOT recommended for production data!")
-        print()
-        return True
-
-    # Block production seed on SQLite
-    print("=" * 70)
-    print("❌ ERROR: Production seed blocked on SQLite")
-    print("=" * 70)
-    print()
-    print("You are attempting to seed production data into SQLite:")
-    print(f"  Source: {jsonl_path}")
-    print()
-    print("SQLite is designed for development/testing with small datasets only.")
-    print("Production data (10K+ fighters) should use PostgreSQL.")
-    print()
-    print("Options:")
-    print("  1. Use sample data instead:")
-    print("     make api:seed")
-    print()
-    print("  2. Switch to PostgreSQL:")
-    print("     docker-compose up -d")
-    print("     make db-upgrade")
-    print("     make load-data")
-    print()
-    print("  3. Force SQLite (NOT RECOMMENDED):")
-    print("     ALLOW_SQLITE_PROD_SEED=1 make api:seed-full")
-    print()
-    print("=" * 70)
-    sys.exit(1)
+    return True
 
 
 async def ensure_tables() -> None:
-    """Create database tables if they don't exist (for SQLite)."""
-    from backend.db.models import Base
+    """Validate PostgreSQL usage prior to running the seed routine."""
 
     db_type = get_database_type()
-    if db_type == "sqlite":
-        engine = get_engine()
-        async with begin_engine_transaction(engine) as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        print("✓ SQLite tables initialized")
+    if db_type != "postgresql":
+        raise RuntimeError(
+            "Automatic table management requires a PostgreSQL database backend."
+        )
 
 
 async def seed_fighters(
@@ -157,7 +133,7 @@ async def seed_fighters(
         print(f"❌ File not found: {jsonl_path}", file=sys.stderr)
         return 0, 0
 
-    # Ensure tables exist (for SQLite)
+    # Ensure the database configuration is valid before loading any data.
     await ensure_tables()
 
     loaded_count = 0
@@ -241,7 +217,9 @@ async def main() -> int:
     # launches now that environment validation occurs during lifespan startup.
     validate_environment()
 
-    parser = argparse.ArgumentParser(description="Seed minimal fighter data into database")
+    parser = argparse.ArgumentParser(
+        description="Seed minimal fighter data into database"
+    )
     parser.add_argument(
         "jsonl_path",
         nargs="?",
@@ -276,7 +254,9 @@ async def main() -> int:
     check_sqlite_production_seed_safety(db_type, args.jsonl_path)
 
     # Run seeding
-    loaded, skipped = await seed_fighters(args.jsonl_path, limit=args.limit, dry_run=args.dry_run)
+    loaded, skipped = await seed_fighters(
+        args.jsonl_path, limit=args.limit, dry_run=args.dry_run
+    )
 
     # Summary
     print()
