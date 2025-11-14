@@ -13,6 +13,7 @@ import type {
 
 import { FightGraphCanvas } from "./FightGraphCanvas";
 import { FightWebFilters } from "./FightWebFilters";
+import { FightWebSort } from "./FightWebSort";
 import { FightWebInsightsPanel } from "./FightWebInsightsPanel";
 import { FightWebLegend } from "./FightWebLegend";
 import { FightWebSearch } from "./FightWebSearch";
@@ -239,10 +240,13 @@ export function FightWebClient({
 
   const previousFiltersRef = useRef<FightGraphQueryParams>(appliedFilters);
   useEffect(() => {
-    if (!filtersEqual(previousFiltersRef.current, appliedFilters)) {
-      previousFiltersRef.current = appliedFilters;
+    const prev = previousFiltersRef.current;
+    const prevComparable = { ...prev, sortBy: DEFAULT_SORT };
+    const nextComparable = { ...appliedFilters, sortBy: DEFAULT_SORT };
+    if (!filtersEqual(prevComparable, nextComparable)) {
       setSelectedNodeId(null);
     }
+    previousFiltersRef.current = appliedFilters;
   }, [appliedFilters]);
 
   const [sidebarError, setSidebarError] = useState<string | null>(
@@ -330,6 +334,17 @@ export function FightWebClient({
     }
     applyFilters(defaultFilters);
   }, [appliedFilters, applyFilters, defaultFilters]);
+
+  const handleSortChange = useCallback(
+    (sortBy: FightWebSortOption) => {
+      const nextFilters: FightGraphQueryParams = {
+        ...appliedFilters,
+        sortBy,
+      };
+      applyFilters(nextFilters);
+    },
+    [appliedFilters, applyFilters],
+  );
 
   const nodeCount = graphData?.nodes.length ?? 0;
   const linkCount = graphData?.links.length ?? 0;
@@ -507,6 +522,12 @@ export function FightWebClient({
             onRetry={() => {
               void refetch();
             }}
+          />
+
+          <FightWebSort
+            sortBy={appliedFilters.sortBy ?? DEFAULT_SORT}
+            onChange={handleSortChange}
+            disabled={isLoading || isRefreshing}
           />
 
           <FightWebSearch

@@ -35,10 +35,8 @@ make db-upgrade
 make api:seed              # 8 sample fighters
 make reload-data           # Full scraped dataset (if you have scraped data)
 
-# 6. Start all services
-make dev-local             # Backend + Frontend on localhost
-# OR
-make dev                   # Backend + Frontend with Cloudflare tunnels
+# 6. Start all services with smart auto-detection
+make dev                   # Auto-detects: Cloudflare → ngrok → localhost
 ```
 
 ### Database Configuration
@@ -52,6 +50,37 @@ Accepted `DATABASE_URL` prefixes for PostgreSQL are:
 See `docs/ai-assistants/CLAUDE.md` for detailed PostgreSQL setup instructions.
 
 Refer to `docs/plans/archive/Initial_Plan.md` for the full project roadmap.
+
+### Development Modes
+
+The `make dev` command automatically detects the best available tunneling option and configures your environment accordingly:
+
+**🌐 Cloudflare Tunnel (Best)**
+- Used if: `cloudflared` is installed AND `~/.cloudflared/config.yml` exists
+- URL: https://ufc.wolfgangschoenberger.com (stable, permanent)
+- Setup: One-time Cloudflare tunnel configuration required
+- Best for: Your personal development workflow, production-like testing
+
+**🚇 ngrok Tunnel (Fallback)**
+- Used if: `ngrok` is installed (Cloudflare not configured)
+- URL: Random HTTPS URL (changes on each restart)
+- Setup: `brew install ngrok` + `ngrok config check`
+- Best for: Quick testing, sharing with others, new developers
+
+**🏠 Localhost Only (Ultimate Fallback)**
+- Used if: No tunnel tools are available
+- URL: http://localhost:3000
+- Setup: None required (always works)
+- Best for: Offline development, CI/CD, minimal setup
+
+All modes use the same architecture: Frontend (port 3000) → Next.js API proxy → Backend (port 8000).
+
+**Manual Mode Selection:**
+```bash
+make dev-cloudflare  # Force Cloudflare tunnel
+make dev-ngrok       # Force ngrok tunnel
+make dev-local       # Force localhost only
+```
 
 ## Container Workflow
 

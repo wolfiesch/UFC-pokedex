@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { FightWebClient } from "@/components/FightWeb";
+import { DEFAULT_SORT } from "@/components/FightWeb/sort-utils";
 import { Badge } from "@/components/ui/badge";
 import { getFightGraph } from "@/lib/api";
 import type { FightGraphQueryParams, FightGraphResponse } from "@/lib/types";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 const DEFAULT_FILTERS: FightGraphQueryParams = {
   limit: 150,
   includeUpcoming: false,
+  sortBy: DEFAULT_SORT,
 };
 
 export default async function FightWebPage() {

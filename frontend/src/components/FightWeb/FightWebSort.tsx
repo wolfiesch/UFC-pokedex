@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowUpAZ, Clock3, TrendingUp } from "lucide-react";
+import {
+  ArrowUpAZ,
+  Clock3,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { FightWebSortOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -10,7 +15,7 @@ import {
   FIGHT_WEB_SORT_OPTIONS,
 } from "./sort-utils";
 
-const SORT_ICONS: Record<FightWebSortOption, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+const SORT_ICONS: Record<FightWebSortOption, LucideIcon> = {
   most_active: TrendingUp,
   alphabetical: ArrowUpAZ,
   most_recent: Clock3,
