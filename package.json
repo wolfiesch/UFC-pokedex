@@ -1,0 +1,15 @@
+{
+  "name": "ufc-pokedex-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.10.0",
+  "scripts": {
+    "postinstall": "cd frontend && pnpm install --frozen-lockfile",
+    "build": "cd frontend && pnpm build",
+    "dev": "cd frontend && pnpm dev",
+    "lint": "cd frontend && pnpm lint",
+    "test": "cd frontend && pnpm test"
+  },
+  "devDependencies": {
+    "next": "14.2.3"
+  }
+}
