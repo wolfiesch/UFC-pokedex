@@ -92,16 +92,23 @@ Vercel needs to know your Railway backend URL.
 1. Go to: https://vercel.com/dashboard
 2. Select **ufc-pokedex** project
 3. Go to **Settings** → **Environment Variables**
-4. Add new variable:
+4. Add/verify variables:
    - **Key:** `NEXT_PUBLIC_API_BASE_URL`
-   - **Value:** `https://fulfilling-nourishment-production.up.railway.app`
-   - **Environments:** Check all (Production, Preview, Development)
+     - **Value:** `https://fulfilling-nourishment-production.up.railway.app`
+     - **Environments:** Check all (Production, Preview, Development)
+   - **Key:** `NEXT_SSR_API_BASE_URL`
+     - **Value:** `https://fulfilling-nourishment-production.up.railway.app`
+     - **Environments:** Check all (Production, Preview, Development)
 5. Click **Save**
 
 **Via Vercel CLI:**
 
 ```bash
 vercel env add NEXT_PUBLIC_API_BASE_URL
+# When prompted, enter: https://fulfilling-nourishment-production.up.railway.app
+# Select: Production, Preview, Development (all 3)
+
+vercel env add NEXT_SSR_API_BASE_URL
 # When prompted, enter: https://fulfilling-nourishment-production.up.railway.app
 # Select: Production, Preview, Development (all 3)
 ```
@@ -211,6 +218,7 @@ railway up
 
 **Common issues:**
 - `NEXT_PUBLIC_API_BASE_URL` not set → Add in Vercel dashboard
+- `NEXT_SSR_API_BASE_URL` not set → Add in Vercel dashboard
 - Build command failed → Verify `vercel.json` is in `frontend/` directory
 - pnpm errors → Check if `pnpm-lock.yaml` exists in `frontend/`
 
@@ -229,9 +237,10 @@ railway up
    # Should show: CORS_ALLOW_ORIGINS=https://ufc-pokedex.vercel.app
    ```
 
-3. Frontend has correct API URL:
+3. Frontend has correct API URLs:
    - Go to Vercel dashboard → Settings → Environment Variables
    - Verify `NEXT_PUBLIC_API_BASE_URL` is set
+   - Verify `NEXT_SSR_API_BASE_URL` is set
 
 4. Check browser console (F12) for CORS errors
 
