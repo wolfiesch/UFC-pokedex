@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator
 
 import pytest
 
 try:
     import pytest_asyncio
     from sqlalchemy import insert
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import AsyncSession
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for fighter stats tests.",
@@ -25,20 +25,20 @@ from scripts.load_scraped_data import (
     calculate_longest_win_streak,
     load_fighter_detail,
 )
+from tests.backend.postgres import (
+    TemporaryPostgresSchema,
+    postgres_schema,
+)  # noqa: F401
 
 
 @pytest_asyncio.fixture
-async def session() -> AsyncSession:
-    pytest.importorskip("aiosqlite")
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    async with async_session() as session:
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Yield an async session backed by a temporary PostgreSQL schema."""
+
+    async with postgres_schema.session_scope(Base.metadata) as session:
         yield session
-        if session.in_transaction():
-            await session.rollback()
-    await engine.dispose()
 
 
 @pytest.fixture

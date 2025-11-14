@@ -1,4 +1,5 @@
 """Tests for query performance optimization."""
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -8,48 +9,35 @@ import pytest
 try:
     import pytest_asyncio
     from sqlalchemy import event
-    from sqlalchemy.ext.asyncio import (
-        AsyncSession,
-        async_sessionmaker,
-        create_async_engine,
-    )
+    from sqlalchemy.ext.asyncio import AsyncSession
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for query performance tests.",
         allow_module_level=True,
     )
 
-try:
-    import aiosqlite  # noqa: F401
-except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
-    pytest.skip(
-        "Optional dependency 'aiosqlite' is required for query performance tests.",
-        allow_module_level=True,
-    )
-
 from backend.db.models import Base, Fighter, Fight
 from backend.db.repositories import PostgreSQLFighterRepository
 from datetime import date
+from tests.backend.postgres import (
+    TemporaryPostgresSchema,
+    postgres_schema,
+)  # noqa: F401
 
 
 @pytest_asyncio.fixture
-async def session() -> AsyncIterator[AsyncSession]:
-    """Provide an in-memory SQLite session for performance tests."""
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Provide an async session bound to a temporary PostgreSQL schema."""
 
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
+    async with postgres_schema.session_scope(Base.metadata) as session:
         yield session
-        if session.in_transaction():
-            await session.rollback()
-
-    await engine.dispose()
 
 
 class QueryCounter:
     """Track number of SQL queries executed."""
+
     def __init__(self):
         self.count = 0
         self.queries = []
@@ -109,12 +97,14 @@ async def test_get_fighter_detail_single_query(session: AsyncSession):
     assert result is not None, "Fighter should be found"
 
     # Filter out PRAGMA queries (SQLite metadata)
-    business_queries = [q for q in counter.queries if not q.startswith('PRAGMA')]
+    business_queries = [q for q in counter.queries if not q.startswith("PRAGMA")]
     query_count = len(business_queries)
 
     # Should use at most 4 business queries (fighter, fights, stats, opponent_fights)
     # More importantly, count should NOT scale with number of fights (no N+1)
-    assert query_count <= 4, f"Used {query_count} queries (N+1 detected). Queries: {business_queries}"
+    assert (
+        query_count <= 4
+    ), f"Used {query_count} queries (N+1 detected). Queries: {business_queries}"
 
     # Verify result has all fights loaded
     assert len(result.fight_history) == 5, "All fights should be loaded"
@@ -158,7 +148,9 @@ async def test_query_count_does_not_scale_with_fights(session: AsyncSession):
     result = await repo.get_fighter("fighter-many-fights")
 
     assert result is not None
-    business_queries_10_fights = [q for q in counter.queries if not q.startswith('PRAGMA')]
+    business_queries_10_fights = [
+        q for q in counter.queries if not q.startswith("PRAGMA")
+    ]
 
     event.remove(engine, "before_cursor_execute", counter.callback)
 
@@ -192,7 +184,9 @@ async def test_query_count_does_not_scale_with_fights(session: AsyncSession):
     result2 = await repo.get_fighter("fighter-more-fights")
 
     assert result2 is not None
-    business_queries_20_fights = [q for q in counter2.queries if not q.startswith('PRAGMA')]
+    business_queries_20_fights = [
+        q for q in counter2.queries if not q.startswith("PRAGMA")
+    ]
 
     event.remove(engine, "before_cursor_execute", counter2.callback)
 

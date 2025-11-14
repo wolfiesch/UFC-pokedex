@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import sys
 import types
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from datetime import date
 
 import pytest
@@ -38,6 +36,7 @@ class _FakeRedis:  # pragma: no cover - lightweight shim for import-time wiring
         # to satisfy interface requirements for test stubs.
         return
         yield  # unreachable, but marks this as an async generator
+
     async def aclose(self) -> None:
         return None
 
@@ -59,22 +58,11 @@ sys.modules["redis.asyncio"] = _redis_asyncio_module
 sys.modules["redis.exceptions"] = _redis_exceptions_module
 
 try:
-    from sqlalchemy.ext.asyncio import (  # type: ignore[attr-defined]
-        AsyncSession,
-        async_sessionmaker,
-        create_async_engine,
-    )
+    import pytest_asyncio
+    from sqlalchemy.ext.asyncio import AsyncSession
 except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency guard
     pytest.skip(
         f"Optional dependency '{exc.name}' is required for event repository tests.",
-        allow_module_level=True,
-    )
-
-try:
-    import aiosqlite  # noqa: F401
-except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
-    pytest.skip(
-        "Optional dependency 'aiosqlite' is required for event repository tests.",
         allow_module_level=True,
     )
 
@@ -83,190 +71,180 @@ from backend.db.models import Base, Event, Fight, Fighter  # noqa: E402
 from backend.db.repositories import PostgreSQLEventRepository  # noqa: E402
 from backend.schemas.event import PaginatedEventsResponse  # noqa: E402
 from backend.services.event_service import EventService  # noqa: E402
+from tests.backend.postgres import (  # noqa: E402,F401
+    TemporaryPostgresSchema,
+    postgres_schema,
+)
 
 
-@asynccontextmanager
-async def session_ctx() -> AsyncIterator[AsyncSession]:
-    """Async context manager yielding an in-memory SQLite session."""
+@pytest_asyncio.fixture()
+async def session(
+    postgres_schema: TemporaryPostgresSchema,
+) -> AsyncIterator[AsyncSession]:
+    """Yield an async session bound to a disposable PostgreSQL schema."""
 
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
-        try:
-            yield session
-        finally:
-            if session.in_transaction():
-                await session.rollback()
-
-    await engine.dispose()
+    async with postgres_schema.session_scope(Base.metadata) as session:
+        yield session
 
 
-def test_get_event_includes_weight_class() -> None:
+@pytest.mark.asyncio
+async def test_get_event_includes_weight_class(session: AsyncSession) -> None:
     """Stored bout weight classes should surface through event fight payloads."""
 
-    async def runner() -> None:
-        async with session_ctx() as session:
-            event = Event(
-                id="evt-1",
-                name="UFC Test Night",
-                date=date(2024, 1, 1),
-                location="Testville",
-                status="completed",
-                venue="Test Arena",
-                broadcast="Test Network",
-                promotion="UFC",
-                ufcstats_url="https://www.ufcstats.com/event-details/evt-1",
-                tapology_url="https://www.tapology.com/events/evt-1",
-                sherdog_url="https://www.sherdog.com/events/evt-1",
-            )
-            fighter = Fighter(id="fighter-1", name="Test Fighter")
-            fight = Fight(
-                id="fight-1",
-                fighter_id=fighter.id,
-                event_id=event.id,
-                opponent_id="fighter-2",
-                opponent_name="Opponent One",
-                event_name=event.name,
-                event_date=event.date,
-                result="win",
-                method="KO",
-                round=1,
-                time="0:30",
-                fight_card_url="https://www.ufcstats.com/fight-details/fight-1",
-                weight_class="Lightweight",
-            )
+    event = Event(
+        id="evt-1",
+        name="UFC Test Night",
+        date=date(2024, 1, 1),
+        location="Testville",
+        status="completed",
+        venue="Test Arena",
+        broadcast="Test Network",
+        promotion="UFC",
+        ufcstats_url="https://www.ufcstats.com/event-details/evt-1",
+        tapology_url="https://www.tapology.com/events/evt-1",
+        sherdog_url="https://www.sherdog.com/events/evt-1",
+    )
+    fighter = Fighter(id="fighter-1", name="Test Fighter")
+    fight = Fight(
+        id="fight-1",
+        fighter_id=fighter.id,
+        event_id=event.id,
+        opponent_id="fighter-2",
+        opponent_name="Opponent One",
+        event_name=event.name,
+        event_date=event.date,
+        result="win",
+        method="KO",
+        round=1,
+        time="0:30",
+        fight_card_url="https://www.ufcstats.com/fight-details/fight-1",
+        weight_class="Lightweight",
+    )
 
-            session.add_all([event, fighter, fight])
-            await session.flush()
+    session.add_all([event, fighter, fight])
+    await session.flush()
 
-            repository = PostgreSQLEventRepository(session)
+    repository = PostgreSQLEventRepository(session)
 
-            detail = await repository.get_event(event.id)
-            assert detail is not None
-            assert detail.fight_card, "Expected at least one fight in the fight card"
-            assert detail.fight_card[0].weight_class == "Lightweight"
-
-    asyncio.run(runner())
+    detail = await repository.get_event(event.id)
+    assert detail is not None
+    assert detail.fight_card, "Expected at least one fight in the fight card"
+    assert detail.fight_card[0].weight_class == "Lightweight"
 
 
-def test_get_event_with_missing_weight_class() -> None:
+@pytest.mark.asyncio
+async def test_get_event_with_missing_weight_class(
+    session: AsyncSession,
+) -> None:
     """Events lacking stored weight classes should expose ``None`` for the field."""
 
-    async def runner() -> None:
-        async with session_ctx() as session:
-            event = Event(
-                id="evt-2",
-                name="UFC Mystery Night",
-                date=date(2024, 2, 2),
-                location="Mystery City",
-                status="completed",
-                venue="Mystery Arena",
-                broadcast="Mystery Network",
-                promotion="UFC",
-                ufcstats_url="https://www.ufcstats.com/event-details/evt-2",
-                tapology_url=None,
-                sherdog_url=None,
-            )
-            fighter = Fighter(id="fighter-3", name="Another Fighter")
-            fight = Fight(
-                id="fight-2",
-                fighter_id=fighter.id,
-                event_id=event.id,
-                opponent_id=None,
-                opponent_name="Unknown Opponent",
-                event_name=event.name,
-                event_date=event.date,
-                result="loss",
-                method="Decision",
-                round=3,
-                time="5:00",
-                fight_card_url="https://www.ufcstats.com/fight-details/fight-2",
-                weight_class=None,
-            )
+    event = Event(
+        id="evt-2",
+        name="UFC Mystery Night",
+        date=date(2024, 2, 2),
+        location="Mystery City",
+        status="completed",
+        venue="Mystery Arena",
+        broadcast="Mystery Network",
+        promotion="UFC",
+        ufcstats_url="https://www.ufcstats.com/event-details/evt-2",
+        tapology_url=None,
+        sherdog_url=None,
+    )
+    fighter = Fighter(id="fighter-3", name="Another Fighter")
+    fight = Fight(
+        id="fight-2",
+        fighter_id=fighter.id,
+        event_id=event.id,
+        opponent_id=None,
+        opponent_name="Unknown Opponent",
+        event_name=event.name,
+        event_date=event.date,
+        result="loss",
+        method="Decision",
+        round=3,
+        time="5:00",
+        fight_card_url="https://www.ufcstats.com/fight-details/fight-2",
+        weight_class=None,
+    )
 
-            session.add_all([event, fighter, fight])
-            await session.flush()
+    session.add_all([event, fighter, fight])
+    await session.flush()
 
-            repository = PostgreSQLEventRepository(session)
+    repository = PostgreSQLEventRepository(session)
 
-            detail = await repository.get_event(event.id)
-            assert detail is not None
-            assert detail.fight_card, "Expected at least one fight in the fight card"
-            assert detail.fight_card[0].weight_class is None
-
-    asyncio.run(runner())
+    detail = await repository.get_event(event.id)
+    assert detail is not None
+    assert detail.fight_card, "Expected at least one fight in the fight card"
+    assert detail.fight_card[0].weight_class is None
 
 
-def test_search_events_filters_event_type_with_manual_pagination() -> None:
+@pytest.mark.asyncio
+async def test_search_events_filters_event_type_with_manual_pagination(
+    session: AsyncSession,
+) -> None:
     """Ensure event-type filtering paginates after in-memory classification."""
 
-    async def runner() -> None:
-        async with session_ctx() as session:
-            events: list[Event] = [
-                Event(
-                    id="evt-a",
-                    name="UFC Fight Night: Alpha",
-                    date=date(2024, 3, 1),
-                    location="Test City",
-                    status="completed",
-                ),
-                Event(
-                    id="evt-b",
-                    name="UFC Fight Night: Beta",
-                    date=date(2024, 4, 1),
-                    location="Test City",
-                    status="completed",
-                ),
-                Event(
-                    id="evt-c",
-                    name="UFC Fight Night: Gamma",
-                    date=date(2024, 5, 1),
-                    location="Test City",
-                    status="completed",
-                ),
-                Event(
-                    id="evt-d",
-                    name="UFC 300: Example",
-                    date=date(2024, 6, 1),
-                    location="Another City",
-                    status="completed",
-                ),
-                Event(
-                    id="evt-e",
-                    name="Dana White's Contender Series 50",
-                    date=date(2024, 7, 1),
-                    location="Another City",
-                    status="completed",
-                ),
-            ]
+    events: list[Event] = [
+        Event(
+            id="evt-a",
+            name="UFC Fight Night: Alpha",
+            date=date(2024, 3, 1),
+            location="Test City",
+            status="completed",
+        ),
+        Event(
+            id="evt-b",
+            name="UFC Fight Night: Beta",
+            date=date(2024, 4, 1),
+            location="Test City",
+            status="completed",
+        ),
+        Event(
+            id="evt-c",
+            name="UFC Fight Night: Gamma",
+            date=date(2024, 5, 1),
+            location="Test City",
+            status="completed",
+        ),
+        Event(
+            id="evt-d",
+            name="UFC 300: Example",
+            date=date(2024, 6, 1),
+            location="Another City",
+            status="completed",
+        ),
+        Event(
+            id="evt-e",
+            name="Dana White's Contender Series 50",
+            date=date(2024, 7, 1),
+            location="Another City",
+            status="completed",
+        ),
+    ]
 
-            session.add_all(events)
-            await session.flush()
+    session.add_all(events)
+    await session.flush()
 
-            repository = PostgreSQLEventRepository(session)
-            service = EventService(repository)
+    repository = PostgreSQLEventRepository(session)
+    service = EventService(repository)
 
-            # Page one should contain the two most recent fight night cards.
-            first_page: PaginatedEventsResponse = await service.search_events(
-                event_type="fight_night",
-                limit=2,
-                offset=0,
-            )
-            assert [event.event_id for event in first_page.events] == ["evt-c", "evt-b"]
-            assert len(first_page.events) == 2
-            assert first_page.has_more is True
+    # Page one should contain the two most recent fight night cards.
+    first_page: PaginatedEventsResponse = await service.search_events(
+        event_type="fight_night",
+        limit=2,
+        offset=0,
+    )
+    assert [event.event_id for event in first_page.events] == ["evt-c", "evt-b"]
+    assert len(first_page.events) == 2
+    assert first_page.has_more is True
 
-            # Page two should surface the remaining fight night entry with no more pages.
-            second_page: PaginatedEventsResponse = await service.search_events(
-                event_type="fight_night",
-                limit=2,
-                offset=2,
-            )
-            assert [event.event_id for event in second_page.events] == ["evt-a"]
-            assert len(second_page.events) == 1
-            assert second_page.has_more is False
-
-    asyncio.run(runner())
+    # Page two should surface the remaining fight night entry with no more pages.
+    second_page: PaginatedEventsResponse = await service.search_events(
+        event_type="fight_night",
+        limit=2,
+        offset=2,
+    )
+    assert [event.event_id for event in second_page.events] == ["evt-a"]
+    assert len(second_page.events) == 1
+    assert second_page.has_more is False
