@@ -1,0 +1,14 @@
+{
+  "name": "ufc-pokedex-monorepo",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm install --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "test": "npm run test --prefix frontend"
+  },
+  "dependencies": {
+    "next": "14.2.3"
+  }
+}
