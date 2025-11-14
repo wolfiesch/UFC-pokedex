@@ -44,12 +44,21 @@ function resolveRewriteBaseUrl(rawUrl) {
 }
 
 function getRewriteDestination() {
-  const raw =
-    process.env.NEXT_API_REWRITE_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
-    process.env.NEXT_SSR_API_BASE_URL;
+  const candidateUrls = [
+    // Maintain parity with the SSR API resolution logic.
+    process.env.NEXT_SSR_API_BASE_URL,
+    process.env.NEXT_API_REWRITE_BASE_URL,
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+  ];
 
-  return resolveRewriteBaseUrl(raw);
+  for (const candidate of candidateUrls) {
+    const resolved = resolveRewriteBaseUrl(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
 }
 
 const repoRoot = path.resolve(process.cwd(), "..");
