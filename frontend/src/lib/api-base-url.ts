@@ -63,6 +63,17 @@ function inferBrowserApiBaseUrl(): string | undefined {
 export const DEFAULT_CLIENT_API_BASE_URL = "http://localhost:8000";
 
 /**
+ * Ordered list of environment variable names that may define the backend URL
+ * when rendering on the server. The sequence mirrors the rewrite configuration
+ * logic so that RSC fetches use the same target as Next.js' routing layer.
+ */
+const SERVER_BASE_URL_ENV_PRIORITY: Array<keyof NodeJS.ProcessEnv> = [
+  "NEXT_API_REWRITE_BASE_URL",
+  "NEXT_SSR_API_BASE_URL",
+  "NEXT_PUBLIC_API_BASE_URL",
+];
+
+/**
  * Resolves the API base URL for client-side usage, with smart fallbacks.
  *
  * Priority:
@@ -94,4 +105,23 @@ export function resolveClientApiBaseUrl(
   }
 
   return resolveApiBaseUrl(undefined, fallbackUrl);
+}
+
+/**
+ * Resolve the API base URL for server environments (e.g., Next.js RSC).
+ *
+ * The server cannot rely on window-based inference, so we check a prioritized
+ * set of environment variables that mirror the configuration logic used in
+ * `next.config.mjs`. This guarantees that server-rendered API calls honor the
+ * same deployment-specific overrides as client-side fetches and Next.js
+ * rewrites.
+ */
+export function resolveServerApiBaseUrl(
+  fallbackUrl = DEFAULT_CLIENT_API_BASE_URL,
+): string {
+  const configuredUrl = SERVER_BASE_URL_ENV_PRIORITY.map(
+    (key) => process.env[key],
+  ).find((value) => Boolean(value?.trim()));
+
+  return resolveApiBaseUrl(configuredUrl, fallbackUrl);
 }
