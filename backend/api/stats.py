@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.schemas.stats import (
     CityStat,
     CityStatsResponse,
+    DEFAULT_LEADERBOARD_METRICS,
     CountryStat,
     CountryStatsResponse,
     GymStat,
@@ -32,20 +33,16 @@ async def stats_summary(
 async def stats_leaderboards(
     limit: int = Query(10, ge=1, le=100, description="Maximum entries per leaderboard."),
     offset: int = Query(0, ge=0, description="Pagination offset for leaderboard entries."),
-    accuracy_metric: Annotated[
-        LeaderboardMetricId,
-        Query(description="fighter_stats.metric name representing accuracy to rank."),
-    ] = "sig_strikes_accuracy_pct",
-    submissions_metric: Annotated[
-        LeaderboardMetricId,
-        Query(description="fighter_stats.metric name representing submissions to rank."),
-    ] = "avg_submissions",
+    metrics: list[LeaderboardMetricId] = Query(
+        default=list(DEFAULT_LEADERBOARD_METRICS),
+        description="Repeated fighter_stats.metric identifiers to rank (comma-separated).",
+    ),
     division: str | None = Query(
         None,
         description="Filter by weight division (e.g., 'Lightweight', 'Heavyweight').",
     ),
-    min_fights: int | None = Query(
-        None, ge=1, le=50, description="Minimum number of UFC fights required."
+    min_fights: int = Query(
+        5, ge=1, le=50, description="Minimum number of UFC fights required."
     ),
     start_date: date | None = Query(
         None, description="Optional inclusive lower bound on fight event dates."
@@ -55,13 +52,12 @@ async def stats_leaderboards(
     ),
     service: StatsService = Depends(get_stats_service),
 ) -> LeaderboardsResponse:
-    """Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering."""
+    """Expose fighter leaderboards for the requested metrics with filtering."""
 
     return await service.get_leaderboards(
         limit=limit,
         offset=offset,
-        accuracy_metric=accuracy_metric,
-        submissions_metric=submissions_metric,
+        metrics=metrics,
         division=division,
         min_fights=min_fights,
         start_date=start_date,

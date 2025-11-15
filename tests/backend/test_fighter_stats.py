@@ -49,6 +49,7 @@ def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
         {
             "event_date": "2024-05-01",
             "result": "W",
+            "method": "KO/TKO",
             "round": 3,
             "time": "04:30",
             "stats": {
@@ -62,6 +63,7 @@ def fight_history_with_rich_metrics() -> list[dict[str, Any]]:
         {
             "event_date": "2024-03-01",
             "result": "W",
+            "method": "SUB",
             "round": 2,
             "time": "03:00",
             "stats": {
@@ -107,16 +109,23 @@ def test_calculate_fighter_stats_averages(
     assert significant["sig_strikes_accuracy_pct"] == "52%"
     assert significant["sig_strikes_defense_pct"] == "55%"
     assert significant["sig_strikes_landed_avg"] == "40"
+    assert significant["sig_strikes_landed_total"] == "80"
+    assert significant["sig_strikes_absorbed_total"] == "69.75"
 
     striking = aggregated["striking"]
     assert striking["total_strikes_landed_avg"] == "75"
     assert striking["avg_knockdowns"] == "0.5"
     assert striking["sig_strikes_accuracy_pct"] == "52%"
+    assert striking["total_strikes_landed_total"] == "150"
+    assert striking["sig_strikes_landed_total"] == "80"
+    assert striking["sig_strikes_absorbed_total"] == "69.75"
+    assert striking["knockdowns_total"] == "1"
 
     takedowns = aggregated["takedown_stats"]
     assert takedowns["takedowns_completed_avg"] == "2.5"
     assert takedowns["takedown_accuracy_pct"] == "44%"
     assert takedowns["takedown_defense_pct"] == "78%"
+    assert takedowns["takedowns_completed_total"] == "5"
 
     grappling = aggregated["grappling"]
     assert grappling["takedowns_avg"] == "2.5"
@@ -124,9 +133,14 @@ def test_calculate_fighter_stats_averages(
     assert grappling["takedown_defense_pct"] == "78%"
     assert grappling["avg_submissions"] == "1.5"
     assert grappling["total_submissions"] == "3"
+    assert grappling["takedowns_total"] == "5"
 
     career = aggregated["career"]
     assert career["avg_fight_duration_seconds"] == "675"
+    assert career["avg_fight_duration_minutes"] == "11.25"
+    assert career["time_in_cage_minutes"] == "22.5"
+    assert career["win_pct"] == "100%"
+    assert career["finish_rate_pct"] == "100%"
     assert career["longest_win_streak"] == "2"
 
 

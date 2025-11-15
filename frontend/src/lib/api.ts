@@ -24,6 +24,7 @@ import type {
   FighterComparisonResponse,
   FighterDetail,
   FighterListItem,
+  LeaderboardMetricId,
   PaginatedFightersResponse,
   StatsLeaderboardsResponse,
   StatsSummaryResponse,
@@ -370,6 +371,7 @@ export async function getStatsSummary() {
 /**
  * Get fighter leaderboards ranked by various metrics
  *
+ * @param params - Optional filters and metric configuration
  * @returns Promise resolving to leaderboards for different stat categories
  * @throws {ApiError} If the request fails
  *
@@ -384,8 +386,46 @@ export async function getStatsSummary() {
  * });
  * ```
  */
-export async function getStatsLeaderboards() {
-  const { data, error } = await client.GET("/stats/leaderboards");
+export interface StatsLeaderboardsParams {
+  limit?: number;
+  offset?: number;
+  metrics?: LeaderboardMetricId[];
+  division?: string | null;
+  minFights?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export async function getStatsLeaderboards(params?: StatsLeaderboardsParams) {
+  const query: Record<string, unknown> = {};
+  if (typeof params?.limit === "number") {
+    query.limit = params.limit;
+  }
+  if (typeof params?.offset === "number") {
+    query.offset = params.offset;
+  }
+  if (params?.metrics && params.metrics.length > 0) {
+    query.metrics = params.metrics;
+  }
+  if (params?.division) {
+    query.division = params.division;
+  }
+  if (typeof params?.minFights === "number") {
+    query.min_fights = params.minFights;
+  }
+  if (params?.startDate) {
+    query.start_date = params.startDate;
+  }
+  if (params?.endDate) {
+    query.end_date = params.endDate;
+  }
+
+  const queryParams =
+    Object.keys(query).length > 0 ? { query } : undefined;
+
+  const { data, error } = await client.GET("/stats/leaderboards", {
+    params: queryParams,
+  });
 
   if (error) {
     throwApiError(

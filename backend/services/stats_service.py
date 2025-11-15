@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date
+from typing import Sequence
 
 from fastapi import Depends
 from pydantic import ValidationError
@@ -59,8 +60,7 @@ def _leaderboard_cache_key(
     *,
     limit: int,
     offset: int,
-    accuracy_metric: LeaderboardMetricId,
-    submissions_metric: LeaderboardMetricId,
+    metrics: Sequence[LeaderboardMetricId] | None,
     division: str | None,
     min_fights: int | None,
     start_date: date | None,
@@ -74,8 +74,7 @@ def _leaderboard_cache_key(
             "leaderboards",
             str(limit),
             str(offset),
-            accuracy_metric,
-            submissions_metric,
+            ",".join(metrics) if metrics else "*",
             division or "*",
             str(min_fights) if min_fights is not None else "*",
             start_date.isoformat() if start_date else "*",
@@ -138,16 +137,14 @@ class StatsService(CacheableService):
         *,
         limit,
         offset,
-        accuracy_metric,
-        submissions_metric,
+        metrics,
         division,
         min_fights,
         start_date,
         end_date: _leaderboard_cache_key(
             limit=limit,
             offset=offset,
-            accuracy_metric=accuracy_metric,
-            submissions_metric=submissions_metric,
+            metrics=metrics,
             division=division,
             min_fights=min_fights,
             start_date=start_date,
@@ -165,21 +162,19 @@ class StatsService(CacheableService):
         *,
         limit: int,
         offset: int,
-        accuracy_metric: LeaderboardMetricId,
-        submissions_metric: LeaderboardMetricId,
+        metrics: Sequence[LeaderboardMetricId] | None,
         division: str | None,
         min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Expose fighter leaderboards for accuracy- and submission-oriented metrics."""
+        """Expose fighter leaderboards for the requested metrics."""
 
         try:
             return await self._repository.get_leaderboards(
                 limit=limit,
                 offset=offset,
-                accuracy_metric=accuracy_metric,
-                submissions_metric=submissions_metric,
+                metrics=metrics,
                 division=division,
                 min_fights=min_fights,
                 start_date=start_date,

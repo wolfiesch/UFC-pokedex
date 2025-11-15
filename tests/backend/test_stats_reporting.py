@@ -169,14 +169,14 @@ async def test_leaderboards_rank_by_numeric_value(session: AsyncSession) -> None
     repository = PostgreSQLFighterRepository(session)
     response = await repository.get_leaderboards(
         limit=5,
-        accuracy_metric="sig_strikes_accuracy_pct",
-        submissions_metric="avg_submissions",
+        metrics=("sig_strikes_accuracy_pct", "avg_submissions"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
     )
 
-    accuracy_ids = [entry.fighter_id for entry in response.accuracy.entries]
-    submission_ids = [entry.fighter_id for entry in response.submissions.entries]
+    leaderboards = {board.metric_id: board for board in response.leaderboards}
+    accuracy_ids = [entry.fighter_id for entry in leaderboards["sig_strikes_accuracy_pct"].entries]
+    submission_ids = [entry.fighter_id for entry in leaderboards["avg_submissions"].entries]
 
     assert accuracy_ids == ["fighter-2", "fighter-1"]
     assert submission_ids == ["fighter-2", "fighter-1"]

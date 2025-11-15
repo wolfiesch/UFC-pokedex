@@ -11,9 +11,8 @@ This repository handles:
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import ClassVar
+from typing import ClassVar, Sequence
 
 from sqlalchemy import Date, Float, Integer, case, cast, func, select
 from sqlalchemy.sql import ColumnElement
@@ -21,7 +20,9 @@ from sqlalchemy.sql import ColumnElement
 from backend.db.models import Fight, Fighter, fighter_stats
 from backend.db.repositories.base import BaseRepository
 from backend.schemas.stats import (
+    DEFAULT_LEADERBOARD_METRICS,
     LEADERBOARD_METRIC_DESCRIPTIONS,
+    LEADERBOARD_METRIC_LABELS,
     SUMMARY_METRIC_DESCRIPTIONS,
     SUMMARY_METRIC_LABELS,
     AverageFightDuration,
@@ -38,16 +39,6 @@ from backend.schemas.stats import (
     TrendTimeBucket,
     WinStreakSummary,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class _LeaderboardPayload:
-    """Lightweight container that pairs leaderboard metadata with ranked entries."""
-
-    metric_id: str
-    title: str
-    description: str
-    entries: Iterable[LeaderboardEntry]
 
 
 class StatsRepository(BaseRepository):
@@ -132,70 +123,41 @@ class StatsRepository(BaseRepository):
         *,
         limit: int,
         offset: int,
-        accuracy_metric: LeaderboardMetricId,
-        submissions_metric: LeaderboardMetricId,
+        metrics: Sequence[LeaderboardMetricId] | None,
         division: str | None,
         min_fights: int | None,
         start_date: date | None,
         end_date: date | None,
     ) -> LeaderboardsResponse:
-        """Compute leaderboards with filtering and pagination support."""
+        """Compute leaderboards for the requested metrics with filtering and pagination."""
 
-        leaderboards: list[_LeaderboardPayload] = []
+        metric_ids = self._normalize_metric_request(metrics)
+        min_fights = max(min_fights or 0, 5)
+        leaderboards: list[LeaderboardDefinition] = []
 
-        accuracy_entries = await self._collect_leaderboard_entries(
-            metric_name=accuracy_metric,
-            limit=limit,
-            offset=offset,
-            division=division,
-            min_fights=min_fights,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        if accuracy_entries:
+        for metric_id in metric_ids:
+            entries = await self._collect_leaderboard_entries(
+                metric_name=metric_id,
+                limit=limit,
+                offset=offset,
+                division=division,
+                min_fights=min_fights,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            if not entries:
+                continue
+
             leaderboards.append(
-                _LeaderboardPayload(
-                    metric_id=accuracy_metric,
-                    title="Striking Accuracy",
-                    description=LEADERBOARD_METRIC_DESCRIPTIONS.get(
-                        accuracy_metric, "Accuracy-focused leaderboard"
-                    ),
-                    entries=accuracy_entries,
+                LeaderboardDefinition(
+                    metric_id=metric_id,
+                    title=self._metric_label(metric_id),
+                    description=LEADERBOARD_METRIC_DESCRIPTIONS.get(metric_id),
+                    entries=entries,
                 )
             )
 
-        submissions_entries = await self._collect_leaderboard_entries(
-            metric_name=submissions_metric,
-            limit=limit,
-            offset=offset,
-            division=division,
-            min_fights=min_fights,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        if submissions_entries:
-            leaderboards.append(
-                _LeaderboardPayload(
-                    metric_id=submissions_metric,
-                    title="Submissions",
-                    description=LEADERBOARD_METRIC_DESCRIPTIONS.get(
-                        submissions_metric, "Submission-focused leaderboard"
-                    ),
-                    entries=submissions_entries,
-                )
-            )
-
-        response_payload = [
-            LeaderboardDefinition(
-                metric_id=payload.metric_id,
-                title=payload.title,
-                description=payload.description,
-                entries=list(payload.entries),
-            )
-            for payload in leaderboards
-        ]
-
-        return LeaderboardsResponse(leaderboards=response_payload)
+        return LeaderboardsResponse(leaderboards=leaderboards)
 
     async def get_trends(
         self,
@@ -362,6 +324,28 @@ class StatsRepository(BaseRepository):
             )
             for row in result.fetchall()
         ]
+
+    def _normalize_metric_request(
+        self, metrics: Sequence[LeaderboardMetricId] | None
+    ) -> list[LeaderboardMetricId]:
+        """Return a de-duplicated, ordered list of leaderboard metrics to evaluate."""
+
+        metric_sequence = list(metrics or DEFAULT_LEADERBOARD_METRICS)
+        seen: set[LeaderboardMetricId] = set()
+        ordered: list[LeaderboardMetricId] = []
+        for metric in metric_sequence:
+            if metric in seen:
+                continue
+            seen.add(metric)
+            ordered.append(metric)
+        return ordered
+
+    def _metric_label(self, metric_id: LeaderboardMetricId) -> str:
+        """Provide a human-readable label for the metric identifier."""
+
+        return LEADERBOARD_METRIC_LABELS.get(
+            metric_id, metric_id.replace("_", " ").title()
+        )
 
     def _numeric_stat_value(self) -> ColumnElement[float | None]:
         """Return an expression that safely coerces the fighter stat value column to a float."""

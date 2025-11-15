@@ -94,7 +94,20 @@ export type StatsSummaryMetricId =
   | "max_win_streak";
 
 export type LeaderboardMetricId =
+  | "win_pct"
+  | "finish_rate_pct"
+  | "avg_fight_duration_minutes"
+  | "time_in_cage_minutes"
+  | "avg_knockdowns"
+  | "total_submissions"
+  | "sig_strikes_landed_per_min"
+  | "sig_strikes_absorbed_per_min"
   | "sig_strikes_accuracy_pct"
+  | "sig_strikes_defense_pct"
+  | "total_strikes_landed_avg"
+  | "takedowns_avg"
+  | "takedown_accuracy_pct"
+  | "takedown_defense_pct"
   | "avg_submissions";
 
 export interface StatsSummaryMetric {

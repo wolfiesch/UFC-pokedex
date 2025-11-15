@@ -1,8 +1,15 @@
+import type { JSX } from "react";
 import type { Metadata } from "next";
 
 import StatsDisplay from "@/components/StatsDisplay";
 import { LeaderboardTable, TrendChart } from "@/components/StatsHub";
+import {
+  DEFAULT_STATS_LEADERBOARD_METRICS,
+  STAT_LEADERBOARD_CONFIG,
+  STAT_LEADERBOARD_SECTIONS,
+} from "@/components/StatsHub/metricConfig";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getStatsLeaderboards,
   getStatsSummary,
@@ -51,7 +58,7 @@ function leaderboardsFromResponse(response: StatsLeaderboardsResponse | null) {
 export default async function StatsHubPage() {
   const [summaryResult, leaderboardsResult, trendsResult] = await Promise.allSettled([
     getStatsSummary(),
-    getStatsLeaderboards(),
+    getStatsLeaderboards({ metrics: DEFAULT_STATS_LEADERBOARD_METRICS }),
     getStatsTrends(),
   ]);
 
@@ -85,6 +92,44 @@ export default async function StatsHubPage() {
   const summaryStats = formatSummaryMetrics(summary);
   const summaryDescriptions = extractMetricDetails(summary);
   const leaderboardDefinitions = leaderboardsFromResponse(leaderboards);
+  const leaderboardsByMetric = new Map(
+    leaderboardDefinitions.map((definition) => [definition.metric_id, definition]),
+  );
+  const leaderboardSectionBlocks = STAT_LEADERBOARD_SECTIONS.map((section) => {
+    const sectionLeaderboards = section.metrics
+      .map((metricId) => leaderboardsByMetric.get(metricId))
+      .filter(Boolean) as LeaderboardDefinition[];
+    if (sectionLeaderboards.length === 0) {
+      return null;
+    }
+    return (
+      <div key={section.id} className="space-y-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-xl font-semibold tracking-tight">{section.title}</h3>
+            <p className="text-sm text-muted-foreground">{section.description}</p>
+          </div>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {section.id}
+          </span>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {sectionLeaderboards.map((leaderboard) => {
+            const metricConfig = STAT_LEADERBOARD_CONFIG[leaderboard.metric_id];
+            return (
+              <LeaderboardTable
+                key={leaderboard.metric_id}
+                title={metricConfig?.title ?? leaderboard.title}
+                description={metricConfig?.description ?? leaderboard.description}
+                entries={leaderboard.entries}
+                metricLabel={metricConfig?.metricLabel ?? "Score"}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }).filter((section): section is JSX.Element => Boolean(section));
   const generatedAt = summary?.generated_at ?? leaderboards?.generated_at ?? trends?.generated_at;
   const lastUpdatedDate = generatedAt ? new Date(generatedAt) : null;
   const formattedGeneratedAt =
@@ -110,113 +155,121 @@ export default async function StatsHubPage() {
         ) : null}
       </header>
 
-      <section className="space-y-6">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">Summary KPIs</h2>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Overview
-          </span>
-        </div>
-        {summaryError ? (
-          <div
-            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
-            role="alert"
-          >
-            {summaryError}
-          </div>
-        ) : summaryStats ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatsDisplay title="Key Indicators" stats={summaryStats} />
-          </div>
-        ) : (
-          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
-            Summary metrics are currently unavailable.
-          </div>
-        )}
+      <Tabs defaultValue="summary" className="space-y-8">
+        <TabsList className="flex w-full flex-wrap gap-2 rounded-3xl border border-border bg-card/70 p-2">
+          <TabsTrigger value="summary" className="flex-1 rounded-2xl text-sm font-semibold">
+            Summary
+          </TabsTrigger>
+          <TabsTrigger value="leaderboards" className="flex-1 rounded-2xl text-sm font-semibold">
+            Leaderboards
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="flex-1 rounded-2xl text-sm font-semibold">
+            Trends
+          </TabsTrigger>
+        </TabsList>
 
-        {summaryDescriptions.length > 0 ? (
-          <dl className="grid gap-4 rounded-3xl border border-border bg-card/80 p-6 text-sm text-foreground/80 md:grid-cols-2">
-            {summaryDescriptions.map((metric) => (
-              <div key={metric.id}>
-                <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                  {metric.label}
-                </dt>
-                <dd className="mt-2">{metric.description}</dd>
+        <TabsContent value="summary">
+          <section className="space-y-6 rounded-3xl border border-border bg-card/60 p-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Summary KPIs</h2>
+              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                Overview
+              </span>
+            </div>
+            {summaryError ? (
+              <div
+                className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+                role="alert"
+              >
+                {summaryError}
               </div>
-            ))}
-          </dl>
-        ) : null}
-      </section>
+            ) : summaryStats ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <StatsDisplay title="Key Indicators" stats={summaryStats} />
+              </div>
+            ) : (
+              <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+                Summary metrics are currently unavailable.
+              </div>
+            )}
 
-      <section className="space-y-6">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">Leaderboards</h2>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Competition
-          </span>
-        </div>
-        {leaderboardsError ? (
-          <div
-            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
-            role="alert"
-          >
-            {leaderboardsError}
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {leaderboardDefinitions.length > 0 ? (
-              leaderboardDefinitions.map((leaderboard, index) => (
-                <LeaderboardTable
-                  key={`${leaderboard.metric_id}-${index}`}
-                  title={leaderboard.title}
-                  description={leaderboard.description}
-                  entries={leaderboard.entries}
-                  metricLabel="Score"
-                />
-              ))
+            {summaryDescriptions.length > 0 ? (
+              <dl className="grid gap-4 rounded-3xl border border-border bg-card/80 p-6 text-sm text-foreground/80 md:grid-cols-2">
+                {summaryDescriptions.map((metric) => (
+                  <div key={metric.id}>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                      {metric.label}
+                    </dt>
+                    <dd className="mt-2">{metric.description}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </section>
+        </TabsContent>
+
+        <TabsContent value="leaderboards">
+          <section className="space-y-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Leaderboards</h2>
+              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                Competition
+              </span>
+            </div>
+            {leaderboardsError ? (
+              <div
+                className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+                role="alert"
+              >
+                {leaderboardsError}
+              </div>
+            ) : leaderboardSectionBlocks.length > 0 ? (
+              <div className="space-y-10">{leaderboardSectionBlocks}</div>
             ) : (
               <div
-                className="py-6 text-center text-sm text-muted-foreground md:col-span-2"
+                className="rounded-3xl border border-border bg-card/60 p-6 text-center text-sm text-muted-foreground"
                 role="status"
               >
                 Leaderboard data has not been published yet.
               </div>
             )}
-          </div>
-        )}
-      </section>
+          </section>
+        </TabsContent>
 
-      <section className="space-y-6">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">Trends</h2>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Trajectory
-          </span>
-        </div>
-        {trendsError ? (
-          <div
-            className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
-            role="alert"
-          >
-            {trendsError}
-          </div>
-        ) : trends && trends.trends.length > 0 ? (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {trends.trends.map((seriesGroup) => (
-              <TrendChart
-                key={`${seriesGroup.metric_id}-${seriesGroup.fighter_id ?? "all"}`}
-                title={seriesGroup.label}
-                description={`Tracking ${seriesGroup.label.toLowerCase()} over time.`}
-                series={[seriesGroup]}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="py-6 text-center text-sm text-muted-foreground" role="status">
-            Historical trend data will appear once enough events are ingested.
-          </div>
-        )}
-      </section>
+        <TabsContent value="trends">
+          <section className="space-y-6 rounded-3xl border border-border bg-card/60 p-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Trends</h2>
+              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                Trajectory
+              </span>
+            </div>
+            {trendsError ? (
+              <div
+                className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+                role="alert"
+              >
+                {trendsError}
+              </div>
+            ) : trends && trends.trends.length > 0 ? (
+              <div className="grid gap-6 lg:grid-cols-2">
+                {trends.trends.map((seriesGroup) => (
+                  <TrendChart
+                    key={`${seriesGroup.metric_id}-${seriesGroup.fighter_id ?? "all"}`}
+                    title={seriesGroup.label}
+                    description={`Tracking ${seriesGroup.label.toLowerCase()} over time.`}
+                    series={[seriesGroup]}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+                Historical trend data will appear once enough events are ingested.
+              </div>
+            )}
+          </section>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

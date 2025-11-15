@@ -22,9 +22,46 @@ StatsSummaryMetricId = Literal[
 ]
 
 LeaderboardMetricId = Literal[
+    "win_pct",
+    "finish_rate_pct",
+    "avg_fight_duration_minutes",
+    "time_in_cage_minutes",
+    "avg_knockdowns",
+    "total_submissions",
+    "sig_strikes_landed_per_min",
+    "sig_strikes_absorbed_per_min",
     "sig_strikes_accuracy_pct",
+    "sig_strikes_defense_pct",
+    "sig_strikes_landed_total",
+    "sig_strikes_absorbed_total",
+    "total_strikes_landed_avg",
+    "total_strikes_landed_total",
+    "takedowns_avg",
+    "takedown_accuracy_pct",
+    "takedown_defense_pct",
     "avg_submissions",
 ]
+
+DEFAULT_LEADERBOARD_METRICS: Final[tuple[LeaderboardMetricId, ...]] = (
+    "win_pct",
+    "finish_rate_pct",
+    "avg_knockdowns",
+    "avg_submissions",
+    "total_submissions",
+    "sig_strikes_landed_per_min",
+    "sig_strikes_absorbed_per_min",
+    "sig_strikes_accuracy_pct",
+    "sig_strikes_defense_pct",
+    "sig_strikes_landed_total",
+    "sig_strikes_absorbed_total",
+    "total_strikes_landed_avg",
+    "total_strikes_landed_total",
+    "takedowns_avg",
+    "takedown_accuracy_pct",
+    "takedown_defense_pct",
+    "avg_fight_duration_minutes",
+    "time_in_cage_minutes",
+)
 
 TrendTimeBucket = Literal["month", "quarter", "year"]
 
@@ -49,9 +86,46 @@ SUMMARY_METRIC_DESCRIPTIONS: Final[dict[StatsSummaryMetricId, str]] = {
     "max_win_streak": "Longest recorded win streak observed within the indexed fights.",
 }
 
+LEADERBOARD_METRIC_LABELS: Final[dict[LeaderboardMetricId, str]] = {
+    "win_pct": "Win Percentage",
+    "finish_rate_pct": "Finish Rate",
+    "avg_fight_duration_minutes": "Avg. Fight Duration",
+    "time_in_cage_minutes": "Time in Cage",
+    "avg_knockdowns": "Avg. Knockdowns",
+    "total_submissions": "Total Submissions",
+    "sig_strikes_landed_per_min": "Sig. Strikes Landed / Min",
+    "sig_strikes_absorbed_per_min": "Sig. Strikes Absorbed / Min",
+    "sig_strikes_accuracy_pct": "Sig. Strike Accuracy",
+    "sig_strikes_defense_pct": "Sig. Strike Defense",
+    "sig_strikes_landed_total": "Total Sig. Strikes Landed",
+    "sig_strikes_absorbed_total": "Total Sig. Strikes Absorbed",
+    "total_strikes_landed_avg": "Avg. Total Strikes Landed",
+    "total_strikes_landed_total": "Total Strikes Landed",
+    "takedowns_avg": "Avg. Takedowns Landed",
+    "takedown_accuracy_pct": "Takedown Accuracy",
+    "takedown_defense_pct": "Takedown Defense",
+    "avg_submissions": "Avg. Submission Attempts",
+}
+
 LEADERBOARD_METRIC_DESCRIPTIONS: Final[dict[LeaderboardMetricId, str]] = {
-    "sig_strikes_accuracy_pct": "Fighters with the highest significant strike accuracy",
-    "avg_submissions": "Fighters with the most submission attempts per fight",
+    "win_pct": "Fighters with the highest UFC win percentage.",
+    "finish_rate_pct": "Fighters whose wins most often come via finish.",
+    "avg_fight_duration_minutes": "Competitors whose bouts last the longest on average (minutes).",
+    "time_in_cage_minutes": "Total accumulated fight time inside the UFC Octagon (minutes).",
+    "avg_knockdowns": "Average knockdowns landed per fight.",
+    "total_submissions": "Most recorded submission attempts across a UFC career.",
+    "sig_strikes_landed_per_min": "Significant strikes landed per minute (SLpM).",
+    "sig_strikes_absorbed_per_min": "Significant strikes absorbed per minute (SApM).",
+    "sig_strikes_accuracy_pct": "Fighters with the highest significant strike accuracy.",
+    "sig_strikes_defense_pct": "Best significant strike defensive percentages.",
+    "sig_strikes_landed_total": "Most cumulative significant strikes landed across UFC bouts.",
+    "sig_strikes_absorbed_total": "Most significant strikes absorbed across UFC bouts.",
+    "total_strikes_landed_avg": "Average total strikes landed per fight.",
+    "total_strikes_landed_total": "Most total strikes landed across all recorded fights.",
+    "takedowns_avg": "Average takedowns completed per fight.",
+    "takedown_accuracy_pct": "Highest takedown accuracy percentages.",
+    "takedown_defense_pct": "Best takedown defense rates.",
+    "avg_submissions": "Fighters with the most submission attempts per fight.",
 }
 
 

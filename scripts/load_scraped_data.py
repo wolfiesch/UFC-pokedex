@@ -37,6 +37,19 @@ LANDED_ATTEMPT_RE = re.compile(
     r"(?P<landed>\d+)\s*(?:of|/)\s*(?P<attempted>\d+)", re.IGNORECASE
 )
 PERCENT_RE = re.compile(r"(?P<pct>\d+(?:\.\d+)?)%")
+WIN_RESULT_PREFIXES = ("w", "win")
+NO_CONTEST_PREFIXES = ("nc", "no contest")
+UPCOMING_RESULT_PREFIXES = ("next",)
+FINISH_METHOD_KEYWORDS = (
+    "ko",
+    "tko",
+    "ko/tko",
+    "sub",
+    "submission",
+    "technical submission",
+    "technical sub",
+    "dq",
+)
 
 
 def _parse_landed_attempted(value: Any) -> tuple[int, int] | None:
@@ -80,6 +93,20 @@ def _parse_int_stat(value: Any) -> int | None:
         return None
     try:
         return int(text)
+    except ValueError:
+        return None
+
+
+def _parse_float_stat(value: Any) -> float | None:
+    """Parse numeric stat values that may include string formatting."""
+
+    if value in (None, "", "--"):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return float(text)
     except ValueError:
         return None
 
@@ -259,10 +286,27 @@ def calculate_fighter_stats(
     }
     knockdown_totals = {"total": 0, "count": 0}
     submission_totals = {"total": 0, "count": 0}
-    durations: list[int] = []
+    duration_samples = 0
+    total_duration_seconds = 0
+    counted_fights = 0
+    wins = 0
+    finishes = 0
+    sig_absorbed_total: float | None = None
 
     for fight in fight_history or []:
         stats = fight.get("stats") or {}
+        result_token = _normalize_text(fight.get("result"))
+        method_token = _normalize_text(fight.get("method"))
+
+        if result_token and not _is_no_contest(result_token) and not _is_future_bout(
+            result_token
+        ):
+            counted_fights += 1
+            if _is_win_result(result_token):
+                wins += 1
+                finish_token = method_token or result_token
+                if _is_finish_method(finish_token):
+                    finishes += 1
 
         sig_counts = _parse_landed_attempted(stats.get("sig_strikes"))
         if sig_counts is not None:
@@ -319,7 +363,8 @@ def calculate_fighter_stats(
             fight.get("time"), fight.get("round")
         )
         if duration_seconds is not None:
-            durations.append(duration_seconds)
+            duration_samples += 1
+            total_duration_seconds += duration_seconds
 
     results: dict[str, dict[str, str]] = {}
 
@@ -327,6 +372,10 @@ def calculate_fighter_stats(
     grappling_summary = _find_summary_section({"td_avg", "td_acc", "td_def", "sub_avg"})
     significant_summary = summary_stats.get("significant_strikes", {})
     takedown_summary = summary_stats.get("takedown_stats", {})
+
+    sapm_rate = _parse_float_stat(
+        striking_summary.get("sapm") or significant_summary.get("sapm")
+    )
 
     STRIKING_SUMMARY_MAP: dict[str, list[tuple[str, str]]] = {
         "slpm": [
@@ -390,6 +439,16 @@ def calculate_fighter_stats(
                 _format_number(landed_avg),
             )
 
+    if sig_totals["landed"] > 0:
+        total_value = _format_number(float(sig_totals["landed"]), decimals=0)
+        _store_stat(
+            results,
+            "significant_strikes",
+            "sig_strikes_landed_total",
+            total_value,
+        )
+        _store_stat(results, "striking", "sig_strikes_landed_total", total_value)
+
     if total_strike_totals["count"] > 0:
         landed_avg = _average(
             total_strike_totals["landed"], total_strike_totals["count"]
@@ -402,6 +461,14 @@ def calculate_fighter_stats(
                 _format_number(landed_avg),
             )
 
+    if total_strike_totals["landed"] > 0:
+        _store_stat(
+            results,
+            "striking",
+            "total_strikes_landed_total",
+            _format_number(float(total_strike_totals["landed"]), decimals=0),
+        )
+
     knockdown_avg = _average(knockdown_totals["total"], knockdown_totals["count"])
     if knockdown_avg is not None:
         _store_stat(
@@ -409,6 +476,13 @@ def calculate_fighter_stats(
             "striking",
             "avg_knockdowns",
             _format_number(knockdown_avg),
+        )
+    if knockdown_totals["total"] > 0:
+        _store_stat(
+            results,
+            "striking",
+            "knockdowns_total",
+            _format_number(float(knockdown_totals["total"]), decimals=0),
         )
 
     if takedown_totals["count"] > 0:
@@ -426,6 +500,15 @@ def calculate_fighter_stats(
                 "takedowns_avg",
                 _format_number(landed_avg),
             )
+    if takedown_totals["landed"] > 0:
+        total_value = _format_number(float(takedown_totals["landed"]), decimals=0)
+        _store_stat(
+            results,
+            "takedown_stats",
+            "takedowns_completed_total",
+            total_value,
+        )
+        _store_stat(results, "grappling", "takedowns_total", total_value)
 
     submission_avg = _average(submission_totals["total"], submission_totals["count"])
     if submission_avg is not None:
@@ -443,12 +526,40 @@ def calculate_fighter_stats(
             _format_number(float(submission_totals["total"]), decimals=0),
         )
 
+    if sapm_rate is not None and total_duration_seconds > 0:
+        sig_absorbed_total = sapm_rate * (total_duration_seconds / 60.0)
+
+    if sig_absorbed_total is not None:
+        absorbed_value = _format_number(sig_absorbed_total)
+        _store_stat(
+            results,
+            "significant_strikes",
+            "sig_strikes_absorbed_total",
+            absorbed_value,
+        )
+        _store_stat(results, "striking", "sig_strikes_absorbed_total", absorbed_value)
+
     # Career metrics such as time-in-cage averages and win streaks
     career_metrics: dict[str, str] = {}
-    if durations:
-        avg_duration = _average(sum(durations), len(durations))
+    if duration_samples:
+        avg_duration = _average(total_duration_seconds, duration_samples)
         if avg_duration is not None:
             career_metrics["avg_fight_duration_seconds"] = _format_number(avg_duration)
+            career_metrics["avg_fight_duration_minutes"] = _format_number(
+                avg_duration / 60.0
+            )
+        career_metrics["time_in_cage_minutes"] = _format_number(
+            total_duration_seconds / 60.0
+        )
+
+    if counted_fights > 0:
+        win_ratio = wins / counted_fights
+        career_metrics["win_pct"] = _format_percentage(win_ratio)
+
+    if wins > 0:
+        finish_ratio = finishes / wins if finishes >= 0 else None
+        if finish_ratio is not None:
+            career_metrics["finish_rate_pct"] = _format_percentage(finish_ratio)
 
     longest_streak = calculate_longest_win_streak(fight_history)
     if longest_streak > 0:
@@ -508,6 +619,47 @@ def _parse_date(value: Any) -> date | None:
         f"[yellow]Unexpected date value type {type(value)!r}; storing as NULL[/yellow]"
     )
     return None
+
+
+def _normalize_text(value: Any) -> str:
+    """Lower-case helper for parsing win/loss result tokens."""
+
+    if value in (None, "", "--"):
+        return ""
+    return str(value).strip().lower()
+
+
+def _is_no_contest(result_token: str) -> bool:
+    """Return True when the result marker represents a no-contest outcome."""
+
+    if not result_token:
+        return False
+    return any(
+        result_token.startswith(prefix) or prefix in result_token
+        for prefix in NO_CONTEST_PREFIXES
+    )
+
+
+def _is_future_bout(result_token: str) -> bool:
+    """Return True when the result marker represents an upcoming fight."""
+
+    if not result_token:
+        return False
+    return any(result_token.startswith(prefix) for prefix in UPCOMING_RESULT_PREFIXES)
+
+
+def _is_win_result(result_token: str) -> bool:
+    """Determine if the fighter won the bout."""
+
+    return any(result_token.startswith(prefix) for prefix in WIN_RESULT_PREFIXES)
+
+
+def _is_finish_method(method_token: str) -> bool:
+    """Heuristically determine if the method indicates a finish (KO, TKO, SUB, etc.)."""
+
+    if not method_token:
+        return False
+    return any(keyword in method_token for keyword in FINISH_METHOD_KEYWORDS)
 
 
 async def load_fighters_from_jsonl(

@@ -1,4 +1,6 @@
 const METRIC_LABEL_OVERRIDES: Record<string, string> = {
+  win_pct: "Win Percentage",
+  finish_rate_pct: "Finish Rate (%)",
   sig_strikes_landed_per_min: "Sig. Strikes Landed / Min",
   sig_strikes_absorbed_per_min: "Sig. Strikes Absorbed / Min",
   sig_strikes_accuracy_pct: "Sig. Strike Accuracy (%)",
@@ -15,6 +17,7 @@ const METRIC_LABEL_OVERRIDES: Record<string, string> = {
   avg_fight_duration_seconds: "Avg. Fight Duration (s)",
   longest_win_streak: "Longest Win Streak",
   avg_fight_duration_minutes: "Avg. Fight Duration (min)",
+  time_in_cage_minutes: "Time in Cage (min)",
   avg_submission_attempts: "Avg. Submission Attempts",
   avg_sig_strikes_accuracy_pct: "Avg. Sig. Strike Accuracy (%)",
   avg_takedown_accuracy_pct: "Avg. Takedown Accuracy (%)",
