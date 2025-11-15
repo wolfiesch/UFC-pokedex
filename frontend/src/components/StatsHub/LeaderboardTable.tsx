@@ -41,6 +41,8 @@ export interface LeaderboardTableProps {
   isLoading?: boolean;
   /** Optional error message displayed when data retrieval fails. */
   error?: string | null;
+  /** Optional caption displayed below the table for context. */
+  caption?: string;
   /** Current pagination offset (used to display correct rank numbers). */
   offset?: number;
   /** Indicates if there are more entries available. */
@@ -155,6 +157,7 @@ export default function LeaderboardTable({
   description,
   entries,
   metricLabel,
+  caption,
   isLoading = false,
   error,
   offset = 0,
@@ -191,6 +194,11 @@ export default function LeaderboardTable({
             onLoadMore,
           })
         )}
+        {caption ? (
+          <p className="mt-4 text-xs text-muted-foreground" data-testid="leaderboard-caption">
+            {caption}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

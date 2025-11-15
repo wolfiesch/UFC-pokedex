@@ -60,6 +60,20 @@ describe("LeaderboardTable", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
   });
 
+  it("renders contextual caption when provided", () => {
+    render(
+      <LeaderboardTable
+        title="With Caption"
+        entries={sampleEntries}
+        caption="Includes fighters with ≥5 UFC fights."
+      />,
+    );
+
+    expect(screen.getByTestId("leaderboard-caption")).toHaveTextContent(
+      "Includes fighters with ≥5 UFC fights.",
+    );
+  });
+
   it("renders empty state when no entries provided", () => {
     render(<LeaderboardTable title="Empty" entries={[]} />);
 

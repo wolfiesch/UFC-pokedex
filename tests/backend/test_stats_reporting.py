@@ -172,6 +172,7 @@ async def test_leaderboards_rank_by_numeric_value(session: AsyncSession) -> None
         metrics=("sig_strikes_accuracy_pct", "avg_submissions"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
+        min_fights=1,
     )
 
     leaderboards = {board.metric_id: board for board in response.leaderboards}
@@ -340,3 +341,90 @@ async def test_trends_calculate_streaks_and_durations(
     )
     # Average duration should be (30 seconds + 450 seconds) / 2 == 240 seconds.
     assert abs(featherweight_bucket.average_duration_seconds - 240.0) < 1e-6
+
+
+@pytest.mark.asyncio
+async def test_leaderboards_enforce_minimum_fight_threshold(
+    session: AsyncSession,
+) -> None:
+    """Default leaderboards should exclude fighters with fewer than five fights."""
+
+    veteran = Fighter(id="veteran", name="Veteran Volume")
+    prospect = Fighter(id="prospect", name="Prospect Puncher")
+    session.add_all([veteran, prospect])
+
+    veteran_fights = [
+        Fight(
+            id=f"vet-{idx}",
+            fighter_id="veteran",
+            opponent_id=None,
+            opponent_name=f"Opponent {idx}",
+            event_name="Test Event",
+            event_date=date(2024, 1, idx + 1),
+            result="Win",
+            method="Decision",
+            round=3,
+            time="5:00",
+            fight_card_url=None,
+        )
+        for idx in range(5)
+    ]
+    prospect_fights = [
+        Fight(
+            id=f"pros-{idx}",
+            fighter_id="prospect",
+            opponent_id=None,
+            opponent_name=f"Opponent P{idx}",
+            event_name="Test Event",
+            event_date=date(2024, 2, idx + 1),
+            result="Win",
+            method="KO",
+            round=1,
+            time="0:30",
+            fight_card_url=None,
+        )
+        for idx in range(2)
+    ]
+    session.add_all(veteran_fights + prospect_fights)
+
+    await session.execute(
+        insert(fighter_stats),
+        [
+            {
+                "fighter_id": "veteran",
+                "category": "striking",
+                "metric": "sig_strikes_landed_total",
+                "value": "300",
+            },
+            {
+                "fighter_id": "prospect",
+                "category": "striking",
+                "metric": "sig_strikes_landed_total",
+                "value": "500",
+            },
+        ],
+    )
+    await session.commit()
+
+    repository = PostgreSQLFighterRepository(session)
+    default_response = await repository.get_leaderboards(
+        limit=5,
+        metrics=("sig_strikes_landed_total",),
+    )
+
+    default_entries = [
+        entry.fighter_id
+        for entry in default_response.leaderboards[0].entries
+    ]
+    assert default_entries == ["veteran"]
+
+    relaxed_response = await repository.get_leaderboards(
+        limit=5,
+        metrics=("sig_strikes_landed_total",),
+        min_fights=1,
+    )
+    relaxed_entries = [
+        entry.fighter_id
+        for entry in relaxed_response.leaderboards[0].entries
+    ]
+    assert relaxed_entries == ["prospect", "veteran"]

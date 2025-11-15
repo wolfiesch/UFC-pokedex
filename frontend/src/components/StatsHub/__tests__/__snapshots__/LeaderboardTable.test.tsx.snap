@@ -64,17 +64,17 @@ exports[`LeaderboardTable > matches snapshot with populated leaderboard data 1`]
             <td
               class="px-4 py-3 align-middle text-sm"
             >
-              <a
-                class="font-medium text-foreground transition hover:text-foreground/70"
-                href="/fighters/1"
+              <div
+                class="flex items-center gap-2"
               >
-                <span
-                  class="sr-only"
+                <a
+                  aria-label="View fighter profile for Fighter One"
+                  class="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition text-primary underline-offset-4 hover:underline focus-visible:ring-0 focus-visible:underline font-medium text-foreground transition hover:text-foreground/70"
+                  href="/fighters/1"
                 >
-                  View fighter profile:
-                </span>
-                Fighter One
-              </a>
+                  Fighter One
+                </a>
+              </div>
             </td>
             <td
               class="px-4 py-3 align-middle text-sm text-right font-mono text-sm font-semibold"
@@ -93,9 +93,17 @@ exports[`LeaderboardTable > matches snapshot with populated leaderboard data 1`]
             <td
               class="px-4 py-3 align-middle text-sm"
             >
-              <span>
-                Fighter Two
-              </span>
+              <div
+                class="flex items-center gap-2"
+              >
+                <a
+                  aria-label="View fighter profile for Fighter Two"
+                  class="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition text-primary underline-offset-4 hover:underline focus-visible:ring-0 focus-visible:underline font-medium text-foreground transition hover:text-foreground/70"
+                  href="/fighters/2"
+                >
+                  Fighter Two
+                </a>
+              </div>
             </td>
             <td
               class="px-4 py-3 align-middle text-sm text-right font-mono text-sm font-semibold"

@@ -7,11 +7,15 @@ export type LeaderboardSectionId =
   | "grappling"
   | "durability";
 
+export const DEFAULT_LEADERBOARD_CAPTION =
+  "Includes fighters with ≥5 UFC fights; ranked using all ingested UFC events.";
+
 export interface LeaderboardMetricConfig {
   title: string;
   description: string;
   metricLabel: string;
   category: LeaderboardSectionId;
+  caption?: string;
 }
 
 export const STAT_LEADERBOARD_CONFIG: Record<
@@ -53,48 +57,84 @@ export const STAT_LEADERBOARD_CONFIG: Record<
     description: "Significant strikes landed per minute (SLpM).",
     metricLabel: "SLpM",
     category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by per-minute significant strike output.",
+  },
+  sig_strikes_landed_total: {
+    title: "Sig. Strikes Landed (Total)",
+    description: "All-time significant strikes landed across recorded bouts.",
+    metricLabel: "Total Strikes",
+    category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by cumulative significant strikes landed.",
   },
   sig_strikes_absorbed_per_min: {
     title: "Significant Strikes Absorbed",
     description: "Significant strikes absorbed per minute (SApM).",
     metricLabel: "SApM",
     category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by per-minute significant strikes absorbed.",
+  },
+  sig_strikes_absorbed_total: {
+    title: "Sig. Strikes Absorbed (Total)",
+    description: "All-time significant strikes absorbed across recorded bouts.",
+    metricLabel: "Total Strikes",
+    category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by cumulative significant strikes absorbed.",
   },
   sig_strikes_accuracy_pct: {
     title: "Significant Strike Accuracy",
     description: "Percentage of significant strikes that land.",
     metricLabel: "Accuracy %",
     category: "striking",
+    caption: DEFAULT_LEADERBOARD_CAPTION,
   },
   sig_strikes_defense_pct: {
     title: "Significant Strike Defense",
     description: "Percentage of significant strikes defended.",
     metricLabel: "Defense %",
     category: "striking",
+    caption: DEFAULT_LEADERBOARD_CAPTION,
   },
   total_strikes_landed_avg: {
     title: "Total Strikes Landed",
     description: "Average total strikes landed per fight.",
     metricLabel: "Strikes",
     category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by average total strikes landed per bout.",
+  },
+  total_strikes_landed_total: {
+    title: "Total Strikes Landed (All-Time)",
+    description: "All-time total strikes landed across recorded bouts.",
+    metricLabel: "Total Strikes",
+    category: "striking",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by cumulative total strikes landed.",
   },
   takedowns_avg: {
     title: "Takedown Volume",
     description: "Average takedowns completed per fight.",
     metricLabel: "TD Avg",
     category: "grappling",
+    caption:
+      "Includes fighters with ≥5 UFC fights; ranked by average takedowns completed per fight.",
   },
   takedown_accuracy_pct: {
     title: "Takedown Accuracy",
     description: "Percentage of attempted takedowns completed.",
     metricLabel: "Accuracy %",
     category: "grappling",
+    caption: DEFAULT_LEADERBOARD_CAPTION,
   },
   takedown_defense_pct: {
     title: "Takedown Defense",
     description: "Percentage of opponent takedowns successfully defended.",
     metricLabel: "Defense %",
     category: "grappling",
+    caption: DEFAULT_LEADERBOARD_CAPTION,
   },
   avg_fight_duration_minutes: {
     title: "Average Fight Duration",
@@ -136,10 +176,13 @@ export const STAT_LEADERBOARD_SECTIONS: LeaderboardSectionConfig[] = [
     description: "Significant strike pace, accuracy, and defence.",
     metrics: [
       "sig_strikes_landed_per_min",
+      "sig_strikes_landed_total",
       "sig_strikes_absorbed_per_min",
+      "sig_strikes_absorbed_total",
       "sig_strikes_accuracy_pct",
       "sig_strikes_defense_pct",
       "total_strikes_landed_avg",
+      "total_strikes_landed_total",
     ],
   },
   {

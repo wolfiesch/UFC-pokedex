@@ -29,7 +29,7 @@ const DIVISIONS = [
  */
 export default function LeaderboardFilters({
   division,
-  minFights,
+  minFights = 5,
   onDivisionChange,
   onMinFightsChange,
 }: LeaderboardFiltersProps) {
@@ -75,6 +75,14 @@ export default function LeaderboardFilters({
               {minFights}
             </span>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Only fighters with ≥5 UFC fights are shown by default.
+          </p>
+          {minFights < 5 ? (
+            <p className="text-xs text-amber-500">
+              Low sample size – results may be noisy.
+            </p>
+          ) : null}
           <Slider
             id="min-fights-filter"
             min={0}
@@ -85,7 +93,7 @@ export default function LeaderboardFilters({
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>0 fights</span>
+            <span>5 fights</span>
             <span>20+ fights</span>
           </div>
         </div>

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import StatsDisplay from "@/components/StatsDisplay";
 import { LeaderboardTable, TrendChart } from "@/components/StatsHub";
 import {
+  DEFAULT_LEADERBOARD_CAPTION,
   DEFAULT_STATS_LEADERBOARD_METRICS,
   STAT_LEADERBOARD_CONFIG,
   STAT_LEADERBOARD_SECTIONS,
@@ -123,6 +124,7 @@ export default async function StatsHubPage() {
                 description={metricConfig?.description ?? leaderboard.description}
                 entries={leaderboard.entries}
                 metricLabel={metricConfig?.metricLabel ?? "Score"}
+                caption={metricConfig?.caption ?? DEFAULT_LEADERBOARD_CAPTION}
               />
             );
           })}
@@ -216,6 +218,10 @@ export default async function StatsHubPage() {
                 Competition
               </span>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Includes fighters with ≥5 UFC fights by default. Lower the threshold to explore
+              small-sample outliers when needed.
+            </p>
             {leaderboardsError ? (
               <div
                 className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"

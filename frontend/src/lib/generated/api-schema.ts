@@ -322,7 +322,7 @@ export interface paths {
         };
         /**
          * Stats Leaderboards
-         * @description Expose fighter leaderboards for accuracy- and submission-oriented metrics with filtering.
+         * @description Expose fighter leaderboards for the requested metrics with filtering.
          */
         get: operations["stats_leaderboards_stats_leaderboards_get"];
         put?: never;
@@ -1259,6 +1259,11 @@ export interface components {
             entry_id: number;
             /** Fighter Id */
             fighter_id: string;
+            /**
+             * Fighter Name
+             * @description Cached fighter name associated with the activity.
+             */
+            fighter_name?: string | null;
             /** Action */
             action: string;
             /**
@@ -1467,6 +1472,13 @@ export interface components {
              */
             id: number;
             /**
+             * Fighter Name
+             * @description Redundant fighter name to keep dashboards readable when hydration fails.
+             */
+            fighter_name?: string | null;
+            /** @description Optional hydrated fighter snapshot used for gallery views. */
+            fighter?: components["schemas"]["FighterListItem"] | null;
+            /**
              * Created At
              * Format: date-time
              * @description Timestamp when the fighter was added to the collection.
@@ -1546,10 +1558,25 @@ export interface components {
         FavoriteUpcomingFight: {
             /** Fighter Id */
             fighter_id: string;
+            /**
+             * Fighter Name
+             * @description Display name for the fighter in the upcoming bout.
+             */
+            fighter_name?: string | null;
             /** Opponent Name */
             opponent_name: string;
+            /**
+             * Opponent Id
+             * @description Structured identifier for the opponent when available.
+             */
+            opponent_id?: string | null;
             /** Event Name */
             event_name: string;
+            /**
+             * Event Id
+             * @description Identifier referencing the underlying event record when present.
+             */
+            event_id?: string | null;
             /**
              * Event Date
              * @description Scheduled date for the fight
@@ -1984,6 +2011,16 @@ export interface components {
             odds_history: components["schemas"]["FighterOddsHistoryEntry"][];
         };
         /**
+         * GymFighterReference
+         * @description Structured reference for notable fighters training at a gym.
+         */
+        GymFighterReference: {
+            /** Fighter Id */
+            fighter_id: string;
+            /** Fighter Name */
+            fighter_name: string;
+        };
+        /**
          * GymStat
          * @description Fighter count by training gym.
          */
@@ -2001,6 +2038,11 @@ export interface components {
              * @description Top 2 fighters from this gym (by last fight date)
              */
             notable_fighters?: string[];
+            /**
+             * Notable Fighter Refs
+             * @description Structured fighter references used for rendering links.
+             */
+            notable_fighter_refs?: components["schemas"]["GymFighterReference"][];
         };
         /**
          * GymStatsResponse
@@ -2028,7 +2070,7 @@ export interface components {
              * Metric Id
              * @enum {string}
              */
-            metric_id: "sig_strikes_accuracy_pct" | "avg_submissions";
+            metric_id: "win_pct" | "finish_rate_pct" | "avg_fight_duration_minutes" | "time_in_cage_minutes" | "avg_knockdowns" | "total_submissions" | "sig_strikes_landed_per_min" | "sig_strikes_absorbed_per_min" | "sig_strikes_accuracy_pct" | "sig_strikes_defense_pct" | "sig_strikes_landed_total" | "sig_strikes_absorbed_total" | "total_strikes_landed_avg" | "total_strikes_landed_total" | "takedowns_avg" | "takedown_accuracy_pct" | "takedown_defense_pct" | "avg_submissions";
             /** Title */
             title: string;
             /** Description */
@@ -2887,14 +2929,12 @@ export interface operations {
                 limit?: number;
                 /** @description Pagination offset for leaderboard entries. */
                 offset?: number;
-                /** @description fighter_stats.metric name representing accuracy to rank. */
-                accuracy_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
-                /** @description fighter_stats.metric name representing submissions to rank. */
-                submissions_metric?: "sig_strikes_accuracy_pct" | "avg_submissions";
+                /** @description Repeated fighter_stats.metric identifiers to rank (comma-separated). */
+                metrics?: ("win_pct" | "finish_rate_pct" | "avg_fight_duration_minutes" | "time_in_cage_minutes" | "avg_knockdowns" | "total_submissions" | "sig_strikes_landed_per_min" | "sig_strikes_absorbed_per_min" | "sig_strikes_accuracy_pct" | "sig_strikes_defense_pct" | "sig_strikes_landed_total" | "sig_strikes_absorbed_total" | "total_strikes_landed_avg" | "total_strikes_landed_total" | "takedowns_avg" | "takedown_accuracy_pct" | "takedown_defense_pct" | "avg_submissions")[];
                 /** @description Filter by weight division (e.g., 'Lightweight', 'Heavyweight'). */
                 division?: string | null;
                 /** @description Minimum number of UFC fights required. */
-                min_fights?: number | null;
+                min_fights?: number;
                 /** @description Optional inclusive lower bound on fight event dates. */
                 start_date?: string | null;
                 /** @description Optional inclusive upper bound on fight event dates. */
