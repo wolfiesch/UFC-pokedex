@@ -55,6 +55,189 @@ const METHOD_ABBREV = {
   OTHER: "?",
 } as const;
 
+// Worker code as string for inline worker (static export compatibility)
+const computeRollingMedianWorkerCode = `
+class Heap {
+  constructor(compare) {
+    this.compare = compare;
+    this.data = [];
+  }
+
+  push(value) {
+    this.data.push(value);
+    this.heapifyUp();
+  }
+
+  peek() {
+    return this.data[0];
+  }
+
+  pop() {
+    if (this.data.length === 0) return undefined;
+    const top = this.data[0];
+    const end = this.data.pop();
+    if (this.data.length > 0 && end !== undefined) {
+      this.data[0] = end;
+      this.heapifyDown();
+    }
+    return top;
+  }
+
+  size() {
+    return this.data.length;
+  }
+
+  heapifyUp() {
+    let index = this.data.length - 1;
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.compare(this.data[index], this.data[parentIndex]) >= 0) break;
+      [this.data[index], this.data[parentIndex]] = [this.data[parentIndex], this.data[index]];
+      index = parentIndex;
+    }
+  }
+
+  heapifyDown() {
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      const right = left + 1;
+      let smallest = index;
+
+      if (left < this.data.length && this.compare(this.data[left], this.data[smallest]) < 0) {
+        smallest = left;
+      }
+      if (right < this.data.length && this.compare(this.data[right], this.data[smallest]) < 0) {
+        smallest = right;
+      }
+      if (smallest === index) break;
+
+      [this.data[index], this.data[smallest]] = [this.data[smallest], this.data[index]];
+      index = smallest;
+    }
+  }
+}
+
+class SlidingMedian {
+  constructor() {
+    this.lower = new Heap((a, b) => b - a);
+    this.upper = new Heap((a, b) => a - b);
+    this.lowerSize = 0;
+    this.upperSize = 0;
+    this.pendingRemovals = new Map();
+  }
+
+  add(value) {
+    if (this.lower.size() === 0 || value <= (this.lower.peek() ?? value)) {
+      this.lower.push(value);
+      this.lowerSize += 1;
+    } else {
+      this.upper.push(value);
+      this.upperSize += 1;
+    }
+    this.rebalance();
+  }
+
+  remove(value) {
+    this.pendingRemovals.set(value, (this.pendingRemovals.get(value) ?? 0) + 1);
+    if (this.lower.size() > 0 && value <= (this.lower.peek() ?? value)) {
+      this.lowerSize -= 1;
+      if (value === this.lower.peek()) this.prune(this.lower);
+    } else {
+      this.upperSize -= 1;
+      if (value === this.upper.peek()) this.prune(this.upper);
+    }
+    this.rebalance();
+  }
+
+  getMedian(windowLength) {
+    if (windowLength === 0) return 0;
+    this.prune(this.lower);
+    this.prune(this.upper);
+    if (windowLength % 2 === 1) return this.lower.peek() ?? 0;
+    const lowerValue = this.lower.peek() ?? 0;
+    const upperValue = this.upper.peek() ?? lowerValue;
+    return (lowerValue + upperValue) / 2;
+  }
+
+  prune(heap) {
+    while (heap.size() > 0) {
+      const value = heap.peek();
+      if (value === undefined) break;
+      const removals = this.pendingRemovals.get(value);
+      if (!removals) break;
+      if (removals === 1) {
+        this.pendingRemovals.delete(value);
+      } else {
+        this.pendingRemovals.set(value, removals - 1);
+      }
+      heap.pop();
+    }
+  }
+
+  rebalance() {
+    this.prune(this.lower);
+    this.prune(this.upper);
+    if (this.lowerSize > this.upperSize + 1) {
+      const value = this.lower.pop();
+      if (value !== undefined) {
+        this.upper.push(value);
+        this.lowerSize -= 1;
+        this.upperSize += 1;
+      }
+    } else if (this.upperSize > this.lowerSize) {
+      const value = this.upper.pop();
+      if (value !== undefined) {
+        this.lower.push(value);
+        this.upperSize -= 1;
+        this.lowerSize += 1;
+      }
+    }
+  }
+}
+
+function computeRollingMedian(points, windowSize = 5) {
+  if (points.length === 0) return [];
+  if (points.length <= windowSize) {
+    const sortedY = points.map((p) => p.y).sort((a, b) => a - b);
+    const medianY = sortedY[Math.floor(sortedY.length / 2)];
+    const medianX = points[Math.floor(points.length / 2)].x;
+    return [{ x: medianX, y: medianY }];
+  }
+
+  const smoothed = [];
+  const halfWindow = Math.floor(windowSize / 2);
+  const yValues = points.map((point) => point.y);
+  const slidingMedian = new SlidingMedian();
+
+  let currentStart = 0;
+  let currentEnd = 0;
+
+  for (let i = 0; i < points.length; i += 1) {
+    const targetStart = Math.max(0, i - halfWindow);
+    const targetEnd = Math.min(points.length, i + halfWindow + 1);
+
+    while (currentEnd < targetEnd) {
+      slidingMedian.add(yValues[currentEnd]);
+      currentEnd += 1;
+    }
+    while (currentStart < targetStart) {
+      slidingMedian.remove(yValues[currentStart]);
+      currentStart += 1;
+    }
+    while (currentEnd > targetEnd) {
+      currentEnd -= 1;
+      slidingMedian.remove(yValues[currentEnd]);
+    }
+
+    const medianY = slidingMedian.getMedian(targetEnd - targetStart);
+    smoothed.push({ x: points[i].x, y: medianY });
+  }
+
+  return smoothed;
+}
+`;
+
 /**
  * Formats opponent name to "F. LastName" format
  * Example: "Jon Jones" → "J. Jones"
@@ -187,9 +370,44 @@ export function FightScatter({
       return;
     }
 
-    const worker = new Worker(
-      new URL("../../workers/trendWorker.ts", import.meta.url),
-    );
+    // Create inline worker using blob URL for static export compatibility
+    const workerCode = `
+      ${computeRollingMedianWorkerCode}
+
+      self.addEventListener("message", (event) => {
+        const { type, points, windowSize = 5 } = event.data;
+
+        if (type !== "compute") {
+          self.postMessage({
+            type: "error",
+            error: "Invalid message type",
+          });
+          return;
+        }
+
+        try {
+          // Ensure points are sorted by X
+          const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+
+          // Compute rolling median
+          const smoothedPoints = computeRollingMedian(sortedPoints, windowSize);
+
+          self.postMessage({
+            type: "result",
+            points: smoothedPoints,
+          });
+        } catch (error) {
+          self.postMessage({
+            type: "error",
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      });
+    `;
+
+    const blob = new Blob([workerCode], { type: "application/javascript" });
+    const workerUrl = URL.createObjectURL(blob);
+    const worker = new Worker(workerUrl);
     workerRef.current = worker;
 
     const handleMessage = (event: MessageEvent<TrendWorkerResponse>) => {
@@ -203,6 +421,7 @@ export function FightScatter({
     return () => {
       worker.removeEventListener("message", handleMessage);
       worker.terminate();
+      URL.revokeObjectURL(workerUrl);
       workerRef.current = null;
     };
   }, []);
