@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: "View current UFC fighter rankings across all weight classes from FightMatrix.",
 };
 
-// Force dynamic rendering to get fresh rankings data
-export const dynamic = 'force-dynamic';
+// For static export, allow graceful fallback when API is unavailable during build
+// Error handling renders fallback UI if data fetch fails
 
 export default async function RankingsPage() {
   // Fetch all current rankings from FightMatrix

@@ -173,3 +173,92 @@ export async function getAllFighterIdsSSR(
     id: fighter.fighter_id,
   }));
 }
+
+/**
+ * Fetch all event IDs for generateStaticParams
+ * Returns all available events
+ */
+export async function getAllEventIdsSSR(): Promise<Array<{ id: string }>> {
+  const apiUrl = getApiBaseUrl();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    const response = await fetch(`${apiUrl}/events/`, {
+      next: { revalidate: false }, // Static at build time
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch events: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    const events = data.events || [];
+
+    return events.map((event: { event_id: string }) => ({
+      id: event.event_id,
+    }));
+  } catch (error) {
+    console.warn("Failed to fetch events for static generation:", error);
+    console.warn("Skipping event prefetch – API unavailable during build.");
+    return [];
+  }
+}
+
+/**
+ * Fetch all division names for generateStaticParams
+ * Returns list of available weight class divisions that have data
+ */
+export async function getAllDivisionNamesSSR(): Promise<
+  Array<{ division: string }>
+> {
+  const apiUrl = getApiBaseUrl();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    const response = await fetch(`${apiUrl}/rankings/`, {
+      next: { revalidate: false }, // Static at build time
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch divisions: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    const divisions = data.divisions || [];
+
+    // Return only divisions that exist in the response
+    // The API already filters to only divisions with data
+    return divisions
+      .map((div: { division: string }) => ({
+        division: encodeURIComponent(div.division),
+      }));
+  } catch (error) {
+    console.warn("Failed to fetch divisions for static generation:", error);
+    console.warn("Skipping division prefetch – API unavailable during build.");
+    // Return only men's divisions as fallback (database only has men's rankings)
+    return [
+      "Flyweight",
+      "Bantamweight",
+      "Featherweight",
+      "Lightweight",
+      "Welterweight",
+      "Middleweight",
+      "Light Heavyweight",
+      "Heavyweight",
+    ].map((division) => ({ division }));
+  }
+}

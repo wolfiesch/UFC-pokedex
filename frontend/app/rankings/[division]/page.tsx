@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import client from "@/lib/api-client";
+import { getAllDivisionNamesSSR } from "@/lib/api-ssr";
 
 type DivisionRankingsPageProps = {
   params: {
@@ -23,23 +24,74 @@ export async function generateMetadata({
   };
 }
 
-// Force dynamic rendering for fresh data
-export const dynamic = 'force-dynamic';
+// Enable static export with revalidation
+export const revalidate = 3600; // Revalidate every hour
+export const dynamicParams = true;
+
+/**
+ * Generate static params for all divisions
+ */
+export async function generateStaticParams() {
+  try {
+    const divisions = await getAllDivisionNamesSSR();
+    // For static export, ensure we have at least one param
+    return divisions.length > 0 ? divisions : [{ division: "Lightweight" }];
+  } catch (error) {
+    console.error("Failed to generate static params for divisions:", error);
+    // For static export, return a fallback division to avoid build error
+    return [{ division: "Lightweight" }];
+  }
+}
 
 export default async function DivisionRankingsPage({
   params,
 }: DivisionRankingsPageProps) {
   const division = decodeURIComponent(params.division);
 
-  const { data, error } = await client.GET("/rankings/{division}", {
-    params: {
-      path: { division },
-      query: { source: "fightmatrix" }
-    }
-  });
+  let data = null;
+  let error = null;
 
+  // Wrap in try-catch to prevent any exceptions from failing the build
+  try {
+    const result = await client.GET("/rankings/{division}", {
+      params: {
+        path: { division },
+        query: { source: "fightmatrix" }
+      }
+    });
+    data = result.data;
+    error = result.error;
+  } catch (e) {
+    console.warn(`Failed to fetch rankings for ${division}:`, e);
+    error = e;
+  }
+
+  // For static export: render error UI instead of notFound()
   if (error || !data) {
-    notFound();
+    return (
+      <section className="container flex flex-col gap-8 py-12">
+        <header className="space-y-4">
+          <Link
+            href="/rankings"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Back to all rankings
+          </Link>
+          <Badge variant="outline" className="w-fit tracking-[0.35em]">
+            Rankings
+          </Badge>
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+            {division}
+          </h1>
+        </header>
+        <div
+          className="rounded-3xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+          role="alert"
+        >
+          Rankings data for {division} is not currently available. This division may not have been updated yet.
+        </div>
+      </section>
+    );
   }
 
   const { rankings, rank_date, total_fighters } = data;

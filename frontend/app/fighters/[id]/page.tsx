@@ -26,19 +26,24 @@ type FighterDetailPageProps = {
 export async function generateStaticParams() {
   if (process.env.NODE_ENV === "development" && !SHOULD_PREFETCH_IN_DEV) {
     // Skip expensive prefetching while running turbopack locally unless opt-in
-    return [];
+    // For static export, we need at least one param to avoid build error
+    return process.env.BUILD_MODE === "static" ? [{ id: "placeholder" }] : [];
   }
 
   try {
     const fighters = await getAllFighterIdsSSR(PREFETCH_LIMIT);
-    return fighters
+    const params = fighters
       .map(({ id }) => id?.trim())
       .filter((id): id is string => Boolean(id))
       .map((id) => ({ id }));
+
+    // For static export, ensure we have at least one param
+    return params.length > 0 ? params : [{ id: "placeholder" }];
   } catch (error) {
     console.error("Failed to generate static params:", error);
-    // Return empty array to continue build without pre-rendering
-    return [];
+    // For static export, return a placeholder to avoid build error
+    // The dynamicParams setting will handle other routes at runtime
+    return [{ id: "placeholder" }];
   }
 }
 

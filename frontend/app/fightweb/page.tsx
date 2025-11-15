@@ -1,4 +1,7 @@
+"use client";
+
 import type { Metadata } from "next";
+import { useEffect, useState } from "react";
 
 import { FightWebClient } from "@/components/FightWeb";
 import { DEFAULT_SORT } from "@/components/FightWeb/sort-utils";
@@ -6,13 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { getFightGraph } from "@/lib/api";
 import type { FightGraphQueryParams, FightGraphResponse } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "FightWeb • UFC Fighter Pokedex",
-  description:
-    "Visualise UFC fighter connections through a graph of shared bouts and divisions.",
-};
-
-export const dynamic = "force-dynamic";
+// Client-side only to avoid build-time API issues with empty fight graph data
 
 const DEFAULT_FILTERS: FightGraphQueryParams = {
   limit: 150,
@@ -20,18 +17,30 @@ const DEFAULT_FILTERS: FightGraphQueryParams = {
   sortBy: DEFAULT_SORT,
 };
 
-export default async function FightWebPage() {
-  let initialData: FightGraphResponse | null = null;
-  let initialError: string | null = null;
+export default function FightWebPage() {
+  const [initialData, setInitialData] = useState<FightGraphResponse | null>(null);
+  const [initialError, setInitialError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  try {
-    initialData = await getFightGraph(DEFAULT_FILTERS);
-  } catch (error) {
-    initialError =
-      error instanceof Error
-        ? error.message
-        : "Unable to load the FightWeb network at this time.";
-  }
+  useEffect(() => {
+    async function loadFightGraph() {
+      try {
+        const data = await getFightGraph(DEFAULT_FILTERS);
+        setInitialData(data);
+      } catch (error) {
+        console.error("Failed to fetch fight graph:", error);
+        setInitialError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load the FightWeb network at this time."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFightGraph();
+  }, []);
 
   return (
     <section className="container flex flex-col gap-12 py-12">
@@ -49,11 +58,17 @@ export default async function FightWebPage() {
         </p>
       </header>
 
-      <FightWebClient
-        initialData={initialData}
-        initialFilters={DEFAULT_FILTERS}
-        initialError={initialError}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg text-muted-foreground">Loading fight network...</div>
+        </div>
+      ) : (
+        <FightWebClient
+          initialData={initialData}
+          initialFilters={DEFAULT_FILTERS}
+          initialError={initialError}
+        />
+      )}
     </section>
   );
 }

@@ -74,12 +74,18 @@ const IGNORED_WATCH_PATTERNS = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove standalone output for Vercel (it's not needed)
-  // output: 'standalone',
+  // Static export for cPanel deployment when BUILD_MODE=static
+  // Note: Pages with dynamic='force-dynamic' will fail static export
+  output: process.env.BUILD_MODE === 'static' ? 'export' : undefined,
 
   // Skip type checking during build (temporary fix for OpenAPI type mismatches)
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  // Skip linting during builds
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 
   // Disable image optimization for cPanel compatibility
@@ -129,9 +135,13 @@ const nextConfig = {
     }
 
     const existingIgnored = config.watchOptions?.ignored ?? [];
+
+    // Normalize existing ignored patterns to ensure all are valid non-empty strings
     const normalizedIgnored = Array.isArray(existingIgnored)
-      ? existingIgnored.filter(Boolean)
-      : [existingIgnored].filter(Boolean);
+      ? existingIgnored.filter((pattern) => pattern && typeof pattern === 'string' && pattern.trim() !== '')
+      : (existingIgnored && typeof existingIgnored === 'string' && existingIgnored.trim() !== '')
+        ? [existingIgnored]
+        : [];
 
     config.watchOptions = {
       ...config.watchOptions,

@@ -8,7 +8,7 @@ import type {
 const DEFAULT_USER_ID = process.env.NEXT_PUBLIC_DEMO_FAVORITES_USER ?? "demo-user";
 
 // Favorites depend on user-scoped data with no-store fetches; keep page dynamic.
-export const dynamic = "force-dynamic";
+// For static export, allow graceful fallback when API is unavailable during build
 
 /**
  * Server entrypoint for the favorites dashboard. We prefetch collection data so
