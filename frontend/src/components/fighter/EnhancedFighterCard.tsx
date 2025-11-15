@@ -47,7 +47,7 @@ function FightBadge({ fighter }: FightBadgeProps): JSX.Element | null {
     const nextDate = new Date(fighter.next_fight_date);
     if (nextDate > today) {
       return (
-        <span className="flex items-center gap-1 text-muted-foreground">
+        <span className="flex items-center gap-1">
           <span>⚔️</span>
           <span>{formatShortDate(nextDate)}</span>
         </span>
@@ -64,7 +64,7 @@ function FightBadge({ fighter }: FightBadgeProps): JSX.Element | null {
 
       if (isWin || isLoss) {
         return (
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <span className="flex items-center gap-1">
             <span className={isWin ? "text-green-500" : "text-red-500"}>
               {isWin ? "🟢" : "🔴"}
             </span>
@@ -75,7 +75,11 @@ function FightBadge({ fighter }: FightBadgeProps): JSX.Element | null {
     }
   }
 
-  return null;
+  return (
+    <span className="flex items-center gap-1">
+      <span className="text-xs">No scheduled bout</span>
+    </span>
+  );
 }
 
 /**
@@ -678,45 +682,51 @@ function EnhancedFighterCardComponent({
               )}
             </div>
 
-            {/* Compact Stats Row with All Badges */}
+            {/* Compact Stats Block with consistent two-row layout */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Record */}
-                <span className="font-medium">{fighter.record}</span>
+              <div className="mt-1 space-y-1">
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  {/* Record */}
+                  <span className="font-medium truncate">
+                    {fighter.record}
+                  </span>
 
-                {/* Division */}
-                {fighter.division && (
-                  <>
-                    <span>•</span>
-                    <span>{fighter.division}</span>
-                  </>
-                )}
+                  {/* Division */}
+                  {fighter.division && (
+                    <>
+                      <span>•</span>
+                      <span className="truncate">{fighter.division}</span>
+                    </>
+                  )}
+                </div>
 
-                {/* Win Streak Badge */}
-                {streak && streak.count >= 2 && (
-                  <>
-                    <span>•</span>
-                    <span
-                      className={`flex items-center gap-0.5 ${
-                        streak.type === "win"
-                          ? "text-green-500"
+                <div className="flex items-center gap-2 whitespace-nowrap text-[11px]">
+                  {/* Fight Status Badge (upcoming / recent / fallback) */}
+                  <FightBadge fighter={fighter} />
+
+                  {/* Win Streak Badge */}
+                  {streak && streak.count >= 2 && (
+                    <>
+                      <span>•</span>
+                      <span
+                        className={`flex items-center gap-0.5 ${
+                          streak.type === "win"
+                            ? "text-green-500"
+                            : streak.type === "loss"
+                              ? "text-red-500"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        {streak.type === "win"
+                          ? "🟢"
                           : streak.type === "loss"
-                            ? "text-red-500"
-                            : "text-gray-500"
-                      }`}
-                    >
-                      {streak.type === "win"
-                        ? "🟢"
-                        : streak.type === "loss"
-                          ? "🔴"
-                          : "⚫"}
-                      <span className="font-medium">{streak.label}</span>
-                    </span>
-                  </>
-                )}
-
-                {/* Fight Status Badge */}
-                <FightBadge fighter={fighter} />
+                            ? "🔴"
+                            : "⚫"}
+                        <span className="font-medium">{streak.label}</span>
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

@@ -135,22 +135,53 @@ async def load_event_details_from_json(
                     if is_upcoming and not result:
                         result = "next"
 
+                    weight_class = fight_data.get("weight_class")
+                    method = fight_data.get("method")
+                    fight_round = fight_data.get("round")
+                    fight_time = fight_data.get("time")
+                    fight_url = fight_data.get("fight_url")
+                    fighter_one_id = fight_data.get("fighter_1_id") or "unknown"
+                    fighter_two_id = fight_data.get("fighter_2_id")
+
                     fight = Fight(
                         id=fight_id,
-                        fighter_id=fight_data.get("fighter_1_id") or "unknown",
+                        fighter_id=fighter_one_id,
                         event_id=event_id,
-                        opponent_id=fight_data.get("fighter_2_id"),
+                        opponent_id=fighter_two_id,
                         opponent_name=fight_data.get("fighter_2_name", "Unknown"),
                         event_name=event_name,
                         event_date=event_date,
                         result=result or "N/A",
-                        method=fight_data.get("method"),
-                        round=fight_data.get("round"),
-                        time=fight_data.get("time"),
-                        fight_card_url=fight_data.get("fight_url"),
+                        method=method,
+                        round=fight_round,
+                        time=fight_time,
+                        fight_card_url=fight_url,
+                        weight_class=weight_class,
                     )
                     await session.merge(fight)
                     fights_loaded += 1
+
+                    # For upcoming fights, capture the fighter_2 perspective so both fighters
+                    # get downstream "next fight" metadata (important for roster cards).
+                    if is_upcoming and fighter_two_id:
+                        mirrored_fight = Fight(
+                            # Synthetic ID ensures we do not collide with canonical UFCStats identifiers.
+                            id=f"{fight_id}-opp",
+                            fighter_id=fighter_two_id,
+                            event_id=event_id,
+                            opponent_id=fighter_one_id,
+                            opponent_name=fight_data.get("fighter_1_name", "Unknown"),
+                            event_name=event_name,
+                            event_date=event_date,
+                            result=result or "N/A",
+                            method=method,
+                            round=fight_round,
+                            time=fight_time,
+                            fight_card_url=fight_url,
+                            weight_class=weight_class,
+                        )
+                        await session.merge(mirrored_fight)
+                        fights_loaded += 1
 
                 # Commit every 50 events for progress visibility
                 if not dry_run and events_loaded % 50 == 0:

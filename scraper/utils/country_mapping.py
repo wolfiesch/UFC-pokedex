@@ -84,6 +84,40 @@ COUNTRY_NAME_TO_ISO = {
     "Armenia": "AM",
     "Macedonia": "MK",
     "North Macedonia": "MK",
+    # Additional countries from UFC.com birthplace backfill
+    "Peru": "PE",
+    "Paraguay": "PY",
+    "Tajikistan": "TJ",
+    "Jamaica": "JM",
+    "Guam": "GU",
+    "Uzbekistan": "UZ",
+    "Cuba": "CU",
+    "Bolivia": "BO",
+    "Venezuela": "VE",
+    "Cyprus": "CY",
+    "Singapore": "SG",
+    "Bulgaria": "BG",
+    "Suriname": "SR",
+    "Scotland": "GB",  # Part of UK
+    "Wales": "GB",  # Part of UK
+    "Mongolia": "MN",
+    "Belarus": "BY",
+    "Angola": "AO",
+    "Moldova": "MD",
+    "Zimbabwe": "ZW",
+    "Myanmar": "MM",
+    "Latvia": "LV",
+    "Democratic Republic of the Congo": "CD",
+    "Guyana": "GY",
+    "Nicaragua": "NI",
+    "Hungary": "HU",
+    "Albania": "AL",
+    "Cabo Verde": "CV",
+    "Cape Verde": "CV",
+    "Panama": "PA",
+    "Dominican Republic": "DO",
+    "Bosnia & Herzegovina": "BA",
+    "Bosnia and Herzegovina": "BA",
 }
 
 
@@ -106,6 +140,16 @@ def normalize_nationality(country_name: str | None) -> str | None:
     # Return None if empty string after strip
     if not country_name:
         return None
+
+    # Fix HTML entity encoding issues (e.g., "Bosnia &amp; Herzegovina")
+    import html
+    country_name = html.unescape(country_name)
+
+    # Handle "City, Country" format - extract country (after the comma)
+    if ", " in country_name:
+        parts = country_name.split(", ")
+        # Use the last part (country)
+        country_name = parts[-1].strip()
 
     # Try exact match first
     if country_name in COUNTRY_NAME_TO_ISO:

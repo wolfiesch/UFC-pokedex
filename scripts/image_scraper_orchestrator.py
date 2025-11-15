@@ -215,11 +215,18 @@ def search_tapology(fighter_name: str) -> str | None:
     return None
 
 
-def search_bing_images(fighter_name: str) -> str | None:
+def search_bing_images(fighter_name: str, nickname: str | None = None) -> str | None:
     """Search Bing Images for fighter photo."""
     try:
-        # Build search query - adding MMA for better specificity
-        query = f"{fighter_name} MMA UFC fighter"
+        # Build search query. Including the fighter's nickname (when available)
+        # helps steer Bing toward the correct athlete instead of famous namesakes.
+        nickname_fragment = ""
+        if nickname:
+            sanitized = nickname.strip().replace('"', "")
+            if sanitized:
+                nickname_fragment = f' "{sanitized}"'
+
+        query = f"{fighter_name}{nickname_fragment} MMA UFC fighter"
 
         # Bing Image Search API endpoint (free tier available)
         # For now, use HTML scraping approach
@@ -386,7 +393,9 @@ async def scrape_fighter_image(
 
     # Source 4: Bing Image Search
     console.print("  [dim]Trying Bing Images...[/dim]")
-    image_url = search_bing_images(fighter_name)
+    fighter_nickname = (fighter.get("nickname") or "").strip() or None
+
+    image_url = search_bing_images(fighter_name, fighter_nickname)
 
     if image_url:
         if download_image(image_url, fighter_id, images_dir, "bing"):

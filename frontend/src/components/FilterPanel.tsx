@@ -93,33 +93,28 @@ export default function FilterPanel({
 
   return (
     <section
-      className="space-y-6 rounded-3xl border border-border bg-card/70 p-6 shadow-subtle"
+      className="space-y-4 rounded-2xl border border-border bg-card/70 px-4 py-3 shadow-subtle"
       aria-label="Roster controls"
     >
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-              Primary filters
-            </p>
-            <p className="text-sm text-muted-foreground/80">
-              Search by name and narrow by stance or division.
-            </p>
-          </div>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Filters
+          </p>
           {hasAnyFilters && onResetFilters ? (
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full"
+              className="rounded-full px-3"
               onClick={onResetFilters}
             >
               Reset filters
             </Button>
           ) : null}
         </div>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-          <SearchBar isLoading={isSearching} className="flex-1" />
-          <div className="grid flex-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <SearchBar isLoading={isSearching} className="flex-1 min-w-0" />
+          <div className="grid flex-1 gap-3 sm:grid-cols-2">
             <FilterSelect
               id="stance-filter"
               label="Stance"
@@ -238,7 +233,7 @@ function FilterSelect({
   options,
 }: FilterSelectProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <label
         htmlFor={id}
         className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground"

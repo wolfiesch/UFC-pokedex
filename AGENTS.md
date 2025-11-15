@@ -27,3 +27,4 @@ Copy `.env.example` to `.env` and never commit secrets—Docker, Railway, and Cl
 - Ensure local dev stack is running (`make dev` or `make dev-local`) so Cloudflare/frontend and API tunnels are live.
 - Use the Playwright MCP to `browser_navigate` to `https://ufc.wolfgangschoenberger.com/` and wait for the app shell and fighter data to render.
 - Treat this as a holistic tunnel check: successful render + data load implies the tunneled frontend is reachable and wired correctly to the tunneled API, without modifying any repo code.
+- Always finish by calling `browser_close` (and, if needed, `ps -ax | grep -i mcp-chrome`) to be sure no shared Playwright process stays alive.

@@ -181,37 +181,40 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
         isSearching={isLoading}
         onResetFilters={handleResetFilters}
       />
-      <section className="rounded-3xl border border-border bg-card/70 p-6 shadow-subtle">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-              Roster summary
-            </p>
-            <p className="text-2xl font-semibold text-foreground">
-              {totalText} fighters
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Filters: {filtersDescription}
-            </p>
-          </div>
-          <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
-            {hasActiveFilters ? (
-              <Button
-                variant="ghost"
-                className="w-full justify-center sm:w-auto"
-                onClick={handleResetFilters}
-              >
-                Reset filters
-              </Button>
-            ) : null}
+      <section
+        className="flex flex-col gap-3 rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm shadow-subtle md:flex-row md:items-center md:justify-between"
+        aria-label="Roster summary"
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground/80">
+            Roster
+          </span>
+          <span className="font-medium text-foreground">
+            {totalText} fighters
+          </span>
+          <span className="hidden text-muted-foreground md:inline">•</span>
+          <span className="text-muted-foreground">
+            Filters: {filtersDescription}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          {hasActiveFilters ? (
             <Button
-              onClick={handleRandomFighter}
-              size="lg"
-              className="w-full justify-center sm:w-fit"
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={handleResetFilters}
             >
-              🎲 Random Fighter
+              Reset filters
             </Button>
-          </div>
+          ) : null}
+          <Button
+            onClick={handleRandomFighter}
+            size="sm"
+            className="rounded-full"
+          >
+            🎲 Random Fighter
+          </Button>
         </div>
       </section>
       <FighterGrid
