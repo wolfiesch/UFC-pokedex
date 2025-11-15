@@ -47,7 +47,7 @@ describe("CollectionsGrid", () => {
   it("renders each fighter with notes and tag chips", () => {
     render(<CollectionsGrid entries={sampleEntries} onReorder={vi.fn()} />);
 
-    expect(screen.getByText(/fighter-a/i)).toBeInTheDocument();
+    expect(screen.getByText(/fighter a/i)).toBeInTheDocument();
     expect(screen.getByText(/Primary striker/i)).toBeInTheDocument();
     expect(screen.getByText(/striking/i)).toBeInTheDocument();
     expect(screen.getByText(/Position #1/i)).toBeInTheDocument();

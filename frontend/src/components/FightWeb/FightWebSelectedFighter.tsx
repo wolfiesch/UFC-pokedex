@@ -1,5 +1,6 @@
 "use client";
 
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import type { FightGraphResponse } from "@/lib/types";
@@ -40,7 +41,12 @@ export function FightWebSelectedFighter({
   return (
     <Card className="border border-border/80 bg-card">
       <CardHeader>
-        <CardTitle>{selectedNode.name}</CardTitle>
+        <CardTitle className="text-lg">
+          <FighterLink
+            fighterId={selectedNode.fighter_id}
+            name={selectedNode.name}
+          />
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <div className="flex items-center justify-between">
@@ -72,7 +78,11 @@ export function FightWebSelectedFighter({
                   key={`${selectedNode.fighter_id}-${fighter.fighter_id}`}
                   className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/50 px-3 py-2"
                 >
-                  <span className="text-foreground/90">{fighter.name}</span>
+                  <FighterLink
+                    fighterId={fighter.fighter_id}
+                    name={fighter.name}
+                    className="text-base text-foreground/90"
+                  />
                   <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                     {link.fights} fights
                   </span>

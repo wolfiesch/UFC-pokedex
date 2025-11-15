@@ -83,7 +83,7 @@ class FavoritesPersistence:
                 FavoriteEntryModel.updated_at,
             ),
             selectinload(FavoriteEntryModel.fighter).options(
-                load_only(Fighter.id, Fighter.division)
+                load_only(Fighter.id, Fighter.name, Fighter.division)
             ),
         )
 
@@ -178,6 +178,7 @@ class FavoritesPersistence:
         collection.entries.append(entry)
 
         await self._session.flush()
+        await self._session.refresh(entry, ["fighter"])
         await self.normalize_positions(collection)
         await self._session.flush()
         return entry
@@ -232,6 +233,8 @@ class FavoritesPersistence:
         """Force-load entries to avoid async lazy loading issues."""
 
         await self._session.refresh(collection, ["entries"])
+        for entry in collection.entries:
+            await self._session.refresh(entry, ["fighter"])
 
     async def fetch_fights_for_entries(self, collection: FavoriteCollection) -> list[Fight]:
         """Fetch fights associated with the fighters in the collection."""

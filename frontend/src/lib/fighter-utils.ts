@@ -1,5 +1,23 @@
 import type { FightHistoryEntry } from "./types";
 
+const FIGHTER_PROFILE_BASE_PATH = "/fighters";
+
+/**
+ * Return the canonical fighter profile href.
+ *
+ * The helper centralises slug formatting so that every surface references the
+ * same URL contract whenever fighter IDs are available.
+ */
+export function getFighterProfileHref(
+  fighterId: string | null | undefined,
+): string {
+  const trimmed = fighterId?.trim();
+  if (!trimmed) {
+    return FIGHTER_PROFILE_BASE_PATH;
+  }
+  return `${FIGHTER_PROFILE_BASE_PATH}/${encodeURIComponent(trimmed)}`;
+}
+
 /**
  * Parsed fight record structure
  */

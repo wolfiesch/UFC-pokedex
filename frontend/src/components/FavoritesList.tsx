@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
-
 import type { FighterListItem } from "@/lib/types";
-import { Card, CardContent } from "@/components/ui/card";
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Props = {
   favorites: FighterListItem[];
@@ -25,8 +24,12 @@ export default function FavoritesList({ favorites }: Props) {
         <li key={fighter.fighter_id}>
           <Card className="h-full border-border/80 bg-card/80 transition hover:-translate-y-1 hover:shadow-xl">
             <CardContent className="flex h-full flex-col justify-between gap-4 p-6">
-              <div>
-                <p className="text-lg font-semibold">{fighter.name}</p>
+              <div className="space-y-1">
+                <FighterLink
+                  fighterId={fighter.fighter_id}
+                  name={fighter.name}
+                  className="text-lg font-semibold"
+                />
                 {fighter.nickname ? (
                   <p className="text-sm text-muted-foreground">
                     &ldquo;{fighter.nickname}&rdquo;
@@ -37,12 +40,13 @@ export default function FavoritesList({ favorites }: Props) {
                 <Badge variant="outline" className="uppercase tracking-tight">
                   {fighter.division ?? "Unknown Division"}
                 </Badge>
-                <Link
-                  href={`/fighters/${fighter.fighter_id}`}
+                <FighterLink
+                  fighterId={fighter.fighter_id}
+                  name={fighter.name}
                   className="inline-flex items-center text-sm font-medium text-foreground/70 transition hover:text-foreground"
                 >
                   View profile →
-                </Link>
+                </FighterLink>
               </div>
             </CardContent>
           </Card>

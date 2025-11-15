@@ -1,4 +1,7 @@
+"use client";
+
 import type { FavoriteActivityItem } from "@/lib/types";
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type ActivityFeedProps = {
@@ -38,9 +41,14 @@ export function ActivityFeed({ activity }: ActivityFeedProps) {
                   key={`${item.entry_id}-${item.occurred_at}-${item.action}`}
                   className="flex flex-col gap-1 rounded-lg border border-border/40 bg-background/40 p-3"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <span className="text-sm font-semibold text-foreground">
-                      {item.action} – {item.fighter_id}
+                      {item.action} –{" "}
+                      <FighterLink
+                        fighterId={item.fighter_id}
+                        name={item.fighter_name ?? item.fighter_id}
+                        className="font-semibold"
+                      />
                     </span>
                     <span className="text-xs text-muted-foreground/80">
                       {item.occurred_at}

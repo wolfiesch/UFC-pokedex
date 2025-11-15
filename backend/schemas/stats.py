@@ -189,6 +189,13 @@ class CityStatsResponse(BaseModel):
     generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
+class GymFighterReference(BaseModel):
+    """Structured reference for notable fighters training at a gym."""
+
+    fighter_id: str
+    fighter_name: str
+
+
 class GymStat(BaseModel):
     """Fighter count by training gym."""
 
@@ -199,6 +206,10 @@ class GymStat(BaseModel):
     notable_fighters: list[str] = Field(
         default_factory=list,
         description="Top 2 fighters from this gym (by last fight date)",
+    )
+    notable_fighter_refs: list[GymFighterReference] = Field(
+        default_factory=list,
+        description="Structured fighter references used for rendering links.",
     )
 
 

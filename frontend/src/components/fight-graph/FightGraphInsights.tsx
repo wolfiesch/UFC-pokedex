@@ -2,6 +2,8 @@
 
 import { format } from "date-fns";
 
+import { FighterLink } from "@/components/fighter/FighterLink";
+
 import type { FightGraphMetadata } from "@/types/fight-graph";
 
 export interface FightGraphInsightsProps {
@@ -102,9 +104,11 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
                     className="flex items-center justify-between rounded-xl bg-slate-950/60 px-3 py-2"
                   >
                     <span className="flex flex-col text-xs uppercase tracking-[0.3em] text-slate-400">
-                      <span className="text-sm font-semibold tracking-normal text-slate-100">
-                        {fighter.name}
-                      </span>
+                      <FighterLink
+                        fighterId={fighter.fighter_id}
+                        name={fighter.name}
+                        className="text-sm font-semibold tracking-normal text-slate-100"
+                      />
                       {fighter.division && <span>{fighter.division}</span>}
                     </span>
                     <span className="flex flex-col items-end font-mono text-base">
@@ -131,9 +135,18 @@ export function FightGraphInsights({ metadata }: FightGraphInsightsProps) {
                       key={`${rivalry.source}-${rivalry.target}`}
                       className="space-y-1 rounded-xl bg-slate-950/60 px-3 py-2"
                     >
-                      <p className="text-sm font-semibold text-slate-100">
-                        {rivalry.source_name ?? rivalry.source} vs{" "}
-                        {rivalry.target_name ?? rivalry.target}
+                      <p className="flex flex-wrap items-center gap-1 text-sm font-semibold text-slate-100">
+                        <FighterLink
+                          fighterId={rivalry.source}
+                          name={rivalry.source_name ?? rivalry.source}
+                          className="text-sm text-slate-100"
+                        />
+                        <span>vs</span>
+                        <FighterLink
+                          fighterId={rivalry.target}
+                          name={rivalry.target_name ?? rivalry.target}
+                          className="text-sm text-slate-100"
+                        />
                       </p>
                       <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
                         {rivalry.fights} fights

@@ -19,6 +19,9 @@ from backend.schemas.favorites import (
     FavoriteEntry as FavoriteEntrySchema,
     FavoriteUpcomingFight,
 )
+from backend.schemas.fighter import FighterListItem
+
+_UFCSTATS_PROFILE_TEMPLATE = "http://www.ufcstats.com/fighter-details/{fighter_id}"
 
 
 class FavoritesAnalytics:
@@ -78,9 +81,12 @@ class FavoritesAnalytics:
     def entry_to_schema(self, entry: FavoriteEntryModel) -> FavoriteEntrySchema:
         """Convert a single ORM entry into its Pydantic representation."""
 
+        fighter_snapshot = self._fighter_snapshot(entry)
         return FavoriteEntrySchema(
             id=entry.id,
             fighter_id=entry.fighter_id,
+            fighter_name=fighter_snapshot.name if fighter_snapshot else None,
+            fighter=fighter_snapshot,
             position=entry.position,
             notes=entry.notes,
             tags=list(entry.tags or []),
@@ -110,6 +116,7 @@ class FavoritesAnalytics:
                 FavoriteActivityItem(
                     entry_id=entry.id,
                     fighter_id=entry.fighter_id,
+                    fighter_name=entry.fighter.name if isinstance(entry.fighter, Fighter) else None,
                     action=action,
                     occurred_at=(entry.updated_at if action == "updated" else entry.added_at),
                     metadata=metadata,
@@ -151,10 +158,19 @@ class FavoritesAnalytics:
             }
         )
 
+        name_lookup = {
+            entry.fighter_id: entry.fighter.name
+            for entry in entry_list
+            if isinstance(entry.fighter, Fighter)
+        }
+
         upcoming = [
             FavoriteUpcomingFight(
                 fighter_id=fight.fighter_id,
+                fighter_name=name_lookup.get(fight.fighter_id),
                 opponent_name=fight.opponent_name,
+                opponent_id=fight.opponent_id,
+                event_id=fight.event_id,
                 event_name=fight.event_name,
                 event_date=fight.event_date,
                 weight_class=fight.weight_class,
@@ -170,6 +186,44 @@ class FavoritesAnalytics:
             divisions=divisions,
             upcoming_fights=upcoming,
         )
+
+    def _fighter_snapshot(self, entry: FavoriteEntryModel) -> FighterListItem | None:
+        """Build a lightweight fighter summary for collection entries."""
+
+        fighter = entry.fighter
+        if not isinstance(fighter, Fighter):
+            return None
+
+        payload = {
+            "fighter_id": fighter.id,
+            "detail_url": _UFCSTATS_PROFILE_TEMPLATE.format(fighter_id=fighter.id),
+            "name": fighter.name,
+            "nickname": fighter.nickname,
+            "record": fighter.record,
+            "division": fighter.division,
+            "height": fighter.height,
+            "weight": fighter.weight,
+            "reach": fighter.reach,
+            "leg_reach": fighter.leg_reach,
+            "stance": fighter.stance,
+            "dob": fighter.dob,
+            "image_url": fighter.image_url,
+            "is_current_champion": fighter.is_current_champion,
+            "is_former_champion": fighter.is_former_champion,
+            "was_interim": fighter.was_interim,
+            "current_streak_type": fighter.current_streak_type or "none",
+            "current_streak_count": fighter.current_streak_count,
+            "last_fight_date": fighter.last_fight_date,
+            "birthplace": fighter.birthplace,
+            "birthplace_city": fighter.birthplace_city,
+            "birthplace_country": fighter.birthplace_country,
+            "nationality": fighter.nationality,
+            "fighting_out_of": fighter.fighting_out_of,
+            "training_gym": fighter.training_gym,
+            "training_city": fighter.training_city,
+            "training_country": fighter.training_country,
+        }
+        return FighterListItem.model_validate(payload)
 
     def _empty_breakdown(self) -> dict[str, int]:
         """Provide default buckets for fight result categories."""

@@ -8,6 +8,7 @@ describe("ActivityFeed", () => {
     {
       entry_id: 1,
       fighter_id: "fighter-a",
+      fighter_name: "Fighter Alpha",
       action: "added",
       occurred_at: "2024-01-01T00:00:00Z",
       metadata: { notes: "Scouted at UFC 300" },
@@ -16,7 +17,7 @@ describe("ActivityFeed", () => {
 
   it("shows timeline entries when activity exists", () => {
     render(<ActivityFeed activity={activity} />);
-    expect(screen.getByText(/fighter-a/i)).toBeInTheDocument();
+    expect(screen.getByText(/fighter alpha/i)).toBeInTheDocument();
     expect(screen.getByText(/Scouted at UFC 300/i)).toBeInTheDocument();
   });
 

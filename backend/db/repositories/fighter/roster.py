@@ -543,7 +543,7 @@ class FighterRosterMixin:
 
         # Fetch notable fighters in a single query using window function
         gym_names = [row.gym for row in rows]
-        notable_by_gym: dict[str, list[str]] = {}
+        notable_refs_by_gym: dict[str, list[dict[str, str]]] = {}
 
         if gym_names:
             from sqlalchemy import text
@@ -552,6 +552,7 @@ class FighterRosterMixin:
                 """
                 WITH ranked_fighters AS (
                     SELECT
+                        id,
                         name,
                         training_gym,
                         ROW_NUMBER() OVER(
@@ -561,25 +562,29 @@ class FighterRosterMixin:
                     FROM fighters
                     WHERE training_gym = ANY(:gym_names)
                 )
-                SELECT name, training_gym
+                SELECT id, name, training_gym
                 FROM ranked_fighters
                 WHERE rn <= 2
             """
             )
             notable_result = await self._session.execute(notable_query, {"gym_names": gym_names})
 
-            for name, gym in notable_result:
-                notable_by_gym.setdefault(gym, []).append(name)
+            for fighter_id, name, gym in notable_result:
+                notable_refs_by_gym.setdefault(gym, []).append(
+                    {"fighter_id": fighter_id, "fighter_name": name}
+                )
 
         stats: list[dict[str, Any]] = []
         for row in rows:
+            notable_refs = notable_refs_by_gym.get(row.gym, [])
             stats.append(
                 {
                     "gym": row.gym,
                     "city": row.city,
                     "country": row.country,
                     "fighter_count": row.fighter_count,
-                    "notable_fighters": notable_by_gym.get(row.gym, []),
+                    "notable_fighters": [ref["fighter_name"] for ref in notable_refs],
+                    "notable_fighter_refs": notable_refs,
                 }
             )
 

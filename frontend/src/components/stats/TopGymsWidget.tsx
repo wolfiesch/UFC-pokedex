@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Loader2 } from "lucide-react";
+import { FighterLinkList } from "@/components/fighter/FighterLinkList";
+import { Dumbbell } from "lucide-react";
 import client from "@/lib/api-client";
 
 interface GymStat {
@@ -13,7 +14,12 @@ interface GymStat {
   city?: string | null;
   country?: string | null;
   fighter_count: number;
-  notable_fighters?: string[];
+  notable_fighters?:
+    | string[]
+    | Array<{
+        fighter_id?: string | null;
+        fighter_name: string;
+      }>;
 }
 
 interface TopGymsWidgetProps {
@@ -78,6 +84,25 @@ export function TopGymsWidget({
       .toUpperCase();
   };
 
+  const getNotableFighters = (gym: GymStat) => {
+    const fighters = gym.notable_fighters ?? [];
+    if (!fighters.length) {
+      return [];
+    }
+    if (typeof fighters[0] === "string") {
+      return (fighters as string[]).map((name) => ({
+        fighterId: null,
+        name,
+      }));
+    }
+    return (fighters as Array<{ fighter_id?: string | null; fighter_name: string }>).map(
+      (fighter) => ({
+        fighterId: fighter.fighter_id ?? null,
+        name: fighter.fighter_name,
+      }),
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -132,13 +157,12 @@ export function TopGymsWidget({
                     {gym.fighter_count} fighter
                     {gym.fighter_count !== 1 ? "s" : ""}
                   </div>
-                  {gym.notable_fighters && gym.notable_fighters.length > 0 && (
-                    <div className="mt-1 truncate text-xs text-primary">
-                      {gym.notable_fighters.slice(0, 2).join(", ")}
-                      {gym.notable_fighters.length > 2 &&
-                        ` +${gym.notable_fighters.length - 2} more`}
-                    </div>
-                  )}
+                  {getNotableFighters(gym).length > 0 ? (
+                    <FighterLinkList
+                      fighters={getNotableFighters(gym).slice(0, 3)}
+                      className="mt-1 text-xs text-primary"
+                    />
+                  ) : null}
                 </div>
               </Link>
             ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import type { FightWebInsights } from "./insight-utils";
@@ -40,7 +41,11 @@ export function FightWebInsightsPanel({
                     className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-3 py-2 text-left text-foreground transition hover:border-foreground hover:bg-background"
                   >
                     <span className="font-medium text-foreground/90">
-                      {fighter.name}
+                      <FighterLink
+                        fighterId={fighter.fighterId}
+                        name={fighter.name}
+                        className="text-sm font-semibold"
+                      />
                       <span className="ml-2 text-xs uppercase tracking-[0.3em] text-muted-foreground/70">
                         {fighter.division ?? "Unlisted"}
                       </span>
@@ -70,11 +75,19 @@ export function FightWebInsightsPanel({
                 >
                   <div className="flex items-center justify-between text-foreground">
                     <span className="font-medium text-foreground/90">
-                      {rivalry.sourceName ?? rivalry.source}
+                      <FighterLink
+                        fighterId={rivalry.source}
+                        name={rivalry.sourceName ?? rivalry.source}
+                        className="text-sm font-semibold"
+                      />
                       <span className="mx-2 text-xs uppercase tracking-[0.3em] text-muted-foreground/60">
                         vs
                       </span>
-                      {rivalry.targetName ?? rivalry.target}
+                      <FighterLink
+                        fighterId={rivalry.target}
+                        name={rivalry.targetName ?? rivalry.target}
+                        className="text-sm font-semibold"
+                      />
                     </span>
                     <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                       {rivalry.fights} fights

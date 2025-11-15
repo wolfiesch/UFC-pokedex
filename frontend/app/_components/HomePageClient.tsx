@@ -158,7 +158,7 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
             Browse{" "}
             {total > 0 ? `${total.toLocaleString()} ` : ""}UFC fighters,
             explore their profiles, and curate your favourites in a streamlined
-            monochrome UI.
+            monochrome UI. Gotta smash em all.
           </p>
         </div>
       </header>

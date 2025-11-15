@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
+from backend.schemas.fighter import FighterListItem
+
 
 class FavoriteEntryBase(BaseModel):
     """Shared payload for favorite entry mutations."""
@@ -81,6 +83,14 @@ class FavoriteEntry(FavoriteEntryBase):
     """Read model exposed in API responses."""
 
     id: int = Field(..., description="Surrogate primary key for the entry row")
+    fighter_name: str | None = Field(
+        None,
+        description="Redundant fighter name to keep dashboards readable when hydration fails.",
+    )
+    fighter: FighterListItem | None = Field(
+        default=None,
+        description="Optional hydrated fighter snapshot used for gallery views.",
+    )
     created_at: datetime = Field(
         ..., description="Timestamp when the fighter was added to the collection."
     )
@@ -134,8 +144,19 @@ class FavoriteUpcomingFight(BaseModel):
     """Normalized summary describing an upcoming booked fight."""
 
     fighter_id: str
+    fighter_name: str | None = Field(
+        default=None, description="Display name for the fighter in the upcoming bout."
+    )
     opponent_name: str
+    opponent_id: str | None = Field(
+        default=None,
+        description="Structured identifier for the opponent when available.",
+    )
     event_name: str
+    event_id: str | None = Field(
+        default=None,
+        description="Identifier referencing the underlying event record when present.",
+    )
     event_date: date | None = Field(None, description="Scheduled date for the fight")
     weight_class: str | None = None
 
@@ -155,6 +176,9 @@ class FavoriteActivityItem(BaseModel):
 
     entry_id: int
     fighter_id: str
+    fighter_name: str | None = Field(
+        default=None, description="Cached fighter name associated with the activity."
+    )
     action: str
     occurred_at: datetime
     metadata: dict[str, Any] = Field(default_factory=dict)

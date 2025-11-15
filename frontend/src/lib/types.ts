@@ -275,6 +275,8 @@ export interface FavoriteActivityItem {
   entry_id: number;
   /** Fighter identifier associated with the activity. */
   fighter_id: string;
+  /** Optional hydrated fighter name for quick rendering. */
+  fighter_name?: string | null;
   /** Human-readable label describing what happened (added, updated, etc.). */
   action: string;
   /** ISO timestamp recording when the action took place. */
@@ -286,8 +288,11 @@ export interface FavoriteActivityItem {
 /** Upcoming fight metadata for any fighter inside a collection. */
 export interface FavoriteUpcomingFight {
   fighter_id: string;
+  fighter_name?: string;
   opponent_name: string;
+  opponent_id?: string | null;
   event_name: string;
+  event_id?: string | null;
   event_date?: string | null;
   weight_class?: string | null;
 }

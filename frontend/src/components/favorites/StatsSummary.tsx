@@ -1,4 +1,7 @@
+"use client";
+
 import type { FavoriteCollectionStats } from "@/lib/types";
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type StatsSummaryProps = {
@@ -111,10 +114,20 @@ export function StatsSummary({ collectionName, stats }: StatsSummaryProps) {
                   className="flex flex-col gap-1 rounded-lg border border-border/40 bg-background/40 p-3"
                 >
                   <span className="font-semibold text-foreground">
-                    {fight.fighter_id}
+                    <FighterLink
+                      fighterId={fight.fighter_id}
+                      name={fight.fighter_name ?? fight.fighter_id}
+                      className="font-semibold"
+                    />
                   </span>
-                  <span className="text-muted-foreground">
-                    vs {fight.opponent_name} — {fight.event_name}
+                  <span className="flex flex-wrap items-center gap-1 text-muted-foreground">
+                    <span>vs</span>
+                    <FighterLink
+                      fighterId={fight.opponent_id ?? null}
+                      name={fight.opponent_name ?? "TBD"}
+                      className="text-muted-foreground"
+                    />
+                    <span>— {fight.event_name}</span>
                   </span>
                   {fight.event_date ? (
                     <span className="text-xs text-muted-foreground/80">

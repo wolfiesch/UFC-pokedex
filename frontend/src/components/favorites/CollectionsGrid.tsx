@@ -19,6 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { FavoriteEntry } from "@/lib/types";
+import { FighterLink } from "@/components/fighter/FighterLink";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,10 @@ export type CollectionsGridProps = {
 /**
  * Sortable list item rendered inside the drag-and-drop context.
  */
+function formatEntryName(entry: FavoriteEntry): string {
+  return entry.fighter?.name ?? entry.fighter_name ?? entry.fighter_id;
+}
+
 function SortableEntry({ entry }: { entry: FavoriteEntry }) {
   const {
     attributes,
@@ -61,7 +66,11 @@ function SortableEntry({ entry }: { entry: FavoriteEntry }) {
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-base font-semibold tracking-tight">
-          {entry.fighter_id}
+          <FighterLink
+            fighterId={entry.fighter_id}
+            name={formatEntryName(entry)}
+            className="text-sm font-semibold"
+          />
         </CardTitle>
         <Button
           variant="outline"

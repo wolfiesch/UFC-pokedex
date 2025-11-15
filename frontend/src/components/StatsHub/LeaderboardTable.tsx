@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { LeaderboardEntry } from "@/lib/types";
+import { FighterLink } from "@/components/fighter/FighterLink";
 import {
   Card,
   CardContent,
@@ -94,7 +95,13 @@ function renderLeaderboardBody({
                 <TableCell className="text-sm font-semibold">{rank}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {entry.detail_url ? (
+                    {entry.fighter_id ? (
+                      <FighterLink
+                        fighterId={entry.fighter_id}
+                        name={entry.fighter_name}
+                        className="font-medium text-foreground transition hover:text-foreground/70"
+                      />
+                    ) : entry.detail_url ? (
                       <Link
                         href={entry.detail_url}
                         className="font-medium text-foreground transition hover:text-foreground/70"
