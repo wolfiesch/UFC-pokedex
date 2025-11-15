@@ -23,8 +23,11 @@ import {
   formatFightDate,
   getRelativeTime,
   formatShortDate,
+  getFormData,
 } from "@/lib/fighter-utils";
 import { toCountryIsoCode } from "@/lib/countryCodes";
+import { FormBar } from "@/components/fighter/FormBar";
+import { StreakBadge } from "@/components/fighter/StreakBadge";
 
 interface EnhancedFighterCardProps {
   fighter: FighterListItem;
@@ -217,6 +220,8 @@ function EnhancedFighterCardComponent({
   const streak = detailedStreak || listStreak;
   const lastFight =
     details && detailsEnabled ? getLastFight(details.fight_history) : null;
+  const formData =
+    details && detailsEnabled ? getFormData(details.fight_history) : [];
 
   // Division color coding
   const getDivisionColor = (division?: string | null) => {
@@ -573,14 +578,8 @@ function EnhancedFighterCardComponent({
                             )}
                           </div>
 
+                          {/* Quick Stats Grid - Physical attributes only (record shown in card footer) */}
                           <div className="grid w-full grid-cols-2 gap-3">
-                            <div className="rounded-xl bg-white/10 p-3 text-center">
-                              <div className="text-2xl font-bold leading-tight">
-                                {fighter.record}
-                              </div>
-                              <div className="text-xs text-white/60">Record</div>
-                            </div>
-
                             {streak && streak.count >= 2 && (
                               <div className="rounded-xl bg-white/10 p-3 text-center">
                                 <div className="text-lg font-bold leading-tight">
@@ -682,9 +681,10 @@ function EnhancedFighterCardComponent({
               )}
             </div>
 
-            {/* Compact Stats Block with consistent two-row layout */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="mt-1 space-y-1">
+            {/* Compact Stats Block - New Two-Row Layout */}
+            <div className="mt-1 space-y-1.5 text-xs text-muted-foreground">
+              {/* Row 1: Record + Division + Streak Badge */}
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   {/* Record */}
                   <span className="font-medium truncate">
@@ -700,45 +700,19 @@ function EnhancedFighterCardComponent({
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 whitespace-nowrap text-[11px]">
-                  {/* Fight Status Badge (upcoming / recent / fallback) */}
-                  <FightBadge fighter={fighter} />
-
-                  {/* Win Streak Badge */}
-                  {streak && streak.count >= 2 && (
-                    <>
-                      <span>•</span>
-                      <span
-                        className={`flex items-center gap-0.5 ${
-                          streak.type === "win"
-                            ? "text-green-500"
-                            : streak.type === "loss"
-                              ? "text-red-500"
-                              : "text-gray-500"
-                        }`}
-                      >
-                        {streak.type === "win"
-                          ? "🟢"
-                          : streak.type === "loss"
-                            ? "🔴"
-                            : "⚫"}
-                        <span className="font-medium">{streak.label}</span>
-                      </span>
-                    </>
-                  )}
-                </div>
+                {/* Streak Badge (right-aligned) */}
+                <StreakBadge streak={streak} />
               </div>
 
-              <div className="flex items-center gap-2">
-                {nationalityFlag && (
-                  <div className="flex items-center gap-1">
-                    <CountryFlag
-                      countryCode={nationalityFlag}
-                      width={16}
-                      height={12}
-                    />
-                  </div>
-                )}
+              {/* Row 2: Fight Status + Form Bar */}
+              <div className="flex items-center justify-between gap-2">
+                {/* Fight Status Badge (upcoming / recent / fallback) */}
+                <div className="flex items-center gap-2 text-[11px]">
+                  <FightBadge fighter={fighter} />
+                </div>
+
+                {/* Form Bar (last 5 fights) */}
+                <FormBar formData={formData} />
               </div>
             </div>
 

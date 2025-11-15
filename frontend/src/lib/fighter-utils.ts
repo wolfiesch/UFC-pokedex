@@ -264,3 +264,77 @@ export function getRelativeTime(date: string | null): string {
     return "";
   }
 }
+
+/**
+ * Form data point representing a single fight result for visualization
+ */
+export interface FormDataPoint {
+  result: "win" | "loss" | "draw" | "nc";
+  opponent: string;
+  date: string | null;
+  method?: string;
+}
+
+/**
+ * Extract form data (last 5 fight results) from fight history
+ * Returns fights in chronological order (most recent first)
+ * Excludes upcoming fights and filters to completed bouts only
+ *
+ * @param fightHistory - Array of fight history entries
+ * @returns Array of up to 5 FormDataPoint objects
+ */
+export function getFormData(
+  fightHistory?: FightHistoryEntry[],
+): FormDataPoint[] {
+  if (!fightHistory || fightHistory.length === 0) {
+    return [];
+  }
+
+  // Sort by date descending (most recent first)
+  const sortedFights = [...fightHistory].sort((a, b) => {
+    const dateA = a.event_date ? new Date(a.event_date).getTime() : 0;
+    const dateB = b.event_date ? new Date(b.event_date).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  // Filter out upcoming fights and non-contest results
+  const completedFights = sortedFights.filter((fight) => {
+    const result = fight.result.toLowerCase().trim();
+
+    // Exclude upcoming fights
+    if (result.includes("next") || result.includes("vs")) {
+      return false;
+    }
+
+    // Check if fight is in the future
+    if (fight.event_date && new Date(fight.event_date) > new Date()) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Take last 5 fights and normalize the result
+  return completedFights.slice(0, 5).map((fight) => {
+    const result = fight.result.toLowerCase().trim();
+
+    let normalizedResult: FormDataPoint["result"] = "nc";
+
+    if (result === "w" || result.includes("win")) {
+      normalizedResult = "win";
+    } else if (result === "l" || result.includes("loss")) {
+      normalizedResult = "loss";
+    } else if (result === "d" || result.includes("draw")) {
+      normalizedResult = "draw";
+    } else if (result === "nc" || result.includes("no contest")) {
+      normalizedResult = "nc";
+    }
+
+    return {
+      result: normalizedResult,
+      opponent: fight.opponent,
+      date: fight.event_date || null,
+      method: fight.method,
+    };
+  });
+}
