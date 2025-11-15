@@ -175,8 +175,16 @@ async def test_leaderboards_rank_by_numeric_value(session: AsyncSession) -> None
         end_date=date(2024, 12, 31),
     )
 
-    accuracy_ids = [entry.fighter_id for entry in response.accuracy.entries]
-    submission_ids = [entry.fighter_id for entry in response.submissions.entries]
+    accuracy_leaderboard = response.get_leaderboard("sig_strikes_accuracy_pct")
+    submissions_leaderboard = response.get_leaderboard("avg_submissions")
+
+    assert accuracy_leaderboard is not None, "Accuracy leaderboard should be present"
+    assert (
+        submissions_leaderboard is not None
+    ), "Submissions leaderboard should be present"
+
+    accuracy_ids = [entry.fighter_id for entry in accuracy_leaderboard.entries]
+    submission_ids = [entry.fighter_id for entry in submissions_leaderboard.entries]
 
     assert accuracy_ids == ["fighter-2", "fighter-1"]
     assert submission_ids == ["fighter-2", "fighter-1"]
@@ -322,21 +330,35 @@ async def test_trends_calculate_streaks_and_durations(
         streak_limit=2,
     )
 
-    assert [entry.fighter_id for entry in response.longest_win_streaks] == [
+    win_streak_series = response.win_streak_series
+    assert [series.fighter_id for series in win_streak_series] == [
         "streaker-2",
         "streaker-1",
     ]
-    assert response.longest_win_streaks[0].streak == 4
+    first_series_points = win_streak_series[0].points
+    assert first_series_points, "Win streak trend should contain at least one point"
+    assert abs(first_series_points[0].value - 4.0) < 1e-6
 
-    january_buckets = [
-        bucket
-        for bucket in response.average_fight_durations
-        if bucket.bucket_label == "Jan 2024"
-    ]
-    assert january_buckets, "January bucket should be present"
-
-    featherweight_bucket = next(
-        bucket for bucket in january_buckets if bucket.division == "Featherweight"
+    featherweight_duration_series = next(
+        (
+            series
+            for series in response.average_duration_series
+            if series.label.startswith("Featherweight")
+        ),
+        None,
     )
-    # Average duration should be (30 seconds + 450 seconds) / 2 == 240 seconds.
-    assert abs(featherweight_bucket.average_duration_seconds - 240.0) < 1e-6
+    assert (
+        featherweight_duration_series is not None
+    ), "Featherweight average duration series should be present"
+
+    january_point = next(
+        (
+            point
+            for point in featherweight_duration_series.points
+            if point.timestamp.startswith("2024-01")
+        ),
+        None,
+    )
+    assert january_point is not None, "January average duration data should be present"
+    # Average duration should be (30 seconds + 450 seconds) / 2 == 240 seconds => 4 minutes.
+    assert abs(january_point.value - 4.0) < 1e-6
