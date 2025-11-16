@@ -60,11 +60,20 @@ export default function EventStatsPanel({
       ? ((stats.finishes / stats.totalFights) * 100).toFixed(1)
       : "0.0";
 
+  // Determine finish rate color based on percentage
+  const getFinishRateColor = (rate: string) => {
+    const rateNum = parseFloat(rate);
+    if (rateNum >= 60) return "bg-green-700/30 text-green-400";
+    if (rateNum >= 40) return "bg-yellow-700/30 text-yellow-400";
+    if (rateNum > 0) return "bg-orange-700/30 text-orange-400";
+    return "bg-gray-700/30 text-gray-400";
+  };
+
   return (
     <div className="space-y-4 rounded-lg border border-gray-700 bg-gray-800/50 p-6">
       <div className="flex items-center justify-between border-b border-gray-700 pb-3">
         <h3 className="text-lg font-bold text-white">📊 Event Statistics</h3>
-        <span className="rounded-full bg-green-700/30 px-3 py-1 text-sm font-medium text-green-400">
+        <span className={`rounded-full px-3 py-1 text-sm font-medium ${getFinishRateColor(finishRate)}`}>
           {finishRate}% Finish Rate
         </span>
       </div>

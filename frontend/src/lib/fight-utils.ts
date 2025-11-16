@@ -69,7 +69,23 @@ export function isMainEvent(
  * - Remaining: Early Prelims
  */
 export function groupFightsBySection(fights: Fight[]): FightCardSection[] {
-  const totalFights = fights.length;
+  // Deduplicate fights by fighter pairs (each fight appears twice in DB, once per fighter)
+  // Create a unique key from sorted fighter IDs to identify the same matchup
+  const uniqueFightsMap = new Map<string, Fight>();
+
+  for (const fight of fights) {
+    // Sort fighter IDs to create a consistent key regardless of order
+    const fighterIds = [fight.fighter_1_id, fight.fighter_2_id].sort();
+    const matchupKey = fighterIds.join("-");
+
+    // Only keep the first occurrence of each matchup
+    if (!uniqueFightsMap.has(matchupKey)) {
+      uniqueFightsMap.set(matchupKey, fight);
+    }
+  }
+
+  const uniqueFights = Array.from(uniqueFightsMap.values());
+  const totalFights = uniqueFights.length;
 
   if (totalFights === 0) {
     return [];
@@ -86,7 +102,7 @@ export function groupFightsBySection(fights: Fight[]): FightCardSection[] {
     sections.push({
       section: "main",
       label: "Main Card",
-      fights: fights.slice(0, mainCardSize),
+      fights: uniqueFights.slice(0, mainCardSize),
     });
   }
 
@@ -95,7 +111,7 @@ export function groupFightsBySection(fights: Fight[]): FightCardSection[] {
     sections.push({
       section: "prelims",
       label: "Prelims",
-      fights: fights.slice(mainCardSize, mainCardSize + prelimsSize),
+      fights: uniqueFights.slice(mainCardSize, mainCardSize + prelimsSize),
     });
   }
 
@@ -105,7 +121,7 @@ export function groupFightsBySection(fights: Fight[]): FightCardSection[] {
     sections.push({
       section: "early_prelims",
       label: "Early Prelims",
-      fights: fights.slice(mainCardSize + prelimsSize),
+      fights: uniqueFights.slice(mainCardSize + prelimsSize),
     });
   }
 
