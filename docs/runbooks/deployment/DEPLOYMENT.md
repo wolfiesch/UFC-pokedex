@@ -91,17 +91,24 @@ curl https://your-project.railway.app/health
    # Follow prompts to create/link project
    ```
 
-3. **Update Vercel Environment Variable**:
-   
-   Go to Vercel Dashboard → Project Settings → Environment Variables:
-   
+3. **Update Vercel Environment Variables**:
+
+   Go to Vercel Dashboard → Project Settings → Environment Variables and ensure both of the following are present:
+
    - **Key:** `NEXT_PUBLIC_API_BASE_URL`
-   - **Value:** `https://your-railway-backend.railway.app`
-   - **Environment:** Production, Preview, Development
+     - **Value:** `https://your-railway-backend.railway.app`
+     - **Environment:** Production, Preview, Development
+   - **Key:** `NEXT_SSR_API_BASE_URL`
+     - **Value:** `https://your-railway-backend.railway.app`
+     - **Environment:** Production, Preview, Development
 
    Or via CLI:
    ```bash
    vercel env add NEXT_PUBLIC_API_BASE_URL
+   # Enter: https://your-railway-backend.railway.app
+   # Select: Production, Preview, Development
+
+   vercel env add NEXT_SSR_API_BASE_URL
    # Enter: https://your-railway-backend.railway.app
    # Select: Production, Preview, Development
    ```

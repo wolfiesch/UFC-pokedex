@@ -153,7 +153,7 @@ vercel logs <deployment-url>
 **Common issues:**
 1. **pnpm install failed** → Check if pnpm-lock.yaml exists in frontend/
 2. **Build command failed** → Verify rootDirectory is set to "frontend" in Vercel project settings
-3. **API_BASE_URL not set** → Add env var in Vercel dashboard
+3. **API base URLs not set** → Add `NEXT_PUBLIC_API_BASE_URL` and `NEXT_SSR_API_BASE_URL` in Vercel dashboard
 
 **Quick fix:**
 ```bash
@@ -174,9 +174,9 @@ vercel --prod
    railway variables | grep CORS
    ```
 
-3. Frontend has correct API URL:
+3. Frontend has correct API URLs:
    ```bash
-   vercel env ls | grep NEXT_PUBLIC_API_BASE_URL
+   vercel env ls | egrep "NEXT_PUBLIC_API_BASE_URL|NEXT_SSR_API_BASE_URL"
    ```
 
 ---

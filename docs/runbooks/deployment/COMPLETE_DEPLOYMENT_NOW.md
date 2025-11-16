@@ -175,9 +175,10 @@ This means the frontend can't reach the backend.
    - Railway dashboard → Variables tab
    - Verify: `CORS_ALLOW_ORIGINS=https://ufc-pokedex.vercel.app`
 
-3. **Frontend has correct API URL:**
+3. **Frontend has correct API URLs:**
    - Vercel dashboard → Settings → Environment Variables
    - Verify: `NEXT_PUBLIC_API_BASE_URL=https://fulfilling-nourishment-production.up.railway.app`
+   - Verify: `NEXT_SSR_API_BASE_URL=https://fulfilling-nourishment-production.up.railway.app`
 
 4. **Browser console (F12) for errors:**
    - Look for CORS errors or network errors
