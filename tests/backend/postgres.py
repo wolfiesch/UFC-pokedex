@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.exc import OperationalError
 
 
 @dataclass(frozen=True)
@@ -116,8 +117,21 @@ def postgres_schema() -> Iterator[TemporaryPostgresSchema]:
     schema_name = f"test_{uuid.uuid4().hex}"
     admin_engine = create_sync_engine(_base_url(), future=True)
 
-    with admin_engine.begin() as connection:
-        connection.execute(sa_schema.CreateSchema(schema_name))
+    try:
+        with admin_engine.begin() as connection:
+            connection.execute(sa_schema.CreateSchema(schema_name))
+    except OperationalError as exc:
+        # Creating a schema fails immediately when PostgreSQL is unavailable.
+        # Skipping the test suite rather than crashing keeps local development
+        # environments without a running database usable while still surfacing
+        # the exact error to anyone investigating the skip reason.
+        admin_engine.dispose()
+        pytest.skip(
+            (
+                "PostgreSQL is required for this test but the database is unreachable: "
+                f"{exc}"
+            )
+        )
 
     schema = TemporaryPostgresSchema(
         name=schema_name, url=_url_with_schema(schema_name)

@@ -25,15 +25,7 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from backend.db.connection import (
-    get_database_type as _connection_get_database_type,
-)
-from backend.db.connection import (
-    get_database_url as _connection_get_database_url,
-)
-from backend.db.connection import (
-    get_engine as _connection_get_engine,
-)
+from backend.db import connection as db_connection
 
 from .api import (
     events,
@@ -130,7 +122,7 @@ def get_database_type() -> str:
     dependency injection without touching private attributes.
     """
 
-    return _connection_get_database_type()
+    return db_connection.get_database_type()
 
 
 def get_database_url() -> str:
@@ -143,7 +135,7 @@ def get_database_url() -> str:
     observability behaviour—such as preflight logging—centralised in this file.
     """
 
-    return _connection_get_database_url()
+    return db_connection.get_database_url()
 
 
 def get_engine() -> AsyncEngine:
@@ -155,7 +147,7 @@ def get_engine() -> AsyncEngine:
     when navigating usages.
     """
 
-    return _connection_get_engine()
+    return db_connection.get_engine()
 
 
 @asynccontextmanager
