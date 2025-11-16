@@ -26,6 +26,15 @@ node_modules/
 .env
 .env.local
 .env.*.local
+frontend/.env.tunnel
+
+# Deployment secrets (CRITICAL - never commit)
+.deployment/config.env
+.deployment/*.env
+.deployment/id_rsa*
+.deployment/*.key
+.deployment/*.pem
+.deployment/*.crt
 
 # Data artifacts
 data/raw/
