@@ -1,0 +1,287 @@
+================================================================================
+                    COUPLING DEPENDENCY DIAGRAMS
+================================================================================
+
+BACKEND DEPENDENCY GRAPH - CRITICAL PATHS
+================================================================================
+
+LAYER 1: ORM Models (Central Hub)
+┌─────────────────────────────────────────┐
+│  backend.db.models (16+ imports)        │
+│  - Fighter, Fight, Event, Ranking, etc  │
+└──────────────┬──────────────────────────┘
+               │
+    ┌──────────┼──────────┬─────────────┬──────────┬─────────┐
+    │          │          │             │          │         │
+    ▼          ▼          ▼             ▼          ▼         ▼
+┌──────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────┐  ┌─────┐
+│APIs  │  │Schemas │  │Scripts │  │Services│  │Repos│  │Mig. │
+└──────┘  └────────┘  └────────┘  └────────┘  └────┘  └─────┘
+
+CRITICAL REPOSITORY HUB - FIGHTER REPOSITORY
+┌─────────────────────────────────────────────────────┐
+│  backend.db.repositories.fighter_repository         │
+│  (1,778 lines - 8 different concerns)               │
+├─────────────────────────────────────────────────────┤
+│ Imports:                                             │
+│  ├─ backend.db.models (5 models)                    │
+│  ├─ backend.db.repositories.base (3 utils)          │
+│  ├─ backend.db.repositories.fight_utils (3 funcs)   │
+│  ├─ backend.schemas.fighter (5 schemas)             │
+│  └─ backend.services.image_resolver (2 funcs)       │
+├─────────────────────────────────────────────────────┤
+│ Methods with High Coupling:                         │
+│  ├─ list_fighters() - 164 lines (4 concerns)        │
+│  ├─ get_fighter() - 237 lines (8 concerns)          │
+│  ├─ search_fighters() - 200 lines (5 concerns)      │
+│  └─ Multiple methods calling resolve_fighter_image()│
+├─────────────────────────────────────────────────────┤
+│ Used By:                                             │
+│  ├─ backend.services.fighter_query_service          │
+│  ├─ backend.services.stats_service                  │
+│  ├─ backend.services.search_service                 │
+│  ├─ backend.db.repositories.postgresql_fighter_repo │
+│  └─ Multiple scripts and warm-up routines           │
+└─────────────────────────────────────────────────────┘
+
+CACHE HUB COUPLING
+┌────────────────────────────────────────────────────┐
+│  backend.cache + backend.services.caching          │
+│  (8+ importing modules)                             │
+├────────────────────────────────────────────────────┤
+│ Directly imported by:                              │
+│  1. fighter_query_service (7 items)                │
+│     └─ detail_key, list_key, search_key,           │
+│        comparison_key, get_cache_client,           │
+│        CacheClient, cached decorator               │
+│  2. fight_graph_service (4+ items)                 │
+│  3. stats_service (4+ items)                       │
+│  4. event_service (4+ items)                       │
+│  5. favorites_service (4+ items)                   │
+│  6. main.py (close_redis)                          │
+│  7. warmup.py (connection warming)                 │
+│  8. services.caching (CacheClient)                 │
+├────────────────────────────────────────────────────┤
+│ Risk: Changes to cache invalidation logic require  │
+│       updates across 5+ service files              │
+└────────────────────────────────────────────────────┘
+
+IMAGE RESOLUTION CROSS-LAYER COUPLING
+┌──────────────────────────────────────────────────┐
+│  backend.services.image_resolver                  │
+│  (Presentation logic in data access layer)        │
+└────────────────┬─────────────────────────────────┘
+                 │
+        ┌────────┼────────┐
+        │        │        │
+        ▼        ▼        ▼
+    ┌────────────────────────────────────┐
+    │ fighter_repository.py              │
+    │ - list_fighters() - line 631       │
+    │ - get_fighter() - line 888         │
+    │ - search_fighters() - line 1073    │
+    │ - get_random_fighter() - line 1283 │
+    └────────────────────────────────────┘
+        │
+        └───────────────────────┐
+                                │
+    ┌───────────────────────────▼──────┐
+    │ fight_graph_repository.py        │
+    │ - Graph building - line 102      │
+    │ - Graph building - line 146      │
+    └──────────────────────────────────┘
+
+SERVICE-TO-REPOSITORY BINDING
+┌─────────────────────────────────────────────┐
+│  Services Layer (Tightly Bound)              │
+├─────────────────────────────────────────────┤
+│ fighter_query_service                       │
+│   └─ imports FighterRepository directly     │
+│      └─ (cannot swap implementations)       │
+│                                              │
+│ stats_service                               │
+│   ├─ imports FighterRepository              │
+│   └─ imports StatsRepository                │
+│      └─ (coupled to both)                   │
+│                                              │
+│ fight_graph_service                         │
+│   └─ imports FightGraphRepository           │
+│      └─ (tightly bound)                     │
+└─────────────────────────────────────────────┘
+
+
+================================================================================
+FRONTEND DEPENDENCY GRAPH - CRITICAL PATHS
+================================================================================
+
+API CLIENT HUB (CRITICAL BOTTLENECK)
+┌────────────────────────────────────────────────────┐
+│  @/lib/api.ts (15+ importing files)                │
+│  Central API function definitions                   │
+├────────────────────────────────────────────────────┤
+│ API Functions:                                     │
+│  - getFighters(), searchFighters()                 │
+│  - getFighterDetails()                             │
+│  - getFavoriteCollections()                        │
+│  - getFightGraph()                                 │
+│  - getStats()                                      │
+│  - getRankings()                                   │
+│  - And 10+ more...                                 │
+├────────────────────────────────────────────────────┤
+│ Imported By:                                       │
+│  ├─ store/favoritesStore.ts (6 functions)         │
+│  ├─ hooks/useFighters.ts (2 functions)            │
+│  ├─ hooks/useFighterDetails.ts                    │
+│  ├─ hooks/useStatsHub.ts                          │
+│  ├─ hooks/useFighter.ts                           │
+│  ├─ components/FightWeb/FightWebClient.tsx        │
+│  ├─ components/stats/* (4+ components)            │
+│  ├─ components/Pokedex/* (3+ components)          │
+│  └─ 3+ other pages                                │
+├────────────────────────────────────────────────────┤
+│ Risk: Signature change in ANY function affects    │
+│       15+ files across the application             │
+└────────────────────────────────────────────────────┘
+
+STORE-HOOK COUPLING CHAIN
+┌────────────────────────────────────────────────────┐
+│  useFavoritesStore (store)                         │
+│  └─ state: defaultCollection, favoriteIds, etc    │
+│     └─ actions: initialize(), toggleFavorite()    │
+│        └─ backend sync: imports @/lib/api         │
+├────────────────────────────────────────────────────┤
+│  Used by:                                          │
+│  ├─ hooks/useFavorites.ts                         │
+│  │  └─ wraps store for convenient access          │
+│  │     └─ used by 3+ components                   │
+│  └─ components/favorites/* (2+ direct imports)    │
+├────────────────────────────────────────────────────┤
+│  useFavoritesFiltersStore (store)                 │
+│  └─ state: searchTerm, stanceFilter, etc          │
+│     └─ actions: setSearchTerm(), filters...       │
+├────────────────────────────────────────────────────┤
+│  Used by:                                          │
+│  ├─ hooks/useFavorites.ts (7 fields)             │
+│  ├─ hooks/useFighters.ts (7 fields)              │
+│  ├─ components/filters/* (direct usage)           │
+│  └─ 3+ other components                          │
+└────────────────────────────────────────────────────┘
+
+COMPONENT ORCHESTRATION HUB
+┌─────────────────────────────────────────────────┐
+│  FightWebClient.tsx (Component Orchestrator)     │
+│  Lines: 300+                                     │
+├─────────────────────────────────────────────────┤
+│ Child Components Imported:                       │
+│  ├─ FightGraphCanvas                            │
+│  ├─ FightWebFilters                             │
+│  ├─ FightWebInsightsPanel                       │
+│  ├─ FightWebLegend                              │
+│  ├─ FightWebSearch                              │
+│  ├─ FightWebSelectedFighter                     │
+│  ├─ FightWebSummary                             │
+│  └─ 2+ utility imports                          │
+├─────────────────────────────────────────────────┤
+│ State Management:                                │
+│  ├─ useState() for local state                  │
+│  ├─ useCallback() for handlers                  │
+│  ├─ useEffect() for side effects                │
+│  └─ Complex filter/data transformations         │
+├─────────────────────────────────────────────────┤
+│ Risk: Changes to ANY child component prop       │
+│       require updates to parent orchestrator    │
+└─────────────────────────────────────────────────┘
+
+
+================================================================================
+CROSS-LAYER COUPLING EXAMPLES
+================================================================================
+
+EXAMPLE 1: Image Handling (Repository Violation)
+────────────────────────────────────────────────
+
+  API Layer (Should handle presentation)
+    └─ @/lib/api.ts (frontend)
+    └─ api/*.py (backend)
+       │
+  Service Layer (Business logic)
+       │
+  Repository Layer (Data access) ← IMAGE RESOLUTION LEAK ❌
+  └─ fighter_repository.py
+     ├─ line 631: image_url=resolve_fighter_image(...)
+     ├─ line 888: image_url=resolve_fighter_image(...)
+     ├─ line 1073: image_url=resolve_fighter_image(...)
+     └─ line 1283: image_url=resolve_fighter_image(...)
+        └─ imports: backend.services.image_resolver
+
+  Correct Pattern: Should be in API layer only
+
+
+EXAMPLE 2: Cache Key Building (Service Violation)
+──────────────────────────────────────────────────
+
+  Service Layer (Should be abstract)
+  └─ fighter_query_service.py
+     └─ imports 7 cache items directly:
+        ├─ comparison_key (function)
+        ├─ detail_key (function)
+        ├─ list_key (function)
+        ├─ search_key (function)
+        ├─ get_cache_client (function)
+        ├─ CacheClient (class)
+        └─ cached (decorator)
+           │
+        └─ Services know too much about cache implementation ❌
+
+  Correct Pattern: Single cache interface abstraction
+
+
+EXAMPLE 3: Store Mutation Across App
+────────────────────────────────────
+
+  Single Store
+  ├─ useFavoritesFiltersStore
+  ├─ Exported from store/favoritesFiltersStore.ts
+  │
+  └─ Imported by 6+ different hooks/components:
+     ├─ hooks/useFavorites.ts (reads 7 fields)
+     ├─ hooks/useFighters.ts (reads 7 fields)
+     ├─ components/filters/DivisionFilter.tsx (mutates)
+     ├─ components/filters/StanceFilter.tsx (mutates)
+     ├─ components/filters/SearchFilter.tsx (mutates)
+     └─ 2+ other components
+        │
+        └─ Store mutation ripples across app ❌
+
+  Correct Pattern: Separate stores per domain
+
+
+================================================================================
+DECOUPLING PRIORITY MATRIX
+================================================================================
+
+           ┌──────────────────────────────────┐
+       HIGH│  CRITICAL        │     HIGH     │
+     Impact│  fighter_repo    │   cache.py   │
+           │  get_fighter()   │   models.py  │
+           │  list_fighters() │   image_res. │
+           │                  │              │
+       MID │  MEDIUM          │  MEDIUM      │
+           │  fight_graph_repo│  queries_svc │
+           │  FightWebClient  │              │
+           │                  │              │
+        LOW│  LOW             │  LOW         │
+           │  Most utils      │  Single-use  │
+           │  Basic helpers   │  routines    │
+           └──────────────────────────────────┘
+             EASY                   HARD
+              Fix              Refactor Difficulty
+
+
+RECOMMENDED REFACTORING ORDER:
+1. Extract image_resolver from repositories (HIGH impact, MEDIUM effort)
+2. Create repository interfaces (HIGH impact, MEDIUM effort)
+3. Break up fighter_repository methods (CRITICAL, HIGH effort)
+4. Partition stores (MEDIUM impact, EASY effort)
+5. Consolidate cache management (HIGH impact, HIGH effort)
+
